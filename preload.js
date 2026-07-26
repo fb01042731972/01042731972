@@ -84,3 +84,69 @@ ipcRenderer.on('ej:update-none', () => {
 ipcRenderer.on('ej:update-error', (_e, msg) => {
   console.warn('[이진견적서] 업데이트 확인 실패:', msg);
 });
+
+// ============================================================
+// 업데이트 적용 완료 팝업
+// main.js가 업데이트 적용 후 새로고침할 때 URL 뒤에
+// #ej-updated-<버전> 을 붙여서 로드하면, 여기서 그걸 읽어
+// "업데이트 완료" 팝업을 띄운다. X 버튼을 눌러야만 닫힘.
+// ============================================================
+function buildUpdateDonePopup(version) {
+  const overlay = document.createElement('div');
+  overlay.id = 'ej-update-done-overlay';
+  overlay.style.cssText = `
+    position:fixed; inset:0; z-index:2147483647;
+    background:rgba(15,23,42,.45);
+    display:flex; align-items:center; justify-content:center;
+  `;
+
+  const box = document.createElement('div');
+  box.style.cssText = `
+    background:#fff; border-radius:12px; padding:22px 24px;
+    min-width:280px; max-width:88vw; box-shadow:0 12px 32px rgba(0,0,0,.25);
+    font-family:'Malgun Gothic',sans-serif; position:relative; text-align:center;
+  `;
+
+  const closeBtn = document.createElement('button');
+  closeBtn.textContent = '✕';
+  closeBtn.style.cssText = `
+    position:absolute; top:8px; right:10px; background:none; border:none;
+    font-size:15px; color:#94a3b8; cursor:pointer; line-height:1; padding:4px;
+  `;
+  closeBtn.onclick = () => overlay.remove();
+
+  const icon = document.createElement('div');
+  icon.textContent = '✅';
+  icon.style.cssText = 'font-size:32px; margin-bottom:8px;';
+
+  const title = document.createElement('div');
+  title.textContent = '업데이트가 완료되었습니다';
+  title.style.cssText = 'font-size:15px; font-weight:700; color:#1f2937; margin-bottom:4px;';
+
+  const sub = document.createElement('div');
+  sub.textContent = version ? `현재 버전: v${version}` : '';
+  sub.style.cssText = 'font-size:12px; color:#64748b;';
+
+  box.appendChild(closeBtn);
+  box.appendChild(icon);
+  box.appendChild(title);
+  if (version) box.appendChild(sub);
+  overlay.appendChild(box);
+  document.body.appendChild(overlay);
+}
+
+function checkUpdateDoneHash() {
+  const m = location.hash.match(/^#ej-updated-(.*)$/);
+  if (!m) return;
+  const version = decodeURIComponent(m[1] || '');
+  const show = () => buildUpdateDonePopup(version);
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', show);
+  } else {
+    show();
+  }
+  // 새로고침해도 다시 뜨지 않도록 주소의 신호는 지워둠 (팝업 자체는 이미 떴으므로 유지됨)
+  history.replaceState(null, '', location.pathname + location.search);
+}
+
+checkUpdateDoneHash();

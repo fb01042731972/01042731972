@@ -193,7 +193,8 @@ ipcMain.handle('ej:apply-update', async () => {
     fs.writeFileSync(CONTENT_HTML, newHtml, 'utf-8');
     writeLocalVersion({ version: manifest.version, source: 'remote', updatedAt: new Date().toISOString() });
 
-    mainWindow.loadFile(CONTENT_HTML);
+    // 새로고침 후 "업데이트 완료" 팝업을 띄울 수 있도록 URL 뒤에 신호(hash)를 붙여서 로드
+    mainWindow.loadFile(CONTENT_HTML, { hash: `ej-updated-${encodeURIComponent(manifest.version)}` });
     return { ok: true };
   } catch (e) {
     return { ok: false, error: String(e.message || e) };
