@@ -158,14 +158,19 @@ async function checkForUpdate(manual) {
         forced: !!manifest.forced,
       });
       mainWindow._pendingManifest = manifest;
-    } else if (manual) {
-      mainWindow.webContents.send('ej:update-none');
+      return { status: 'available', version: manifest.version, notes: manifest.notes || '', forced: !!manifest.forced, checkedAt: new Date().toISOString() };
+    } else {
+      if (manual) {
+        mainWindow.webContents.send('ej:update-none');
+      }
+      return { status: 'none', version: local.version, checkedAt: new Date().toISOString() };
     }
   } catch (e) {
     if (manual) {
       mainWindow.webContents.send('ej:update-error', String(e.message || e));
     }
     // 조용히 무시 (오프라인 상태일 수 있음)
+    return { status: 'error', error: String(e.message || e), checkedAt: new Date().toISOString() };
   }
 }
 

@@ -76,6 +76,7 @@ ipcRenderer.on('ej:update-available', (_event, info) => {
 contextBridge.exposeInMainWorld('ejUpdater', {
   checkNow: () => ipcRenderer.invoke('ej:check-now'),
   getVersion: () => ipcRenderer.invoke('ej:get-version'),
+  applyUpdate: () => ipcRenderer.invoke('ej:apply-update'),
 });
 
 ipcRenderer.on('ej:update-none', () => {

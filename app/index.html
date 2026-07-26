@@ -196,6 +196,16 @@
       <button onclick="closeThemeSettingsModal()" style="border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
     </div>
 
+    <div class="text-xs font-bold text-gray-700 mb-2">🔄 프로그램 업데이트</div>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;display:flex;flex-direction:column;gap:8px">
+      <div id="updateStatusInfo" style="font-size:12px;color:#475569">버전 정보를 불러오는 중...</div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+        <button type="button" id="updateCheckBtn" onclick="checkForAppUpdate()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer">🔄 지금 확인</button>
+        <button type="button" id="updateApplyBtn" onclick="applyAppUpdate()" class="text-xs font-bold px-3 py-2 rounded" style="display:none;background:#146C8E;color:#fff;border:none;cursor:pointer">⬇️ 지금 업데이트</button>
+      </div>
+      <div id="updateCheckResult" style="font-size:12px;color:#334155"></div>
+    </div>
+
     <div class="text-xs font-bold text-gray-700 mb-2">🏷 회사명 / 로고</div>
     <p class="text-[11px] text-gray-500 mb-2">상단에 표시되는 이름과 로고 이미지를 원하는 대로 바꿀 수 있어요. 로고를 넣으면 이름 앞에 함께 표시됩니다.</p>
     <div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px">
@@ -670,17 +680,13 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <div class="quote-label">연락처</div>
-                <div class="flex items-center gap-1">
-                  <input class="quote-inp" id="q_to_tel" placeholder="010-0000-0000">
-                  <button type="button" onclick="sendReplySms('q')" class="no-print" title="이 번호로 문자 답장 보내기 (알리고, 인터넷 필요)" style="border:none;background:none;cursor:pointer;font-size:13px;flex-shrink:0;padding:2px">💬</button>
-                </div>
+                <input class="quote-inp" id="q_to_tel" placeholder="010-0000-0000">
               </div>
               <div>
                 <div class="quote-label">이메일</div>
                 <div class="flex items-center gap-1">
                   <input class="quote-inp" id="q_to_email" placeholder="example@mail.com">
-                  <button type="button" onclick="sendDocEmail('q','client')" class="no-print" title="이 주소로 메일 작성창 열기 (첨부는 직접)" style="border:none;background:none;cursor:pointer;font-size:13px;flex-shrink:0;padding:2px">📧</button>
-                  <button type="button" onclick="sendQuotePdfEmail('q')" class="no-print" title="견적서 PDF를 자동으로 만들어 첨부한 뒤 바로 발송 (네이버, 인터넷 필요)" style="border:none;background:none;cursor:pointer;font-size:13px;flex-shrink:0;padding:2px">📎📧</button>
+                  <button type="button" onclick="sendDocEmail('q','client')" class="no-print" title="이 주소로 메일 작성창 열기" style="border:none;background:none;cursor:pointer;font-size:13px;flex-shrink:0;padding:2px">📧</button>
                 </div>
               </div>
             </div>
@@ -20880,11 +20886,7 @@ window.addEventListener('load', () => setTimeout(runStartupDiagnostics, 200));
 // 문서 자동저장 (특기사항 포함 모든 입력칸 + 품목 행) — 이 브라우저에 자동 보관
 // ════════════════════════════════════════
 let _draftSaveTimer = null;
-// 🆕 입력 중(디바운스 대기 중)인지 여부 — 이미 doSaveDraft가 다 반영해서 "깨끗한" 상태라면
-// 자동저장 틱마다 굳이 input/textarea를 다시 훑을 필요가 없으므로 이 값으로 건너뜀
-let _draftDirty = false;
 function scheduleDraftSave() {
-  _draftDirty = true;
   clearTimeout(_draftSaveTimer);
   _draftSaveTimer = setTimeout(doSaveDraft, 400);
 }
@@ -20897,7 +20899,6 @@ function doSaveDraft() {
       fields[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
     });
     localStorage.setItem(K_DRAFT_FIELDS, JSON.stringify(fields));
-    _draftDirty = false;
   } catch (e) { console.error('자동저장 실패:', e); }
 }
 function restoreDraft() {
@@ -25208,6 +25209,12 @@ function openThemeSettingsModal() {
   const nameEl = document.getElementById('brandNameInput');
   if (nameEl) nameEl.value = b.name;
   renderBrandLogoPreview(b.logo);
+  loadUpdateStatusUI();
+  // 매번 모달을 열 때마다 이전 확인 결과 표시는 지워둠
+  const updResultEl = document.getElementById('updateCheckResult');
+  if (updResultEl) updResultEl.textContent = '';
+  const updApplyBtn = document.getElementById('updateApplyBtn');
+  if (updApplyBtn) updApplyBtn.style.display = 'none';
   const modal = document.getElementById('themeSettingsModal');
   if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
 }
@@ -25334,6 +25341,75 @@ function saveBrand() {
   showToast('🏷 회사명/로고가 저장되었습니다.');
 }
 applyBrand(loadBrand()); // 페이지 로드 시 저장된 회사명/로고 즉시 적용
+
+// ── 🔄 프로그램 업데이트 확인 / 적용 (⚙️ 설정 모달 안에 위치) ──
+// window.ejUpdater 는 preload.js가 노출하는 API. Electron 앱이 아닌
+// 일반 브라우저에서 열었을 때는 존재하지 않으므로 매번 확인하고 사용한다.
+function fmtUpdateDate(iso) {
+  if (!iso) return '(기록 없음)';
+  try {
+    return new Date(iso).toLocaleString('ko-KR');
+  } catch (e) { return iso; }
+}
+async function loadUpdateStatusUI() {
+  const infoEl = document.getElementById('updateStatusInfo');
+  if (!infoEl) return;
+  if (!window.ejUpdater) {
+    infoEl.textContent = '이 화면에서는 업데이트 확인을 지원하지 않습니다 (프로그램 창에서만 가능).';
+    const checkBtn = document.getElementById('updateCheckBtn');
+    if (checkBtn) checkBtn.disabled = true;
+    return;
+  }
+  try {
+    const v = await window.ejUpdater.getVersion();
+    const dateLabel = v.source === 'remote' ? '마지막 업데이트' : '설치된 기본 버전';
+    infoEl.textContent = `현재 버전: v${v.version || '알 수 없음'} · ${dateLabel}: ${fmtUpdateDate(v.updatedAt)}`;
+  } catch (e) {
+    infoEl.textContent = '버전 정보를 불러오지 못했습니다.';
+  }
+}
+async function checkForAppUpdate() {
+  const btn = document.getElementById('updateCheckBtn');
+  const resultEl = document.getElementById('updateCheckResult');
+  const applyBtn = document.getElementById('updateApplyBtn');
+  if (!window.ejUpdater) return;
+  if (btn) { btn.disabled = true; btn.textContent = '확인 중...'; }
+  if (applyBtn) applyBtn.style.display = 'none';
+  if (resultEl) resultEl.textContent = '';
+  try {
+    const r = await window.ejUpdater.checkNow();
+    const now = fmtUpdateDate(r.checkedAt || new Date().toISOString());
+    if (r.status === 'available') {
+      resultEl.innerHTML = `🔔 새 버전 v${r.version}이 있습니다${r.notes ? ' — ' + r.notes.replace(/</g,'&lt;') : ''} <span style="color:#94a3b8">(확인: ${now})</span>`;
+      if (applyBtn) applyBtn.style.display = '';
+    } else if (r.status === 'none') {
+      resultEl.textContent = `✅ 이미 최신 버전입니다 (v${r.version || ''}) · 확인: ${now}`;
+    } else {
+      resultEl.textContent = `⚠ 확인 실패: ${r.error || '알 수 없는 오류'} · 확인: ${now}`;
+    }
+  } catch (e) {
+    resultEl.textContent = '⚠ 확인 중 오류가 발생했습니다: ' + (e.message || e);
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '🔄 지금 확인'; }
+  }
+}
+async function applyAppUpdate() {
+  const applyBtn = document.getElementById('updateApplyBtn');
+  const resultEl = document.getElementById('updateCheckResult');
+  if (!window.ejUpdater || !window.ejUpdater.applyUpdate) return;
+  if (applyBtn) { applyBtn.disabled = true; applyBtn.textContent = '적용 중...'; }
+  try {
+    const r = await window.ejUpdater.applyUpdate();
+    if (!r.ok) {
+      if (resultEl) resultEl.textContent = '⚠ 업데이트 적용 실패: ' + r.error;
+      if (applyBtn) { applyBtn.disabled = false; applyBtn.textContent = '⬇️ 지금 업데이트'; }
+    }
+    // 성공하면 main.js가 창을 새로고침하므로 이후 별도 처리 불필요
+  } catch (e) {
+    if (resultEl) resultEl.textContent = '⚠ 오류: ' + (e.message || e);
+    if (applyBtn) { applyBtn.disabled = false; applyBtn.textContent = '⬇️ 지금 업데이트'; }
+  }
+}
 
 // (📸 캡처 버튼은 이제 드롭다운 없이 바로 startRegionCapture()를 호출합니다 — 클릭 한 번으로 시작)
 
@@ -25758,7 +25834,7 @@ async function exportAllBackup() {
 // ════════════════════════════════════════
 const AUTOSAVE_DB_NAME   = 'quoteAppAutoSaveDB_v1';
 const AUTOSAVE_STORE     = 'handles';
-const AUTOSAVE_INTERVAL_MS = 8000; // 8초마다 각 저장 장치의 폴더 안 파일에 덮어쓰기 (버벅임 개선을 위해 4초→8초로 완화)
+const AUTOSAVE_INTERVAL_MS = 4000; // 4초마다 각 저장 장치의 폴더 안 파일에 덮어쓰기
 const AUTOSAVE_FILE_NAME = '이진주방산업_자동저장.json';
 const AUTOSAVE_FILE_NAMES_LEGACY = ['이진주방산업_자동저장_1.json', '이진주방산업_자동저장_2.json']; // 이전 버전(2중 저장) 파일명 — 마이그레이션 시 참고용
 
@@ -25774,9 +25850,6 @@ const _autoSaveState = {
   usb:     { dirHandle: null, busy: false }
 };
 let _autoSaveTimer = null;
-// 각 저장 장치에 마지막으로 실제 기록에 성공한 내용 — 데이터가 바뀌지 않았으면
-// 굳이 다시 지우고/새로 쓰는 디스크 작업을 반복하지 않도록 건너뛰기 위함 (버벅임 개선)
-const _autoSaveLastWritten = { primary: null, usb: null };
 
 // "📄 현재 문서만 파일로 저장" 저장 창이 마지막으로 저장한 위치를 기억해 두는 IDB 키
 // (자동 저장 폴더용 IDB 저장소를 그대로 재사용 — 폴더가 아닌 "마지막에 저장한 파일" 핸들을 저장하며,
@@ -25834,9 +25907,7 @@ async function readNewestAutoSaveFromDir(dirHandle) {
 }
 
 function buildBackupObject() {
-  // 🆕 입력 디바운스(400ms)가 이미 끝나서 저장이 반영된 "깨끗한" 상태라면 다시 스캔하지 않음.
-  //    아직 타이핑 중이라 디바운스 대기 중일 때만 지금 즉시 반영해서 최신 값을 백업에 포함시킴.
-  if (_draftDirty) doSaveDraft(); // 저장 직전 최신 입력값 반영
+  doSaveDraft(); // 저장 직전 최신 입력값 반영
   return {
     _type: 'quote-app-backup',
     _savedAt: new Date().toISOString(),
@@ -25958,21 +26029,10 @@ async function setupAutoOverwriteFileUSB() { return setupAutoSaveTarget('usb'); 
 //    "새 파일"로 다시 만듭니다. 이렇게 하면 "덮어쓰기(바꿔치기)" 대신 매번 "새로 만들기"가
 //    되어, 이 문제가 생기는 경우가 크게 줄어듭니다. 그래도 그 순간 폴더 자체가 일시적으로
 //    안 보이는 경우(USB 재인식 등)를 대비해 몇 차례 더 재시도합니다.
-async function writeAutoSaveToTarget(targetKey, precomputedContent) {
+async function writeAutoSaveToTarget(targetKey) {
   const cfg = AUTOSAVE_TARGETS[targetKey];
   const st  = _autoSaveState[targetKey];
   if (!st.dirHandle || st.busy) return;
-
-  // 🆕 호출한 쪽(자동 저장 루프)이 이미 만들어 둔 내용이 있으면 그걸 그대로 재사용하고,
-  //    없으면(예: 최초 1회 즉시 저장 등 단독 호출) 이번에 새로 만듦.
-  //    → 기존에는 primary/usb 저장 때마다 각각 buildBackupObject()+JSON.stringify를
-  //      중복 실행했는데, 한 번만 만들어 재사용하도록 개선.
-  const content = precomputedContent !== undefined ? precomputedContent : JSON.stringify(buildBackupObject());
-
-  // 🆕 직전에 실제로 디스크에 성공적으로 기록한 내용과 완전히 같다면, 지우고 새로
-  //    쓰는 디스크 작업을 또 반복할 필요가 없으므로 건너뜀 (주기적 버벅임의 주 원인이었음)
-  if (_autoSaveLastWritten[targetKey] === content) return;
-
   st.busy = true;
   try {
     const perm = await st.dirHandle.queryPermission({ mode: 'readwrite' });
@@ -25980,6 +26040,8 @@ async function writeAutoSaveToTarget(targetKey, precomputedContent) {
       setAutoSaveStatus(targetKey, `⚠️ ${cfg.label} 저장 권한 필요 — 메뉴에서 다시 설정해주세요.`, true);
       return;
     }
+    const backup = buildBackupObject();
+    const content = JSON.stringify(backup, null, 2);
 
     const RETRYABLE = ['NotFoundError', 'NoModificationAllowedError', 'InvalidStateError'];
     const MAX_TRIES = 5;
@@ -26008,7 +26070,6 @@ async function writeAutoSaveToTarget(targetKey, precomputedContent) {
     }
     if (lastErr) throw lastErr;
 
-    _autoSaveLastWritten[targetKey] = content;
     const now = new Date();
     const p = n => String(n).padStart(2, '0');
     setAutoSaveStatus(targetKey, `🔁 ${cfg.label} 저장됨 (${st.dirHandle.name}/${AUTOSAVE_FILE_NAME}) · ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`, false);
@@ -26124,19 +26185,12 @@ async function autoSaveDocSnapshotOnHistoryRegister(type, partyName) {
   }
 }
 
-// 8초마다 각 저장 장치(폴더/USB)의 파일 1개에 덮어씀
-// 🆕 백업 객체 생성 + JSON 직렬화를 이번 틱에 딱 한 번만 수행해서 primary/usb 양쪽에
-//    그대로 재사용 (기존엔 저장 장치마다 각각 새로 만들어서 두 배로 일했음).
-//    들여쓰기 없는 압축 JSON을 사용해 문자열 변환 비용도 줄임(자동저장 파일은 사람이
-//    직접 읽는 용도가 아니라 복구용이라 들여쓰기가 필요 없음).
+// 4초마다 각 저장 장치(폴더/USB)의 파일 1개에 덮어씀
 function startAutoOverwriteLoop() {
   if (_autoSaveTimer) clearInterval(_autoSaveTimer);
   _autoSaveTimer = setInterval(() => {
-    const hasTarget = _autoSaveState.primary.dirHandle || _autoSaveState.usb.dirHandle;
-    if (!hasTarget) return;
-    const content = JSON.stringify(buildBackupObject());
-    writeAutoSaveToTarget('primary', content);
-    writeAutoSaveToTarget('usb', content);
+    writeAutoSaveToTarget('primary');
+    writeAutoSaveToTarget('usb');
   }, AUTOSAVE_INTERVAL_MS);
 }
 
@@ -26640,86 +26694,6 @@ function sendDocEmail(prefix, role) {
   ].filter(l => l !== '' || true).join('\n');
 
   sendMailTo(email, subject, bodyLines);
-}
-
-// ════════════════════════════════════════
-// 📱 문자 답장(알리고) / 📎📧 이메일 PDF 자동 첨부 발송(네이버)
-// — 프로그램(exe)에서만 동작합니다 (main.js/preload.js의 네이티브 기능을 사용).
-//   설정 파일(comm-config.json)이 없으면 안내 메시지가 표시됩니다.
-// ════════════════════════════════════════
-
-// 거래처 연락처로 문자 답장을 보냅니다. prefix: 'q'(견적서) | 'o'(발주서)
-async function sendReplySms(prefix) {
-  const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-  const phone = gv(prefix + '_to_tel');
-  if (!phone || !phone.trim()) { alert('연락처가 입력되어 있지 않습니다. 먼저 연락처를 입력해 주세요.'); return; }
-  if (!window.ejComm) { alert('이 기능은 이진견적서 프로그램(exe)에서만 사용할 수 있습니다.\n(웹 브라우저에서는 지원되지 않습니다)'); return; }
-
-  const myName = gv(prefix + '_sup_name') || '이진주방산업';
-  const defaultMsg = `[${myName}] 견적 요청 확인했습니다. 견적서는 이메일로 보내드리겠습니다. 감사합니다.`;
-  const msg = prompt('보낼 문자 내용을 확인하거나 고쳐주세요:', defaultMsg);
-  if (msg === null) return; // 취소
-  if (!msg.trim()) { alert('문자 내용이 비어있습니다.'); return; }
-
-  showToast('📱 문자를 발송하는 중입니다...');
-  try {
-    const result = await window.ejComm.sendSms({ to: phone, message: msg });
-    if (result && result.ok) {
-      showToast('📱 문자를 발송했습니다.');
-    } else {
-      alert('문자 발송 실패:\n' + ((result && result.error) || '알 수 없는 오류'));
-    }
-  } catch (e) {
-    alert('문자 발송 중 오류가 발생했습니다: ' + (e && e.message || e));
-  }
-}
-
-// 견적서/발주서를 실제 PDF로 만들어 첨부한 뒤, 네이버 메일로 바로 발송합니다.
-// prefix: 'q'(견적서) | 'o'(발주서)
-async function sendQuotePdfEmail(prefix) {
-  const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-  const email = gv(prefix + '_to_email');
-  if (!email || !email.trim()) { alert('이메일 주소가 입력되어 있지 않습니다. 먼저 이메일 주소를 입력해 주세요.'); return; }
-  if (!isValidEmailAddr(email)) { alert('올바른 이메일 주소 형식이 아닙니다.\n입력값: ' + email); return; }
-  if (!window.ejComm) { alert('이 기능은 이진견적서 프로그램(exe)에서만 사용할 수 있습니다.\n(웹 브라우저에서는 지원되지 않습니다)'); return; }
-
-  const docLabel = prefix === 'o' ? '발주서' : '견적서';
-  const num = gv(prefix + '_num');
-  const myName = gv(prefix + '_sup_name') || '이진주방산업';
-  const toName = gv(prefix + '_to_name');
-
-  const subject = `[${myName}] ${docLabel}${num ? ' (' + num + ')' : ''} 안내`;
-  const body = (toName ? toName + ' 님, 안녕하세요.\n' : '안녕하세요.\n')
-    + `${myName} 입니다. ${docLabel}를 첨부해 드립니다. 확인 부탁드립니다.\n\n감사합니다.`;
-
-  let docHtml;
-  try {
-    const type = (typeof effectiveDocType === 'function') ? effectiveDocType() : (prefix === 'o' ? 'order' : 'quote');
-    docHtml = buildClassicDocHTML(type);
-  } catch (e) {
-    alert('견적서 내용을 만드는 중 오류가 발생했습니다: ' + (e && e.message || e));
-    return;
-  }
-  const pdfStyles = '*{box-sizing:border-box}body{font-family:"Malgun Gothic",dotum,sans-serif;padding:16px;background:#fff;margin:0}';
-  const html = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><style>' + pdfStyles + '</style></head><body>' + docHtml + '</body></html>';
-
-  showToast('📎 PDF를 만들고 메일을 보내는 중입니다... (몇 초 걸릴 수 있습니다)');
-  try {
-    const result = await window.ejComm.sendQuoteEmail({
-      to: email,
-      subject,
-      body,
-      html,
-      fileName: docLabel + (num ? ('_' + num) : ''),
-    });
-    if (result && result.ok) {
-      showToast('📧 ' + docLabel + '를 PDF로 첨부해 이메일을 발송했습니다.');
-    } else {
-      alert('이메일 발송 실패:\n' + ((result && result.error) || '알 수 없는 오류'));
-    }
-  } catch (e) {
-    alert('이메일 발송 중 오류가 발생했습니다: ' + (e && e.message || e));
-  }
 }
 
 function onPriceSearch(q) {
