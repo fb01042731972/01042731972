@@ -1,6 +1,6 @@
 {
-  "version": "1.0.0",
-  "path": "releases/index-1.0.0.html",
-  "notes": "최초 배포",
+  "version": "1.0.1",
+  "path": "releases/index-1.0.1.html",
+  "notes": "회사명/로고 변경 기능 추가",
   "forced": false
 }
