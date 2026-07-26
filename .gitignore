@@ -1,0 +1,5 @@
+node_modules/
+dist/
+gh-token.txt
+.DS_Store
+*.log

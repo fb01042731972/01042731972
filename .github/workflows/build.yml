@@ -1,0 +1,33 @@
+name: Windows exe 빌드
+
+# main 브랜치에 push 하거나, GitHub 저장소 화면에서 수동으로 실행하면 동작합니다.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: 소스 가져오기
+        uses: actions/checkout@v4
+
+      - name: Node.js 설치
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: 의존성 설치
+        run: npm install
+
+      - name: Windows exe 빌드 (설치형 + 포터블)
+        run: npm run dist:win
+
+      - name: 빌드 결과물 업로드
+        uses: actions/upload-artifact@v4
+        with:
+          name: 이진견적서-windows
+          path: |
+            dist/*.exe
+          retention-days: 30
