@@ -20880,7 +20880,11 @@ window.addEventListener('load', () => setTimeout(runStartupDiagnostics, 200));
 // 문서 자동저장 (특기사항 포함 모든 입력칸 + 품목 행) — 이 브라우저에 자동 보관
 // ════════════════════════════════════════
 let _draftSaveTimer = null;
+// 🆕 입력 중(디바운스 대기 중)인지 여부 — 이미 doSaveDraft가 다 반영해서 "깨끗한" 상태라면
+// 자동저장 틱마다 굳이 input/textarea를 다시 훑을 필요가 없으므로 이 값으로 건너뜀
+let _draftDirty = false;
 function scheduleDraftSave() {
+  _draftDirty = true;
   clearTimeout(_draftSaveTimer);
   _draftSaveTimer = setTimeout(doSaveDraft, 400);
 }
@@ -20893,6 +20897,7 @@ function doSaveDraft() {
       fields[el.id] = (el.type === 'checkbox') ? el.checked : el.value;
     });
     localStorage.setItem(K_DRAFT_FIELDS, JSON.stringify(fields));
+    _draftDirty = false;
   } catch (e) { console.error('자동저장 실패:', e); }
 }
 function restoreDraft() {
@@ -25829,7 +25834,9 @@ async function readNewestAutoSaveFromDir(dirHandle) {
 }
 
 function buildBackupObject() {
-  doSaveDraft(); // 저장 직전 최신 입력값 반영
+  // 🆕 입력 디바운스(400ms)가 이미 끝나서 저장이 반영된 "깨끗한" 상태라면 다시 스캔하지 않음.
+  //    아직 타이핑 중이라 디바운스 대기 중일 때만 지금 즉시 반영해서 최신 값을 백업에 포함시킴.
+  if (_draftDirty) doSaveDraft(); // 저장 직전 최신 입력값 반영
   return {
     _type: 'quote-app-backup',
     _savedAt: new Date().toISOString(),
