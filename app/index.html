@@ -196,6 +196,28 @@
       <button onclick="closeThemeSettingsModal()" style="border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
     </div>
 
+    <div class="text-xs font-bold text-gray-700 mb-2">🏷 회사명 / 로고</div>
+    <p class="text-[11px] text-gray-500 mb-2">상단에 표시되는 이름과 로고 이미지를 원하는 대로 바꿀 수 있어요. 로고를 넣으면 이름 앞에 함께 표시됩니다.</p>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label style="font-size:11px;color:#64748b;font-weight:700;display:block;margin-bottom:4px">회사명 / 상호</label>
+        <input id="brandNameInput" type="text" class="inp" placeholder="예: 이진주방산업" oninput="previewBrand()" style="padding:7px 10px;font-size:13px">
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div id="brandLogoPreviewWrap" style="width:40px;height:40px;border:1px dashed #cbd5e1;border-radius:8px;display:flex;align-items:center;justify-content:center;overflow:hidden;flex-shrink:0;background:#f8fafc">
+          <img id="brandLogoPreviewImg" src="" style="display:none;max-width:100%;max-height:100%;object-fit:contain">
+          <span id="brandLogoPreviewEmpty" style="font-size:16px;color:#cbd5e1">＋</span>
+        </div>
+        <button type="button" onclick="document.getElementById('brandLogoFileInput').click()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer">🖼️ 로고 이미지 선택</button>
+        <button type="button" onclick="clearBrandLogo()" class="text-xs font-bold px-2 py-2 rounded" style="background:none;color:#94a3b8;border:none;cursor:pointer">삭제</button>
+        <input type="file" id="brandLogoFileInput" accept="image/*" class="hidden" onchange="handleBrandLogoSelected(this)">
+      </div>
+      <div class="flex gap-2">
+        <button onclick="resetBrand()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">기본값으로</button>
+        <button onclick="saveBrand()" class="text-xs font-bold px-3 py-2 rounded" style="background:#146C8E;color:#fff;border:none;cursor:pointer;flex:1">저장</button>
+      </div>
+    </div>
+
     <div class="text-xs font-bold text-gray-700 mb-2">✉️ 메일 설정</div>
     <p class="text-[11px] text-gray-500 mb-2">이메일 버튼(📧)을 눌렀을 때 어떤 메일 서비스로 열지 선택합니다.</p>
     <div style="border:1px solid #e2e8f0;border-radius:8px;overflow:hidden;margin-bottom:16px">
@@ -325,7 +347,7 @@
 <!-- ════════════════════════ 상단 헤더 바 ════════════════════════ -->
 <div class="max-w-5xl mx-auto bg-white rounded-lg shadow-md mb-4 p-4 no-print" style="position:sticky;top:0;z-index:200">
   <div class="flex justify-between items-center mb-3">
-    <h1 class="text-lg font-bold text-gray-800">📄 이진주방산업</h1>
+    <h1 class="text-lg font-bold text-gray-800" id="brandTitle" style="display:flex;align-items:center;gap:6px"><img id="brandTitleLogo" src="" style="display:none;height:22px;width:22px;object-fit:contain;border-radius:4px"><span id="brandTitleIcon">📄</span><span id="brandTitleText">이진주방산업</span></h1>
     <div class="flex gap-1 flex-wrap justify-end">
       <div style="position:relative;display:inline-block">
         <button id="customerMenuBtn" onclick="toggleCustomerMenu()" class="hdr-btn" style="background:#16a34a" onmouseover="this.style.background='#22c55e'" onmouseout="this.style.background='#16a34a'">고객용 ▾</button>
@@ -25171,6 +25193,12 @@ function openThemeSettingsModal() {
   if (cardEl) cardEl.value = t.card;
   if (accentEl) accentEl.value = t.accent;
   renderMailProviderCheck();
+  // 회사명/로고 필드도 현재 저장된 값으로 채워줌
+  const b = loadBrand();
+  _brandLogoPending = null;
+  const nameEl = document.getElementById('brandNameInput');
+  if (nameEl) nameEl.value = b.name;
+  renderBrandLogoPreview(b.logo);
   const modal = document.getElementById('themeSettingsModal');
   if (modal) { modal.classList.remove('hidden'); modal.style.display = 'flex'; }
 }
@@ -25178,6 +25206,8 @@ function closeThemeSettingsModal() {
   const modal = document.getElementById('themeSettingsModal');
   if (modal) { modal.classList.add('hidden'); modal.style.display = 'none'; }
   applyTheme(loadTheme()); // 저장 안 하고 닫으면 미리보기 취소하고 저장된 값으로 복원
+  applyBrand(loadBrand()); // 회사명/로고도 저장 안 하고 닫으면 복원
+  _brandLogoPending = null;
 }
 function previewTheme() {
   const bgEl = document.getElementById('themeColorBg');
@@ -25213,6 +25243,88 @@ function saveTheme() {
   closeThemeSettingsModal();
 }
 applyTheme(loadTheme()); // 페이지 로드 시 저장된 테마 즉시 적용
+
+// ── 🏷 회사명 / 로고 커스터마이즈 (⚙️ 설정 모달 안에 위치) ──
+const K_BRAND = 'QUOTE_BRAND_V1';
+const BRAND_DEFAULTS = { name: '이진주방산업', logo: '' }; // logo: base64 data URL 또는 빈 문자열
+let _brandLogoPending = null; // 아직 저장 전, 미리보기만 하고 있는 로고 base64
+
+function loadBrand() {
+  try {
+    const raw = localStorage.getItem(K_BRAND);
+    if (!raw) return { ...BRAND_DEFAULTS };
+    return { ...BRAND_DEFAULTS, ...JSON.parse(raw) };
+  } catch (e) { return { ...BRAND_DEFAULTS }; }
+}
+function applyBrand(b) {
+  const nameEl = document.getElementById('brandTitleText');
+  const iconEl = document.getElementById('brandTitleIcon');
+  const logoEl = document.getElementById('brandTitleLogo');
+  if (nameEl) nameEl.textContent = b.name || BRAND_DEFAULTS.name;
+  if (b.logo) {
+    if (logoEl) { logoEl.src = b.logo; logoEl.style.display = ''; }
+    if (iconEl) iconEl.style.display = 'none';
+  } else {
+    if (logoEl) { logoEl.src = ''; logoEl.style.display = 'none'; }
+    if (iconEl) iconEl.style.display = '';
+  }
+}
+function renderBrandLogoPreview(dataUrl) {
+  const img = document.getElementById('brandLogoPreviewImg');
+  const empty = document.getElementById('brandLogoPreviewEmpty');
+  if (!img || !empty) return;
+  if (dataUrl) { img.src = dataUrl; img.style.display = ''; empty.style.display = 'none'; }
+  else { img.src = ''; img.style.display = 'none'; empty.style.display = ''; }
+}
+function handleBrandLogoSelected(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  if (!file.type.startsWith('image/')) { alert('이미지 파일만 선택할 수 있습니다.'); return; }
+  if (file.size > 2 * 1024 * 1024) { alert('로고 이미지는 2MB 이하로 선택해주세요.'); return; }
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    _brandLogoPending = e.target.result;
+    renderBrandLogoPreview(_brandLogoPending);
+  };
+  reader.readAsDataURL(file);
+}
+function clearBrandLogo() {
+  _brandLogoPending = '';
+  renderBrandLogoPreview('');
+}
+function previewBrand() {
+  const nameEl = document.getElementById('brandNameInput');
+  const b = loadBrand();
+  applyBrand({
+    name: nameEl ? nameEl.value : b.name,
+    logo: (_brandLogoPending !== null) ? _brandLogoPending : b.logo
+  });
+}
+function resetBrand() {
+  _brandLogoPending = '';
+  const nameEl = document.getElementById('brandNameInput');
+  if (nameEl) nameEl.value = BRAND_DEFAULTS.name;
+  renderBrandLogoPreview('');
+  applyBrand(BRAND_DEFAULTS);
+}
+function saveBrand() {
+  const nameEl = document.getElementById('brandNameInput');
+  const b = loadBrand();
+  const next = {
+    name: (nameEl && nameEl.value.trim()) ? nameEl.value.trim() : BRAND_DEFAULTS.name,
+    logo: (_brandLogoPending !== null) ? _brandLogoPending : b.logo
+  };
+  try {
+    localStorage.setItem(K_BRAND, JSON.stringify(next));
+  } catch (e) {
+    alert('로고 이미지 용량이 너무 커서 저장하지 못했습니다. 더 작은 이미지로 다시 시도해주세요.');
+    return;
+  }
+  _brandLogoPending = null;
+  applyBrand(next);
+  showToast('🏷 회사명/로고가 저장되었습니다.');
+}
+applyBrand(loadBrand()); // 페이지 로드 시 저장된 회사명/로고 즉시 적용
 
 // (📸 캡처 버튼은 이제 드롭다운 없이 바로 startRegionCapture()를 호출합니다 — 클릭 한 번으로 시작)
 
