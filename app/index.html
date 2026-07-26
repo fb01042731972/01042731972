@@ -670,13 +670,17 @@
             <div class="grid grid-cols-2 gap-2">
               <div>
                 <div class="quote-label">연락처</div>
-                <input class="quote-inp" id="q_to_tel" placeholder="010-0000-0000">
+                <div class="flex items-center gap-1">
+                  <input class="quote-inp" id="q_to_tel" placeholder="010-0000-0000">
+                  <button type="button" onclick="sendReplySms('q')" class="no-print" title="이 번호로 문자 답장 보내기 (알리고, 인터넷 필요)" style="border:none;background:none;cursor:pointer;font-size:13px;flex-shrink:0;padding:2px">💬</button>
+                </div>
               </div>
               <div>
                 <div class="quote-label">이메일</div>
                 <div class="flex items-center gap-1">
                   <input class="quote-inp" id="q_to_email" placeholder="example@mail.com">
-                  <button type="button" onclick="sendDocEmail('q','client')" class="no-print" title="이 주소로 메일 작성창 열기" style="border:none;background:none;cursor:pointer;font-size:13px;flex-shrink:0;padding:2px">📧</button>
+                  <button type="button" onclick="sendDocEmail('q','client')" class="no-print" title="이 주소로 메일 작성창 열기 (첨부는 직접)" style="border:none;background:none;cursor:pointer;font-size:13px;flex-shrink:0;padding:2px">📧</button>
+                  <button type="button" onclick="sendQuotePdfEmail('q')" class="no-print" title="견적서 PDF를 자동으로 만들어 첨부한 뒤 바로 발송 (네이버, 인터넷 필요)" style="border:none;background:none;cursor:pointer;font-size:13px;flex-shrink:0;padding:2px">📎📧</button>
                 </div>
               </div>
             </div>
@@ -26609,6 +26613,86 @@ function sendDocEmail(prefix, role) {
   ].filter(l => l !== '' || true).join('\n');
 
   sendMailTo(email, subject, bodyLines);
+}
+
+// ════════════════════════════════════════
+// 📱 문자 답장(알리고) / 📎📧 이메일 PDF 자동 첨부 발송(네이버)
+// — 프로그램(exe)에서만 동작합니다 (main.js/preload.js의 네이티브 기능을 사용).
+//   설정 파일(comm-config.json)이 없으면 안내 메시지가 표시됩니다.
+// ════════════════════════════════════════
+
+// 거래처 연락처로 문자 답장을 보냅니다. prefix: 'q'(견적서) | 'o'(발주서)
+async function sendReplySms(prefix) {
+  const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const phone = gv(prefix + '_to_tel');
+  if (!phone || !phone.trim()) { alert('연락처가 입력되어 있지 않습니다. 먼저 연락처를 입력해 주세요.'); return; }
+  if (!window.ejComm) { alert('이 기능은 이진견적서 프로그램(exe)에서만 사용할 수 있습니다.\n(웹 브라우저에서는 지원되지 않습니다)'); return; }
+
+  const myName = gv(prefix + '_sup_name') || '이진주방산업';
+  const defaultMsg = `[${myName}] 견적 요청 확인했습니다. 견적서는 이메일로 보내드리겠습니다. 감사합니다.`;
+  const msg = prompt('보낼 문자 내용을 확인하거나 고쳐주세요:', defaultMsg);
+  if (msg === null) return; // 취소
+  if (!msg.trim()) { alert('문자 내용이 비어있습니다.'); return; }
+
+  showToast('📱 문자를 발송하는 중입니다...');
+  try {
+    const result = await window.ejComm.sendSms({ to: phone, message: msg });
+    if (result && result.ok) {
+      showToast('📱 문자를 발송했습니다.');
+    } else {
+      alert('문자 발송 실패:\n' + ((result && result.error) || '알 수 없는 오류'));
+    }
+  } catch (e) {
+    alert('문자 발송 중 오류가 발생했습니다: ' + (e && e.message || e));
+  }
+}
+
+// 견적서/발주서를 실제 PDF로 만들어 첨부한 뒤, 네이버 메일로 바로 발송합니다.
+// prefix: 'q'(견적서) | 'o'(발주서)
+async function sendQuotePdfEmail(prefix) {
+  const gv = id => { const el = document.getElementById(id); return el ? el.value : ''; };
+  const email = gv(prefix + '_to_email');
+  if (!email || !email.trim()) { alert('이메일 주소가 입력되어 있지 않습니다. 먼저 이메일 주소를 입력해 주세요.'); return; }
+  if (!isValidEmailAddr(email)) { alert('올바른 이메일 주소 형식이 아닙니다.\n입력값: ' + email); return; }
+  if (!window.ejComm) { alert('이 기능은 이진견적서 프로그램(exe)에서만 사용할 수 있습니다.\n(웹 브라우저에서는 지원되지 않습니다)'); return; }
+
+  const docLabel = prefix === 'o' ? '발주서' : '견적서';
+  const num = gv(prefix + '_num');
+  const myName = gv(prefix + '_sup_name') || '이진주방산업';
+  const toName = gv(prefix + '_to_name');
+
+  const subject = `[${myName}] ${docLabel}${num ? ' (' + num + ')' : ''} 안내`;
+  const body = (toName ? toName + ' 님, 안녕하세요.\n' : '안녕하세요.\n')
+    + `${myName} 입니다. ${docLabel}를 첨부해 드립니다. 확인 부탁드립니다.\n\n감사합니다.`;
+
+  let docHtml;
+  try {
+    const type = (typeof effectiveDocType === 'function') ? effectiveDocType() : (prefix === 'o' ? 'order' : 'quote');
+    docHtml = buildClassicDocHTML(type);
+  } catch (e) {
+    alert('견적서 내용을 만드는 중 오류가 발생했습니다: ' + (e && e.message || e));
+    return;
+  }
+  const pdfStyles = '*{box-sizing:border-box}body{font-family:"Malgun Gothic",dotum,sans-serif;padding:16px;background:#fff;margin:0}';
+  const html = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><style>' + pdfStyles + '</style></head><body>' + docHtml + '</body></html>';
+
+  showToast('📎 PDF를 만들고 메일을 보내는 중입니다... (몇 초 걸릴 수 있습니다)');
+  try {
+    const result = await window.ejComm.sendQuoteEmail({
+      to: email,
+      subject,
+      body,
+      html,
+      fileName: docLabel + (num ? ('_' + num) : ''),
+    });
+    if (result && result.ok) {
+      showToast('📧 ' + docLabel + '를 PDF로 첨부해 이메일을 발송했습니다.');
+    } else {
+      alert('이메일 발송 실패:\n' + ((result && result.error) || '알 수 없는 오류'));
+    }
+  } catch (e) {
+    alert('이메일 발송 중 오류가 발생했습니다: ' + (e && e.message || e));
+  }
 }
 
 function onPriceSearch(q) {

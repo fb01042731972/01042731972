@@ -71,6 +71,128 @@ const BUNDLED_HTML = path.join(__dirname, 'app', 'index.html');
 
 let mainWindow = null;
 
+// ============================================================
+// 📱 문자(SMS) + 📧 이메일(PDF 자동첨부) 발송 기능
+// ============================================================
+// 설정 파일: comm-config.json
+//   gh-token.txt와 같은 방식으로, exe와 같은 폴더(또는 userData 폴더)에
+//   아래 형식으로 저장해두면 자동으로 읽어옵니다. 코드에는 절대 직접 적지 않습니다.
+//
+//   {
+//     "aligo": { "apiKey": "...", "userId": "...", "sender": "0212345678" },
+//     "naver": { "user": "company@naver.com", "appPassword": "..." }
+//   }
+//
+// - aligo.sender 는 반드시 알리고에 사전 등록/인증된 발신번호여야 합니다.
+// - naver.appPassword 는 네이버 로그인 비밀번호가 아니라, 네이버 2단계 인증에서
+//   발급받는 "애플리케이션 비밀번호"입니다.
+// 자세한 설정 방법은 함께 드린 "문자·이메일 자동발송 설정 안내서"를 참고하세요.
+const nodemailer = require('nodemailer');
+
+function readCommConfig() {
+  const candidates = [
+    path.join(process.cwd(), 'comm-config.json'),
+    path.join(app.getPath('userData'), 'comm-config.json'),
+    path.join(__dirname, 'comm-config.json'),
+  ];
+  for (const p of candidates) {
+    try {
+      const raw = fs.readFileSync(p, 'utf-8');
+      return JSON.parse(raw);
+    } catch (e) { /* 다음 후보 확인 */ }
+  }
+  return null;
+}
+
+// ---- 알리고 문자(SMS) 발송 ----------------------------------------
+async function sendAligoSms(to, message) {
+  const cfg = readCommConfig();
+  if (!cfg || !cfg.aligo || !cfg.aligo.apiKey || !cfg.aligo.userId || !cfg.aligo.sender) {
+    return { ok: false, error: 'comm-config.json 파일에 알리고(aligo) 설정이 없습니다. 안내서를 참고해 설정 파일을 만들어주세요.' };
+  }
+  const phone = String(to || '').replace(/[^0-9]/g, '');
+  if (!phone) return { ok: false, error: '받는 사람 전화번호가 없습니다.' };
+  if (!message || !message.trim()) return { ok: false, error: '문자 내용이 비어있습니다.' };
+
+  try {
+    const params = new URLSearchParams();
+    params.append('key', cfg.aligo.apiKey);
+    params.append('user_id', cfg.aligo.userId);
+    params.append('sender', String(cfg.aligo.sender).replace(/[^0-9]/g, ''));
+    params.append('receiver', phone);
+    params.append('msg', message);
+
+    const res = await fetch('https://apis.aligo.in/send/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded; charset=utf-8' },
+      body: params.toString(),
+    });
+    const data = await res.json();
+    if (String(data.result_code) === '1') {
+      return { ok: true, info: data };
+    }
+    return { ok: false, error: `알리고 오류: ${data.message || '알 수 없는 오류'} (코드 ${data.result_code})` };
+  } catch (e) {
+    return { ok: false, error: '문자 발송 중 오류: ' + String(e.message || e) };
+  }
+}
+
+// ---- 견적서/발주서 HTML을 실제 PDF 파일로 변환 (Electron 내장 기능) --------
+async function htmlToPdfBuffer(html) {
+  const win = new BrowserWindow({
+    show: false,
+    webPreferences: { offscreen: false, sandbox: false },
+  });
+  try {
+    await win.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html));
+    // 폰트/레이아웃이 완전히 그려질 시간을 살짝 확보
+    await new Promise(resolve => setTimeout(resolve, 300));
+    const pdfBuffer = await win.webContents.printToPDF({
+      printBackground: true,
+      landscape: false,
+      pageSize: 'A4',
+      margins: { marginType: 'default' },
+    });
+    return pdfBuffer;
+  } finally {
+    if (!win.isDestroyed()) win.destroy();
+  }
+}
+
+// ---- 네이버 메일로 PDF 자동 첨부 발송 -------------------------------
+async function sendQuoteEmailWithPdf({ to, subject, body, html, fileName }) {
+  const cfg = readCommConfig();
+  if (!cfg || !cfg.naver || !cfg.naver.user || !cfg.naver.appPassword) {
+    return { ok: false, error: 'comm-config.json 파일에 네이버(naver) 메일 설정이 없습니다. 안내서를 참고해 설정 파일을 만들어주세요.' };
+  }
+  if (!to) return { ok: false, error: '받는 사람 이메일 주소가 없습니다.' };
+
+  try {
+    const pdfBuffer = await htmlToPdfBuffer(html);
+
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.naver.com',
+      port: 587,
+      secure: false,
+      auth: { user: cfg.naver.user, pass: cfg.naver.appPassword },
+    });
+
+    await transporter.sendMail({
+      from: cfg.naver.user,
+      to,
+      subject: subject || '견적서 안내',
+      text: body || '',
+      attachments: [
+        { filename: (fileName || '견적서') + '.pdf', content: pdfBuffer },
+      ],
+    });
+
+    return { ok: true };
+  } catch (e) {
+    return { ok: false, error: '이메일 발송 중 오류: ' + String(e.message || e) };
+  }
+}
+
 function readLocalVersion() {
   try {
     const raw = fs.readFileSync(VERSION_FILE, 'utf-8');
@@ -212,6 +334,18 @@ function pruneOldBackups() {
 
 ipcMain.handle('ej:check-now', () => checkForUpdate(true));
 ipcMain.handle('ej:get-version', () => readLocalVersion());
+
+// 문자(SMS) / 이메일(PDF 자동첨부) 발송 — 렌더러(index.html)에서 호출
+ipcMain.handle('ej:send-sms', (event, payload) => sendAligoSms(payload && payload.to, payload && payload.message));
+ipcMain.handle('ej:send-quote-email', (event, payload) => sendQuoteEmailWithPdf(payload || {}));
+ipcMain.handle('ej:comm-config-status', () => {
+  const cfg = readCommConfig();
+  return {
+    hasConfig: !!cfg,
+    hasAligo: !!(cfg && cfg.aligo && cfg.aligo.apiKey && cfg.aligo.userId && cfg.aligo.sender),
+    hasNaver: !!(cfg && cfg.naver && cfg.naver.user && cfg.naver.appPassword),
+  };
+});
 
 // ---- 앱 라이프사이클 -------------------------------------------
 app.whenReady().then(createWindow);
