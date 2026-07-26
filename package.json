@@ -20,6 +20,7 @@
   "build": {
     "appId": "com.ejinkitchen.quotation",
     "productName": "이진견적서",
+    "publish": null,
     "directories": {
       "output": "dist"
     },
