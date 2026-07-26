@@ -25753,7 +25753,7 @@ async function exportAllBackup() {
 // ════════════════════════════════════════
 const AUTOSAVE_DB_NAME   = 'quoteAppAutoSaveDB_v1';
 const AUTOSAVE_STORE     = 'handles';
-const AUTOSAVE_INTERVAL_MS = 4000; // 4초마다 각 저장 장치의 폴더 안 파일에 덮어쓰기
+const AUTOSAVE_INTERVAL_MS = 8000; // 8초마다 각 저장 장치의 폴더 안 파일에 덮어쓰기 (버벅임 개선을 위해 4초→8초로 완화)
 const AUTOSAVE_FILE_NAME = '이진주방산업_자동저장.json';
 const AUTOSAVE_FILE_NAMES_LEGACY = ['이진주방산업_자동저장_1.json', '이진주방산업_자동저장_2.json']; // 이전 버전(2중 저장) 파일명 — 마이그레이션 시 참고용
 
@@ -25769,6 +25769,9 @@ const _autoSaveState = {
   usb:     { dirHandle: null, busy: false }
 };
 let _autoSaveTimer = null;
+// 각 저장 장치에 마지막으로 실제 기록에 성공한 내용 — 데이터가 바뀌지 않았으면
+// 굳이 다시 지우고/새로 쓰는 디스크 작업을 반복하지 않도록 건너뛰기 위함 (버벅임 개선)
+const _autoSaveLastWritten = { primary: null, usb: null };
 
 // "📄 현재 문서만 파일로 저장" 저장 창이 마지막으로 저장한 위치를 기억해 두는 IDB 키
 // (자동 저장 폴더용 IDB 저장소를 그대로 재사용 — 폴더가 아닌 "마지막에 저장한 파일" 핸들을 저장하며,
@@ -25948,10 +25951,21 @@ async function setupAutoOverwriteFileUSB() { return setupAutoSaveTarget('usb'); 
 //    "새 파일"로 다시 만듭니다. 이렇게 하면 "덮어쓰기(바꿔치기)" 대신 매번 "새로 만들기"가
 //    되어, 이 문제가 생기는 경우가 크게 줄어듭니다. 그래도 그 순간 폴더 자체가 일시적으로
 //    안 보이는 경우(USB 재인식 등)를 대비해 몇 차례 더 재시도합니다.
-async function writeAutoSaveToTarget(targetKey) {
+async function writeAutoSaveToTarget(targetKey, precomputedContent) {
   const cfg = AUTOSAVE_TARGETS[targetKey];
   const st  = _autoSaveState[targetKey];
   if (!st.dirHandle || st.busy) return;
+
+  // 🆕 호출한 쪽(자동 저장 루프)이 이미 만들어 둔 내용이 있으면 그걸 그대로 재사용하고,
+  //    없으면(예: 최초 1회 즉시 저장 등 단독 호출) 이번에 새로 만듦.
+  //    → 기존에는 primary/usb 저장 때마다 각각 buildBackupObject()+JSON.stringify를
+  //      중복 실행했는데, 한 번만 만들어 재사용하도록 개선.
+  const content = precomputedContent !== undefined ? precomputedContent : JSON.stringify(buildBackupObject());
+
+  // 🆕 직전에 실제로 디스크에 성공적으로 기록한 내용과 완전히 같다면, 지우고 새로
+  //    쓰는 디스크 작업을 또 반복할 필요가 없으므로 건너뜀 (주기적 버벅임의 주 원인이었음)
+  if (_autoSaveLastWritten[targetKey] === content) return;
+
   st.busy = true;
   try {
     const perm = await st.dirHandle.queryPermission({ mode: 'readwrite' });
@@ -25959,8 +25973,6 @@ async function writeAutoSaveToTarget(targetKey) {
       setAutoSaveStatus(targetKey, `⚠️ ${cfg.label} 저장 권한 필요 — 메뉴에서 다시 설정해주세요.`, true);
       return;
     }
-    const backup = buildBackupObject();
-    const content = JSON.stringify(backup, null, 2);
 
     const RETRYABLE = ['NotFoundError', 'NoModificationAllowedError', 'InvalidStateError'];
     const MAX_TRIES = 5;
@@ -25989,6 +26001,7 @@ async function writeAutoSaveToTarget(targetKey) {
     }
     if (lastErr) throw lastErr;
 
+    _autoSaveLastWritten[targetKey] = content;
     const now = new Date();
     const p = n => String(n).padStart(2, '0');
     setAutoSaveStatus(targetKey, `🔁 ${cfg.label} 저장됨 (${st.dirHandle.name}/${AUTOSAVE_FILE_NAME}) · ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`, false);
@@ -26104,12 +26117,19 @@ async function autoSaveDocSnapshotOnHistoryRegister(type, partyName) {
   }
 }
 
-// 4초마다 각 저장 장치(폴더/USB)의 파일 1개에 덮어씀
+// 8초마다 각 저장 장치(폴더/USB)의 파일 1개에 덮어씀
+// 🆕 백업 객체 생성 + JSON 직렬화를 이번 틱에 딱 한 번만 수행해서 primary/usb 양쪽에
+//    그대로 재사용 (기존엔 저장 장치마다 각각 새로 만들어서 두 배로 일했음).
+//    들여쓰기 없는 압축 JSON을 사용해 문자열 변환 비용도 줄임(자동저장 파일은 사람이
+//    직접 읽는 용도가 아니라 복구용이라 들여쓰기가 필요 없음).
 function startAutoOverwriteLoop() {
   if (_autoSaveTimer) clearInterval(_autoSaveTimer);
   _autoSaveTimer = setInterval(() => {
-    writeAutoSaveToTarget('primary');
-    writeAutoSaveToTarget('usb');
+    const hasTarget = _autoSaveState.primary.dirHandle || _autoSaveState.usb.dirHandle;
+    if (!hasTarget) return;
+    const content = JSON.stringify(buildBackupObject());
+    writeAutoSaveToTarget('primary', content);
+    writeAutoSaveToTarget('usb', content);
   }, AUTOSAVE_INTERVAL_MS);
 }
 
