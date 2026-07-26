@@ -78,13 +78,6 @@ contextBridge.exposeInMainWorld('ejUpdater', {
   getVersion: () => ipcRenderer.invoke('ej:get-version'),
 });
 
-// 📱 문자(알리고) / 📧 이메일(네이버, PDF 자동첨부) 발송 — index.html에서 window.ejComm으로 호출
-contextBridge.exposeInMainWorld('ejComm', {
-  sendSms: (payload) => ipcRenderer.invoke('ej:send-sms', payload),
-  sendQuoteEmail: (payload) => ipcRenderer.invoke('ej:send-quote-email', payload),
-  configStatus: () => ipcRenderer.invoke('ej:comm-config-status'),
-});
-
 ipcRenderer.on('ej:update-none', () => {
   console.log('[이진견적서] 이미 최신 버전입니다.');
 });
