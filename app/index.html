@@ -206,6 +206,24 @@
       <div id="updateCheckResult" style="font-size:12px;color:#334155"></div>
     </div>
 
+    <div class="text-xs font-bold text-gray-700 mb-2">☁️ 구글시트 자동 기록</div>
+    <p class="text-[11px] text-gray-500 mb-2">"🗂 거래내역으로 등록" 버튼을 누를 때마다, 이 견적서/발주서/거래명세표 요약이 구글시트에 자동으로 한 줄씩 기록됩니다. 사장님이 그 시트만 열어보면 모든 직원의 등록 현황을 한눈에 볼 수 있어요.</p>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px">
+      <div>
+        <label style="font-size:11px;color:#64748b;font-weight:700;display:block;margin-bottom:4px">이 PC 사용자(작성자) 이름</label>
+        <input id="sheetStaffNameInput" type="text" class="inp" placeholder="예: 김대리" style="padding:7px 10px;font-size:13px">
+      </div>
+      <div>
+        <label style="font-size:11px;color:#64748b;font-weight:700;display:block;margin-bottom:4px">구글시트 연동 주소 (Apps Script 웹앱 URL)</label>
+        <input id="sheetWebhookUrlInput" type="text" class="inp" placeholder="https://script.google.com/macros/s/.../exec" style="padding:7px 10px;font-size:12px">
+      </div>
+      <div id="sheetSyncStatus" style="font-size:11px;color:#94a3b8"></div>
+      <div class="flex gap-2">
+        <button onclick="testSheetSync()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">📤 테스트 전송</button>
+        <button onclick="saveSheetSyncConfig()" class="text-xs font-bold px-3 py-2 rounded" style="background:#146C8E;color:#fff;border:none;cursor:pointer;flex:1">저장</button>
+      </div>
+    </div>
+
     <div class="text-xs font-bold text-gray-700 mb-2">🏷 회사명 / 로고</div>
     <p class="text-[11px] text-gray-500 mb-2">상단에 표시되는 이름과 로고 이미지를 원하는 대로 바꿀 수 있어요. 로고를 넣으면 이름 앞에 함께 표시됩니다.</p>
     <div style="border:1px solid #e2e8f0;border-radius:8px;padding:12px;margin-bottom:16px;display:flex;flex-direction:column;gap:10px">
@@ -21144,6 +21162,9 @@ function saveHistorySnapshot(type, manual) {
     // 이미 "가계부 등록" 버튼으로 확정 등록된 건이라면, 문서를 수정해서 총액/거래처가
     // 바뀌었을 때 가계부에 저장된 금액도 함께 최신화(동기화)해서 서로 어긋나지 않도록 함
     syncLedgerEntryFromHistory(record);
+    // ☁️ "🗂 거래내역으로 등록" 버튼을 직접 눌러 확정 등록한 경우에만 구글시트로 전송
+    // (입력 중 자동저장(디바운스)까지 매번 전송하면 시트가 무의미하게 계속 쌓이므로 제외)
+    if (manual) sendQuoteToSheet(record);
     // 문서에 적은 품목들을 단가표(품목 마스터)에도 자동 반영
     // (같은 품목명이 있으면 단가만 최신 값으로 갱신, 없으면 "자동추가" 카테고리에 새로 추가)
     upsertPriceItemsFromRows(rows);
@@ -25209,6 +25230,14 @@ function openThemeSettingsModal() {
   const nameEl = document.getElementById('brandNameInput');
   if (nameEl) nameEl.value = b.name;
   renderBrandLogoPreview(b.logo);
+  // 구글시트 연동 설정도 현재 저장된 값으로 채워줌
+  const sheetCfg = loadSheetSyncConfig();
+  const staffEl = document.getElementById('sheetStaffNameInput');
+  const sheetUrlEl = document.getElementById('sheetWebhookUrlInput');
+  if (staffEl) staffEl.value = sheetCfg.staffName || '';
+  if (sheetUrlEl) sheetUrlEl.value = sheetCfg.url || '';
+  const sheetStatusEl = document.getElementById('sheetSyncStatus');
+  if (sheetStatusEl) sheetStatusEl.textContent = sheetCfg.url ? '✅ 연동 중' : '';
   loadUpdateStatusUI();
   // 매번 모달을 열 때마다 이전 확인 결과 표시는 지워둠
   const updResultEl = document.getElementById('updateCheckResult');
@@ -25409,6 +25438,82 @@ async function applyAppUpdate() {
     if (resultEl) resultEl.textContent = '⚠ 오류: ' + (e.message || e);
     if (applyBtn) { applyBtn.disabled = false; applyBtn.textContent = '⬇️ 지금 업데이트'; }
   }
+}
+
+// ── ☁️ 구글시트 자동 기록 ("🗂 거래내역으로 등록" 시점에 호출됨) ──
+const K_SHEET_SYNC = 'QUOTE_SHEET_SYNC_V1';
+function loadSheetSyncConfig() {
+  try {
+    const raw = localStorage.getItem(K_SHEET_SYNC);
+    if (!raw) return { staffName: '', url: '' };
+    return { staffName: '', url: '', ...JSON.parse(raw) };
+  } catch (e) { return { staffName: '', url: '' }; }
+}
+function saveSheetSyncConfig() {
+  const nameEl = document.getElementById('sheetStaffNameInput');
+  const urlEl = document.getElementById('sheetWebhookUrlInput');
+  const cfg = {
+    staffName: nameEl ? nameEl.value.trim() : '',
+    url: urlEl ? urlEl.value.trim() : ''
+  };
+  try {
+    localStorage.setItem(K_SHEET_SYNC, JSON.stringify(cfg));
+    const statusEl = document.getElementById('sheetSyncStatus');
+    if (statusEl) statusEl.textContent = cfg.url ? '✅ 저장되었습니다. 이제부터 "거래내역으로 등록"할 때마다 자동 전송됩니다.' : '연동 주소 없이 저장됨 (자동 전송 안 함).';
+    showToast('☁️ 구글시트 연동 설정이 저장되었습니다.');
+  } catch (e) {
+    alert('설정 저장에 실패했습니다.');
+  }
+}
+async function testSheetSync() {
+  const cfg = loadSheetSyncConfig();
+  const statusEl = document.getElementById('sheetSyncStatus');
+  if (!cfg.url) { if (statusEl) statusEl.textContent = '⚠ 먼저 구글시트 연동 주소를 입력해주세요.'; return; }
+  if (statusEl) statusEl.textContent = '전송 중...';
+  try {
+    await fetch(cfg.url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        staffName: cfg.staffName || '(이름 미설정)',
+        type: '테스트',
+        num: 'TEST-' + Date.now(),
+        date: new Date().toISOString().slice(0, 10),
+        partyName: '(테스트 거래처)',
+        supplierName: '',
+        total: '0 원',
+        balanceText: '',
+        savedAt: new Date().toISOString()
+      })
+    });
+    if (statusEl) statusEl.textContent = '📤 전송했습니다. 구글시트에 "테스트" 행이 추가됐는지 확인해주세요 (브라우저 보안 특성상 성공 여부를 여기서 직접 확인할 수는 없어요).';
+  } catch (e) {
+    if (statusEl) statusEl.textContent = '⚠ 전송 실패: ' + (e.message || e) + ' (인터넷 연결을 확인해주세요)';
+  }
+}
+// 실제 견적서/발주서/거래명세표를 "거래내역으로 등록"할 때 호출되는 함수
+function sendQuoteToSheet(record) {
+  const cfg = loadSheetSyncConfig();
+  if (!cfg.url) return; // 연동 설정 안 했으면 아무일도 하지 않음
+  try {
+    fetch(cfg.url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+      body: JSON.stringify({
+        staffName: cfg.staffName || '(이름 미설정)',
+        type: docLabelOf(record.type),
+        num: record.num || '',
+        date: record.date || '',
+        partyName: record.partyName || '',
+        supplierName: record.supplierName || '',
+        total: record.total || '',
+        balanceText: record.balanceText || '',
+        savedAt: record.updatedAt || new Date().toISOString()
+      })
+    }).catch(() => { /* 오프라인 등으로 실패해도 조용히 무시 (문서 저장 자체는 정상 진행) */ });
+  } catch (e) { /* 무시 */ }
 }
 
 // (📸 캡처 버튼은 이제 드롭다운 없이 바로 startRegionCapture()를 호출합니다 — 클릭 한 번으로 시작)
