@@ -1575,6 +1575,7 @@
         <button onclick="delWorkorder()" class="wo-topbtn" style="color:#ef4444;border-color:#fecaca">🗑 삭제</button>
         <span class="wo-topsep"></span>
         <button onclick="printWorkorder()" class="wo-topbtn" style="color:#16a34a;border-color:#bbf7d0">🖨 인쇄 / PDF</button>
+        <button onclick="exportWorkorderStandalone()" class="wo-topbtn" style="color:#7c3aed;border-color:#ddd6fe">📤 보내기 (파일로 저장)</button>
         <button onclick="woToggleFieldMode()" id="wo_fieldModeBtn" class="wo-topbtn">🔧 현장 모드</button>
       </div>
     </div>
@@ -20417,6 +20418,112 @@ function printWorkorder() {
   const win = window.open(url, '_blank');
   if (!win) showToast('팝업이 차단되었습니다. 브라우저 주소창의 팝업 차단 아이콘을 눌러 이 사이트의 팝업을 허용해 주세요.');
   setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+// ════════════════════════════════════════
+// 📤 작업지시서 "보내기" — 상대방이 컴퓨터에서 그냥 열어보면 되는 파일 하나로 저장.
+// 인쇄용(printWorkorder)과 달리, 받는 사람이 사진을 클릭하면 확대되고, 녹음이 있으면
+// 그 자리에서 재생할 수 있는 "보기 전용" 페이지를 만들어 다운로드합니다.
+// 이 파일 하나만 카카오톡/이메일/USB 등으로 보내면, 받는 분은 이 프로그램이 없어도
+// 아무 브라우저에서 더블클릭만으로 열어볼 수 있습니다.
+// ════════════════════════════════════════
+async function exportWorkorderStandalone() {
+  const f = collectWorkorderFields();
+  if (!f.item && !f.num && !f.workContent) {
+    if (!confirm('아직 작성된 내용이 거의 없습니다. 그래도 보내기 파일을 만들까요?')) return;
+  }
+  showToast('📤 보내기 파일을 만들고 있습니다...');
+
+  const imgData = woComposeCanvas().toDataURL('image/png');
+  const companyName = (document.getElementById('q_sup_name') || {}).value || '';
+  const processHtml = WO_PROCESS_LIST.map(p => `<span style="margin-right:10px;display:inline-block">${f.process.includes(p) ? '☑' : '☐'} ${p}</span>`).join('');
+  const transcript = (document.getElementById('wo_transcriptBox') || {}).value || '';
+
+  // 녹음파일 준비: 지금 화면에 있는 녹음(메모리)이 있으면 그것을, 없으면 저장된 파일(IndexedDB)에서 가져옵니다.
+  let audioBlob = woAudioBlob;
+  if (!audioBlob && woCurrentId) {
+    try { const rec = await woIndexedDBLoadAudio(woCurrentId); if (rec && rec.blob) audioBlob = rec.blob; } catch (e) {}
+  }
+  let audioDataUrl = '';
+  if (audioBlob) {
+    audioDataUrl = await new Promise(resolve => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve('');
+      reader.readAsDataURL(audioBlob);
+    });
+  }
+
+  const styles = [
+    '*{box-sizing:border-box}',
+    'body{font-family:"Malgun Gothic",dotum,sans-serif;padding:16px;background:#EEF2F1;margin:0}',
+    '.wrap{max-width:900px;margin:0 auto;background:#fff;border:1px solid #333;padding:16px}',
+    'table{width:100%;border-collapse:collapse;font-size:12px}',
+    'td,th{border:1px solid #ccc;padding:5px 8px;text-align:left}',
+    '.zoomable{cursor:zoom-in}',
+    '#lbOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;align-items:center;justify-content:center;flex-direction:column;cursor:zoom-out}',
+    '#lbOverlay img{max-width:92vw;max-height:88vh;box-shadow:0 4px 24px rgba(0,0,0,.5)}',
+    '#lbOverlay .lbHint{color:#e5e7eb;font-size:12px;margin-top:10px}',
+    '@media print{.no-print{display:none!important}.wrap{border:none!important}}'
+  ].join('\n');
+
+  const bodyHtml = `<div class="wrap">
+      <div style="text-align:center;margin-bottom:10px">
+        <div style="font-size:12px;color:#888">${escQ(companyName)}</div>
+        <div style="font-size:22px;font-weight:800;letter-spacing:8px">작업지시서</div>
+        <div style="font-size:10px;color:#aaa;margin-top:4px">받으신 문서 보기 전용입니다. (수정 불가)</div>
+      </div>
+      <table style="margin-bottom:10px">
+        <tr><td style="width:16%;background:#f8fafc">작업번호</td><td style="width:34%">${escQ(f.num)}</td><td style="width:16%;background:#f8fafc">거래처</td><td style="width:34%">${escQ(f.client)}</td></tr>
+        <tr><td style="background:#f8fafc">작성일</td><td>${escQ(f.date)}</td><td style="background:#f8fafc">납기일</td><td>${escQ(f.due)}</td></tr>
+        <tr><td style="background:#f8fafc">품명</td><td>${escQ(f.item)}</td><td style="background:#f8fafc">담당자</td><td>${escQ(f.manager)}</td></tr>
+        <tr><td style="background:#f8fafc">수량</td><td>${escQ(f.qty)} ${escQ(f.unit)}</td><td style="background:#f8fafc">재질</td><td>${escQ(f.material)}</td></tr>
+        <tr><td style="background:#f8fafc">두께</td><td>${escQ(f.thickness)} mm</td><td style="background:#f8fafc">규격</td><td>${escQ(f.spec)}</td></tr>
+        <tr><td style="background:#f8fafc">도면번호</td><td colspan="3">${escQ(f.drawNo)}</td></tr>
+      </table>
+      <div style="font-size:12px;margin-bottom:6px"><b>작업내용</b><br>${escQ(f.workContent).replace(/\n/g, '<br>')}</div>
+      ${f.customerRequest ? `<div style="font-size:13px;margin-bottom:10px;border:1px solid #fdba74;background:#fff7ed;border-radius:6px;padding:8px"><b style="color:#c2410c">⭐ 고객 요청사항</b><br>${escQ(f.customerRequest).replace(/\n/g, '<br>')}</div>` : ''}
+      <div style="font-size:12px;margin-bottom:10px;border:1px solid #ccc;padding:6px">${processHtml}</div>
+      <img src="${imgData}" class="zoomable" onclick="openLB(this.src)" style="width:100%;border:1px solid #333;margin-bottom:10px">
+      ${woGalleryPhotos.length ? `<div style="margin-bottom:10px">
+        <div style="font-size:12px;font-weight:700;margin-bottom:4px">참고 사진 (클릭하면 확대됩니다)</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap">
+          ${woGalleryPhotos.map(p => `<div style="width:120px"><img src="${p.dataURL}" class="zoomable" onclick="openLB(this.src)" style="width:100%;height:90px;object-fit:cover;border:1px solid #ccc;display:block"><div style="text-align:center;font-size:10px;background:#f8fafc;border:1px solid #ccc;border-top:none">${escQ(p.label)}</div></div>`).join('')}
+        </div>
+      </div>` : ''}
+      ${audioDataUrl ? `<div style="margin-bottom:10px;border:1px solid #ddd6fe;background:#f5f3ff;border-radius:6px;padding:8px">
+        <div style="font-size:12px;font-weight:700;color:#6d28d9;margin-bottom:6px">🎙️ 통화/음성 녹음</div>
+        <audio controls src="${audioDataUrl}" style="width:100%"></audio>
+      </div>` : ''}
+      ${transcript.trim() ? `<div style="font-size:12px;margin-bottom:10px;border:1px solid #e5e7eb;border-radius:6px;padding:8px;background:#fafafa"><b>🎙️ 음성 인식 텍스트</b><br>${escQ(transcript).replace(/\n/g, '<br>')}</div>` : ''}
+      <div style="font-size:12px;margin-bottom:10px"><b>특이사항</b><br>${escQ(f.note).replace(/\n/g, '<br>')}</div>
+      <table>
+        <tr><td style="width:33%;background:#f8fafc;text-align:center">작업자<br><br>${escQ(f.worker)}</td>
+            <td style="width:33%;background:#f8fafc;text-align:center">검사자<br><br>${escQ(f.inspector)}</td>
+            <td style="width:34%;background:#f8fafc;text-align:center">출고확인<br><br>${escQ(f.shipConfirm)}</td></tr>
+      </table>
+    </div>
+    <div id="lbOverlay" onclick="closeLB()"><img id="lbImg" src=""><div class="lbHint">화면을 클릭하면 닫힙니다</div></div>`;
+
+  const printBtnBar =
+    '<div class="no-print" style="position:sticky;top:0;z-index:999;background:#1e293b;padding:10px 16px;display:flex;gap:10px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2)">' +
+      '<button onclick="window.print()" style="background:#146C8E;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 인쇄 / PDF로 저장</button>' +
+      '<span style="color:#cbd5e1;font-size:12px">사진을 클릭하면 확대됩니다.' + (audioDataUrl ? ' 녹음은 위에서 바로 재생할 수 있습니다.' : '') + '</span>' +
+    '</div>';
+  const lbScript = '<script>function openLB(src){document.getElementById("lbImg").src=src;document.getElementById("lbOverlay").style.display="flex";}function closeLB(){document.getElementById("lbOverlay").style.display="none";document.getElementById("lbImg").src="";}<\/script>';
+  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>작업지시서 - ' + escQ(f.num || '') + '</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyHtml + lbScript + '</body></html>';
+
+  const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const safeNum = (f.num || '작업지시서').replace(/[\\/:*?"<>|]/g, '_');
+  a.download = `작업지시서_${safeNum}.html`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+  showToast('📤 파일을 다운로드했습니다. 이 파일을 카카오톡·이메일 등으로 보내면, 받는 분이 프로그램 없이 그냥 열어서 내용·사진·녹음을 볼 수 있습니다.');
 }
 
 // html2pdf.js(외부 CDN 라이브러리) 없이, 인터넷 연결 없는 환경에서도 동작하도록
