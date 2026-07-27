@@ -1602,7 +1602,7 @@
             <input id="wo_client" class="inp w-full" autocomplete="off" oninput="onWorkorderClientInput(this)" onfocus="onWorkorderClientInput(this)" onblur="setTimeout(hideAutocomplete,150)" placeholder="거래처명">
           </div>
           <div data-wo="detail"><label class="text-gray-500 block" style="margin-bottom:2px">담당자</label><input id="wo_manager" class="inp w-full" placeholder="담당자"></div>
-          <div data-wo="detail"><label class="text-gray-500 block" style="margin-bottom:2px">품명</label><input id="wo_item" class="inp w-full" placeholder="제품명"></div>
+          <div data-wo="detail"><label class="text-gray-500 block" style="margin-bottom:2px">품명</label><input id="wo_item" class="inp w-full" placeholder="제품명" oninput="onWoItemNameInput(this)"></div>
           <div data-wo="detail">
             <label class="text-gray-500 block" style="margin-bottom:2px">수량</label>
             <div class="flex gap-1">
@@ -1624,6 +1624,8 @@
           <div data-wo="detail"><label class="text-gray-500 block" style="margin-bottom:2px">규격</label><input id="wo_spec" class="inp w-full" placeholder="가로×세로×높이 등"></div>
           <div data-wo="detail"><label class="text-gray-500 block" style="margin-bottom:2px">도면번호</label><input id="wo_drawNo" class="inp w-full" placeholder="도면번호"></div>
         </div>
+
+        <div id="wo_photoMatchBox" class="no-print" data-wo="core" style="display:none;margin:-4px 0 10px;padding:8px;border:1px solid #dbeafe;border-radius:6px;background:#f0f7ff"></div>
 
         <div class="mb-2" data-wo="core">
           <label class="text-gray-500 block text-xs" style="margin-bottom:2px">작업내용</label>
@@ -16672,6 +16674,40 @@ function ensureAutocompleteBox() {
 function hideAutocomplete() {
   if (_acBoxEl) _acBoxEl.style.display = 'none';
   _acMatched = []; _acOnSelect = null;
+  hideItemPhotoPreview();
+}
+// ── 품목명 입력 중 자동으로 뜨는 사진 미리보기(완제품 재고 사진과 매칭) ──
+// 자동완성 목록과 겹치지 않도록 입력칸 오른쪽에 별도로 띄웁니다.
+let _itemPhotoBoxEl = null;
+function ensureItemPhotoBox() {
+  if (_itemPhotoBoxEl) return _itemPhotoBoxEl;
+  const box = document.createElement('div');
+  box.id = 'itemPhotoPreviewBox';
+  box.style.cssText = 'position:fixed;z-index:9999;background:#f0f7ff;border:1px solid #bfdbfe;'
+    + 'border-radius:6px;box-shadow:0 6px 16px rgba(0,0,0,.15);padding:6px;display:none;font-size:10px';
+  document.body.appendChild(box);
+  window.addEventListener('scroll', hideItemPhotoPreview, true);
+  window.addEventListener('resize', hideItemPhotoPreview);
+  _itemPhotoBoxEl = box;
+  return box;
+}
+function hideItemPhotoPreview() {
+  if (_itemPhotoBoxEl) _itemPhotoBoxEl.style.display = 'none';
+}
+function showItemPhotoPreview(inputEl, matches) {
+  if (!matches || matches.length === 0) { hideItemPhotoPreview(); return; }
+  const box = ensureItemPhotoBox();
+  box.innerHTML = '<div style="color:#2563eb;font-weight:600;margin-bottom:4px;white-space:nowrap">📷 재고 사진</div>'
+    + '<div style="display:flex;gap:4px">'
+    + matches.slice(0, 4).map(m => `<img src="${m.image}" onmousedown="event.preventDefault();openInvImageViewer('${m.id}')" style="width:40px;height:40px;object-fit:cover;border-radius:4px;border:1px solid #bfdbfe;cursor:pointer;background:#fff">`).join('')
+    + '</div>';
+  const rect = inputEl.getBoundingClientRect();
+  box.style.display = 'block';
+  let left = rect.right + 6;
+  const boxWidth = box.offsetWidth || 180;
+  if (left + boxWidth > window.innerWidth) left = Math.max(4, rect.left - boxWidth - 6);
+  box.style.left = left + 'px';
+  box.style.top = rect.top + 'px';
 }
 // 후보 목록을 입력창 아래에 띄웁니다. renderItemFn(item)은 후보 한 줄의 내용(html)을,
 // onSelectFn(item)은 그 후보를 클릭했을 때 할 일을 정의합니다.
@@ -16732,6 +16768,7 @@ function onItemNameInput(inputEl, rows, i, renderFn) {
       if (typeof renderFn === 'function') renderFn();
     }
   );
+  showItemPhotoPreview(inputEl, findInventoryPhotoMatches(inputEl.value));
 }
 
 
@@ -20147,7 +20184,44 @@ function applyWorkorderFields(f) {
   setVal('wo_workContent', f.workContent); setVal('wo_customerRequest', f.customerRequest); setVal('wo_note', f.note);
   setVal('wo_worker', f.worker); setVal('wo_inspector', f.inspector); setVal('wo_shipConfirm', f.shipConfirm);
   document.querySelectorAll('.wo-process-cb').forEach(cb => cb.checked = (f.process || []).includes(cb.value));
+  renderWoPhotoMatches(findInventoryPhotoMatches(f.item));
 }
+
+// ── 품명 → 완제품 재고(사진) 자동 매칭 ──
+// 작업지시서 "품명" 칸에 입력된 이름과 완제품 재고에 등록된 제품명을 비교해,
+// 예전에 찍어둔 사진을 자동으로 찾아 보여줍니다. (작업자가 "이 제품 맞나요?" 확인하기 쉽도록)
+function findInventoryPhotoMatches(name) {
+  const kw = (name || '').trim().toLowerCase();
+  if (!kw) return [];
+  const withPhoto = loadInventory().filter(x => x.image && (x.name || '').trim());
+  const exact = withPhoto.filter(x => x.name.trim().toLowerCase() === kw);
+  const partial = withPhoto.filter(x => {
+    const n = x.name.trim().toLowerCase();
+    return n !== kw && (n.includes(kw) || kw.includes(n));
+  });
+  const merged = exact.concat(partial);
+  merged.sort((a, b) => (b.madeDate || '').localeCompare(a.madeDate || ''));
+  // 같은 제품명이 여러 번 제작된 경우, 최신순으로 최대 6장까지만 보여줍니다.
+  return merged.slice(0, 6);
+}
+function renderWoPhotoMatches(matches) {
+  const box = document.getElementById('wo_photoMatchBox');
+  if (!box) return;
+  if (!matches || matches.length === 0) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  box.innerHTML = '<div style="font-size:11px;color:#2563eb;font-weight:600;margin-bottom:6px">📷 재고에서 찾은 이전 제품 사진 (클릭하면 크게 보기)</div>'
+    + '<div style="display:flex;gap:8px;flex-wrap:wrap">'
+    + matches.map(m => `
+        <div style="text-align:center;cursor:pointer" onclick="openInvImageViewer('${m.id}')">
+          <img src="${m.image}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;border:1px solid #bfdbfe;background:#fff">
+          <div style="font-size:9px;color:#64748b;margin-top:2px;max-width:60px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escQ(m.madeDate || '')}</div>
+        </div>`).join('')
+    + '</div>';
+}
+function onWoItemNameInput(inputEl) {
+  renderWoPhotoMatches(findInventoryPhotoMatches(inputEl.value));
+}
+
 function newWorkorder() {
   if (!confirm('지금 작성 중인 내용을 지우고 새로 작성할까요? (저장하지 않은 내용은 사라집니다)')) return;
   woStopSpeechRecognition();
