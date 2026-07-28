@@ -25661,6 +25661,39 @@ async function applyAppUpdate() {
   }
 }
 
+// ════════════════════════════════════════
+// 🔄 앱 시작 시 자동 업데이트 확인
+//    - 하루 1회만 자동으로 서버에 새 버전이 있는지 확인
+//    - 있으면 물어보고, 확인하면 바로 다운로드/적용 (창이 새로고침됨)
+// ════════════════════════════════════════
+const K_LAST_AUTO_UPDATE_CHECK = 'QUOTE_APP_LAST_AUTO_UPDATE_CHECK';
+async function autoCheckForUpdateOnStartup() {
+  try {
+    if (!window.ejUpdater || !window.ejUpdater.checkNow) return;
+    const todayKey = new Date().toDateString();
+    if (localStorage.getItem(K_LAST_AUTO_UPDATE_CHECK) === todayKey) return; // 오늘 이미 확인했으면 건너뜀
+    localStorage.setItem(K_LAST_AUTO_UPDATE_CHECK, todayKey);
+
+    const r = await window.ejUpdater.checkNow();
+    if (r && r.status === 'available') {
+      const wantsUpdate = confirm(
+        `🔔 새 버전(v${r.version})이 있습니다.` +
+        (r.notes ? `\n\n${r.notes}` : '') +
+        `\n\n지금 업데이트할까요? (파일만 새로 받는 것이며, 저장된 견적서·거래처 등 데이터는 그대로 유지됩니다)`
+      );
+      if (wantsUpdate && window.ejUpdater.applyUpdate) {
+        await window.ejUpdater.applyUpdate();
+      }
+    }
+  } catch (e) {
+    // 자동 확인 실패는 조용히 무시 — 필요하면 ⚙️ 설정에서 수동으로 "🔄 지금 확인" 가능
+  }
+}
+window.addEventListener('load', () => {
+  // 다른 시작 로직들과 겹치지 않도록 약간 지연 후 실행
+  setTimeout(autoCheckForUpdateOnStartup, 2000);
+});
+
 // ── ☁️ 구글시트 자동 기록 ("🗂 거래내역으로 등록" 시점에 호출됨) ──
 const K_SHEET_SYNC = 'QUOTE_SHEET_SYNC_V1';
 function loadSheetSyncConfig() {
