@@ -25628,7 +25628,12 @@ async function checkForAppUpdate() {
       resultEl.innerHTML = `🔔 새 버전 v${r.version}이 있습니다${r.notes ? ' — ' + r.notes.replace(/</g,'&lt;') : ''} <span style="color:#94a3b8">(확인: ${now})</span>`;
       if (applyBtn) applyBtn.style.display = '';
     } else if (r.status === 'none') {
-      resultEl.textContent = `✅ 이미 최신 버전입니다 (v${r.version || ''}) · 확인: ${now}`;
+      let lastUpgradeLabel = now;
+      try {
+        const v = await window.ejUpdater.getVersion();
+        lastUpgradeLabel = fmtUpdateDate(v.updatedAt);
+      } catch (e) {}
+      resultEl.textContent = `✅ 이미 최신 버전입니다 (v${r.version || ''}) · 마지막 업그레이드: ${lastUpgradeLabel}`;
     } else {
       resultEl.textContent = `⚠ 확인 실패: ${r.error || '알 수 없는 오류'} · 확인: ${now}`;
     }
