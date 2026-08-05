@@ -326,6 +326,7 @@
         </div>
       </div>
       <button onclick="openPersonalCalendar()" title="회사 모임, 거래처 방문 등 개인 일정을 달력으로 관리합니다" class="hdr-btn cal-btn" style="position:relative">📅 일정<span id="calTodayBadge" class="ship-badge" style="display:none">0</span></button>
+      <button onclick="openStaffModal()" title="직원별 출근/휴무/연차 등 근무 상태를 달력에 기록하고 관리합니다" class="hdr-btn" style="background:#0f766e">👥 직원 근무</button>
       <button onclick="startNewDoc()" title="현재 내용은 거래내역에 저장한 뒤 화면을 비웁니다 (우리 회사 정보는 유지)" class="hdr-btn" style="background:#f97316" onmouseover="this.style.background='#fb923c'" onmouseout="this.style.background='#f97316'">🆕 새 문서</button>
       <div style="position:relative;display:inline-block">
         <button id="captureMenuBtn" onclick="startRegionCapture()" title="클릭하면 화면/창 선택창이 뜹니다. 선택하면 바로 캡처되어 새 창에 표시되며, 원하는 영역을 드래그해 놓으면 저장 위치(폴더)를 직접 골라 저장할 수 있습니다" class="hdr-btn" style="background:#0d9488">📸 캡처</button>
@@ -387,6 +388,7 @@
     <button id="docTabOrder" onclick="switchDocType('order')" title="우리 회사가 발주(주문)할 때 쓰는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📙 발주서</button>
     <button id="docTabStatement" onclick="switchDocType('statement')" title="물건을 납품한 뒤 금액을 정리해 보내는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📗 거래명세표</button>
     <button id="docTabWorkorder" onclick="switchDocType('workorder')" title="현장 작업자가 볼 스케치·사진 도면과 작업 지시 내용을 만듭니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📝 작업지시서</button>
+    <button id="docTabWorkboard" onclick="switchDocType('workboard')" title="접수 순서대로 모든 작업 주문을 한 표로 관리합니다 (날짜/상호/연락처/제품명/작업내용/수량/금액/운송/출고일/작업자/작업상태 등)" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">📋 작업현황판<span id="workboardBadge" class="ship-badge" style="display:none">0</span></button>
     <button id="docTabHistory" onclick="switchDocType('history')" title="지금까지 작성하고 저장한 견적서·발주서·거래명세표 목록을 확인합니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">🗂️ 거래내역<span id="receivableBadge" class="ship-badge" style="display:none">0</span></button>
     <button id="docTabShipping" onclick="switchDocType('shipping')" title="제작·배송 중인 제품의 진행 상황을 관리합니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">🚚 제품 진행중<span id="shipBadge" class="ship-badge" style="display:none">0</span></button>
     <button id="docTabLedger" onclick="switchDocType('ledger')" title="수입과 지출을 날짜별로 기록하는 간단한 가계부입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📒 가계부</button>
@@ -863,7 +865,7 @@
             <div class="grid grid-cols-2 gap-2 items-end">
               <div>
                 <div class="quote-label" style="font-size:9px">입금액(계약금)</div>
-                <input class="quote-inp" id="q_paidAmt" type="number" min="0" value="0" oninput="updateQuoteTotals()" style="border:1px solid #d1d5db;border-radius:4px;padding:4px 6px">
+                <input class="quote-inp" id="q_paidAmt" type="number" min="0" value="0" oninput="priceTooltipShow(this);updateQuoteTotals()" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)" style="border:1px solid #d1d5db;border-radius:4px;padding:4px 6px">
               </div>
               <div class="text-right">
                 <div class="quote-label" style="font-size:9px">잔금 / 입금비율</div>
@@ -1135,7 +1137,6 @@
                 <th style="width:34px">No</th>
                 <th>품목명</th>
                 <th style="width:100px">규격</th>
-                <th style="width:80px">재질</th>
                 <th style="width:50px">수량</th>
                 <th style="width:50px">단위</th>
                 <th style="width:90px">단가(원)</th>
@@ -1419,7 +1420,7 @@
           <div class="grid grid-cols-2 gap-2">
             <div>
               <div class="quote-label">전잔액</div>
-              <input class="quote-inp" id="s_prevBal" type="number" min="0" value="0" oninput="updateStatementTotals()">
+              <input class="quote-inp" id="s_prevBal" type="number" min="0" value="0" oninput="priceTooltipShow(this);updateStatementTotals()" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
             </div>
             <div>
               <div class="quote-label">출고액 (이번 거래)</div>
@@ -1427,7 +1428,7 @@
             </div>
             <div>
               <div class="quote-label">입금액</div>
-              <input class="quote-inp" id="s_paidAmt" type="number" min="0" value="0" oninput="updateStatementTotals()">
+              <input class="quote-inp" id="s_paidAmt" type="number" min="0" value="0" oninput="priceTooltipShow(this);updateStatementTotals()" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
             </div>
             <div>
               <div class="quote-label">잔액</div>
@@ -1681,6 +1682,7 @@
             <option value="quote">견적서</option>
             <option value="order">발주서</option>
             <option value="statement">거래명세표</option>
+            <option value="workboard">작업현황판</option>
           </select>
         </div>
         <div>
@@ -1738,6 +1740,7 @@
 
 <!-- ════════════════════════ 제품 진행중 ════════════════════════ -->
 <div id="saveToast" class="toast">✅ 저장되었습니다</div>
+<div id="priceFullTooltip" class="no-print" style="position:fixed;z-index:5000;background:#111827;color:#fff;font-weight:800;font-size:14px;padding:7px 12px;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.35);pointer-events:none;display:none;white-space:nowrap;letter-spacing:.3px"></div>
 
 <!-- ════════════════════════ 품목 검색 추가 팝업 (견적서/발주서/거래명세표 공용) ════════════════════════ -->
 <div id="quoteSearchModal" class="hidden" style="position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1000;align-items:flex-start;justify-content:center;padding:40px 16px" onclick="if(event.target===this) closeQuoteSearch()">
@@ -1863,6 +1866,33 @@
   </div>
 </div>
 
+<!-- ════════════════════════ ⚙️ 라벨 항목별 글자 크기 설정 모달 ════════════════════════ -->
+<div id="labelFieldStyleModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1400;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeLabelFieldStyleModal()">
+  <div style="background:#fff;border-radius:12px;max-width:430px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+    <div style="position:sticky;top:0;background:#fff;padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;z-index:1">
+      <div class="text-sm font-bold" style="color:#9a3412">⚙️ 라벨 항목별 글자 크기 설정</div>
+      <button onclick="closeLabelFieldStyleModal()" style="border:none;background:none;font-size:20px;color:#9ca3af;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div style="padding:14px 16px">
+      <p class="text-gray-500" style="font-size:11px;margin-bottom:10px">항목마다 원하는 글자 크기(px)를 직접 입력하세요. 인쇄할 때 실제 크기 그대로 적용됩니다. 위쪽 "글자 크기(작게/보통/크게)"를 선택하면 여기서 정한 크기에 추가로 곱해집니다.</p>
+
+      <div style="display:flex;flex-direction:column;gap:0">
+        <div style="display:grid;grid-template-columns:1fr 64px 46px 84px;gap:6px;align-items:center;padding:4px 2px;font-size:9px;color:#94a3b8;font-weight:700;border-bottom:1px solid #f1f5f9;margin-bottom:2px">
+          <div>항목</div><div>크기(px)</div><div>굵게</div><div>구분선</div>
+        </div>
+        <div id="labelFieldStyleRows"></div>
+      </div>
+
+      <p class="text-gray-400" style="font-size:9px;margin-top:8px">구분선은 해당 항목 아래쪽에 줄을 넣어 항목을 구분해 줍니다. (점선 / 실선 중 선택)</p>
+
+      <div class="flex gap-2 mt-4">
+        <button onclick="resetLabelFieldStyleModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">기본값으로</button>
+        <button onclick="saveLabelFieldStyleModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#ea580c;color:#fff;border:none;cursor:pointer;flex:1">저장</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════════════ 🏷️ 빠른접수 모달 ════════════════════════ -->
 <div id="quickIntakeModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:1300;align-items:center;justify-content:center;padding:16px">
   <div style="background:#fff;border-radius:10px;max-width:460px;width:96vw;max-height:92vh;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.35);display:flex;flex-direction:column">
@@ -1899,7 +1929,12 @@
         <p class="text-gray-400" style="font-size:9px;margin-top:4px">"기본값으로 저장"을 누르면 다음에 빠른접수를 열 때 자동으로 채워집니다.</p>
       </div>
 
-      <label class="text-gray-500 block text-xs" style="margin-bottom:2px">상호명 / 성함</label>
+      <label class="text-gray-500 block text-xs" style="margin-bottom:2px;display:flex;justify-content:space-between;align-items:center">
+        <span>상호명 / 성함</span>
+        <select id="qi_workboard_picker" onchange="fillQuickIntakeFromWorkboardPicker(this.value)" style="font-size:10px;border:1px solid #e2e8f0;border-radius:4px;padding:1px 3px;max-width:190px;color:#ea580c" title="작업현황판에 등록된 주문을 그대로 불러와 접수합니다">
+          <option value="">📋 작업현황판에서 불러오기</option>
+        </select>
+      </label>
       <div style="position:relative;margin-bottom:8px">
         <input id="qi_name" class="inp w-full" autocomplete="off" placeholder="예: (주)한빛식당" oninput="onQuickIntakeNameInput(this)" onfocus="onQuickIntakeNameInput(this)" onblur="setTimeout(hideAutocomplete,150)">
       </div>
@@ -1938,6 +1973,11 @@
       <label class="text-gray-500 block text-xs" style="margin-bottom:2px">메모 (선택)</label>
       <textarea id="qi_memo" rows="2" class="inp w-full text-xs" style="margin-bottom:8px" placeholder="규격, 요청사항 등"></textarea>
 
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:8px;padding:6px 8px;border:1px dashed #cbd5e1;border-radius:6px;background:#f8fafc">
+        <span id="qi_memoFolderStatus" style="font-size:10px;color:#64748b;flex:1">📁 메모 저장 폴더가 지정되지 않았습니다 (지정하면 접수할 때마다 메모 파일이 자동 저장됩니다)</span>
+        <button type="button" onclick="setupQuickIntakeMemoFolder()" class="wo-tool-btn" style="color:#2563eb;flex-shrink:0">📁 폴더 지정</button>
+      </div>
+
       <div style="border:1px solid #e5e7eb;border-radius:6px;padding:8px;margin-bottom:10px;background:#f8fafc">
         <div class="flex justify-between items-center" style="margin-bottom:6px">
           <label class="text-gray-500 text-xs font-bold">➕ 추가 항목 (라벨에 더 넣고 싶은 칸)</label>
@@ -1945,15 +1985,39 @@
         </div>
         <div id="qi_customFieldsArea" class="space-y-2"></div>
         <button type="button" onclick="addQuickIntakeCustomField()" class="add-btn" style="margin-top:6px">+ 항목 추가</button>
-        <p class="text-gray-400" style="font-size:9px;margin-top:4px">항목명·내용을 적고 "이 항목 구성 저장"을 누르면, 다음 빠른접수부터 같은 항목 칸이 자동으로 나옵니다.</p>
+        <p class="text-gray-400" style="font-size:9px;margin-top:4px">항목명(문구)을 적으면 자동으로 기억되어 다음 빠른접수부터 같은 항목 칸이 나타납니다. 내용(값)은 매번 새로 입력하는 칸이라 저장되지 않아요. 항목명을 고치면 바로 수정되고, 필요 없는 항목은 ✕로 지우면 다음 빠른접수부터 나타나지 않습니다.</p>
       </div>
 
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <label class="text-gray-500 block text-xs">글자 크기 (전체 배율)</label>
+        <button type="button" onclick="openLabelFieldStyleModal()" class="wo-tool-btn" style="color:#ea580c;border:1px solid #fed7aa" title="받는 사람·주소·전화번호·물품명·수량·보내는 사람·메모 등 항목마다 글자 크기(px)를 따로 정하고, 점선/실선 구분선도 넣을 수 있습니다">⚙️ 항목별 크기 설정</button>
+      </div>
+      <select id="qi_labelFontScale" class="inp w-full" style="margin-bottom:8px" onchange="saveQuickIntakeLabelSizeChoice()">
+        <option value="0.85">작게</option>
+        <option value="1" selected>보통</option>
+        <option value="1.25">크게</option>
+        <option value="1.5">아주 크게</option>
+      </select>
+
       <label class="text-gray-500 block text-xs" style="margin-bottom:2px">라벨 크기</label>
-      <select id="qi_labelSize" class="inp w-full" style="margin-bottom:12px">
+      <select id="qi_labelSize" class="inp w-full" style="margin-bottom:8px" onchange="toggleQuickIntakeCustomLabelSize(); saveQuickIntakeLabelSizeChoice();">
         <option value="100x150">100 x 150mm (4x6, 배송라벨)</option>
         <option value="100x50">100 x 50mm</option>
         <option value="60x40">60 x 40mm (소형)</option>
+        <option value="56roll">56mm 폭 (롤지, 세로 자동)</option>
+        <option value="30roll">30mm 폭 (롤지, 세로 자동)</option>
+        <option value="custom">직접 입력 (규격을 직접 정하기)</option>
       </select>
+      <div id="qi_labelCustomBox" class="flex gap-2" style="display:none;margin-bottom:12px">
+        <div style="flex:1">
+          <label class="text-gray-500 block text-xs" style="margin-bottom:2px">폭 (mm)</label>
+          <input id="qi_labelCustomW" type="number" min="10" max="300" class="inp w-full" placeholder="예: 56" oninput="saveQuickIntakeLabelSizeChoice()">
+        </div>
+        <div style="flex:1">
+          <label class="text-gray-500 block text-xs" style="margin-bottom:2px">높이 (mm, 비우면 롤지·자동)</label>
+          <input id="qi_labelCustomH" type="number" min="0" max="500" class="inp w-full" placeholder="비워두면 자동" oninput="saveQuickIntakeLabelSizeChoice()">
+        </div>
+      </div>
 
       <div class="flex gap-2">
         <button onclick="submitQuickIntake()" class="add-btn" style="margin-top:0;flex:1;background:#ea580c;color:#fff;border-color:#ea580c;font-weight:700">🏷️ 접수 + 라벨 인쇄</button>
@@ -1994,7 +2058,10 @@
     <div class="border-t pt-3" style="border-color:#e5e7eb">
       <div class="flex justify-between items-center mb-2">
         <div id="calSelectedDateLabel" class="text-xs font-bold text-gray-700"></div>
-        <button onclick="calOpenForm()" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#7c3aed;color:#fff;border:none;cursor:pointer">➕ 새 일정 추가</button>
+        <div class="flex gap-2">
+          <button onclick="calOpenVacationForm()" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#f97316;color:#fff;border:none;cursor:pointer">📅 기간 등록 (여러 날짜 한번에)</button>
+          <button onclick="calOpenForm()" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#7c3aed;color:#fff;border:none;cursor:pointer">➕ 새 일정 추가</button>
+        </div>
       </div>
       <div id="calDayEventList"></div>
     </div>
@@ -2021,6 +2088,12 @@
           <div class="quote-label">일자</div>
           <input id="calEv_date" type="date" class="inp">
         </div>
+        <div>
+          <div class="quote-label">종료일 <span class="font-normal text-gray-400">(휴가처럼 여러 날짜에 걸친 일정일 때만 입력)</span></div>
+          <input id="calEv_endDate" type="date" class="inp">
+        </div>
+      </div>
+      <div class="calform-row">
         <div style="flex:0 0 110px">
           <div class="quote-label">시간(선택)</div>
           <input id="calEv_time" type="time" class="inp">
@@ -2056,6 +2129,71 @@
   </div>
 </div>
 
+<!-- ════════════════════════ 📌 날짜 클릭 시 뜨는 상세정보 팝업(새창) ════════════════════════ -->
+<div id="calDayDetailModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1260;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeCalDayDetailModal()">
+  <div style="background:#fff;border-radius:10px;max-width:480px;width:96vw;max-height:82vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.4)">
+    <div class="calform-titlebar">
+      <div style="font-weight:700;font-size:13px" id="calDayDetailTitle">📌 상세 정보</div>
+      <button onclick="closeCalDayDetailModal()" style="border:none;background:none;color:#fff;font-size:18px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div class="calform-body">
+      <div id="calDayDetailList" style="margin-bottom:10px"></div>
+      <div class="flex justify-end gap-2">
+        <button onclick="calOpenVacationForm(calDayDetailDate)" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#f97316;color:#fff;border:none;cursor:pointer">📅 기간 등록</button>
+        <button onclick="calOpenForm(calDayDetailDate)" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#7c3aed;color:#fff;border:none;cursor:pointer">➕ 새 일정 추가</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 📅 기간(여러 날짜) 등록 팝업 ════════════════════════ -->
+<div id="calVacationFormModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1310;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeCalVacationForm()">
+  <div style="background:#fff;border-radius:8px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden">
+    <div class="calform-titlebar" style="background:#f97316">
+      <div style="font-weight:700;font-size:13px">📅 기간(여러 날짜) 등록</div>
+      <button onclick="closeCalVacationForm()" style="border:none;background:none;color:#fff;font-size:18px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div class="calform-body">
+      <p class="text-[11px] text-gray-500 mb-3">시작일과 종료일을 입력하면 그 기간의 <b>모든 날짜</b>에 자동으로 표시됩니다.<br>(예: 4일 ~ 6일 입력 시 4일·5일·6일 전부에 표시됨)<br>제목은 원하시는 대로 자유롭게 적으시면 됩니다. (예: 휴가, 근무자 결근, 김OO 미출근, 출장 등)</p>
+      <div class="calform-row">
+        <div>
+          <div class="quote-label">시작일</div>
+          <input id="calVac_start" type="date" class="inp">
+        </div>
+        <div>
+          <div class="quote-label">종료일</div>
+          <input id="calVac_end" type="date" class="inp">
+        </div>
+      </div>
+      <div class="calform-row">
+        <div>
+          <div class="quote-label">제목 <span class="font-normal text-gray-400">(직접 자유롭게 입력)</span></div>
+          <input id="calVac_title" class="inp" placeholder="예: 휴가 / 근무자 결근 / 김OO 미출근 등">
+        </div>
+      </div>
+      <div class="calform-row">
+        <div>
+          <div class="quote-label flex justify-between items-center">
+            <span>구분</span>
+            <span onclick="openCalCategoryModal()" style="cursor:pointer;color:#7c3aed;font-weight:700;font-size:11px">➕ 카테고리 관리</span>
+          </div>
+          <select id="calVac_type" class="inp"></select>
+        </div>
+      </div>
+      <div class="calform-row">
+        <div>
+          <div class="quote-label">메모(선택)</div>
+          <textarea id="calVac_memo" class="inp" rows="2" placeholder="예: 사유, 대체 근무자 등" style="resize:vertical"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-1">
+        <button onclick="closeCalVacationForm()" class="text-xs font-bold px-4 py-1.5 rounded" style="background:#e5e7eb;color:#374151;border:none;cursor:pointer">취소</button>
+        <button onclick="calSaveVacation()" class="text-xs font-bold px-4 py-1.5 rounded" style="background:#f97316;color:#fff;border:none;cursor:pointer">등록</button>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════════════ 일정 카테고리 관리 팝업 ════════════════════════ -->
 <div id="calCategoryModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1400;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeCalCategoryModal()">
   <div style="background:#fff;border-radius:8px;max-width:360px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden">
@@ -2075,6 +2213,163 @@
       </div>
       <div class="flex justify-end mt-3">
         <button onclick="closeCalCategoryModal()" class="text-xs font-bold px-4 py-1.5 rounded" style="background:#e5e7eb;color:#374151;border:none;cursor:pointer">닫기</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 👥 직원 근무 관리 메인 달력 ════════════════════════ -->
+<div id="staffModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1200;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeStaffModal()">
+  <div style="background:#fff;border-radius:10px;max-width:1120px;width:96vw;max-height:96vh;overflow-y:auto;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.25)">
+    <div class="flex justify-between items-center mb-3">
+      <div class="text-sm font-bold text-gray-800">👥 직원 근무 관리 <span class="text-xs font-normal text-gray-400">— 직원별 출근·휴무·연차 등을 달력에 기록</span></div>
+      <button onclick="closeStaffModal()" style="border:none;background:none;font-size:20px;color:#9ca3af;cursor:pointer;line-height:1">✕</button>
+    </div>
+
+    <div class="flex justify-between items-center mb-2 flex-wrap gap-2">
+      <div class="flex gap-2">
+        <button onclick="openStaffEmployeeModal()" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#0f766e;color:#fff;border:none;cursor:pointer">👤 직원 관리</button>
+        <button onclick="staffOpenRangeForm()" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#7c3aed;color:#fff;border:none;cursor:pointer">📅 여러 날짜 한번에 입력</button>
+        <button onclick="staffPrintMonthlyReport()" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#146C8E;color:#fff;border:none;cursor:pointer">🖨️ 월 근무표 출력</button>
+      </div>
+    </div>
+
+    <div id="staffFilterChips" class="flex gap-1.5 flex-wrap mb-2"></div>
+
+    <div class="flex justify-between items-center mb-2">
+      <button onclick="staffShiftMonth(-1)" class="add-btn" style="margin-top:0">◀ 이전달</button>
+      <div id="staffMonthLabel" class="text-base font-bold text-gray-700"></div>
+      <div class="flex gap-1">
+        <button onclick="staffGoToday()" class="add-btn" style="margin-top:0">오늘</button>
+        <button onclick="staffShiftMonth(1)" class="add-btn" style="margin-top:0">다음달 ▶</button>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px;margin-bottom:4px">
+      <div class="cal-weekday" style="color:#dc2626">일</div>
+      <div class="cal-weekday">월</div>
+      <div class="cal-weekday">화</div>
+      <div class="cal-weekday">수</div>
+      <div class="cal-weekday">목</div>
+      <div class="cal-weekday">금</div>
+      <div class="cal-weekday" style="color:#146C8E">토</div>
+    </div>
+    <div id="staffGrid" style="display:grid;grid-template-columns:repeat(7,1fr);gap:3px"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 👤 직원 관리 팝업 ════════════════════════ -->
+<div id="staffEmployeeModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1310;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeStaffEmployeeModal()">
+  <div style="background:#fff;border-radius:8px;max-width:420px;width:100%;max-height:88vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.35)">
+    <div class="calform-titlebar" style="background:#0f766e">
+      <div style="font-weight:700;font-size:13px">👤 직원 관리</div>
+      <button onclick="closeStaffEmployeeModal()" style="border:none;background:none;color:#fff;font-size:18px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div class="calform-body">
+      <div id="staffEmployeeList" style="margin-bottom:12px"></div>
+      <div class="border-t pt-3" style="border-color:#e5e7eb">
+        <input type="hidden" id="staffEmp_editId" value="">
+        <div id="staffEmpFormTitle" class="text-xs font-bold text-gray-600 mb-2">➕ 새 직원 등록</div>
+        <div class="calform-row">
+          <div>
+            <div class="quote-label">이름</div>
+            <input id="staffEmp_name" class="inp" placeholder="예: 김철수">
+          </div>
+          <div>
+            <div class="quote-label">직책(선택)</div>
+            <input id="staffEmp_position" class="inp" placeholder="예: 팀장">
+          </div>
+        </div>
+        <div class="calform-row">
+          <div>
+            <div class="quote-label">연락처(선택)</div>
+            <input id="staffEmp_tel" class="inp" placeholder="010-0000-0000">
+          </div>
+          <div style="flex:0 0 90px">
+            <div class="quote-label">근무 색상</div>
+            <input id="staffEmp_color" type="color" value="#146C8E" style="width:100%;height:36px;border:1px solid #d1d5db;border-radius:6px;padding:2px;cursor:pointer">
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-2">
+          <button id="staffEmp_cancelBtn" onclick="staffCancelEmployeeEdit()" class="hidden text-xs font-bold px-4 py-1.5 rounded" style="background:#e5e7eb;color:#374151;border:none;cursor:pointer">취소</button>
+          <button onclick="staffSaveEmployee()" id="staffEmp_saveBtn" class="text-xs font-bold px-4 py-1.5 rounded" style="background:#0f766e;color:#fff;border:none;cursor:pointer">➕ 등록</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 📌 날짜별 근무 입력 팝업 ════════════════════════ -->
+<div id="staffDayFormModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1260;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeStaffDayForm()">
+  <div style="background:#fff;border-radius:8px;max-width:440px;width:96vw;max-height:88vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.4)">
+    <div class="calform-titlebar" style="background:#0f766e">
+      <div style="font-weight:700;font-size:13px" id="staffDayFormTitle">📌 근무 입력</div>
+      <button onclick="closeStaffDayForm()" style="border:none;background:none;color:#fff;font-size:18px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div class="calform-body">
+      <div id="staffDayExistingList" style="margin-bottom:10px"></div>
+      <div class="border-t pt-3" style="border-color:#e5e7eb">
+        <input type="hidden" id="staffDay_editId" value="">
+        <div class="calform-row">
+          <div>
+            <div class="quote-label">직원</div>
+            <select id="staffDay_emp" class="inp"></select>
+          </div>
+        </div>
+        <div class="quote-label">근무</div>
+        <div id="staffDay_statusRadios" class="flex gap-2 flex-wrap" style="margin-bottom:10px"></div>
+        <div class="calform-row">
+          <div>
+            <div class="quote-label">메모(선택)</div>
+            <textarea id="staffDay_memo" class="inp" rows="2" style="resize:vertical"></textarea>
+          </div>
+        </div>
+        <div class="flex justify-end gap-2 mt-1">
+          <button id="staffDay_deleteBtn" onclick="staffDeleteDayEntry(document.getElementById('staffDay_editId').value)" class="hidden text-xs font-bold px-4 py-1.5 rounded" style="background:#fff;color:#ef4444;border:1px solid #fecaca;cursor:pointer">삭제</button>
+          <button onclick="staffCancelDayEdit()" class="text-xs font-bold px-4 py-1.5 rounded" style="background:#e5e7eb;color:#374151;border:none;cursor:pointer">새로 입력</button>
+          <button onclick="staffSaveDayEntry()" class="text-xs font-bold px-4 py-1.5 rounded" style="background:#0f766e;color:#fff;border:none;cursor:pointer">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 📅 여러 날짜 한번에 근무 입력 팝업 ════════════════════════ -->
+<div id="staffRangeFormModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:1310;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeStaffRangeForm()">
+  <div style="background:#fff;border-radius:8px;max-width:420px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);overflow:hidden">
+    <div class="calform-titlebar" style="background:#7c3aed">
+      <div style="font-weight:700;font-size:13px">📅 여러 날짜 한번에 근무 입력</div>
+      <button onclick="closeStaffRangeForm()" style="border:none;background:none;color:#fff;font-size:18px;cursor:pointer;line-height:1">✕</button>
+    </div>
+    <div class="calform-body">
+      <p class="text-[11px] text-gray-500 mb-3">직원과 기간, 근무 상태를 정하면 <b>그 기간의 모든 날짜</b>에 한번에 적용됩니다.<br>(예: 4일 ~ 8일 · 연차 선택 시 4~8일 전부 연차로 자동 입력)</p>
+      <div class="calform-row">
+        <div>
+          <div class="quote-label">직원</div>
+          <select id="staffRange_emp" class="inp"></select>
+        </div>
+      </div>
+      <div class="calform-row">
+        <div>
+          <div class="quote-label">시작일</div>
+          <input id="staffRange_start" type="date" class="inp">
+        </div>
+        <div>
+          <div class="quote-label">종료일</div>
+          <input id="staffRange_end" type="date" class="inp">
+        </div>
+      </div>
+      <div class="quote-label">근무</div>
+      <div id="staffRange_statusRadios" class="flex gap-2 flex-wrap" style="margin-bottom:10px"></div>
+      <div class="calform-row">
+        <div>
+          <div class="quote-label">메모(선택)</div>
+          <textarea id="staffRange_memo" class="inp" rows="2" style="resize:vertical"></textarea>
+        </div>
+      </div>
+      <div class="flex justify-end gap-2 mt-1">
+        <button onclick="closeStaffRangeForm()" class="text-xs font-bold px-4 py-1.5 rounded" style="background:#e5e7eb;color:#374151;border:none;cursor:pointer">취소</button>
+        <button onclick="staffSaveRange()" class="text-xs font-bold px-4 py-1.5 rounded" style="background:#7c3aed;color:#fff;border:none;cursor:pointer">적용</button>
       </div>
     </div>
   </div>
@@ -2293,6 +2588,156 @@
   </div>
 </div>
 
+<!-- ════════════════════════ 📋 작업현황판 (접수 순서대로 작업 주문 관리) ════════════════════════ -->
+<div class="max-w-5xl mx-auto mb-6" id="workboardSection" style="display:none">
+  <div class="bg-white rounded-lg shadow-md p-5">
+
+    <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+      <div class="text-sm font-bold text-gray-700">📋 작업현황판 <span class="text-xs font-normal text-gray-400">(주문이 들어온 순서대로 자동 정렬됩니다. 행을 클릭하면 작업내용·비고 전체 내용을 볼 수 있고, "작업상태"를 클릭하면 대기→작업중→완료 순으로 바뀝니다. 접수일/출고일은 달력에도 자동으로 표시됩니다)</span></div>
+      <div class="flex items-center gap-3 flex-wrap">
+        <input id="wb_search" class="inp" style="width:180px;display:inline-block" placeholder="🔍 상호/연락처/제품명 검색" oninput="renderWorkboard()">
+        <button onclick="openWorkboardModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-bold px-3 py-1.5 rounded text-xs no-print">➕ 새 작업 등록</button>
+        <div class="text-xs text-gray-500">작업중 <span id="wb_active_count" class="font-bold text-red-600">0건</span> / 완료 <span id="wb_done_count" class="font-bold text-green-600">0건</span> / 전체 <span id="wb_total_count" class="font-bold text-blue-600">0건</span></div>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto">
+      <table class="qtable" style="font-size:11px;table-layout:fixed;width:100%">
+        <thead>
+          <tr>
+            <th style="width:5%">No</th>
+            <th style="width:11%">접수일</th>
+            <th style="width:16%">상호</th>
+            <th style="width:17%">제품명</th>
+            <th style="width:7%">수량</th>
+            <th style="width:12%">금액</th>
+            <th style="width:11%">출고일</th>
+            <th style="width:12%">작업상태</th>
+            <th style="width:9%" class="no-print">동작</th>
+          </tr>
+        </thead>
+        <tbody id="workboardTableBody"></tbody>
+      </table>
+    </div>
+    <div class="text-[10px] text-gray-400 mt-1">💡 행을 클릭하면 연락처·주소·작업내용·운송·작업자·완료시간·비고 등 나머지 정보가 아래에 펼쳐집니다.</div>
+    <div id="wb_pagination"></div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 작업현황판 — 새 작업 등록/수정 모달 ════════════════════════ -->
+<div id="workboardModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1100;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeWorkboardModal()">
+  <div style="background:#fff;border-radius:10px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.25)">
+    <div class="text-sm font-bold text-gray-800 mb-3" id="workboardModalTitle">➕ 새 작업 등록</div>
+    <div class="flex flex-col gap-2">
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <div class="quote-label">접수일</div>
+          <input id="wb_receivedDate" type="date" class="inp">
+        </div>
+        <div>
+          <div class="quote-label">출고일</div>
+          <input id="wb_shipDate" type="date" class="inp">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <div class="quote-label" style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+            <span>상호</span>
+            <select id="wb_company_picker" onchange="pickWorkboardContact(this.value)" style="font-size:10px;border:1px solid #e2e8f0;border-radius:4px;padding:1px 2px;max-width:130px;color:#146C8E" title="자주 거래하는 곳을 목록에서 바로 불러옵니다">
+              <option value="">📂 불러오기</option>
+            </select>
+          </div>
+          <input id="wb_company" class="inp" list="wb_company_datalist" placeholder="예: ○○식당" onchange="autoFillWorkboardCompany(this.value)">
+          <datalist id="wb_company_datalist"></datalist>
+        </div>
+        <div>
+          <div class="quote-label">연락처</div>
+          <input id="wb_phone" class="inp" placeholder="예: 010-1234-5678">
+        </div>
+      </div>
+      <div>
+        <div class="quote-label">주소</div>
+        <div style="display:flex;gap:6px">
+          <input id="wb_address" class="inp" placeholder="주문자 주소" style="flex:1">
+          <button type="button" onclick="openAddressSearch('wb_address')" title="주소 검색" style="flex-shrink:0;font-size:11px;padding:0 10px;border:1px solid #BFDDE6;border-radius:6px;background:#fff;color:#146C8E;cursor:pointer">🔍</button>
+        </div>
+      </div>
+      <div>
+        <div class="quote-label">제품명</div>
+        <input id="wb_product" class="inp" list="wb_product_datalist" placeholder="예: 싱크대">
+        <datalist id="wb_product_datalist"></datalist>
+      </div>
+      <div style="position:relative">
+        <div class="quote-label" style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+          <span>작업내용 및 요청사항</span>
+          <div style="display:flex;gap:4px;align-items:center">
+            <select id="wb_workDetail_preset_select" onchange="loadWorkboardPreset('workDetail', this.value)" style="font-size:10px;border:1px solid #e2e8f0;border-radius:4px;padding:1px 2px;max-width:110px" title="저장해 둔 작업내용을 불러옵니다">
+              <option value="">📂 불러오기</option>
+            </select>
+            <button type="button" onclick="saveWorkboardPreset('workDetail')" style="font-size:10px;border:1px solid #BFDDE6;border-radius:4px;padding:1px 6px;color:#146C8E;background:#fff;cursor:pointer" title="지금 입력한 내용을 이름 붙여 저장해 두면 다음에 목록에서 바로 불러올 수 있습니다">💾 저장</button>
+            <button type="button" onclick="delWorkboardPreset('workDetail')" style="font-size:10px;border:1px solid #fecaca;border-radius:4px;padding:1px 6px;color:#dc2626;background:#fff;cursor:pointer" title="위 목록에서 선택한 저장 항목을 삭제합니다">🗑</button>
+          </div>
+        </div>
+        <textarea id="wb_workDetail" class="inp" rows="3" placeholder="예: SUS304, 1.2T, 배수구 좌측" oninput="filterWorkboardMemoSuggestions()" onfocus="filterWorkboardMemoSuggestions()"></textarea>
+        <div id="wb_memo_suggest" class="hidden" style="position:absolute;left:0;right:0;top:100%;z-index:20;background:#fff;border:1px solid #d1d5db;border-radius:0 0 6px 6px;box-shadow:0 6px 16px rgba(0,0,0,.12);max-height:150px;overflow-y:auto"></div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <div class="quote-label">수량</div>
+          <input id="wb_qty" type="number" class="inp" placeholder="1">
+        </div>
+        <div>
+          <div class="quote-label">금액</div>
+          <input id="wb_amount" type="number" class="inp" placeholder="0">
+        </div>
+      </div>
+      <div class="grid grid-cols-2 gap-2">
+        <div>
+          <div class="quote-label">운송</div>
+          <input id="wb_shipping" class="inp" list="wb_shipping_options" placeholder="예: 화물">
+          <datalist id="wb_shipping_options">
+            <option value="화물"></option>
+            <option value="택배"></option>
+            <option value="직접수령"></option>
+            <option value="직접배송"></option>
+          </datalist>
+        </div>
+        <div>
+          <div class="quote-label" style="display:flex;justify-content:space-between;align-items:center;gap:3px;flex-wrap:wrap">
+            <span>작업자</span>
+            <div style="display:flex;gap:3px;align-items:center">
+              <select id="wb_worker_picker" onchange="pickWorkboardWorker(this.value)" style="font-size:10px;border:1px solid #e2e8f0;border-radius:4px;padding:1px 1px;max-width:66px" title="저장된 작업자 목록에서 선택">
+                <option value="">📂</option>
+              </select>
+              <button type="button" onclick="saveWorkboardWorker()" style="font-size:10px;border:1px solid #BFDDE6;border-radius:4px;padding:1px 4px;color:#146C8E;background:#fff;cursor:pointer" title="입력한 작업자 이름을 저장해 다음에도 목록에서 바로 선택할 수 있게 합니다">💾</button>
+              <button type="button" onclick="delWorkboardWorker()" style="font-size:10px;border:1px solid #fecaca;border-radius:4px;padding:1px 4px;color:#dc2626;background:#fff;cursor:pointer" title="위 목록에서 선택한 작업자를 삭제합니다">🗑</button>
+            </div>
+          </div>
+          <input id="wb_worker" class="inp" list="wb_worker_datalist" placeholder="예: 김철수">
+          <datalist id="wb_worker_datalist"></datalist>
+        </div>
+      </div>
+      <div>
+        <div class="quote-label" style="display:flex;justify-content:space-between;align-items:center;gap:4px">
+          <span>비고</span>
+          <div style="display:flex;gap:4px;align-items:center">
+            <select id="wb_note_preset_select" onchange="loadWorkboardPreset('note', this.value)" style="font-size:10px;border:1px solid #e2e8f0;border-radius:4px;padding:1px 2px;max-width:110px" title="저장해 둔 비고를 불러옵니다">
+              <option value="">📂 불러오기</option>
+            </select>
+            <button type="button" onclick="saveWorkboardPreset('note')" style="font-size:10px;border:1px solid #BFDDE6;border-radius:4px;padding:1px 6px;color:#146C8E;background:#fff;cursor:pointer" title="지금 입력한 내용을 이름 붙여 저장해 두면 다음에 목록에서 바로 불러올 수 있습니다">💾 저장</button>
+            <button type="button" onclick="delWorkboardPreset('note')" style="font-size:10px;border:1px solid #fecaca;border-radius:4px;padding:1px 6px;color:#dc2626;background:#fff;cursor:pointer" title="위 목록에서 선택한 저장 항목을 삭제합니다">🗑</button>
+          </div>
+        </div>
+        <textarea id="wb_note" class="inp" rows="2" placeholder="기타 참고사항"></textarea>
+      </div>
+    </div>
+    <div class="flex justify-end gap-2 mt-4">
+      <button onclick="closeWorkboardModal()" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#e5e7eb;color:#374151;border:none;cursor:pointer">취소</button>
+      <button onclick="saveWorkboardEntry()" class="text-xs font-bold px-3 py-1.5 rounded" style="background:#146C8E;color:#fff;border:none;cursor:pointer">저장</button>
+    </div>
+  </div>
+</div>
+
 <!-- ════════════════════════ 가계부 (수입/지출 관리) ════════════════════════ -->
 <div class="max-w-5xl mx-auto mb-6" id="ledgerSection" style="display:none">
   <div class="bg-white rounded-lg shadow-md p-5">
@@ -2421,7 +2866,7 @@
         </div>
         <div>
           <div class="quote-label">금액</div>
-          <input id="ledger_in_amount" type="number" class="inp" placeholder="0">
+          <input id="ledger_in_amount" type="number" class="inp" placeholder="0" oninput="priceTooltipShow(this)" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
         </div>
       </div>
       <div style="text-align:right;margin-top:10px">
@@ -2514,25 +2959,25 @@
         </div>
         <div>
           <div class="quote-label">제작비용 (원가, 선택)</div>
-          <input id="inv_in_cost" type="number" class="inp" placeholder="예: 350000">
+          <input id="inv_in_cost" type="number" class="inp" placeholder="예: 350000" oninput="priceTooltipShow(this)" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
         </div>
         <div>
           <div class="quote-label">판매단가 (예상, 선택)</div>
-          <input id="inv_in_price" type="number" class="inp" placeholder="예: 550000">
+          <input id="inv_in_price" type="number" class="inp" placeholder="예: 550000" oninput="priceTooltipShow(this)" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
         </div>
       </div>
       <div class="grid grid-cols-2 md:grid-cols-4 gap-2 items-end mb-2">
         <div>
           <div class="quote-label">수량</div>
-          <input id="inv_in_qty" type="number" min="0" class="inp" placeholder="예: 5" value="1" oninput="syncInvCurrentQty()">
+          <input id="inv_in_qty" type="number" min="0" class="inp" placeholder="예: 5" value="1" oninput="qtyTooltipShow(this);syncInvCurrentQty()" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
         </div>
         <div>
           <div class="quote-label">현재수량 (재고)</div>
-          <input id="inv_in_curqty" type="number" min="0" class="inp" placeholder="자동 입력" value="1">
+          <input id="inv_in_curqty" type="number" min="0" class="inp" placeholder="자동 입력" value="1" oninput="qtyTooltipShow(this)" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
         </div>
         <div>
           <div class="quote-label">최소수량 (경고 기준)</div>
-          <input id="inv_in_minqty" type="number" min="0" class="inp" placeholder="예: 1" value="0">
+          <input id="inv_in_minqty" type="number" min="0" class="inp" placeholder="예: 1" value="0" oninput="qtyTooltipShow(this)" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
         </div>
       </div>
       <div class="grid grid-cols-1 gap-2 items-end mb-2">
@@ -2621,13 +3066,13 @@
           </div>
           <div>
             <div class="quote-label">최소재고 (경고 기준)</div>
-            <input id="mat_in_minstock" type="number" min="0" class="inp" placeholder="예: 10" value="0">
+            <input id="mat_in_minstock" type="number" min="0" class="inp" placeholder="예: 10" value="0" oninput="qtyTooltipShow(this)" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
           </div>
         </div>
         <div class="grid grid-cols-2 gap-2 items-end mb-2">
           <div>
             <div class="quote-label">현재고 (신규 등록 시 초기값)</div>
-            <input id="mat_in_stock" type="number" min="0" class="inp" placeholder="예: 130" value="0">
+            <input id="mat_in_stock" type="number" min="0" class="inp" placeholder="예: 130" value="0" oninput="qtyTooltipShow(this)" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
           </div>
           <div>
             <div class="quote-label">메모 (선택)</div>
@@ -2682,7 +3127,7 @@
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2 items-end mb-2">
           <div>
             <div class="quote-label">수량</div>
-            <input id="matIn_qty" type="number" min="1" class="inp" placeholder="예: 30">
+            <input id="matIn_qty" type="number" min="1" class="inp" placeholder="예: 30" oninput="qtyTooltipShow(this)" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
           </div>
           <div>
             <div class="quote-label">거래처</div>
@@ -2726,7 +3171,7 @@
         <div class="grid grid-cols-2 md:grid-cols-3 gap-2 items-end mb-2">
           <div>
             <div class="quote-label">수량</div>
-            <input id="matOut_qty" type="number" min="1" class="inp" placeholder="예: 20">
+            <input id="matOut_qty" type="number" min="1" class="inp" placeholder="예: 20" oninput="qtyTooltipShow(this)" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
           </div>
           <div>
             <div class="quote-label">거래처</div>
@@ -15623,7 +16068,7 @@ function renderPriceTable() {
       <td><input class="inp" data-row="${i}" data-field="spec" placeholder="규격" value="${escQ(r.spec||'')}" oninput="onPriceChange(${i},'spec',this.value)"></td>
       <td><input class="inp" data-row="${i}" data-field="mat" placeholder="재질" value="${escQ(r.mat)}" oninput="onPriceChange(${i},'mat',this.value)"></td>
       <td><input class="inp text-center" data-row="${i}" data-field="unit" placeholder="EA" value="${escQ(r.unit)}" oninput="onPriceChange(${i},'unit',this.value)"></td>
-      <td><input class="inp text-right" data-row="${i}" data-field="price" type="number" min="0" value="${r.price}" oninput="onPriceChange(${i},'price',parseFloat(this.value)||0)"></td>
+      <td><input class="inp text-right" data-row="${i}" data-field="price" type="number" min="0" value="${r.price}" oninput="priceTooltipShow(this);onPriceChange(${i},'price',parseFloat(this.value)||0)" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
       <td><input class="inp" data-row="${i}" data-field="note" placeholder="비고" value="${escQ(r.note)}" oninput="onPriceChange(${i},'note',this.value)"></td>
       <td class="td-center"><button onclick="openCalcCfgModal(${i})" title="계산 방식 / 추가비용 / 최소 판매 기준 설정" style="border:1px solid ${r.calc?'#7FB8CB':'#e2e8f0'};background:${r.calc?'#EAF4F6':'#fff'};border-radius:4px;padding:2px 6px;font-size:12px;cursor:pointer;color:${r.calc?'#146C8E':'#94a3b8'}">⚙️${r.calc?'':''}</button></td>
       <td class="td-center"><button class="del-btn" onclick="delPriceRow(${i})">✕</button></td>
@@ -16236,9 +16681,9 @@ function renderQuoteTable() {
       <td><input class="qinp-td" placeholder="품목명" value="${escQ(r.name)}" autocomplete="off" oninput="quoteRows[${i}].name=this.value;onItemNameInput(this,quoteRows,${i},renderQuoteTable)" onfocus="onItemNameInput(this,quoteRows,${i},renderQuoteTable)" onblur="setTimeout(hideAutocomplete,150)"></td>
       <td><input class="qinp-td td-center" placeholder="규격" value="${escQ(r.spec||'')}" oninput="quoteRows[${i}].spec=this.value"></td>
       <td><input class="qinp-td td-center" placeholder="재질" value="${escQ(r.mat)}" oninput="quoteRows[${i}].mat=this.value"></td>
-      <td><input class="qinp-td td-center" type="number" min="1" value="${r.qty}" oninput="quoteRows[${i}].qty=Math.max(1,parseFloat(this.value)||1);updateQuoteAmount(${i})"></td>
+      <td><input class="qinp-td td-center" type="number" min="1" value="${r.qty}" oninput="qtyTooltipShow(this);quoteRows[${i}].qty=Math.max(1,parseFloat(this.value)||1);updateQuoteAmount(${i})" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
       <td><input class="qinp-td td-center" value="${escQ(r.unit)}" oninput="quoteRows[${i}].unit=this.value"></td>
-      <td><input class="qinp-td td-num" type="number" min="0" value="${r.price}" oninput="quoteRows[${i}].price=parseFloat(this.value)||0;updateQuoteAmount(${i})"></td>
+      <td><input class="qinp-td td-num" type="number" min="0" value="${r.price}" oninput="priceTooltipShow(this);quoteRows[${i}].price=parseFloat(this.value)||0;updateQuoteAmount(${i})" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
       <td class="td-num font-semibold" id="q_amt_${i}">${amount.toLocaleString()}</td>
       <td><input class="qinp-td" placeholder="비고" value="${escQ(r.note)}" oninput="quoteRows[${i}].note=this.value"></td>
       <td class="td-center no-print">
@@ -16450,10 +16895,9 @@ function renderOrderTable() {
       <td class="td-center text-gray-400">${i+1}</td>
       <td><input class="qinp-td" placeholder="품목명" value="${escQ(r.name)}" autocomplete="off" oninput="orderRows[${i}].name=this.value;onItemNameInput(this,orderRows,${i},renderOrderTable)" onfocus="onItemNameInput(this,orderRows,${i},renderOrderTable)" onblur="setTimeout(hideAutocomplete,150)"></td>
       <td><input class="qinp-td td-center" placeholder="규격" value="${escQ(r.spec||'')}" oninput="orderRows[${i}].spec=this.value"></td>
-      <td><input class="qinp-td td-center" placeholder="재질" value="${escQ(r.mat)}" oninput="orderRows[${i}].mat=this.value"></td>
-      <td><input class="qinp-td td-center" type="number" min="1" value="${r.qty}" oninput="orderRows[${i}].qty=Math.max(1,parseFloat(this.value)||1);updateOrderAmount(${i})"></td>
+      <td><input class="qinp-td td-center" type="number" min="1" value="${r.qty}" oninput="qtyTooltipShow(this);orderRows[${i}].qty=Math.max(1,parseFloat(this.value)||1);updateOrderAmount(${i})" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
       <td><input class="qinp-td td-center" value="${escQ(r.unit)}" oninput="orderRows[${i}].unit=this.value"></td>
-      <td><input class="qinp-td td-num" type="number" min="0" value="${r.price}" oninput="orderRows[${i}].price=parseFloat(this.value)||0;updateOrderAmount(${i})"></td>
+      <td><input class="qinp-td td-num" type="number" min="0" value="${r.price}" oninput="priceTooltipShow(this);orderRows[${i}].price=parseFloat(this.value)||0;updateOrderAmount(${i})" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
       <td class="td-num font-semibold" id="o_amt_${i}">${amount.toLocaleString()}</td>
       <td><input class="qinp-td" placeholder="비고" value="${escQ(r.note)}" oninput="orderRows[${i}].note=this.value"></td>
       <td class="td-center no-print">
@@ -16535,8 +16979,8 @@ function renderStatementTable() {
       <td class="td-center text-gray-400">${i+1}</td>
       <td><input class="qinp-td" placeholder="품목명" value="${escQ(r.name)}" autocomplete="off" oninput="statementRows[${i}].name=this.value;onItemNameInput(this,statementRows,${i},renderStatementTable)" onfocus="onItemNameInput(this,statementRows,${i},renderStatementTable)" onblur="setTimeout(hideAutocomplete,150)"></td>
       <td><input class="qinp-td td-center" placeholder="규격" value="${escQ(r.spec||'')}" oninput="statementRows[${i}].spec=this.value"></td>
-      <td><input class="qinp-td td-center" type="number" min="0" value="${r.qty}" oninput="statementRows[${i}].qty=parseFloat(this.value)||0;updateStatementRowAmount(${i})"></td>
-      <td><input class="qinp-td td-num" type="number" min="0" value="${r.price}" oninput="statementRows[${i}].price=parseFloat(this.value)||0;updateStatementRowAmount(${i})"></td>
+      <td><input class="qinp-td td-center" type="number" min="0" value="${r.qty}" oninput="qtyTooltipShow(this);statementRows[${i}].qty=parseFloat(this.value)||0;updateStatementRowAmount(${i})" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
+      <td><input class="qinp-td td-num" type="number" min="0" value="${r.price}" oninput="priceTooltipShow(this);statementRows[${i}].price=parseFloat(this.value)||0;updateStatementRowAmount(${i})" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
       <td class="td-num font-semibold" id="s_amt_${i}">${supply.toLocaleString()}</td>
       <td class="td-num" id="s_vat_${i}">${vat.toLocaleString()}</td>
       <td><input class="qinp-td" placeholder="비고" value="${escQ(r.note||'')}" oninput="statementRows[${i}].note=this.value"></td>
@@ -17114,6 +17558,87 @@ async function statementFillFromImage(input) {
 // ════════════════════════════════════════════════════════════════════
 // 🏷️ 빠른접수 — 전화 주문을 상호/주소/물품명만 빠르게 적으면
 // 업체정보 저장 + 작업지시서 자동 생성 + 라벨 인쇄까지 한번에 처리
+
+// ════════════════════════════════════════════════════════════════════
+// 🏷️ 라벨 항목별 글자 크기 설정 (받는 사람 / 주소 / 전화번호 / 물품명 / 수량 /
+//    보내는 사람 / 메모 각각 px 단위로 직접 조절 + 항목별 구분선 없음/점선/실선)
+// ════════════════════════════════════════════════════════════════════
+const LABEL_FIELD_STYLE_DEFAULTS = {
+  sender: { label: '보내는 사람', size: 12, bold: false, divider: 'dashed' },
+  name:   { label: '받는 사람',   size: 24, bold: true,  divider: 'none' },
+  tel:    { label: '전화번호',    size: 18, bold: false, divider: 'none' },
+  addr:   { label: '주소',        size: 16, bold: false, divider: 'none' },
+  item:   { label: '물품명',      size: 22, bold: true,  divider: 'none' },
+  qty:    { label: '수량',        size: 18, bold: false, divider: 'none' },
+  memo:   { label: '메모',        size: 14, bold: false, divider: 'dashed' }
+};
+function loadLabelFieldStyle() {
+  let saved = null;
+  try { saved = JSON.parse(localStorage.getItem('qi_labelFieldStyle') || 'null'); } catch (e) { saved = null; }
+  const merged = {};
+  Object.keys(LABEL_FIELD_STYLE_DEFAULTS).forEach(k => {
+    merged[k] = Object.assign({}, LABEL_FIELD_STYLE_DEFAULTS[k], (saved && saved[k]) ? saved[k] : {});
+  });
+  return merged;
+}
+function saveLabelFieldStyleObj(obj) {
+  try { localStorage.setItem('qi_labelFieldStyle', JSON.stringify(obj)); } catch (e) {}
+}
+function labelFieldStyleDividerSelectHTML(id, value) {
+  const opts = [['none', '없음'], ['dashed', '점선'], ['solid', '실선']];
+  return '<select id="' + id + '" class="inp" style="font-size:10px;padding:3px 4px">' +
+    opts.map(o => '<option value="' + o[0] + '"' + (o[0] === value ? ' selected' : '') + '>' + o[1] + '</option>').join('') +
+    '</select>';
+}
+function renderLabelFieldStyleRows() {
+  const holder = document.getElementById('labelFieldStyleRows');
+  if (!holder) return;
+  const style = loadLabelFieldStyle();
+  holder.innerHTML = Object.keys(LABEL_FIELD_STYLE_DEFAULTS).map(k => {
+    const s = style[k];
+    return '<div style="display:grid;grid-template-columns:1fr 64px 46px 84px;gap:6px;align-items:center;padding:5px 2px;border-bottom:1px solid #f8fafc">' +
+      '<div style="font-size:12px;font-weight:600;color:#334155">' + s.label + '</div>' +
+      '<input id="lfs_' + k + '_size" type="number" min="6" max="80" class="inp" style="padding:3px 4px" value="' + s.size + '">' +
+      '<label style="display:flex;justify-content:center"><input id="lfs_' + k + '_bold" type="checkbox" ' + (s.bold ? 'checked' : '') + '></label>' +
+      labelFieldStyleDividerSelectHTML('lfs_' + k + '_divider', s.divider || 'none') +
+    '</div>';
+  }).join('');
+}
+function openLabelFieldStyleModal() {
+  renderLabelFieldStyleRows();
+  const m = document.getElementById('labelFieldStyleModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function closeLabelFieldStyleModal() {
+  const m = document.getElementById('labelFieldStyleModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+function saveLabelFieldStyleModal() {
+  const out = {};
+  Object.keys(LABEL_FIELD_STYLE_DEFAULTS).forEach(k => {
+    const sizeEl = document.getElementById('lfs_' + k + '_size');
+    const boldEl = document.getElementById('lfs_' + k + '_bold');
+    const divEl = document.getElementById('lfs_' + k + '_divider');
+    const parsedSize = parseInt(sizeEl && sizeEl.value, 10);
+    out[k] = {
+      label: LABEL_FIELD_STYLE_DEFAULTS[k].label,
+      size: Math.max(6, Math.min(80, isNaN(parsedSize) ? LABEL_FIELD_STYLE_DEFAULTS[k].size : parsedSize)),
+      bold: boldEl ? boldEl.checked : LABEL_FIELD_STYLE_DEFAULTS[k].bold,
+      divider: divEl ? divEl.value : 'none'
+    };
+  });
+  saveLabelFieldStyleObj(out);
+  showToast('⚙️ 라벨 항목별 글자 크기 설정을 저장했습니다.');
+  closeLabelFieldStyleModal();
+}
+function resetLabelFieldStyleModal() {
+  if (!confirm('항목별 글자 크기 설정을 기본값으로 되돌릴까요?')) return;
+  try { localStorage.removeItem('qi_labelFieldStyle'); } catch (e) {}
+  renderLabelFieldStyleRows();
+  showToast('기본값으로 되돌렸습니다.');
+}
 // ════════════════════════════════════════════════════════════════════
 const K_QI_SENDER = 'QUICK_INTAKE_SENDER_V1';
 const K_QI_CUSTOM_FIELDS = 'QUICK_INTAKE_CUSTOM_FIELDS_V1';
@@ -17142,9 +17667,9 @@ function addQuickIntakeCustomField(label, value) {
   row.className = 'qi-custom-field-row';
   row.style.cssText = 'display:grid;grid-template-columns:1fr 1fr auto;gap:6px;margin-bottom:6px;align-items:center';
   row.innerHTML =
-    '<input class="inp qi-cf-label" placeholder="항목명 (예: 결제방법)" value="' + escQ(label || '') + '">' +
-    '<input class="inp qi-cf-value" placeholder="내용" value="' + escQ(value || '') + '">' +
-    '<button type="button" onclick="this.closest(\'.qi-custom-field-row\').remove()" style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px">✕</button>';
+    '<input class="inp qi-cf-label" placeholder="항목명 (예: 결제방법)" value="' + escQ(label || '') + '" oninput="scheduleAutoSaveQuickIntakeCustomFields()">' +
+    '<input class="inp qi-cf-value" placeholder="내용 (이번 접수에만 적용)" value="' + escQ(value || '') + '">' +
+    '<button type="button" onclick="removeQuickIntakeCustomFieldRow(this)" title="이 항목 삭제 (다음 빠른접수부터 안 나타납니다)" style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px">✕</button>';
   area.appendChild(row);
 }
 function collectQuickIntakeCustomFields() {
@@ -17153,11 +17678,112 @@ function collectQuickIntakeCustomFields() {
     value: (row.querySelector('.qi-cf-value').value || '').trim()
   })).filter(f => f.label || f.value);
 }
-function saveQuickIntakeCustomFieldsTemplate() {
+// 항목명(문구)만 조용히 저장 — 값(내용)은 매번 새로 적는 칸이라 템플릿에는 저장하지 않음
+function autoSaveQuickIntakeCustomFieldsTemplate() {
   const fields = collectQuickIntakeCustomFields().filter(f => f.label).map(f => ({ label: f.label }));
-  localStorage.setItem(K_QI_CUSTOM_FIELDS, JSON.stringify(fields));
+  try { localStorage.setItem(K_QI_CUSTOM_FIELDS, JSON.stringify(fields)); } catch (e) {}
+}
+let _qiCustomFieldsAutoSaveTimer = null;
+function scheduleAutoSaveQuickIntakeCustomFields() {
+  clearTimeout(_qiCustomFieldsAutoSaveTimer);
+  _qiCustomFieldsAutoSaveTimer = setTimeout(autoSaveQuickIntakeCustomFieldsTemplate, 500);
+}
+// ✕ 눌러 항목을 지우면, 지운 상태를 바로 저장해서 다음 빠른접수부터는 그 항목 칸이 다시 나타나지 않게 함
+function removeQuickIntakeCustomFieldRow(btn) {
+  const row = btn.closest('.qi-custom-field-row');
+  if (row) row.remove();
+  autoSaveQuickIntakeCustomFieldsTemplate();
+}
+function saveQuickIntakeCustomFieldsTemplate() {
+  autoSaveQuickIntakeCustomFieldsTemplate();
   showToast('추가 항목 구성을 저장했습니다. 다음 빠른접수부터 같은 항목 칸이 자동으로 나옵니다.');
 }
+// ────────────────────────────────────────────────────────────────
+// 🏷️ 빠른접수 — 메모 저장 폴더 (자동 저장 폴더와는 별개로, 사용자가 직접 지정)
+// 한 번 폴더를 지정해두면(showDirectoryPicker) 그 핸들을 IndexedDB에 기억해 두고,
+// 이후 "접수" 처리할 때마다 그 폴더 안에 [날짜_시간_상호명].txt 파일로 접수 내용을
+// 자동 저장합니다(덮어쓰지 않고 매번 새 파일로 계속 쌓임).
+// ────────────────────────────────────────────────────────────────
+const QI_MEMO_DIR_IDB_KEY = 'quickIntakeMemoDirHandle';
+let _qiMemoDirHandle = null;
+
+function updateQuickIntakeMemoFolderStatus() {
+  const el = document.getElementById('qi_memoFolderStatus');
+  if (!el) return;
+  el.textContent = _qiMemoDirHandle
+    ? `📁 저장 폴더: "${_qiMemoDirHandle.name}" (접수할 때마다 이 폴더에 메모 파일이 자동 저장됩니다)`
+    : '📁 메모 저장 폴더가 지정되지 않았습니다 (지정하면 접수할 때마다 메모 파일이 자동 저장됩니다)';
+}
+
+async function setupQuickIntakeMemoFolder() {
+  if (!window.showDirectoryPicker) {
+    alert('이 브라우저는 "폴더 지정 저장" 기능을 지원하지 않습니다.\nChrome, Edge 등 최신 브라우저에서 사용해 주세요.');
+    return;
+  }
+  try {
+    const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+    _qiMemoDirHandle = dirHandle;
+    await idbSetAutoSave(QI_MEMO_DIR_IDB_KEY, dirHandle);
+    updateQuickIntakeMemoFolderStatus();
+    showToast(`빠른접수 메모 저장 폴더가 "${dirHandle.name}"(으)로 지정되었습니다. 이제 접수할 때마다 이 폴더에 메모 파일이 자동 저장됩니다.`);
+  } catch (err) {
+    if (err && err.name !== 'AbortError') console.error('빠른접수 메모 폴더 지정 실패:', err);
+  }
+}
+
+// 빠른접수 창을 열 때마다 예전에 지정해 둔 폴더를 기억해서 화면에 표시합니다.
+// (실제 쓰기 권한은 접수 처리 시점에 필요하면 다시 요청합니다 — 그때가 사용자 동작 시점이라 안전합니다)
+async function restoreQuickIntakeMemoFolder() {
+  if (!window.indexedDB) { updateQuickIntakeMemoFolderStatus(); return; }
+  try {
+    const dirHandle = await idbGetAutoSave(QI_MEMO_DIR_IDB_KEY);
+    _qiMemoDirHandle = dirHandle || null;
+  } catch (err) {
+    console.error('빠른접수 메모 폴더 불러오기 실패:', err);
+  }
+  updateQuickIntakeMemoFolderStatus();
+}
+
+// 파일명: [날짜_시간] 뒤에 [받을 사람 상호명]을 자동으로 붙여서 저장 (예: 20260805_143022_테스트업체.txt)
+function buildQuickIntakeMemoFileName(partyName) {
+  const now = new Date();
+  const p = n => String(n).padStart(2, '0');
+  const ts = `${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}${p(now.getSeconds())}`;
+  const party = sanitizeForFileName(partyName) || '상호미입력';
+  return `${ts}_${party}.txt`;
+}
+
+async function saveQuickIntakeMemoFile(data) {
+  if (!_qiMemoDirHandle) return; // 폴더를 지정하지 않았다면 조용히 건너뜀
+  try {
+    let perm = await _qiMemoDirHandle.queryPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') perm = await _qiMemoDirHandle.requestPermission({ mode: 'readwrite' });
+    if (perm !== 'granted') {
+      showToast('메모 저장 폴더 권한이 없어 메모 파일을 저장하지 못했습니다. "📁 폴더 지정"을 다시 눌러 주세요.');
+      return;
+    }
+    const fileName = buildQuickIntakeMemoFileName(data.name);
+    const content = [
+      `[🏷️ 빠른접수] ${new Date().toLocaleString('ko-KR', { hour12: false })}`,
+      `상호명: ${data.name || ''}`,
+      data.tel ? `연락처: ${data.tel}` : '',
+      data.addr ? `받을 주소: ${data.addr}` : '',
+      data.item ? `물품명: ${data.item}${data.qty ? ' × ' + data.qty : ''}` : '',
+      data.price ? `단가: ${Number(data.price).toLocaleString('ko-KR')}원` : '',
+      data.memo ? `메모: ${data.memo}` : '',
+      ...(data.customFields || []).map(f => `${f.label}${f.value ? ': ' + f.value : ''}`)
+    ].filter(Boolean).join('\n');
+    const fileHandle = await _qiMemoDirHandle.getFileHandle(fileName, { create: true });
+    const writable = await fileHandle.createWritable();
+    await writable.write(content);
+    await writable.close();
+    showToast(`📁 메모가 "${_qiMemoDirHandle.name}" 폴더에 "${fileName}"(으)로 저장되었습니다.`);
+  } catch (err) {
+    console.error('빠른접수 메모 파일 저장 실패:', err);
+    showToast('메모 파일 저장 중 문제가 발생했습니다.');
+  }
+}
+
 function openQuickIntakeModal() {
   const m = document.getElementById('quickIntakeModal');
   m.classList.remove('hidden');
@@ -17174,6 +17800,37 @@ function openQuickIntakeModal() {
     loadQuickIntakeCustomFieldsTemplate().forEach(f => addQuickIntakeCustomField(f.label, ''));
   }
   setTimeout(() => document.getElementById('qi_name').focus(), 50);
+  populateQuickIntakeWorkboardPicker();
+  restoreQuickIntakeLabelSizeChoice();
+  restoreQuickIntakeMemoFolder();
+}
+function populateQuickIntakeWorkboardPicker() {
+  const sel = document.getElementById('qi_workboard_picker');
+  if (!sel) return;
+  const list = (typeof loadWorkboard === 'function' ? loadWorkboard() : [])
+    .slice()
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''))
+    .slice(0, 100);
+  sel.innerHTML = '<option value="">📋 작업현황판에서 불러오기</option>' +
+    list.map(w => `<option value="${escQ(w.id)}">${escQ(w.receivedDate || '')} · ${escQ(w.company || '(상호없음)')} · ${escQ(w.product || '')}</option>`).join('');
+  sel.value = '';
+}
+// 작업현황판에 이미 등록해 둔 주문 1건을 그대로 골라, 빠른접수의 모든 칸(상호·주소·연락처·
+// 물품명·수량·단가·메모)을 그 내용으로 채웁니다. 지금 입력해 둔 값이 있어도 이 항목을
+// 명시적으로 선택한 것이므로 덮어씁니다.
+function fillQuickIntakeFromWorkboardPicker(workboardId) {
+  if (!workboardId) return;
+  const w = loadWorkboard().find(x => x.id === workboardId);
+  if (!w) return;
+  const setVal = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v || ''; };
+  setVal('qi_name', w.company);
+  setVal('qi_addr', w.address);
+  setVal('qi_tel', w.phone);
+  setVal('qi_item', w.product);
+  setVal('qi_qty', w.qty || 1);
+  setVal('qi_price', w.amount);
+  setVal('qi_memo', w.workDetail);
+  showToast(`📋 작업현황판의 "${w.company || ''} · ${w.product || ''}" 내용을 불러왔습니다.`);
 }
 function quickIntakeHasContent() {
   const ids = ['qi_name', 'qi_addr', 'qi_tel', 'qi_item', 'qi_memo', 'qi_price'];
@@ -17194,25 +17851,128 @@ function onQuickIntakeNameInput(inputEl) {
   const all = [...loadContacts(), ...loadClientList()].filter(r => (r.name || '').toLowerCase().includes(kw));
   const matched = dedupeByName(all).slice(0, 8);
   showAutocompleteList(inputEl, matched,
-    (r) => `<div style="font-weight:600;color:#1f2937">${escQ(r.name)}</div>
-            <div style="color:#94a3b8;font-size:10px;margin-top:1px">${[escQ(r.tel || ''), escQ(r.addr || '')].filter(Boolean).join(' · ')}</div>`,
+    (r) => {
+      const last = findLastWorkboardOrderByCompany(r.name);
+      return `<div style="font-weight:600;color:#1f2937">${escQ(r.name)}</div>
+            <div style="color:#94a3b8;font-size:10px;margin-top:1px">${[escQ(r.tel || ''), escQ(r.addr || '')].filter(Boolean).join(' · ')}</div>
+            ${last ? `<div style="color:#ea580c;font-size:10px;margin-top:2px">📋 작업현황판 최근 주문: ${escQ(last.product || '')}${last.qty ? ' · ' + escQ(last.qty) + '개' : ''}${last.amount ? ' · ' + Number(last.amount).toLocaleString() + '원' : ''}</div>` : ''}`;
+    },
     (r) => {
       inputEl.value = r.name;
       const addrEl = document.getElementById('qi_addr'); if (addrEl && !addrEl.value && r.addr) addrEl.value = r.addr;
       const telEl = document.getElementById('qi_tel'); if (telEl && !telEl.value && r.tel) telEl.value = r.tel;
+      fillQuickIntakeFromWorkboard(r.name);
     }
   );
+}
+// 같은 상호로 작업현황판에 등록된 가장 최근 주문 1건을 찾습니다.
+function findLastWorkboardOrderByCompany(name) {
+  name = (name || '').trim();
+  if (!name) return null;
+  const past = (typeof loadWorkboard === 'function' ? loadWorkboard() : [])
+    .filter(w => (w.company || '').trim() === name)
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  return past[0] || null;
+}
+// 빠른접수에서 상호를 선택하면, 작업현황판에 저장된 가장 최근 주문 내용(물품명·수량·단가·메모/
+// 주소·연락처)까지 자동으로 채워 바로 택배 등 접수 처리를 진행할 수 있게 합니다. 이미 입력되어
+// 있는 칸은 덮어쓰지 않습니다.
+function fillQuickIntakeFromWorkboard(name) {
+  const last = findLastWorkboardOrderByCompany(name);
+  if (!last) return;
+  const fillIfEmpty = (elId, v) => {
+    const el = document.getElementById(elId);
+    if (el && !String(el.value || '').trim() && v) el.value = v;
+  };
+  const addrEl = document.getElementById('qi_addr'); if (addrEl && !addrEl.value && last.address) addrEl.value = last.address;
+  const telEl = document.getElementById('qi_tel'); if (telEl && !telEl.value && last.phone) telEl.value = last.phone;
+  fillIfEmpty('qi_item', last.product);
+  fillIfEmpty('qi_qty', last.qty);
+  fillIfEmpty('qi_price', last.amount);
+  fillIfEmpty('qi_memo', last.workDetail);
+  showToast(`📋 작업현황판의 최근 주문 내용을 불러왔습니다. (${[last.product, last.qty ? last.qty + '개' : ''].filter(Boolean).join(' · ')})`);
+}
+function toggleQuickIntakeCustomLabelSize() {
+  const sel = document.getElementById('qi_labelSize');
+  const box = document.getElementById('qi_labelCustomBox');
+  if (!sel || !box) return;
+  const isCustom = sel.value === 'custom';
+  box.style.display = isCustom ? 'flex' : 'none';
+}
+// 라벨 크기 선택(및 직접입력 폭/높이)을 바꿀 때마다 즉시 저장해 두고, 빠른접수 창을 다시 열 때마다
+// 자동으로 그대로 불러옵니다. → 한 번 정한 규격은 매번 다시 설정할 필요 없이 계속 그대로 사용됩니다.
+function saveQuickIntakeLabelSizeChoice() {
+  try {
+    const size = document.getElementById('qi_labelSize').value;
+    const w = document.getElementById('qi_labelCustomW').value;
+    const h = document.getElementById('qi_labelCustomH').value;
+    const fontScaleEl = document.getElementById('qi_labelFontScale');
+    const fontScale = fontScaleEl ? fontScaleEl.value : '1';
+    localStorage.setItem('qi_labelSizeChoice', JSON.stringify({ size, w, h, fontScale }));
+  } catch (e) {}
+}
+function restoreQuickIntakeLabelSizeChoice() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('qi_labelSizeChoice') || 'null');
+    if (!saved) return;
+    const sel = document.getElementById('qi_labelSize');
+    if (sel && saved.size) sel.value = saved.size;
+    const wEl = document.getElementById('qi_labelCustomW');
+    const hEl = document.getElementById('qi_labelCustomH');
+    if (wEl) wEl.value = saved.w || '';
+    if (hEl) hEl.value = saved.h || '';
+    const fontScaleEl = document.getElementById('qi_labelFontScale');
+    if (fontScaleEl && saved.fontScale) fontScaleEl.value = saved.fontScale;
+    toggleQuickIntakeCustomLabelSize();
+  } catch (e) {}
 }
 // 라벨 인쇄 팝업: 작성창(빠른접수 모달)에서 이미 정해진 내용을 보여주고,
 // 필요하면 라벨 위에서 클릭해 마지막으로 살짝 고칠 수 있게만 합니다.
 // 칸(항목) 추가는 여기가 아니라 빠른접수 작성창의 "+ 항목 추가"에서 합니다.
-function printQuickLabel(data, sizeKey) {
+function printQuickLabel(data, sizeKey, fontScale) {
   const sizes = {
-    '100x150': { w: '100mm', h: '150mm', font: '15px' },
-    '100x50': { w: '100mm', h: '50mm', font: '13px' },
-    '60x40': { w: '60mm', h: '40mm', font: '10px' }
+    '100x150': { w: '100mm', h: '150mm', font: 20 },
+    '100x50': { w: '100mm', h: '50mm', font: 17 },
+    '60x40': { w: '60mm', h: '40mm', font: 13 },
+    '56roll': { w: '56mm', h: 'auto', font: 12, roll: true },
+    '30roll': { w: '30mm', h: 'auto', font: 9, roll: true }
   };
-  const sz = sizes[sizeKey] || sizes['100x150'];
+  let sz = sizes[sizeKey];
+  if (!sz && typeof sizeKey === 'string' && sizeKey.indexOf('custom:') === 0) {
+    const parts = sizeKey.split(':');
+    const cw = parseFloat(parts[1]);
+    const chRaw = parts[2];
+    const ch = (!chRaw || chRaw === 'auto') ? 'auto' : parseFloat(chRaw);
+    if (cw > 0) {
+      const font = Math.max(9, Math.min(22, Math.round(cw * 0.22)));
+      sz = { w: cw + 'mm', h: (ch === 'auto' || !ch) ? 'auto' : ch + 'mm', font: font, roll: (ch === 'auto' || !ch) };
+    }
+  }
+  if (!sz) sz = sizes['100x150'];
+  // 글자 크기 선택(작게/보통/크게/아주 크게)을 곱해 최종 폰트 크기를 정함
+  const scale = parseFloat(fontScale) || 1;
+  const finalFontPx = Math.max(6, Math.round(sz.font * scale));
+  sz = Object.assign({}, sz, { font: finalFontPx + 'px' });
+  // 항목별(받는 사람/주소/전화번호/물품명/수량/보내는 사람/메모) 글자 크기·굵게·구분선 설정을 반영
+  const lfs = (typeof loadLabelFieldStyle === 'function') ? loadLabelFieldStyle() : null;
+  const lfsPx = (key, fallback) => {
+    const base = (lfs && lfs[key] && lfs[key].size) || fallback;
+    return Math.max(6, Math.round(base * scale));
+  };
+  const lfsBold = (key, fallback) => ((lfs && lfs[key]) ? !!lfs[key].bold : !!fallback) ? '800' : '400';
+  const lfsDividerCSS = (key, fallback) => {
+    const d = (lfs && lfs[key]) ? lfs[key].divider : fallback;
+    if (d === 'dashed') return 'border-bottom:1px dashed #999;padding-bottom:2mm;margin-bottom:2.5mm;';
+    if (d === 'solid') return 'border-bottom:1px solid #333;padding-bottom:2mm;margin-bottom:2.5mm;';
+    return '';
+  };
+  const senderPx = lfsPx('sender', 12), namePx = lfsPx('name', 24), telPx = lfsPx('tel', 18),
+        addrPx = lfsPx('addr', 16), itemPx = lfsPx('item', 22), qtyPx = lfsPx('qty', 18), memoPx = lfsPx('memo', 14);
+  const senderBold = lfsBold('sender', false), nameBold = lfsBold('name', true), telBold = lfsBold('tel', false),
+        addrBold = lfsBold('addr', false), itemBold = lfsBold('item', true), qtyBold = lfsBold('qty', false), memoBold = lfsBold('memo', false);
+  const senderDivCSS = lfsDividerCSS('sender', 'dashed'), nameDivCSS = lfsDividerCSS('name', 'none'),
+        telDivCSS = lfsDividerCSS('tel', 'none'), addrDivCSS = lfsDividerCSS('addr', 'none'),
+        itemDivCSS = lfsDividerCSS('item', 'none'), memoDivCSS = lfsDividerCSS('memo', 'dashed');
   const customFields = Array.isArray(data.customFields) ? data.customFields : [];
   const customRowsHTML = customFields.map(f =>
     '<div class="row">' +
@@ -17222,11 +17982,12 @@ function printQuickLabel(data, sizeKey) {
   ).join('');
   const priceText = data.price ? Number(data.price).toLocaleString('ko-KR') + '원' : '';
 
+  const pad = sz.roll ? '2mm' : '4mm';
   const styles = [
     '*{box-sizing:border-box;margin:0;padding:0}',
-    `@page{size:${sz.w} ${sz.h};margin:0}`,
+    `@page{size:${sz.w} ${sz.roll ? '297mm' : sz.h};margin:0}`,
     `html,body{width:${sz.w}}`,
-    `body{min-height:${sz.h};font-family:"Malgun Gothic",dotum,sans-serif;padding:4mm;font-size:${sz.font};color:#111}`,
+    `body{${sz.roll ? '' : `min-height:${sz.h};`}font-family:"Malgun Gothic",dotum,sans-serif;padding:${pad};font-size:${sz.font};color:#111}`,
     '.name{font-weight:800;font-size:1.5em;margin-bottom:2mm;word-break:break-all;overflow-wrap:anywhere}',
     '.row{margin-bottom:1.6mm;line-height:1.4;word-break:break-all;overflow-wrap:anywhere;page-break-inside:avoid}',
     '.lbl{color:#555;font-size:0.78em;margin-right:3px}',
@@ -17237,30 +17998,37 @@ function printQuickLabel(data, sizeKey) {
   ].join('\n');
 
   const body = `
-    <div class="row" style="margin-bottom:2.5mm;padding-bottom:2mm;border-bottom:1px dashed #999">
+    <div class="row" style="${senderDivCSS}font-size:${senderPx}px;font-weight:${senderBold}">
       <span class="lbl">보내는곳</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.senderName || '')}</span>
       ${data.senderTel ? ' · <span class="val" contenteditable="true" spellcheck="false">' + escQ(data.senderTel) + '</span>' : ' · <span class="val" contenteditable="true" spellcheck="false">☎ 010-0000-0000</span>'}
-      <br><span class="val" contenteditable="true" spellcheck="false" style="font-size:0.85em;color:#333">${escQ(data.senderAddr || '')}</span>
+      <br><span class="val" contenteditable="true" spellcheck="false" style="color:#333">${escQ(data.senderAddr || '')}</span>
     </div>
-    <div style="margin-bottom:1.3mm"><span class="lbl">받는 분</span></div>
-    <div class="name" contenteditable="true" spellcheck="false">${escQ(data.name || '(상호명 없음)')}</div>
-    <div class="row"><span class="lbl">연락처</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.tel || '')}</span></div>
-    <div class="row"><span class="lbl">주소</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.addr || '')}</span></div>
-    <div class="row item"><span class="lbl">물품명</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.item || '')}</span>${data.qty ? ' × <span class="val" contenteditable="true" spellcheck="false">' + escQ(String(data.qty)) + '</span>' : ''}</div>
+    <div style="margin-bottom:1.3mm;${nameDivCSS}"><span class="lbl">받는 분</span>
+    <div class="name" contenteditable="true" spellcheck="false" style="font-size:${namePx}px;font-weight:${nameBold}">${escQ(data.name || '(상호명 없음)')}</div></div>
+    <div class="row" style="${telDivCSS}font-size:${telPx}px;font-weight:${telBold}"><span class="lbl">연락처</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.tel || '')}</span></div>
+    <div class="row" style="${addrDivCSS}font-size:${addrPx}px;font-weight:${addrBold}"><span class="lbl">주소</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.addr || '')}</span></div>
+    <div class="row item" style="${itemDivCSS}font-size:${itemPx}px;font-weight:${itemBold}"><span class="lbl">물품명</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.item || '')}</span>${data.qty ? ' × <span class="val" contenteditable="true" spellcheck="false" style="font-size:' + qtyPx + 'px;font-weight:' + qtyBold + '">' + escQ(String(data.qty)) + '</span>' : ''}</div>
     <div class="row"><span class="lbl">물품가액</span><span class="val" contenteditable="true" spellcheck="false">${priceText}</span></div>
-    <div class="row"><span class="lbl">메모</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.memo || '')}</span></div>
+    <div class="row" style="${memoDivCSS}font-size:${memoPx}px;font-weight:${memoBold}"><span class="lbl">메모</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.memo || '')}</span></div>
     ${customRowsHTML}
   `;
   const printBtnBar =
     '<div class="no-print" style="position:sticky;top:0;z-index:999;background:#1e293b;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.2)">' +
-      '<button onclick="window.print()" style="background:#ea580c;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 라벨 인쇄</button>' +
+      '<button onclick="__qlPrint()" style="background:#ea580c;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 라벨 인쇄</button>' +
       '<span style="color:#cbd5e1;font-size:11px">라벨의 내용을 클릭하면 마지막으로 고칠 수 있어요. 칸을 더 넣으려면 작성창의 "+ 항목 추가"를 이용하세요.</span>' +
     '</div>';
+  const rollWidthMM = parseFloat(sz.w) || 56;
   const popupScript = [
+    'function __qlFitPage(){',
+    (sz.roll
+      ? '  try{ var h = document.body.scrollHeight; var mm = Math.ceil((h/96*25.4)+3); if(mm < 10) mm = 10; if(mm > 1000) mm = 1000; var st = document.getElementById("__qlPageStyle"); if(!st){ st = document.createElement("style"); st.id = "__qlPageStyle"; document.head.appendChild(st); } st.innerHTML = "@page{size:' + rollWidthMM + 'mm " + mm + "mm;margin:0}"; }catch(e){}'
+      : ''),
+    '}',
+    'function __qlPrint(){ __qlFitPage(); setTimeout(function(){ try{ window.print(); }catch(e){} }, 50); }',
     'window.addEventListener("load", function(){',
     '  var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();',
-    '  var doPrint = function(){ setTimeout(function(){ try{ window.print(); }catch(e){} }, 300); };',
-    '  ready.then(doPrint).catch(doPrint);',
+    '  var start = function(){ setTimeout(__qlPrint, 300); };',
+    '  ready.then(start).catch(start);',
     '});'
   ].join('\n');
   const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>라벨 - ' + escQ(data.name || '') + '</title><style>' + styles + '</style></head><body>' + printBtnBar + body + '<script>' + popupScript + '<\/script></body></html>';
@@ -17303,7 +18071,15 @@ function submitQuickIntake() {
   const memo = document.getElementById('qi_memo').value.trim();
   const price = parseInt(document.getElementById('qi_price').value, 10) || 0;
   const shipAt = document.getElementById('qi_shipAt').value;
-  const sizeKey = document.getElementById('qi_labelSize').value;
+  let sizeKey = document.getElementById('qi_labelSize').value;
+  if (sizeKey === 'custom') {
+    const cw = parseFloat(document.getElementById('qi_labelCustomW').value);
+    const chVal = document.getElementById('qi_labelCustomH').value;
+    const ch = chVal ? parseFloat(chVal) : '';
+    if (!cw || cw <= 0) { alert('라벨 폭(mm)을 입력해 주세요.'); return; }
+    sizeKey = 'custom:' + cw + ':' + (ch || 'auto');
+  }
+  saveQuickIntakeLabelSizeChoice();
 
   if (!name && !item) { alert('상호명(성함) 또는 물품명 중 하나는 입력해 주세요.'); return; }
 
@@ -17399,14 +18175,22 @@ function submitQuickIntake() {
   // 3) 라벨 인쇄 (테스트 모드 체크 시 생략)
   const skipLabelForTest = document.getElementById('qi_skipLabelTest') && document.getElementById('qi_skipLabelTest').checked;
   if (!skipLabelForTest) {
+    const fontScaleEl = document.getElementById('qi_labelFontScale');
+    const fontScale = fontScaleEl ? fontScaleEl.value : '1';
     printQuickLabel({
       name, addr, tel, item, qty, memo, price,
       senderName: document.getElementById('qi_senderName').value.trim(),
       senderAddr: document.getElementById('qi_senderAddr').value.trim(),
       senderTel: document.getElementById('qi_senderTel').value.trim(),
       customFields: collectQuickIntakeCustomFields()
-    }, sizeKey);
+    }, sizeKey, fontScale);
   }
+
+  // 4) 메모 저장 폴더가 지정되어 있으면, 접수 내용을 [날짜_시간_상호명].txt 파일로 자동 저장
+  saveQuickIntakeMemoFile({
+    name, addr, tel, item, qty, memo, price,
+    customFields: collectQuickIntakeCustomFields()
+  });
 
   showToast('접수 완료! 업체정보 저장 · 작업지시서 생성' + (skipLabelForTest ? ' 진행 (라벨 인쇄는 테스트 모드로 생략됨)' : ' · 라벨 인쇄를 진행했습니다.'));
   closeQuickIntakeModal();
@@ -19523,8 +20307,8 @@ function buildPagerHtml(total, state, totalPages, start, size, goPageFn, setSize
 function switchDocType(type) {
   activeDocType = type;
   if (type === 'quote' || type === 'order' || type === 'statement') lastDocType = type;
-  const sections = { quote:'quoteSection', order:'orderSection', statement:'statementSection', workorder:'workorderSection', history:'historySection', shipping:'shippingSection', ledger:'ledgerSection', inventory:'inventorySection', contacts:'contactsSection' };
-  const tabs     = { quote:'docTabQuote', order:'docTabOrder', statement:'docTabStatement', workorder:'docTabWorkorder', history:'docTabHistory', shipping:'docTabShipping', ledger:'docTabLedger', inventory:'docTabInventory', contacts:'docTabContacts' };
+  const sections = { quote:'quoteSection', order:'orderSection', statement:'statementSection', workorder:'workorderSection', workboard:'workboardSection', history:'historySection', shipping:'shippingSection', ledger:'ledgerSection', inventory:'inventorySection', contacts:'contactsSection' };
+  const tabs     = { quote:'docTabQuote', order:'docTabOrder', statement:'docTabStatement', workorder:'docTabWorkorder', workboard:'docTabWorkboard', history:'docTabHistory', shipping:'docTabShipping', ledger:'docTabLedger', inventory:'docTabInventory', contacts:'docTabContacts' };
   Object.keys(sections).forEach(t => {
     const sec = document.getElementById(sections[t]);
     const tab = document.getElementById(tabs[t]);
@@ -19546,6 +20330,7 @@ function switchDocType(type) {
   if (type === 'inventory') { renderInventory(); switchMatSub('items'); }
   if (type === 'contacts') renderContacts();
   if (type === 'workorder') initWorkorderCanvasIfNeeded();
+  if (type === 'workboard') renderWorkboard();
 }
 
 // prefix: 'q' / 'o' / 's' / printAreaId, docLabel
@@ -20680,8 +21465,9 @@ function buildClassicDocHTML(type) {
     vatSum += rowVat;
     return '<tr>'
       + '<td style="border:1px solid #333;padding:5px 6px">' + esc(r.name) + '</td>'
-      + '<td style="border:1px solid #333;padding:5px 6px;text-align:center">' + esc(r.mat) + '</td>'
-      + '<td style="border:1px solid #333;padding:5px 6px;text-align:center">' + (r.qty || 0) + (r.unit ? (' ' + esc(r.unit)) : '') + '</td>'
+      + '<td style="border:1px solid #333;padding:5px 6px;text-align:center">' + esc(r.spec) + '</td>'
+      + '<td style="border:1px solid #333;padding:5px 6px;text-align:center">' + (r.qty || 0) + '</td>'
+      + '<td style="border:1px solid #333;padding:5px 6px;text-align:center">' + esc(r.unit) + '</td>'
       + '<td style="border:1px solid #333;padding:5px 6px;text-align:right">' + (parseFloat(r.price) || 0).toLocaleString() + '</td>'
       + '<td style="border:1px solid #333;padding:5px 6px;text-align:right">' + amount.toLocaleString() + '</td>'
       + '<td style="border:1px solid #333;padding:5px 6px;text-align:right">' + rowVat.toLocaleString() + '</td>'
@@ -20692,7 +21478,7 @@ function buildClassicDocHTML(type) {
   const minRows = 8;
   let emptyRowsHtml = '';
   for (let i = rows.length; i < minRows; i++) {
-    emptyRowsHtml += '<tr>' + '<td style="border:1px solid #333;padding:5px 6px;height:22px">&nbsp;</td>'.repeat(7) + '</tr>';
+    emptyRowsHtml += '<tr>' + '<td style="border:1px solid #333;padding:5px 6px;height:22px">&nbsp;</td>'.repeat(8) + '</tr>';
   }
 
   const finalVat = type === 'statement' ? vatSum : (vatChk ? Math.round(supply * 0.1) : 0);
@@ -20782,15 +21568,16 @@ function buildClassicDocHTML(type) {
     : (''
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px">'
         + '<div style="width:46%">'
-          + '<div style="font-size:12px;margin-bottom:34px">' + esc(dateVal) + '</div>'
+          + (type === 'order' ? '<div style="font-size:11px;font-weight:700;color:#146C8E;margin-bottom:8px">📨 수신자(공급업체)</div>' : '')
+          + '<div style="font-size:12px;margin-bottom:' + (type === 'order' ? '20px' : '34px') + '">' + esc(dateVal) + '</div>'
           + '<div style="font-size:14px;border-bottom:1px solid #333;padding-bottom:6px;display:flex;justify-content:space-between">'
-            + '<span>' + (esc(toNameVal) || '&nbsp;') + '</span><span>귀하</span>'
+            + '<span>' + (esc(toNameVal) || '&nbsp;') + '</span>' + (type === 'order' ? '' : '<span>귀하</span>')
           + '</div>'
           + clientInfoHtml
         + '</div>'
         + '<table style="width:52%;border-collapse:collapse;font-size:11px">'
           + '<tr>'
-            + '<td rowspan="5" style="border:1px solid #333;background:#f3f4f6;width:20px;text-align:center;font-weight:700;writing-mode:vertical-rl;letter-spacing:2px">공급자</td>'
+            + '<td rowspan="5" style="border:1px solid #333;background:#f3f4f6;width:20px;text-align:center;font-weight:700;writing-mode:vertical-rl;letter-spacing:2px">' + (type === 'order' ? '발주자' : '공급자') + '</td>'
             + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc;width:76px">등록번호</td>'
             + '<td colspan="3" style="border:1px solid #333;padding:4px 6px">' + esc(sup.reg) + '</td>'
           + '</tr>'
@@ -20842,6 +21629,7 @@ function buildClassicDocHTML(type) {
         + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9">품 명</th>'
         + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9;width:70px">규 격</th>'
         + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9;width:60px">수 량</th>'
+        + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9;width:50px">단 위</th>'
         + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9;width:80px">단 가</th>'
         + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9;width:90px">공급가액</th>'
         + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9;width:70px">세 액</th>'
@@ -20852,6 +21640,7 @@ function buildClassicDocHTML(type) {
         + '<td style="border:1px solid #333;padding:6px;text-align:center">계</td>'
         + '<td style="border:1px solid #333;padding:6px"></td>'
         + '<td style="border:1px solid #333;padding:6px;text-align:center">' + totalQty + '</td>'
+        + '<td style="border:1px solid #333;padding:6px"></td>'
         + '<td style="border:1px solid #333;padding:6px"></td>'
         + '<td style="border:1px solid #333;padding:6px;text-align:right">' + supply.toLocaleString() + '</td>'
         + '<td style="border:1px solid #333;padding:6px;text-align:right">' + finalVat.toLocaleString() + '</td>'
@@ -21042,6 +21831,46 @@ function showToast(msg) {
 }
 
 // ════════════════════════════════════════
+// 💰 단가/금액 입력칸이 좁아서 숫자가 다 안 보일 때 — 입력 중이거나 마우스를
+// 올렸을 때 전체 숫자를 검은 말풍선으로 입력칸 위에 크게 보여줍니다.
+// (표 칸 크기는 그대로 유지되고, 인쇄에는 no-print 처리되어 전혀 영향 없음)
+// ════════════════════════════════════════
+function priceTooltipShow(el) {
+  const val = parseFloat(el.value) || 0;
+  if (!val) { priceTooltipHide(); return; }
+  _numTooltipRender(el, '💰 ' + val.toLocaleString('ko-KR') + '원');
+}
+function qtyTooltipShow(el) {
+  const val = parseFloat(el.value) || 0;
+  if (!val) { priceTooltipHide(); return; }
+  _numTooltipRender(el, '🔢 ' + val.toLocaleString('ko-KR') + '개');
+}
+function _numTooltipRender(el, text) {
+  const tip = document.getElementById('priceFullTooltip');
+  if (!tip) return;
+  tip.textContent = text;
+  tip.style.display = 'block';
+  const rect = el.getBoundingClientRect();
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = rect.left + rect.width / 2 - tw / 2;
+  left = Math.max(4, Math.min(left, window.innerWidth - tw - 4));
+  let top = rect.top - th - 8;
+  if (top < 4) top = rect.bottom + 8; // 화면 맨 위쪽이라 위에 놓을 공간이 없으면 아래쪽에 표시
+  tip.style.left = left + 'px';
+  tip.style.top = top + 'px';
+}
+function priceTooltipHideIfNotFocused(el) {
+  if (document.activeElement !== el) {
+    const tip = document.getElementById('priceFullTooltip');
+    if (tip) tip.style.display = 'none';
+  }
+}
+function priceTooltipHide() {
+  const tip = document.getElementById('priceFullTooltip');
+  if (tip) tip.style.display = 'none';
+}
+
+// ════════════════════════════════════════
 // 새 버전 파일로 덮어썼을 때, 최초 1회 안내창 띄우기
 // — 파일(html)을 새 버전으로 덮어써도 견적서/발주서/단가표/거래처 등 데이터는
 //   브라우저(localStorage)에 별도로 저장되어 있어 사라지지 않습니다.
@@ -21173,7 +22002,7 @@ function saveHistoryListToStorage(list) {
   }
   catch(e){ console.error('거래내역 저장 실패:', e); }
 }
-function docLabelOf(type) { return { quote:'견적서', order:'발주서', statement:'거래명세표', workorder:'작업지시서' }[type] || type; }
+function docLabelOf(type) { return { quote:'견적서', order:'발주서', statement:'거래명세표', workorder:'작업지시서', workboard:'작업현황판' }[type] || type; }
 function formatDateTime(iso) {
   if(!iso) return '';
   const d = new Date(iso);
@@ -21910,6 +22739,15 @@ function loadHistoryRecord(id) {
   const list = loadHistory();
   const rec = list.find(h => h.id === id);
   if(!rec) return;
+
+  // 작업현황판에서 자동 등록된 줄은 편집 화면을 덮어쓰는 대신, 작업현황판 탭으로 이동해
+  // 해당 항목의 수정창을 바로 열어줍니다.
+  if (rec.type === 'workboard') {
+    switchDocType('workboard');
+    openWorkboardModal(rec.workboardId);
+    return;
+  }
+
   if(!confirm(`${docLabelOf(rec.type)} [${rec.num||rec.key}] 내용을 불러옵니다.\n현재 작성 중인 ${docLabelOf(rec.type)} 화면 내용은 덮어씌워집니다. 계속할까요?`)) return;
 
   if(rec.type === 'quote') quoteRows = JSON.parse(JSON.stringify(rec.rows));
@@ -21937,6 +22775,13 @@ function loadHistoryRecord(id) {
 }
 
 function delHistoryRecord(id) {
+  const rec = loadHistory().find(h => h.id === id);
+  // 작업현황판에서 자동 등록된 줄은 원본(작업현황판 항목)까지 함께 지워야 데이터가 어긋나지
+  // 않으므로, 거래내역만 따로 지우지 않고 작업현황판 삭제 함수로 위임합니다.
+  if (rec && rec.type === 'workboard') {
+    delWorkboardEntry(rec.workboardId);
+    return;
+  }
   if(!confirm('이 거래내역을 삭제하시겠습니까? (현재 작성 화면의 내용은 삭제되지 않습니다)')) return;
   const list = loadHistory().filter(h => h.id !== id);
   saveHistoryListToStorage(list);
@@ -22082,6 +22927,20 @@ function calTypeLabel(type) {
   const cat = loadCalCategories().find(c => c.id === type);
   return cat ? cat.label : '기타';
 }
+function ensureVacationCalCategory() {
+  const cats = loadCalCategories();
+  if (!cats.some(c => c.id === 'vacation')) {
+    cats.push({ id: 'vacation', label: '🏖️ 휴가', color: '#f97316' });
+    saveCalCategories(cats);
+  }
+}
+// 일정(ev)이 특정 날짜(dateStr)를 포함하는지 판단 — endDate가 있으면(휴가처럼 기간에 걸친 일정)
+// date~endDate 사이의 모든 날짜에 해당되고, endDate가 없으면 date 하루만 해당됩니다.
+function calEventCoversDate(ev, dateStr) {
+  if (!ev || !ev.date) return false;
+  const end = (ev.endDate && ev.endDate >= ev.date) ? ev.endDate : ev.date;
+  return dateStr >= ev.date && dateStr <= end;
+}
 function calTypeColor(type) {
   const cat = loadCalCategories().find(c => c.id === type);
   return cat ? cat.color : '#6b7280';
@@ -22165,6 +23024,7 @@ function openPersonalCalendar() {
   calViewYear = today.getFullYear();
   calViewMonth = today.getMonth();
   calSelectedDate = todayLocalISO();
+  ensureVacationCalCategory();
   const m = document.getElementById('personalCalModal');
   m.classList.remove('hidden');
   m.style.display = 'flex';
@@ -22192,7 +23052,7 @@ function calGoToday() {
 function calPickDate(dateStr) {
   calSelectedDate = dateStr;
   renderPersonalCalendar();
-  calOpenForm(dateStr);
+  openCalDayDetailModal(dateStr);
 }
 function calOpenForm(dateStr) {
   calCancelEditEvent();
@@ -22238,7 +23098,7 @@ function renderPersonalCalendar() {
   let html = '';
   cells.forEach(c => {
     const dateStr = `${c.y}-${String(c.mo + 1).padStart(2,'0')}-${String(c.d).padStart(2,'0')}`;
-    const evs = list.filter(ev => ev.date === dateStr).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+    const evs = list.filter(ev => calEventCoversDate(ev, dateStr)).sort((a,b) => (a.time||'').localeCompare(b.time||''));
     let cls = 'cal-day';
     if (c.other) cls += ' cal-otherMonth';
     if (dateStr === todayStr) cls += ' cal-today';
@@ -22248,7 +23108,9 @@ function renderPersonalCalendar() {
     shown.forEach(ev => {
       const alarmCls = (ev.alarm && ev.time) ? ' cal-evtag-alarm' : '';
       const alarmIcon = (ev.alarm && ev.time) ? '🔔 ' : '';
-      tags += `<span class="cal-evtag${alarmCls}" style="background:${calTypeColor(ev.type)}" title="${escQ(ev.title)}" onclick="event.stopPropagation();calStartEditEvent('${ev.id}')">${alarmIcon}${escQ(ev.title)}</span>`;
+      const isRange = ev.endDate && ev.endDate > ev.date;
+      const rangeTitle = isRange ? `${escQ(ev.title)} (${ev.date} ~ ${ev.endDate})` : escQ(ev.title);
+      tags += `<span class="cal-evtag${alarmCls}" style="background:${calTypeColor(ev.type)}" title="${rangeTitle}" onclick="event.stopPropagation();calStartEditEvent('${ev.id}')">${alarmIcon}${escQ(ev.title)}</span>`;
     });
     if (evs.length > shown.length) {
       tags += `<span class="cal-evtag-more">+${evs.length - shown.length}건 더</span>`;
@@ -22271,19 +23133,22 @@ function renderPersonalCalendar() {
   updateCalendarBadge();
 }
 function renderCalDayEventList() {
-  const list = loadPersonalSchedule().filter(ev => ev.date === calSelectedDate)
+  const list = loadPersonalSchedule().filter(ev => calEventCoversDate(ev, calSelectedDate))
     .sort((a,b) => (a.time||'').localeCompare(b.time||''));
   const wrap = document.getElementById('calDayEventList');
   if (list.length === 0) {
     wrap.innerHTML = `<p class="text-[11px] text-gray-400 text-center py-2">이 날짜에 등록된 일정이 없습니다.</p>`;
     return;
   }
-  wrap.innerHTML = list.map(ev => `
+  wrap.innerHTML = list.map(ev => {
+    const isRange = ev.endDate && ev.endDate > ev.date;
+    return `
     <div class="cal-evrow">
       <div>
         <span style="font-weight:700;color:${calTypeColor(ev.type)}">${ev.time ? escQ(ev.time) : '종일'}</span>
         &nbsp;·&nbsp;<span style="color:${calTypeColor(ev.type)}">${calTypeLabel(ev.type)}</span>
         &nbsp;<b>${escQ(ev.title)}</b>
+        ${isRange ? `<span style="color:#f97316;font-weight:700;font-size:11px;margin-left:4px">📅 ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</span>` : ''}
         ${(ev.alarm && ev.time) ? `<span style="color:#ef4444;font-weight:700;font-size:11px;margin-left:4px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</span>` : ''}
         ${ev.memo ? `<div class="text-[11px] text-gray-400">${escQ(ev.memo)}</div>` : ''}
       </div>
@@ -22292,10 +23157,12 @@ function renderCalDayEventList() {
         <button class="add-btn" style="margin-top:0;padding:2px 8px;color:#ef4444;border-color:#fecaca" onclick="calDeleteEvent('${ev.id}')">🗑 삭제</button>
       </div>
     </div>
-  `).join('');
+  `;
+  }).join('');
 }
 function calSaveEvent() {
   const date = document.getElementById('calEv_date').value;
+  const endDateRaw = document.getElementById('calEv_endDate').value;
   const time = document.getElementById('calEv_time').value;
   const title = document.getElementById('calEv_title').value.trim();
   const memo = document.getElementById('calEv_memo').value.trim();
@@ -22306,16 +23173,18 @@ function calSaveEvent() {
   if (!date) { showToast('⚠️ 날짜를 입력해 주세요.'); return; }
   if (!title) { showToast('⚠️ 제목을 입력해 주세요.'); return; }
   if (alarm && !time) { showToast('⚠️ 알림을 받으려면 시간을 입력해 주세요.'); return; }
+  if (endDateRaw && endDateRaw < date) { showToast('⚠️ 종료일은 시작일(일자)보다 빠를 수 없습니다.'); return; }
+  const endDate = (endDateRaw && endDateRaw > date) ? endDateRaw : '';
 
   const list = loadPersonalSchedule();
   // 저장(수정 포함) 시점에는 알림을 새로 계산할 수 있도록 발동 상태를 초기화
   if (editId) {
     const idx = list.findIndex(ev => ev.id === editId);
-    if (idx > -1) list[idx] = Object.assign({}, list[idx], { date, time, title, memo, type, alarm, alarmFired: false, snoozeUntil: null });
+    if (idx > -1) list[idx] = Object.assign({}, list[idx], { date, endDate, time, title, memo, type, alarm, alarmFired: false, snoozeUntil: null });
     showToast('✅ 일정이 수정되었습니다.');
   } else {
-    list.push({ id: 'cal_' + Date.now(), date, time, title, memo, type, alarm, alarmFired: false, snoozeUntil: null, createdAt: new Date().toISOString() });
-    showToast(alarm ? '✅ 일정이 추가되었습니다. (🔔 알림 설정됨)' : '✅ 일정이 추가되었습니다.');
+    list.push({ id: 'cal_' + Date.now(), date, endDate, time, title, memo, type, alarm, alarmFired: false, snoozeUntil: null, createdAt: new Date().toISOString() });
+    showToast(alarm ? '✅ 일정이 추가되었습니다. (🔔 알림 설정됨)' : (endDate ? `✅ 일정이 추가되었습니다. (${date} ~ ${endDate} 기간 전체 표시됨)` : '✅ 일정이 추가되었습니다.'));
   }
   savePersonalSchedule(list);
   calSelectedDate = date;
@@ -22329,6 +23198,7 @@ function calStartEditEvent(id) {
   if (!ev) return;
   document.getElementById('calEv_editId').value = ev.id;
   document.getElementById('calEv_date').value = ev.date;
+  document.getElementById('calEv_endDate').value = ev.endDate || '';
   document.getElementById('calEv_time').value = ev.time || '';
   document.getElementById('calEv_title').value = ev.title;
   document.getElementById('calEv_memo').value = ev.memo || '';
@@ -22344,6 +23214,7 @@ function calStartEditEvent(id) {
 function calCancelEditEvent() {
   document.getElementById('calEv_editId').value = '';
   document.getElementById('calEv_date').value = calSelectedDate || todayLocalISO();
+  document.getElementById('calEv_endDate').value = '';
   document.getElementById('calEv_time').value = '';
   document.getElementById('calEv_title').value = '';
   document.getElementById('calEv_memo').value = '';
@@ -22360,8 +23231,543 @@ function calDeleteEvent(id) {
   savePersonalSchedule(list);
   calCloseEventForm();
   renderPersonalCalendar();
+  if (document.getElementById('calDayDetailModal') && !document.getElementById('calDayDetailModal').classList.contains('hidden')) {
+    renderCalDayDetailModal();
+  }
   showToast('🗑 삭제되었습니다.');
 }
+
+// ════════════════════════════════════════
+// 📌 달력 날짜 클릭 시 뜨는 상세정보 팝업(새창)
+// ════════════════════════════════════════
+let calDayDetailDate = '';
+function openCalDayDetailModal(dateStr) {
+  calDayDetailDate = dateStr;
+  renderCalDayDetailModal();
+  const m = document.getElementById('calDayDetailModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function closeCalDayDetailModal() {
+  const m = document.getElementById('calDayDetailModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+function renderCalDayDetailModal() {
+  const dateStr = calDayDetailDate;
+  if (!dateStr) return;
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const wd = ['일','월','화','수','목','금','토'][new Date(y, mo - 1, d).getDay()];
+  document.getElementById('calDayDetailTitle').textContent = `📌 ${y}년 ${mo}월 ${d}일 (${wd}) 상세정보`;
+
+  const list = loadPersonalSchedule().filter(ev => calEventCoversDate(ev, dateStr))
+    .sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  const wrap = document.getElementById('calDayDetailList');
+  if (list.length === 0) {
+    wrap.innerHTML = `<p class="text-[12px] text-gray-400 text-center py-6">이 날짜에 등록된 일정이 없습니다.</p>`;
+    return;
+  }
+  wrap.innerHTML = list.map(ev => {
+    const isRange = ev.endDate && ev.endDate > ev.date;
+    return `
+    <div class="cal-evrow" style="align-items:flex-start">
+      <div>
+        <span style="font-weight:700;color:${calTypeColor(ev.type)}">${ev.time ? escQ(ev.time) : '종일'}</span>
+        &nbsp;·&nbsp;<span style="color:${calTypeColor(ev.type)}">${calTypeLabel(ev.type)}</span><br>
+        <b style="font-size:13px">${escQ(ev.title)}</b>
+        ${isRange ? `<div style="color:#f97316;font-weight:700;font-size:11px;margin-top:2px">📅 기간: ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</div>` : ''}
+        ${(ev.alarm && ev.time) ? `<div style="color:#ef4444;font-weight:700;font-size:11px;margin-top:2px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</div>` : ''}
+        ${ev.memo ? `<div class="text-[11px] text-gray-500 mt-1" style="white-space:pre-wrap">${escQ(ev.memo)}</div>` : ''}
+      </div>
+      <div class="flex gap-2" style="flex-shrink:0">
+        <button class="add-btn" style="margin-top:0;padding:2px 8px" onclick="closeCalDayDetailModal();calStartEditEvent('${ev.id}')">✏️ 수정</button>
+        <button class="add-btn" style="margin-top:0;padding:2px 8px;color:#ef4444;border-color:#fecaca" onclick="calDeleteEvent('${ev.id}')">🗑 삭제</button>
+      </div>
+    </div>
+  `;
+  }).join('');
+}
+
+// ════════════════════════════════════════
+// 📅 기간(여러 날짜) 등록 — 시작일~종료일을 입력하면 그 기간 전체에 자동으로 표시됩니다.
+// 제목과 구분(카테고리)은 직접 정해서 자유롭게 쓸 수 있습니다. (휴가, 근무자 결근 등 무엇이든 가능)
+// ════════════════════════════════════════
+function calOpenVacationForm(dateStr) {
+  ensureVacationCalCategory();
+  const base = dateStr || calSelectedDate || todayLocalISO();
+  document.getElementById('calVac_start').value = base;
+  document.getElementById('calVac_end').value = base;
+  document.getElementById('calVac_title').value = '';
+  document.getElementById('calVac_memo').value = '';
+  const sel = document.getElementById('calVac_type');
+  const cats = loadCalCategories();
+  sel.innerHTML = cats.map(c => `<option value="${escQ(c.id)}">${c.label}</option>`).join('');
+  if (cats.some(c => c.id === 'vacation')) sel.value = 'vacation';
+  const m = document.getElementById('calVacationFormModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+  setTimeout(() => { const t = document.getElementById('calVac_title'); if (t) t.focus(); }, 50);
+}
+function closeCalVacationForm() {
+  const m = document.getElementById('calVacationFormModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+function calSaveVacation() {
+  const start = document.getElementById('calVac_start').value;
+  const end = document.getElementById('calVac_end').value;
+  const title = document.getElementById('calVac_title').value.trim();
+  const type = document.getElementById('calVac_type').value;
+  const memo = document.getElementById('calVac_memo').value.trim();
+  if (!start || !end) { showToast('⚠️ 시작일과 종료일을 모두 입력해 주세요.'); return; }
+  if (!title) { showToast('⚠️ 제목을 입력해 주세요. (예: 휴가, 근무자 결근 등 자유롭게)'); return; }
+  if (end < start) { showToast('⚠️ 종료일은 시작일보다 빠를 수 없습니다.'); return; }
+
+  const list = loadPersonalSchedule();
+  list.push({
+    id: 'cal_vac_' + Date.now(), date: start, endDate: end > start ? end : '',
+    time: '', title, memo, type: type || 'personal', alarm: false, alarmFired: false, snoozeUntil: null,
+    createdAt: new Date().toISOString()
+  });
+  savePersonalSchedule(list);
+  closeCalVacationForm();
+  closeCalDayDetailModal();
+  calSelectedDate = start;
+  calViewYear = Number(start.split('-')[0]);
+  calViewMonth = Number(start.split('-')[1]) - 1;
+  renderPersonalCalendar();
+  showToast(end > start ? `📅 ${start} ~ ${end} 기간 전체에 "${title}"(으)로 등록되었습니다.` : `📅 "${title}"(으)로 등록되었습니다.`);
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 👥 직원 근무 관리 — 직원별 출근/휴무/연차 등 근무 상태를 달력에 기록
+// (일정 관리 달력과는 별도의 저장소를 사용하는 독립된 기능)
+// ════════════════════════════════════════════════════════════════════
+const K_STAFF_EMPLOYEES = 'STAFF_EMPLOYEES_V1';
+const K_STAFF_ATTEND = 'STAFF_ATTENDANCE_V1';
+const STAFF_STATUS_LIST = [
+  { id: 'work',   label: '출근', short: '출' },
+  { id: 'off',    label: '휴무', short: '휴' },
+  { id: 'am',     label: '오전', short: '오전' },
+  { id: 'pm',     label: '오후', short: '오후' },
+  { id: 'night',  label: '야간', short: '야' },
+  { id: 'annual', label: '연차', short: '연' },
+  { id: 'sick',   label: '병가', short: '병' },
+  { id: 'trip',   label: '출장', short: '출장' },
+  { id: 'edu',    label: '교육', short: '교' }
+];
+function staffStatusLabel(id) { const s = STAFF_STATUS_LIST.find(x => x.id === id); return s ? s.label : id; }
+function staffStatusShort(id) { const s = STAFF_STATUS_LIST.find(x => x.id === id); return s ? s.short : (id || ''); }
+
+function loadStaffEmployees() {
+  try { const v = JSON.parse(localStorage.getItem(K_STAFF_EMPLOYEES)); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function saveStaffEmployees(list) { localStorage.setItem(K_STAFF_EMPLOYEES, JSON.stringify(list)); }
+function loadStaffAttendance() {
+  try { const v = JSON.parse(localStorage.getItem(K_STAFF_ATTEND)); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function saveStaffAttendance(list) { localStorage.setItem(K_STAFF_ATTEND, JSON.stringify(list)); }
+
+let staffViewYear, staffViewMonth, staffSelectedDate = '', staffFilterEmpId = 'all';
+
+function openStaffModal() {
+  const today = new Date();
+  staffViewYear = today.getFullYear();
+  staffViewMonth = today.getMonth();
+  staffFilterEmpId = 'all';
+  const m = document.getElementById('staffModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+  renderStaffCalendar();
+}
+function closeStaffModal() {
+  const m = document.getElementById('staffModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+function staffShiftMonth(delta) {
+  staffViewMonth += delta;
+  if (staffViewMonth < 0) { staffViewMonth = 11; staffViewYear--; }
+  if (staffViewMonth > 11) { staffViewMonth = 0; staffViewYear++; }
+  renderStaffCalendar();
+}
+function staffGoToday() {
+  const today = new Date();
+  staffViewYear = today.getFullYear();
+  staffViewMonth = today.getMonth();
+  renderStaffCalendar();
+}
+function staffSetFilter(empId) {
+  staffFilterEmpId = empId;
+  renderStaffCalendar();
+}
+function renderStaffFilterChips() {
+  const emps = loadStaffEmployees();
+  const wrap = document.getElementById('staffFilterChips');
+  let html = `<span onclick="staffSetFilter('all')" class="cal-evtag" style="cursor:pointer;background:${staffFilterEmpId === 'all' ? '#374151' : '#9ca3af'}">전체</span>`;
+  html += emps.map(e => `<span onclick="staffSetFilter('${e.id}')" class="cal-evtag" style="cursor:pointer;background:${e.color};${staffFilterEmpId === e.id ? 'outline:2px solid #111;outline-offset:1px' : ''}">${escQ(e.name)}</span>`).join('');
+  if (emps.length === 0) html += `<span class="text-[11px] text-gray-400">— 등록된 직원이 없습니다. "👤 직원 관리"에서 먼저 직원을 등록해 주세요.</span>`;
+  wrap.innerHTML = html;
+}
+function renderStaffCalendar() {
+  document.getElementById('staffMonthLabel').textContent = `${staffViewYear}년 ${staffViewMonth + 1}월`;
+  renderStaffFilterChips();
+
+  const emps = loadStaffEmployees();
+  const empMap = {}; emps.forEach(e => empMap[e.id] = e);
+  const attend = loadStaffAttendance();
+  const firstDay = new Date(staffViewYear, staffViewMonth, 1);
+  const startWeekday = firstDay.getDay();
+  const daysInMonth = new Date(staffViewYear, staffViewMonth + 1, 0).getDate();
+  const daysInPrevMonth = new Date(staffViewYear, staffViewMonth, 0).getDate();
+  const todayStr = todayLocalISO();
+
+  const cells = [];
+  for (let i = 0; i < startWeekday; i++) {
+    const d = daysInPrevMonth - startWeekday + 1 + i;
+    const y = staffViewMonth === 0 ? staffViewYear - 1 : staffViewYear;
+    const mo = staffViewMonth === 0 ? 11 : staffViewMonth - 1;
+    cells.push({ y, mo, d, other: true });
+  }
+  for (let d = 1; d <= daysInMonth; d++) cells.push({ y: staffViewYear, mo: staffViewMonth, d, other: false });
+  while (cells.length % 7 !== 0) {
+    const last = cells[cells.length - 1];
+    let y = last.y, mo = last.mo, d = last.d + 1;
+    if (d > new Date(y, mo + 1, 0).getDate()) { d = 1; mo++; if (mo > 11) { mo = 0; y++; } }
+    cells.push({ y, mo, d, other: true });
+  }
+
+  let html = '';
+  cells.forEach(c => {
+    const dateStr = `${c.y}-${String(c.mo + 1).padStart(2,'0')}-${String(c.d).padStart(2,'0')}`;
+    let recs = attend.filter(a => a.date === dateStr);
+    if (staffFilterEmpId !== 'all') recs = recs.filter(a => a.empId === staffFilterEmpId);
+    let cls = 'cal-day';
+    if (c.other) cls += ' cal-otherMonth';
+    if (dateStr === todayStr) cls += ' cal-today';
+    let tags = '';
+    const shown = recs.slice(0, 4);
+    shown.forEach(a => {
+      const e = empMap[a.empId];
+      const empName = e ? e.name : '(삭제된 직원)';
+      const color = e ? e.color : '#9ca3af';
+      tags += `<span class="cal-evtag" style="background:${color}" title="${escQ(empName)} ${escQ(staffStatusLabel(a.status))}" onclick="event.stopPropagation();staffOpenDayForm('${dateStr}')">${escQ(empName)} ${escQ(staffStatusLabel(a.status))}</span>`;
+    });
+    if (recs.length > shown.length) tags += `<span class="cal-evtag-more">+${recs.length - shown.length}건 더</span>`;
+    html += `<div class="${cls}" onclick="staffOpenDayForm('${dateStr}')">
+      <div class="cal-daynum">${c.d}</div>
+      <div class="cal-dot-wrap">${tags}</div>
+    </div>`;
+  });
+  document.getElementById('staffGrid').innerHTML = html;
+}
+
+// ── 직원 관리 ──
+function openStaffEmployeeModal() {
+  staffCancelEmployeeEdit();
+  renderStaffEmployeeList();
+  const m = document.getElementById('staffEmployeeModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function closeStaffEmployeeModal() {
+  const m = document.getElementById('staffEmployeeModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+  renderStaffCalendar();
+}
+function renderStaffEmployeeList() {
+  const emps = loadStaffEmployees();
+  const wrap = document.getElementById('staffEmployeeList');
+  if (emps.length === 0) {
+    wrap.innerHTML = `<p class="text-[11px] text-gray-400 text-center py-2">등록된 직원이 없습니다.</p>`;
+    return;
+  }
+  wrap.innerHTML = emps.map(e => `
+    <div class="flex items-center justify-between" style="padding:6px 2px;border-bottom:1px solid #f1f5f9">
+      <div class="flex items-center gap-2">
+        <span style="display:inline-block;width:14px;height:14px;border-radius:50%;background:${e.color};border:1px solid rgba(0,0,0,.1)"></span>
+        <div>
+          <div class="text-xs font-bold">${escQ(e.name)} ${e.position ? `<span class="font-normal text-gray-400">(${escQ(e.position)})</span>` : ''}</div>
+          ${e.tel ? `<div class="text-[11px] text-gray-400">${escQ(e.tel)}</div>` : ''}
+        </div>
+      </div>
+      <div class="flex gap-2">
+        <button onclick="staffStartEditEmployee('${e.id}')" class="text-[11px]" style="color:#146C8E;border:none;background:none;cursor:pointer">수정</button>
+        <button onclick="staffDeleteEmployee('${e.id}')" class="text-[11px]" style="color:#ef4444;border:none;background:none;cursor:pointer">삭제</button>
+      </div>
+    </div>
+  `).join('');
+}
+function staffSaveEmployee() {
+  const name = document.getElementById('staffEmp_name').value.trim();
+  const position = document.getElementById('staffEmp_position').value.trim();
+  const tel = document.getElementById('staffEmp_tel').value.trim();
+  const color = document.getElementById('staffEmp_color').value || '#146C8E';
+  const editId = document.getElementById('staffEmp_editId').value;
+  if (!name) { showToast('⚠️ 이름을 입력해 주세요.'); return; }
+
+  const list = loadStaffEmployees();
+  if (editId) {
+    const idx = list.findIndex(e => e.id === editId);
+    if (idx > -1) list[idx] = Object.assign({}, list[idx], { name, position, tel, color });
+    showToast('✅ 직원 정보가 수정되었습니다.');
+  } else {
+    list.push({ id: 'emp_' + Date.now(), name, position, tel, color, createdAt: new Date().toISOString() });
+    showToast('✅ 직원이 등록되었습니다.');
+  }
+  saveStaffEmployees(list);
+  staffCancelEmployeeEdit();
+  renderStaffEmployeeList();
+}
+function staffStartEditEmployee(id) {
+  const e = loadStaffEmployees().find(x => x.id === id);
+  if (!e) return;
+  document.getElementById('staffEmp_editId').value = e.id;
+  document.getElementById('staffEmp_name').value = e.name;
+  document.getElementById('staffEmp_position').value = e.position || '';
+  document.getElementById('staffEmp_tel').value = e.tel || '';
+  document.getElementById('staffEmp_color').value = e.color || '#146C8E';
+  document.getElementById('staffEmpFormTitle').textContent = '✏️ 직원 정보 수정';
+  document.getElementById('staffEmp_saveBtn').textContent = '✅ 수정 완료';
+  document.getElementById('staffEmp_cancelBtn').classList.remove('hidden');
+}
+function staffCancelEmployeeEdit() {
+  document.getElementById('staffEmp_editId').value = '';
+  document.getElementById('staffEmp_name').value = '';
+  document.getElementById('staffEmp_position').value = '';
+  document.getElementById('staffEmp_tel').value = '';
+  document.getElementById('staffEmp_color').value = '#146C8E';
+  document.getElementById('staffEmpFormTitle').textContent = '➕ 새 직원 등록';
+  document.getElementById('staffEmp_saveBtn').textContent = '➕ 등록';
+  document.getElementById('staffEmp_cancelBtn').classList.add('hidden');
+}
+function staffDeleteEmployee(id) {
+  const hasRecords = loadStaffAttendance().some(a => a.empId === id);
+  const msg = hasRecords
+    ? '이 직원의 근무 기록도 함께 삭제됩니다. 정말 삭제하시겠습니까?'
+    : '이 직원을 삭제하시겠습니까?';
+  if (!confirm(msg)) return;
+  saveStaffEmployees(loadStaffEmployees().filter(e => e.id !== id));
+  saveStaffAttendance(loadStaffAttendance().filter(a => a.empId !== id));
+  renderStaffEmployeeList();
+  showToast('🗑 삭제되었습니다.');
+}
+
+// ── 날짜별 근무 입력 ──
+function staffRenderStatusRadios(containerId, name, selectedId) {
+  const wrap = document.getElementById(containerId);
+  wrap.innerHTML = STAFF_STATUS_LIST.map(s => `
+    <label style="display:flex;align-items:center;gap:4px;cursor:pointer;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:5px 9px;font-size:12px">
+      <input type="radio" name="${name}" value="${s.id}" ${selectedId === s.id ? 'checked' : ''} style="cursor:pointer">${s.label}
+    </label>
+  `).join('');
+}
+function staffGetCheckedRadio(name) {
+  const el = document.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : '';
+}
+function staffOpenDayForm(dateStr) {
+  const emps = loadStaffEmployees();
+  if (emps.length === 0) { showToast('⚠️ 먼저 "👤 직원 관리"에서 직원을 등록해 주세요.'); openStaffEmployeeModal(); return; }
+  staffSelectedDate = dateStr;
+  const [y, mo, d] = dateStr.split('-').map(Number);
+  const wd = ['일','월','화','수','목','금','토'][new Date(y, mo - 1, d).getDay()];
+  document.getElementById('staffDayFormTitle').textContent = `📌 ${y}년 ${mo}월 ${d}일 (${wd}) 근무 입력`;
+  const sel = document.getElementById('staffDay_emp');
+  sel.innerHTML = emps.map(e => `<option value="${escQ(e.id)}">${escQ(e.name)}</option>`).join('');
+  staffRenderDayExistingList();
+  staffCancelDayEdit();
+  const m = document.getElementById('staffDayFormModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function closeStaffDayForm() {
+  const m = document.getElementById('staffDayFormModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+  renderStaffCalendar();
+}
+function staffRenderDayExistingList() {
+  const emps = loadStaffEmployees();
+  const empMap = {}; emps.forEach(e => empMap[e.id] = e);
+  const recs = loadStaffAttendance().filter(a => a.date === staffSelectedDate);
+  const wrap = document.getElementById('staffDayExistingList');
+  if (recs.length === 0) {
+    wrap.innerHTML = `<p class="text-[11px] text-gray-400 text-center py-2">이 날짜에 등록된 근무가 없습니다.</p>`;
+    return;
+  }
+  wrap.innerHTML = recs.map(a => {
+    const e = empMap[a.empId];
+    return `
+    <div class="cal-evrow">
+      <div>
+        <span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${e ? e.color : '#9ca3af'};margin-right:4px"></span>
+        <b>${escQ(e ? e.name : '(삭제된 직원)')}</b>&nbsp;·&nbsp;${escQ(staffStatusLabel(a.status))}
+        ${a.memo ? `<div class="text-[11px] text-gray-400">${escQ(a.memo)}</div>` : ''}
+      </div>
+      <div class="flex gap-2" style="flex-shrink:0">
+        <button class="add-btn" style="margin-top:0;padding:2px 8px" onclick="staffStartEditDayEntry('${a.id}')">✏️ 수정</button>
+        <button class="add-btn" style="margin-top:0;padding:2px 8px;color:#ef4444;border-color:#fecaca" onclick="staffDeleteDayEntry('${a.id}')">🗑 삭제</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+function staffStartEditDayEntry(id) {
+  const a = loadStaffAttendance().find(x => x.id === id);
+  if (!a) return;
+  document.getElementById('staffDay_editId').value = a.id;
+  document.getElementById('staffDay_emp').value = a.empId;
+  staffRenderStatusRadios('staffDay_statusRadios', 'staffDayStatus', a.status);
+  document.getElementById('staffDay_memo').value = a.memo || '';
+  document.getElementById('staffDay_deleteBtn').classList.remove('hidden');
+}
+function staffCancelDayEdit() {
+  document.getElementById('staffDay_editId').value = '';
+  staffRenderStatusRadios('staffDay_statusRadios', 'staffDayStatus', 'work');
+  document.getElementById('staffDay_memo').value = '';
+  document.getElementById('staffDay_deleteBtn').classList.add('hidden');
+}
+function staffSaveDayEntry() {
+  const empId = document.getElementById('staffDay_emp').value;
+  const status = staffGetCheckedRadio('staffDayStatus');
+  const memo = document.getElementById('staffDay_memo').value.trim();
+  const editId = document.getElementById('staffDay_editId').value;
+  if (!empId) { showToast('⚠️ 직원을 선택해 주세요.'); return; }
+  if (!status) { showToast('⚠️ 근무 상태를 선택해 주세요.'); return; }
+
+  let list = loadStaffAttendance();
+  if (editId) {
+    const idx = list.findIndex(a => a.id === editId);
+    if (idx > -1) list[idx] = Object.assign({}, list[idx], { empId, status, memo });
+  } else {
+    // 같은 직원 + 같은 날짜에 이미 기록이 있으면 덮어씀 (하루에 직원당 근무 상태는 1건)
+    const dupIdx = list.findIndex(a => a.empId === empId && a.date === staffSelectedDate);
+    if (dupIdx > -1) list[dupIdx] = Object.assign({}, list[dupIdx], { status, memo });
+    else list.push({ id: 'att_' + Date.now(), empId, date: staffSelectedDate, status, memo, createdAt: new Date().toISOString() });
+  }
+  saveStaffAttendance(list);
+  staffRenderDayExistingList();
+  staffCancelDayEdit();
+  renderStaffCalendar();
+  showToast('✅ 근무가 저장되었습니다.');
+}
+function staffDeleteDayEntry(id) {
+  if (!id) return;
+  if (!confirm('이 근무 기록을 삭제하시겠습니까?')) return;
+  saveStaffAttendance(loadStaffAttendance().filter(a => a.id !== id));
+  staffRenderDayExistingList();
+  staffCancelDayEdit();
+  renderStaffCalendar();
+  showToast('🗑 삭제되었습니다.');
+}
+
+// ── 여러 날짜 한번에 입력(기간 일괄 등록) ──
+function staffOpenRangeForm() {
+  const emps = loadStaffEmployees();
+  if (emps.length === 0) { showToast('⚠️ 먼저 "👤 직원 관리"에서 직원을 등록해 주세요.'); openStaffEmployeeModal(); return; }
+  const sel = document.getElementById('staffRange_emp');
+  sel.innerHTML = emps.map(e => `<option value="${escQ(e.id)}">${escQ(e.name)}</option>`).join('');
+  const base = staffSelectedDate || todayLocalISO();
+  document.getElementById('staffRange_start').value = base;
+  document.getElementById('staffRange_end').value = base;
+  document.getElementById('staffRange_memo').value = '';
+  staffRenderStatusRadios('staffRange_statusRadios', 'staffRangeStatus', 'annual');
+  const m = document.getElementById('staffRangeFormModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function closeStaffRangeForm() {
+  const m = document.getElementById('staffRangeFormModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+function staffSaveRange() {
+  const empId = document.getElementById('staffRange_emp').value;
+  const start = document.getElementById('staffRange_start').value;
+  const end = document.getElementById('staffRange_end').value;
+  const status = staffGetCheckedRadio('staffRangeStatus');
+  const memo = document.getElementById('staffRange_memo').value.trim();
+  if (!empId) { showToast('⚠️ 직원을 선택해 주세요.'); return; }
+  if (!start || !end) { showToast('⚠️ 시작일과 종료일을 모두 입력해 주세요.'); return; }
+  if (end < start) { showToast('⚠️ 종료일은 시작일보다 빠를 수 없습니다.'); return; }
+  if (!status) { showToast('⚠️ 근무 상태를 선택해 주세요.'); return; }
+
+  const list = loadStaffAttendance();
+  let cur = new Date(start);
+  const endD = new Date(end);
+  let count = 0;
+  while (cur <= endD) {
+    const dateStr = todayLocalISOFromDate(cur);
+    const dupIdx = list.findIndex(a => a.empId === empId && a.date === dateStr);
+    if (dupIdx > -1) list[dupIdx] = Object.assign({}, list[dupIdx], { status, memo });
+    else list.push({ id: 'att_' + Date.now() + '_' + count, empId, date: dateStr, status, memo, createdAt: new Date().toISOString() });
+    count++;
+    cur.setDate(cur.getDate() + 1);
+  }
+  saveStaffAttendance(list);
+  closeStaffRangeForm();
+  staffViewYear = Number(start.split('-')[0]);
+  staffViewMonth = Number(start.split('-')[1]) - 1;
+  renderStaffCalendar();
+  const empName = (loadStaffEmployees().find(e => e.id === empId) || {}).name || '';
+  showToast(`✅ ${empName} — ${start} ~ ${end} 기간(${count}일)에 "${staffStatusLabel(status)}"(으)로 등록되었습니다.`);
+}
+function todayLocalISOFromDate(dt) {
+  return `${dt.getFullYear()}-${String(dt.getMonth() + 1).padStart(2,'0')}-${String(dt.getDate()).padStart(2,'0')}`;
+}
+
+// ── 월 근무표 출력 ──
+function staffPrintMonthlyReport() {
+  const emps = loadStaffEmployees();
+  if (emps.length === 0) { showToast('⚠️ 등록된 직원이 없습니다.'); return; }
+  const targetEmps = staffFilterEmpId === 'all' ? emps : emps.filter(e => e.id === staffFilterEmpId);
+  const attend = loadStaffAttendance();
+  const daysInMonth = new Date(staffViewYear, staffViewMonth + 1, 0).getDate();
+  const dayCols = [];
+  for (let d = 1; d <= daysInMonth; d++) dayCols.push(d);
+
+  let theadHtml = `<tr><th class="nametd">직원</th>${dayCols.map(d => `<th>${d}</th>`).join('')}</tr>`;
+  let bodyHtml = targetEmps.map(e => {
+    const cells = dayCols.map(d => {
+      const dateStr = `${staffViewYear}-${String(staffViewMonth + 1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+      const rec = attend.find(a => a.empId === e.id && a.date === dateStr);
+      return `<td>${rec ? escQ(staffStatusShort(rec.status)) : ''}</td>`;
+    }).join('');
+    return `<tr><td class="nametd" style="border-left:4px solid ${e.color}">${escQ(e.name)}</td>${cells}</tr>`;
+  }).join('');
+
+  const legend = STAFF_STATUS_LIST.map(s => `${s.short}=${s.label}`).join('  ·  ');
+  const styles = [
+    '*{box-sizing:border-box}',
+    'body{font-family:"Malgun Gothic",dotum,sans-serif;padding:16px;color:#111}',
+    'h2{font-size:16px;margin-bottom:10px}',
+    'table{border-collapse:collapse;width:100%;font-size:11px}',
+    'th,td{border:1px solid #cbd5e1;padding:4px 3px;text-align:center;min-width:22px}',
+    'th{background:#f1f5f9}',
+    '.nametd{text-align:left;font-weight:700;white-space:nowrap;padding-left:8px;min-width:70px}',
+    '.legend{margin-top:12px;font-size:11px;color:#555}',
+    '@media print{.no-print{display:none!important}}'
+  ].join('\n');
+  const printBtnBar = '<div class="no-print" style="margin-bottom:12px"><button onclick="window.print()" style="background:#146C8E;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 인쇄</button></div>';
+  const body = `${printBtnBar}<h2>${staffViewYear}년 ${staffViewMonth + 1}월 근무표</h2><table><thead>${theadHtml}</thead><tbody>${bodyHtml}</tbody></table><div class="legend">${legend}</div>`;
+  const popupScript = [
+    'window.addEventListener("load", function(){',
+    '  var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();',
+    '  var doPrint = function(){ setTimeout(function(){ try{ window.print(); }catch(e){} }, 300); };',
+    '  ready.then(doPrint).catch(doPrint);',
+    '});'
+  ].join('\n');
+  const fullHTML = `<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>${staffViewYear}년 ${staffViewMonth + 1}월 근무표</title><style>${styles}</style></head><body>${body}<script>${popupScript}<\/script></body></html>`;
+  const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+  if (!win) { showToast('팝업이 차단되었습니다. 브라우저 주소창의 팝업 차단 아이콘을 눌러 이 사이트의 팝업을 허용해 주세요.'); URL.revokeObjectURL(url); return; }
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
+}
+
 function updateCalendarBadge() {
   const todayStr = todayLocalISO();
   const count = loadPersonalSchedule().filter(ev => ev.date === todayStr).length;
@@ -24426,7 +25832,7 @@ function renderInventory() {
           <div class="mt-2 p-2 rounded" style="background:#f8fafc;border:1px solid #e2e8f0;max-width:320px">
             <div class="grid grid-cols-2 gap-1 mb-1">
               <input type="date" id="inv_sell_date_${item.id}" class="inp" style="font-size:11px;padding:4px 6px" value="${todayLocalISO()}">
-              <input type="number" id="inv_sell_amount_${item.id}" class="inp" style="font-size:11px;padding:4px 6px" placeholder="판매금액" value="${item.price ? item.price : ''}">
+              <input type="number" id="inv_sell_amount_${item.id}" class="inp" style="font-size:11px;padding:4px 6px" placeholder="판매금액" value="${item.price ? item.price : ''}" oninput="priceTooltipShow(this)" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
             </div>
             <div class="flex gap-1">
               <button class="add-btn" style="flex:1;padding:4px 6px;font-size:11px;color:#16a34a;border-color:#bbf7d0" onclick="confirmSellInventory('${item.id}')">✔ 확정</button>
@@ -24688,7 +26094,7 @@ function buildLedgerEditRow(e) {
             </div>
             <div>
               <div class="quote-label">금액</div>
-              <input id="led_edit_amt_${e.id}" type="number" class="inp" value="${e.amount||0}">
+              <input id="led_edit_amt_${e.id}" type="number" class="inp" value="${e.amount||0}" oninput="priceTooltipShow(this)" onfocus="priceTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="priceTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)">
             </div>
           </div>
           <div class="flex justify-end gap-2 mt-2 no-print">
@@ -25879,7 +27285,12 @@ function buildBackupObject() {
     ledgerSettings: localStorage.getItem(K_LEDGER_SETTINGS),
     inventory: localStorage.getItem(K_INVENTORY),
     contacts: localStorage.getItem(K_CONTACTS),
-    personalSchedule: localStorage.getItem(K_PERSONAL_SCHEDULE)
+    personalSchedule: localStorage.getItem(K_PERSONAL_SCHEDULE),
+    workboard: localStorage.getItem(K_WORKBOARD),
+    shippingManual: localStorage.getItem(K_SHIPPING_MANUAL),
+    wbWorkDetailPresets: localStorage.getItem(K_WB_PRESET.workDetail),
+    wbNotePresets: localStorage.getItem(K_WB_PRESET.note),
+    wbWorkers: localStorage.getItem(K_WB_WORKERS)
   };
 }
 
@@ -25908,6 +27319,11 @@ function applyBackupObjectToStorage(backup) {
   setIf(K_INVENTORY, backup.inventory);
   setIf(K_CONTACTS, backup.contacts);
   setIf(K_PERSONAL_SCHEDULE, backup.personalSchedule);
+  setIf(K_WORKBOARD, backup.workboard);
+  setIf(K_SHIPPING_MANUAL, backup.shippingManual);
+  setIf(K_WB_PRESET.workDetail, backup.wbWorkDetailPresets);
+  setIf(K_WB_PRESET.note, backup.wbNotePresets);
+  setIf(K_WB_WORKERS, backup.wbWorkers);
   // 🛠️ 수정: 백업 파일에 로고/도장 값이 없다고 해서 현재 로고/도장을 지우지 않음.
   // (예전 백업 파일이나 도장 저장 전에 만든 백업을 불러오면 도장이 사라지던 원인이었음)
   if (backup.logo) localStorage.setItem(K_LOGO, backup.logo);
@@ -26896,6 +28312,667 @@ function insertQuoteSearchChecked() {
   closeQuoteSearch();
 }
 
+// ════════════════════════════════════════════════════════════════════
+// 📋 작업현황판 — 접수 순서대로 작업 주문을 한 표로 관리
+// (날짜/상호/연락처/제품명/작업내용/수량/금액/운송/출고일/작업자/작업상태/완료시간/비고)
+// 저장·정렬은 "접수일 → 등록순서(같은 날짜 안에서는 입력한 순서)" 기준입니다.
+// 접수일/출고일을 입력하면 개인 일정(달력)에도 자동으로 등록/수정/삭제가 반영됩니다.
+// ════════════════════════════════════════════════════════════════════
+const K_WORKBOARD = 'WORK_BOARD_LIST_V1';
+let wbEditId = null;
+let wbExpandedIds = new Set();
+let _wbPage = 1, _wbPageSize = 'all';
+
+function loadWorkboard() {
+  try { return JSON.parse(localStorage.getItem(K_WORKBOARD)) || []; } catch (e) { return []; }
+}
+function saveWorkboard(list) {
+  try { localStorage.setItem(K_WORKBOARD, JSON.stringify(list)); } catch (e) { console.error('작업현황판 저장 실패:', e); }
+}
+
+function openWorkboardModal(id) {
+  wbEditId = id || null;
+  const rec = id ? loadWorkboard().find(w => w.id === id) : null;
+  const setVal = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v || ''; };
+  document.getElementById('workboardModalTitle').textContent = rec ? '✏️ 작업 정보 수정' : '➕ 새 작업 등록';
+  setVal('wb_receivedDate', rec ? rec.receivedDate : todayLocalISO());
+  setVal('wb_shipDate', rec ? rec.shipDate : '');
+  setVal('wb_company', rec ? rec.company : '');
+  setVal('wb_phone', rec ? rec.phone : '');
+  setVal('wb_address', rec ? rec.address : '');
+  setVal('wb_product', rec ? rec.product : '');
+  setVal('wb_workDetail', rec ? rec.workDetail : '');
+  setVal('wb_qty', rec ? rec.qty : '');
+  setVal('wb_amount', rec ? rec.amount : '');
+  setVal('wb_shipping', rec ? rec.shipping : '');
+  setVal('wb_worker', rec ? rec.worker : '');
+  setVal('wb_note', rec ? rec.note : '');
+  populateWorkboardDatalists();
+  populateWorkboardPresetSelects();
+  populateWorkboardWorkerControls();
+  const suggestBox = document.getElementById('wb_memo_suggest');
+  if (suggestBox) { suggestBox.classList.add('hidden'); suggestBox.innerHTML = ''; }
+  const m = document.getElementById('workboardModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+  setTimeout(() => { const el = document.getElementById('wb_company'); if (el) el.focus(); }, 50);
+}
+function closeWorkboardModal() {
+  const m = document.getElementById('workboardModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+  wbEditId = null;
+}
+
+// 자주 거래하는 곳(업체 관리에 저장된 연락처)·과거에 입력했던 제품명을 모아
+// "상호"·"제품명" 입력창에 자동완성(첫 글자 입력 시 후보 표시)으로 띄워줍니다.
+function populateWorkboardDatalists() {
+  try {
+    const contacts = loadContacts();
+    const companyNames = Array.from(new Set([
+      ...contacts.map(c => (c.name || '').trim()),
+      ...loadWorkboard().map(w => (w.company || '').trim())
+    ].filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ko'));
+    const companyDatalist = document.getElementById('wb_company_datalist');
+    if (companyDatalist) companyDatalist.innerHTML = companyNames.map(n => `<option value="${escQ(n)}"></option>`).join('');
+
+    // "📂 불러오기" 드롭다운 — 선택하면 상호·연락처·주소가 한 번에 채워짐
+    const picker = document.getElementById('wb_company_picker');
+    if (picker) {
+      const prev = picker.value;
+      picker.innerHTML = '<option value="">📂 불러오기</option>' +
+        contacts.filter(c => c.name).map(c => `<option value="${escQ(c.id)}">${escQ(c.name)}${c.tel ? ' · ' + escQ(c.tel) : ''}</option>`).join('');
+      picker.value = prev && contacts.some(c => c.id === prev) ? prev : '';
+    }
+
+    const priceData = (typeof loadPriceData === 'function') ? loadPriceData() : {};
+    const priceItemNames = Object.values(priceData).flat().map(it => (it && it.name || '').trim()).filter(Boolean);
+    const productNames = Array.from(new Set([
+      ...priceItemNames,
+      ...loadWorkboard().map(w => (w.product || '').trim())
+    ].filter(Boolean))).sort((a, b) => a.localeCompare(b, 'ko'));
+    const productDatalist = document.getElementById('wb_product_datalist');
+    if (productDatalist) productDatalist.innerHTML = productNames.map(n => `<option value="${escQ(n)}"></option>`).join('');
+  } catch (e) { console.error('작업현황판 자동완성 목록 생성 실패:', e); }
+}
+
+// "📂 불러오기" 드롭다운에서 거래처를 선택하면 상호·연락처·주소를 한 번에 채웁니다.
+function pickWorkboardContact(contactId) {
+  if (!contactId) return;
+  const contact = loadContacts().find(c => c.id === contactId);
+  if (!contact) return;
+  const setVal = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v || ''; };
+  setVal('wb_company', contact.name);
+  setVal('wb_phone', contact.tel);
+  setVal('wb_address', contact.addr);
+  document.getElementById('wb_company_picker').value = '';
+  fillWorkboardFromCompanyHistory(contact.name, true);
+}
+
+// 상호 입력창에 직접 타이핑하다가 자동완성 목록(datalist)에서 거래처명을 그대로 선택했을 때도
+// (별도로 "📂 불러오기" 드롭다운을 누르지 않아도) 연락처·주소 및 이전 주문 정보가 자동으로
+// 채워지도록 합니다.
+function autoFillWorkboardCompany(name) {
+  name = (name || '').trim();
+  if (!name) return;
+  const contact = loadContacts().find(c => (c.name || '').trim() === name);
+  const setVal = (elId, v) => { const el = document.getElementById(elId); if (el) el.value = v || ''; };
+  if (contact) {
+    if (contact.tel) setVal('wb_phone', contact.tel);
+    if (contact.addr) setVal('wb_address', contact.addr);
+  }
+  fillWorkboardFromCompanyHistory(name, false);
+}
+
+// 같은 상호로 등록했던 가장 최근 작업 내역을 찾아, 아직 비어 있는 항목(제품명·작업내용 및
+// 요청사항·수량·금액·운송·작업자)을 자동으로 채워줍니다. 이미 값이 입력된 항목은 덮어쓰지
+// 않습니다. 접수일·출고일은 이번 건에 맞게 새로 입력해야 하므로 채우지 않습니다.
+function fillWorkboardFromCompanyHistory(name, showOwnToast) {
+  name = (name || '').trim();
+  if (!name) return;
+  const past = loadWorkboard()
+    .filter(w => (w.company || '').trim() === name && w.id !== wbEditId)
+    .sort((a, b) => (b.createdAt || '').localeCompare(a.createdAt || ''));
+  const last = past[0];
+  if (!last) { if (showOwnToast) showToast(`"${name}" 정보를 불러왔습니다.`); return; }
+
+  const fillIfEmpty = (elId, v) => {
+    const el = document.getElementById(elId);
+    if (el && !el.value.trim() && v) el.value = v;
+  };
+  fillIfEmpty('wb_product', last.product);
+  fillIfEmpty('wb_workDetail', last.workDetail);
+  fillIfEmpty('wb_qty', last.qty);
+  fillIfEmpty('wb_amount', last.amount);
+  fillIfEmpty('wb_shipping', last.shipping);
+  fillIfEmpty('wb_worker', last.worker);
+  showToast(`"${name}"의 연락처·주소와 이전 주문 정보(제품명·작업내용·수량·금액·운송·작업자)를 자동으로 불러왔습니다.`);
+}
+
+// "작업내용 및 요청사항"에 글자를 입력하면, 과거에 입력했던 작업내용 중 일치하는
+// 문구를 아래에 후보로 보여줍니다. 클릭하면 그 문구로 바로 채워집니다.
+function filterWorkboardMemoSuggestions() {
+  const box = document.getElementById('wb_memo_suggest');
+  const ta = document.getElementById('wb_workDetail');
+  if (!box || !ta) return;
+  const kw = (ta.value || '').trim().toLowerCase();
+  if (!kw) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+
+  const past = loadWorkboard()
+    .map(w => (w.workDetail || '').trim())
+    .filter(Boolean);
+  const uniquePast = Array.from(new Set(past.reverse())); // 최근 입력한 것부터
+  const matches = uniquePast.filter(s => s.toLowerCase().includes(kw) && s.toLowerCase() !== kw).slice(0, 6);
+
+  if (matches.length === 0) { box.classList.add('hidden'); box.innerHTML = ''; return; }
+  box.innerHTML = matches.map(s => `
+    <div onclick="document.getElementById('wb_workDetail').value=this.dataset.full;document.getElementById('wb_memo_suggest').classList.add('hidden');"
+         data-full="${escQ(s)}"
+         style="padding:6px 10px;font-size:11px;cursor:pointer;border-bottom:1px solid #f1f5f9;white-space:pre-line"
+         onmouseover="this.style.background='#f0f9ff'" onmouseout="this.style.background='#fff'">${escQ(s)}</div>
+  `).join('');
+  box.classList.remove('hidden');
+}
+document.addEventListener('click', function(e) {
+  const box = document.getElementById('wb_memo_suggest');
+  if (box && !box.classList.contains('hidden') && !e.target.closest('#wb_workDetail') && !e.target.closest('#wb_memo_suggest')) {
+    box.classList.add('hidden');
+  }
+});
+
+// ── "작업내용 및 요청사항" / "비고" — 이름 붙여 저장하고 다음에 그대로 불러오기 ──
+// (매번 새로 타이핑하지 않도록, 자주 쓰는 문구를 이름을 붙여 저장해 두고 드롭다운에서 바로 불러옵니다)
+const K_WB_PRESET = { workDetail: 'WORK_BOARD_WORKDETAIL_PRESETS_V1', note: 'WORK_BOARD_NOTE_PRESETS_V1' };
+function loadWbPresetList(field) {
+  try { return JSON.parse(localStorage.getItem(K_WB_PRESET[field])) || []; } catch (e) { return []; }
+}
+function saveWbPresetList(field, list) {
+  try { localStorage.setItem(K_WB_PRESET[field], JSON.stringify(list)); } catch (e) { console.error('프리셋 저장 실패:', e); }
+}
+function populateWorkboardPresetSelects() {
+  ['workDetail', 'note'].forEach(field => {
+    const sel = document.getElementById('wb_' + field + '_preset_select');
+    if (!sel) return;
+    const list = loadWbPresetList(field).slice().sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+    sel.innerHTML = '<option value="">📂 불러오기</option>' + list.map((d, i) => `<option value="${i}">${escQ(d.name || '(이름없음)')}</option>`).join('');
+  });
+}
+function saveWorkboardPreset(field) {
+  const el = document.getElementById('wb_' + field);
+  const text = (el && el.value || '').trim();
+  if (!text) { alert('저장할 내용을 먼저 입력해 주세요.'); return; }
+  const defaultName = text.split('\n')[0].replace(/^[·\-\s]+/, '').slice(0, 20) || (field === 'note' ? '비고' : '작업내용');
+  const name = prompt('이 내용을 저장할 이름을 입력하세요.', defaultName);
+  if (!name || !name.trim()) return;
+  const list = loadWbPresetList(field);
+  const idx = list.findIndex(d => d.name === name.trim());
+  const d = { name: name.trim(), text };
+  if (idx >= 0) list[idx] = d; else list.push(d);
+  saveWbPresetList(field, list);
+  populateWorkboardPresetSelects();
+  showToast(`'${name.trim()}' 이름으로 저장되었습니다. 다음에 목록에서 바로 불러올 수 있습니다.`);
+}
+function loadWorkboardPreset(field, idx) {
+  if (idx === '' || idx === undefined) return;
+  const list = loadWbPresetList(field);
+  const d = list[parseInt(idx, 10)];
+  if (!d) return;
+  const el = document.getElementById('wb_' + field);
+  if (el) el.value = d.text;
+  showToast(`'${d.name}' 내용을 불러왔습니다.`);
+  document.getElementById('wb_' + field + '_preset_select').value = '';
+}
+function delWorkboardPreset(field) {
+  const sel = document.getElementById('wb_' + field + '_preset_select');
+  const idx = sel ? sel.value : '';
+  if (idx === '') { showToast('삭제할 항목을 위 목록에서 먼저 선택해 주세요.'); return; }
+  const list = loadWbPresetList(field);
+  const name = list[parseInt(idx, 10)]?.name || '';
+  if (!confirm(`'${name}' 저장 항목을 삭제할까요?`)) return;
+  list.splice(parseInt(idx, 10), 1);
+  saveWbPresetList(field, list);
+  populateWorkboardPresetSelects();
+  showToast('삭제되었습니다.');
+}
+
+// ── "작업자" — 여러 명을 저장해 두고 목록에서 바로 선택 ──
+const K_WB_WORKERS = 'WORK_BOARD_WORKERS_V1';
+function loadWbWorkers() {
+  try { return JSON.parse(localStorage.getItem(K_WB_WORKERS)) || []; } catch (e) { return []; }
+}
+function saveWbWorkers(list) {
+  try { localStorage.setItem(K_WB_WORKERS, JSON.stringify(list)); } catch (e) { console.error('작업자 목록 저장 실패:', e); }
+}
+function populateWorkboardWorkerControls() {
+  const workers = loadWbWorkers().slice().sort((a, b) => a.localeCompare(b, 'ko'));
+  const dl = document.getElementById('wb_worker_datalist');
+  if (dl) dl.innerHTML = workers.map(n => `<option value="${escQ(n)}"></option>`).join('');
+  const sel = document.getElementById('wb_worker_picker');
+  if (sel) sel.innerHTML = '<option value="">📂</option>' + workers.map(n => `<option value="${escQ(n)}">${escQ(n)}</option>`).join('');
+}
+function saveWorkboardWorker() {
+  const el = document.getElementById('wb_worker');
+  const name = (el && el.value || '').trim();
+  if (!name) { alert('저장할 작업자 이름을 먼저 입력해 주세요.'); return; }
+  const list = loadWbWorkers();
+  if (!list.includes(name)) list.push(name);
+  saveWbWorkers(list);
+  populateWorkboardWorkerControls();
+  showToast(`'${name}' 작업자가 저장되었습니다. 다음부터 목록에서 바로 선택할 수 있습니다.`);
+}
+function pickWorkboardWorker(name) {
+  if (!name) return;
+  const el = document.getElementById('wb_worker');
+  if (el) el.value = name;
+  document.getElementById('wb_worker_picker').value = '';
+}
+function delWorkboardWorker() {
+  const sel = document.getElementById('wb_worker_picker');
+  const name = sel ? sel.value : '';
+  if (!name) { showToast('삭제할 작업자를 위 목록에서 먼저 선택해 주세요.'); return; }
+  if (!confirm(`'${name}' 작업자를 목록에서 삭제할까요? (이미 등록된 작업 기록은 그대로 남습니다)`)) return;
+  saveWbWorkers(loadWbWorkers().filter(n => n !== name));
+  populateWorkboardWorkerControls();
+  showToast('삭제되었습니다.');
+}
+
+function saveWorkboardEntry() {
+  const getVal = id => (document.getElementById(id).value || '').trim();
+  const receivedDate = getVal('wb_receivedDate') || todayLocalISO();
+  const company = getVal('wb_company');
+  const product = getVal('wb_product');
+  if (!company && !product) { alert('상호 또는 제품명 중 하나는 입력해 주세요.'); return; }
+
+  const list = loadWorkboard();
+  const isEdit = !!wbEditId;
+  const rec = isEdit ? list.find(w => w.id === wbEditId) : null;
+
+  const entry = {
+    id: rec ? rec.id : ('wb_' + Date.now() + '_' + Math.random().toString(36).slice(2, 7)),
+    receivedDate,
+    company,
+    phone: getVal('wb_phone'),
+    address: getVal('wb_address'),
+    product,
+    workDetail: getVal('wb_workDetail'),
+    qty: getVal('wb_qty'),
+    amount: getVal('wb_amount'),
+    shipping: getVal('wb_shipping'),
+    shipDate: getVal('wb_shipDate'),
+    worker: getVal('wb_worker'),
+    note: getVal('wb_note'),
+    status: rec ? rec.status : 'pending',
+    completedAt: rec ? rec.completedAt : '',
+    createdAt: rec ? rec.createdAt : new Date().toISOString()
+  };
+
+  if (isEdit) {
+    const idx = list.findIndex(w => w.id === wbEditId);
+    list[idx] = entry;
+  } else {
+    list.push(entry);
+  }
+  saveWorkboard(list);
+  syncWorkboardCalendar(entry);
+  syncWorkboardLedger(entry);
+  syncWorkboardShipping(entry);
+  syncWorkboardHistory(entry);
+  upsertContactFromWorkboard(entry);
+  if (entry.worker && entry.worker.trim()) {
+    const workers = loadWbWorkers();
+    if (!workers.includes(entry.worker.trim())) { workers.push(entry.worker.trim()); saveWbWorkers(workers); }
+  }
+  closeWorkboardModal();
+  renderWorkboard();
+  if (activeDocType === 'ledger') renderLedger();
+  if (activeDocType === 'shipping') renderShippingTable();
+  if (activeDocType === 'history') renderHistoryTable();
+  renderDashboard();
+  const summary = [entry.company, entry.product, entry.receivedDate].filter(Boolean).join(' · ');
+  showToast(`✅ ${summary} 저장 완료` + (isEdit ? ' (수정됨 · 가계부·제품 진행중·거래내역·달력에도 반영됨)' : ' (가계부·제품 진행중·거래내역·달력에 자동 반영됨)'));
+}
+
+function delWorkboardEntry(id) {
+  if (!confirm('이 작업 항목을 삭제할까요?\n(가계부·제품 진행중·거래내역·달력에 자동 등록된 내용도 함께 삭제됩니다)')) return;
+  const list = loadWorkboard().filter(w => w.id !== id);
+  saveWorkboard(list);
+  removeWorkboardCalendarEvents(id);
+  removeWorkboardLedgerEntry(id);
+  removeWorkboardShippingEntry(id);
+  removeWorkboardHistoryEntry(id);
+  renderWorkboard();
+  if (activeDocType === 'ledger') renderLedger();
+  if (activeDocType === 'shipping') renderShippingTable();
+  if (activeDocType === 'history') renderHistoryTable();
+  renderDashboard();
+  showToast('작업 항목을 삭제했습니다.');
+}
+
+// 작업상태를 대기 → 작업중 → 완료 → 대기 순서로 클릭할 때마다 전환합니다.
+// "완료"로 바뀌는 순간 완료시간이 자동으로 기록됩니다.
+function toggleWorkboardStatus(id) {
+  const list = loadWorkboard();
+  const rec = list.find(w => w.id === id);
+  if (!rec) return;
+  const order = ['pending', 'inprogress', 'done'];
+  const next = order[(order.indexOf(rec.status) + 1) % order.length];
+  rec.status = next;
+  rec.completedAt = (next === 'done') ? new Date().toLocaleString('ko-KR', { hour12: false }) : '';
+  saveWorkboard(list);
+  renderWorkboard();
+}
+
+function toggleWorkboardDetail(id) {
+  if (wbExpandedIds.has(id)) wbExpandedIds.delete(id); else wbExpandedIds.add(id);
+  renderWorkboard();
+}
+
+// 저장해 둔 "보내는 사람"(빠른접수) 정보를 그대로 활용해, 이 작업 건의 받는 사람 정보로
+// 열전사 프린터용 라벨을 바로 인쇄합니다. (작업 완료 후 배송 보낼 때 사용)
+function printWorkboardLabel(id) {
+  const rec = loadWorkboard().find(w => w.id === id);
+  if (!rec) return;
+  const sender = (typeof loadQuickIntakeSender === 'function') ? loadQuickIntakeSender() : {};
+  printQuickLabel({
+    name: rec.company,
+    addr: rec.address,
+    tel: rec.phone,
+    item: rec.product,
+    qty: rec.qty,
+    memo: rec.workDetail,
+    price: rec.amount,
+    senderName: sender.name || '',
+    senderAddr: sender.addr || '',
+    senderTel: sender.tel || ''
+  }, '100x150');
+}
+
+function goWbPage(p) { _wbPage = p; renderWorkboard(); }
+function setWbPageSize(v) { _wbPageSize = (v === 'all') ? 'all' : parseInt(v, 10); _wbPage = 1; renderWorkboard(); }
+
+function wbStatusPill(status) {
+  if (status === 'done') return '<span style="display:inline-block;background:#dcfce7;color:#16a34a;font-size:11px;font-weight:700;border-radius:9999px;padding:2px 10px;white-space:nowrap;cursor:pointer" title="클릭하면 \'대기\'로 되돌릴 수 있습니다">✅ 완료</span>';
+  if (status === 'inprogress') return '<span style="display:inline-block;background:#fee2e2;color:#dc2626;font-size:11px;font-weight:700;border-radius:9999px;padding:2px 10px;white-space:nowrap;cursor:pointer" title="클릭하면 \'완료\'로 바뀝니다">🔴 작업중</span>';
+  return '<span style="display:inline-block;background:#f1f5f9;color:#64748b;font-size:11px;font-weight:700;border-radius:9999px;padding:2px 10px;white-space:nowrap;cursor:pointer" title="클릭하면 \'작업중\'으로 바뀝니다">⚪ 대기</span>';
+}
+
+function updateWorkboardBadge() {
+  const badge = document.getElementById('workboardBadge');
+  const list = loadWorkboard();
+  const activeCount = list.filter(w => w.status !== 'done').length;
+  if (badge) {
+    if (activeCount > 0) { badge.style.display = 'inline-block'; badge.textContent = activeCount > 99 ? '99+' : String(activeCount); }
+    else badge.style.display = 'none';
+  }
+}
+
+function renderWorkboard() {
+  const tbody = document.getElementById('workboardTableBody');
+  if (!tbody) return;
+  const kw = (document.getElementById('wb_search') ? document.getElementById('wb_search').value : '').trim().toLowerCase();
+  let items = loadWorkboard();
+  // 접수일 → 등록순서(같은 날짜 안에서는 입력한 순서) 기준으로 정렬
+  items = items.slice().sort((a, b) => {
+    const d = (a.receivedDate || '').localeCompare(b.receivedDate || '');
+    if (d !== 0) return d;
+    return (a.createdAt || '').localeCompare(b.createdAt || '');
+  });
+  if (kw) {
+    items = items.filter(w =>
+      (w.company || '').toLowerCase().includes(kw) ||
+      (w.phone || '').toLowerCase().includes(kw) ||
+      (w.product || '').toLowerCase().includes(kw)
+    );
+  }
+
+  const totalEl = document.getElementById('wb_total_count');
+  const activeEl = document.getElementById('wb_active_count');
+  const doneEl = document.getElementById('wb_done_count');
+  if (totalEl) totalEl.textContent = items.length + '건';
+  if (activeEl) activeEl.textContent = items.filter(w => w.status !== 'done').length + '건';
+  if (doneEl) doneEl.textContent = items.filter(w => w.status === 'done').length + '건';
+  updateWorkboardBadge();
+
+  if (items.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center text-gray-400 py-6">등록된 작업이 없습니다. "➕ 새 작업 등록" 버튼으로 오늘 접수한 주문을 입력해 주세요.</td></tr>';
+    const pagerEl0 = document.getElementById('wb_pagination');
+    if (pagerEl0) pagerEl0.innerHTML = '';
+    return;
+  }
+
+  const wbState = { page: _wbPage, pageSize: _wbPageSize };
+  const { pageList: pagedItems, totalPages: wbTotalPages, start: wbStart, size: wbSize } = paginateList(items, wbState);
+  _wbPage = wbState.page;
+  const wbPagerEl = document.getElementById('wb_pagination');
+  if (wbPagerEl) wbPagerEl.innerHTML = buildPagerHtml(items.length, wbState, wbTotalPages, wbStart, wbSize, 'goWbPage', 'setWbPageSize');
+
+  const truncate = (s, n) => {
+    s = s || '';
+    return s.length > n ? escQ(s.slice(0, n)) + '…' : escQ(s);
+  };
+
+  tbody.innerHTML = pagedItems.map((it, i) => {
+    const no = wbStart + i + 1;
+    const open = wbExpandedIds.has(it.id);
+    const rowClick = `onclick="if(!event.target.closest('.no-print')) toggleWorkboardDetail('${it.id}')"`;
+    const mainRow = `
+      <tr style="cursor:pointer" ${rowClick} title="클릭하면 연락처·주소·작업내용·운송·작업자·완료시간·비고 등 나머지 정보를 볼 수 있습니다">
+        <td class="td-center text-gray-400">${no}</td>
+        <td class="td-center">${escQ(it.receivedDate)}</td>
+        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escQ(it.company)}</td>
+        <td style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escQ(it.product)}</td>
+        <td class="td-center">${escQ(it.qty)}</td>
+        <td class="td-num">${it.amount ? Number(it.amount).toLocaleString() : ''}</td>
+        <td class="td-center">${escQ(it.shipDate)}</td>
+        <td class="td-center no-print" onclick="event.stopPropagation();toggleWorkboardStatus('${it.id}')">${wbStatusPill(it.status)}</td>
+        <td class="td-center no-print">
+          <button class="add-btn" style="padding:2px 5px" onclick="event.stopPropagation();openWorkboardModal('${it.id}')">수정</button>
+          <button class="add-btn" style="padding:2px 5px" onclick="event.stopPropagation();printWorkboardLabel('${it.id}')" title="열전사 프린터용 라벨 인쇄">🖨️</button>
+          <button class="add-btn" style="padding:2px 5px;color:#dc2626;border-color:#fecaca" onclick="event.stopPropagation();delWorkboardEntry('${it.id}')">삭제</button>
+        </td>
+      </tr>`;
+    const detailRow = open ? `
+      <tr>
+        <td colspan="9" style="background:#f8fafc;padding:12px 18px;border-top:none">
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+            <div><b>☎️ 연락처:</b> ${escQ(it.phone) || '-'}</div>
+            <div><b>🙋 작업자:</b> ${escQ(it.worker) || '-'}</div>
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] mt-2">
+            <div><b>📮 주소:</b> ${escQ(it.address) || '-'}</div>
+            <div><b>🚚 운송:</b> ${escQ(it.shipping) || '-'}</div>
+          </div>
+          <div class="text-[11px] text-gray-700 whitespace-pre-line mt-2"><b>📝 작업내용 및 요청사항:</b><br>${escQ(it.workDetail) || '-'}</div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px] mt-2">
+            <div><b>⏱️ 완료시간:</b> ${escQ(it.completedAt) || '-'}</div>
+          </div>
+          ${it.note ? `<div class="text-[11px] text-gray-600 whitespace-pre-line mt-2"><b>🗒️ 비고:</b><br>${escQ(it.note)}</div>` : ''}
+        </td>
+      </tr>` : '';
+    return mainRow + detailRow;
+  }).join('');
+}
+
+// ── 작업현황판 ↔ 개인 일정(달력) 자동 연동 ──
+// 접수일에는 "📋 접수: 상호 - 제품명", 출고일이 있으면 "🚚 출고예정: 상호 - 제품명" 일정을 자동으로
+// 추가/수정합니다. 항목을 수정하면 기존 일정을 지우고 새로 등록하여 항상 최신 내용을 유지합니다.
+function ensureWorkboardCalCategory() {
+  const cats = loadCalCategories();
+  if (!cats.some(c => c.id === 'workboard')) {
+    cats.push({ id: 'workboard', label: '📋 작업현황', color: '#146C8E' });
+    saveCalCategories(cats);
+  }
+}
+function removeWorkboardCalendarEvents(id) {
+  try {
+    const list = loadPersonalSchedule().filter(ev => ev.id !== ('cal_wb_recv_' + id) && ev.id !== ('cal_wb_ship_' + id));
+    savePersonalSchedule(list);
+    if (typeof updateCalendarBadge === 'function') updateCalendarBadge();
+  } catch (e) { console.error('작업현황판 → 달력 일정 삭제 실패:', e); }
+}
+function syncWorkboardCalendar(entry) {
+  try {
+    ensureWorkboardCalCategory();
+    // 이전에 등록된 일정을 먼저 지운 뒤 최신 내용으로 다시 등록(수정 시에도 항상 최신 유지)
+    let list = loadPersonalSchedule().filter(ev => ev.id !== ('cal_wb_recv_' + entry.id) && ev.id !== ('cal_wb_ship_' + entry.id));
+    const label = [entry.company, entry.product].filter(Boolean).join(' - ');
+    if (entry.receivedDate) {
+      list.push({
+        id: 'cal_wb_recv_' + entry.id,
+        date: entry.receivedDate, time: '', title: `📋 접수: ${label}`,
+        memo: '작업현황판에 자동 등록됨', type: 'workboard', alarm: false, alarmFired: false, snoozeUntil: null,
+        createdAt: new Date().toISOString()
+      });
+    }
+    if (entry.shipDate) {
+      list.push({
+        id: 'cal_wb_ship_' + entry.id,
+        date: entry.shipDate, time: '', title: `🚚 출고예정: ${label}`,
+        memo: '작업현황판에 자동 등록됨', type: 'workboard', alarm: true, alarmFired: false, snoozeUntil: null,
+        createdAt: new Date().toISOString()
+      });
+    }
+    savePersonalSchedule(list);
+    if (typeof updateCalendarBadge === 'function') updateCalendarBadge();
+  } catch (e) { console.error('작업현황판 → 달력 자동등록 실패:', e); }
+}
+
+// ── 작업현황판 ↔ 가계부 자동 연동 ──
+// 금액을 입력하면 "예상매출(작업현황판)"로 가계부에 자동 등록됩니다. 가계부 탭에서
+// "💰 수입 확정" 버튼을 누르면 실제 확정 매출로 전환할 수 있습니다. 수정 시 금액이 바뀌면
+// 가계부 항목도 함께 갱신되고, 항목을 삭제하면 가계부 항목도 함께 삭제됩니다.
+function removeWorkboardLedgerEntry(id) {
+  try {
+    const list = loadLedgerManual().filter(e => e.id !== ('wb_ledger_' + id));
+    saveLedgerManualList(list);
+  } catch (e) { console.error('작업현황판 → 가계부 삭제 실패:', e); }
+}
+function syncWorkboardLedger(entry) {
+  try {
+    const ledgerId = 'wb_ledger_' + entry.id;
+    let list = loadLedgerManual().filter(e => e.id !== ledgerId);
+    const amount = parseInt(entry.amount, 10) || 0;
+    if (amount > 0) {
+      // 이미 "확정 매출"로 전환된 적이 있다면(expected:false) 그 상태를 유지하고 금액만 갱신
+      const prev = loadLedgerManual().find(e => e.id === ledgerId);
+      list.push({
+        id: ledgerId,
+        date: entry.receivedDate,
+        type: 'income',
+        category: (prev && prev.expected === false) ? prev.category : '예상매출(작업현황판)',
+        memo: [entry.company, entry.product].filter(Boolean).join(' - '),
+        amount,
+        source: 'manual',
+        expected: prev ? prev.expected : true,
+        createdAt: new Date().toISOString()
+      });
+    }
+    saveLedgerManualList(list);
+  } catch (e) { console.error('작업현황판 → 가계부 자동등록 실패:', e); }
+}
+
+// ── 작업현황판 ↔ 제품 진행중 자동 연동 ──
+// 출고일을 입력하면 "🚚 제품 진행중" 탭에도 자동으로 추적 항목이 등록됩니다. 항목을 완료 처리하면
+// 여기서는 상태가 바뀌지 않으니, "제품 진행중" 탭에서 직접 "출고완료" 처리해 주세요.
+function removeWorkboardShippingEntry(id) {
+  try {
+    const list = loadManualShippingItems().filter(it => it.id !== ('wb_ship_' + id));
+    saveManualShippingItems(list);
+    if (typeof updateShippingBadge === 'function') updateShippingBadge();
+  } catch (e) { console.error('작업현황판 → 제품 진행중 삭제 실패:', e); }
+}
+function syncWorkboardShipping(entry) {
+  try {
+    const shipId = 'wb_ship_' + entry.id;
+    let list = loadManualShippingItems().filter(it => it.id !== shipId);
+    if (entry.shipDate) {
+      const prev = loadManualShippingItems().find(it => it.id === shipId);
+      list.push({
+        id: shipId,
+        num: '작업현황판',
+        partyName: entry.company || '(상호 미입력)',
+        makeAt: '',
+        shipAt: entry.shipDate,
+        memo: [entry.product, entry.qty ? `${entry.qty}개` : ''].filter(Boolean).join(' · '),
+        status: prev ? prev.status : 'pending',
+        statusAt: prev ? prev.statusAt : '',
+        createdAt: prev ? prev.createdAt : new Date().toISOString()
+      });
+    }
+    saveManualShippingItems(list);
+    if (typeof updateShippingBadge === 'function') updateShippingBadge();
+  } catch (e) { console.error('작업현황판 → 제품 진행중 자동등록 실패:', e); }
+}
+
+// ── 작업현황판 ↔ 업체 관리(연락처) 자동 저장 ──
+// 자주 주문하는 곳을 매번 새로 입력하지 않도록, 작업현황판에 저장할 때마다 상호·연락처·주소를
+// "업체 관리"에도 자동 저장합니다. 같은 전화번호(또는 같은 상호)가 이미 있으면 그 업체 정보를
+// 최신 값으로 갱신하고, 없으면 새 업체로 추가합니다. 이렇게 쌓인 목록이 다음 등록 때
+// "📂 불러오기" 드롭다운과 자동완성 후보로 나타납니다.
+function upsertContactFromWorkboard(entry) {
+  try {
+    if (!entry.company && !entry.phone) return;
+    const contacts = loadContacts();
+    const normalizedTel = normTel(entry.phone);
+    let contact = normalizedTel ? contacts.find(c => normTel(c.tel) === normalizedTel) : null;
+    if (!contact && entry.company) contact = contacts.find(c => (c.name || '').trim() === entry.company.trim());
+
+    if (contact) {
+      if (entry.company) contact.name = entry.company;
+      if (entry.phone) contact.tel = entry.phone;
+      if (entry.address) contact.addr = entry.address;
+    } else {
+      contact = {
+        id: genContactId(), name: entry.company || '', tel: entry.phone || '', addr: entry.address || '',
+        ceo: '', reg: '', biz: '', item: entry.product || '', email: '', tel2: '', bank: '', kakaoId: '', kakaoLink: '',
+        memo: '(작업현황판 등록 시 자동 저장)', history: []
+      };
+      contacts.unshift(contact);
+    }
+    saveContacts(contacts);
+    if (typeof maybeAutoBackupContacts === 'function') maybeAutoBackupContacts();
+    if (activeDocType === 'contacts' && typeof renderContacts === 'function') renderContacts();
+  } catch (e) { console.error('작업현황판 → 업체 관리 자동저장 실패:', e); }
+}
+
+
+// 저장할 때마다 "거래내역" 탭에도 "작업현황판" 유형으로 한 줄이 자동 등록/갱신됩니다.
+// 이 줄의 "✕" 삭제 버튼을 누르면 작업현황판 원본 항목까지 함께 삭제됩니다(loadHistoryRecord/
+// delHistoryRecord에서 type==='workboard'인 경우 이 항목들로 위임 처리).
+function removeWorkboardHistoryEntry(id) {
+  try {
+    const list = loadHistory().filter(h => h.id !== ('wb_hist_' + id));
+    saveHistoryListToStorage(list);
+  } catch (e) { console.error('작업현황판 → 거래내역 삭제 실패:', e); }
+}
+function syncWorkboardHistory(entry) {
+  try {
+    const histId = 'wb_hist_' + entry.id;
+    const list = loadHistory();
+    const idx = list.findIndex(h => h.id === histId);
+    const prev = idx >= 0 ? list[idx] : null;
+    const amount = parseInt(entry.amount, 10) || 0;
+    const record = {
+      id: histId,
+      type: 'workboard',
+      key: entry.id,
+      workboardId: entry.id,
+      num: entry.product || '',
+      date: entry.receivedDate,
+      partyName: entry.company,
+      supplierName: '',
+      total: amount ? amount.toLocaleString() + '원' : '',
+      balanceText: null,
+      fields: {}, rows: [],
+      createdAt: prev ? prev.createdAt : new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      revisions: prev ? (prev.revisions || []) : []
+    };
+    if (idx >= 0) list[idx] = record; else list.push(record);
+    saveHistoryListToStorage(list);
+  } catch (e) { console.error('작업현황판 → 거래내역 자동등록 실패:', e); }
+}
+
 // ════════════════════════════════════════
 // 초기화
 // ════════════════════════════════════════
@@ -26997,6 +29074,9 @@ window.onload = function() {
 
   // 제품 진행중 알림 배지 초기화
   updateShippingBadge();
+
+  // 작업현황판 알림 배지 초기화
+  updateWorkboardBadge();
 
   // 가계부 직접입력 날짜 기본값 = 오늘
   const ledgerDateEl = document.getElementById('ledger_in_date');
