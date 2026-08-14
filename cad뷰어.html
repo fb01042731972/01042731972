@@ -1,0 +1,943 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CAD 뷰어 + 주석 도구</title>
+<style>
+  :root{
+    --bg: #10151c;
+    --panel: #161d26;
+    --panel-2: #1d2530;
+    --line: #2a3441;
+    --text: #dbe4ee;
+    --text-dim: #8695a7;
+    --accent: #ff8a3d;
+    --accent-2: #4dd0e1;
+    --danger: #ff5c5c;
+    --mono: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Pretendard, Roboto, sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    margin:0; padding:0; height:100%; background:var(--bg); color:var(--text);
+    font-family:var(--sans); overflow:hidden;
+  }
+  #app{ display:flex; flex-direction:column; height:100vh; }
+
+  header{
+    display:flex; align-items:center; gap:14px;
+    padding:10px 16px; background:var(--panel);
+    border-bottom:1px solid var(--line);
+    flex-wrap:wrap;
+  }
+  header h1{
+    font-size:14px; font-weight:700; letter-spacing:.04em; color:var(--text);
+    margin:0; white-space:nowrap;
+  }
+  header h1 span{ color:var(--accent); }
+
+  .filebtn{
+    position:relative; overflow:hidden;
+    background:var(--accent); color:#1a1006; border:none;
+    padding:8px 14px; border-radius:6px; font-weight:700; font-size:13px;
+    cursor:pointer;
+  }
+  .filebtn input{
+    position:absolute; inset:0; opacity:0; cursor:pointer;
+  }
+  #filename{ font-size:12px; color:var(--text-dim); font-family:var(--mono); }
+  .hbtn{
+    background:var(--panel-2); color:var(--text); border:1px solid var(--line);
+    padding:7px 12px; border-radius:6px; font-size:12.5px; cursor:pointer;
+  }
+  .hbtn:hover{ border-color:var(--accent-2); }
+  .hbtn:disabled{ opacity:.35; cursor:default; }
+  .hbtn:disabled:hover{ border-color:var(--line); }
+  #status{ margin-left:auto; font-size:12px; color:var(--text-dim); font-family:var(--mono); }
+
+  main{ flex:1; display:flex; min-height:0; }
+
+  #toolbar{
+    width:200px; background:var(--panel); border-right:1px solid var(--line);
+    padding:14px 12px; overflow-y:auto; flex-shrink:0;
+  }
+  #toolbar h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--text-dim); margin:16px 0 8px; font-weight:700;
+  }
+  #toolbar h2:first-child{ margin-top:0; }
+  .tool-btn{
+    display:flex; align-items:center; gap:8px; width:100%;
+    padding:9px 10px; margin-bottom:6px; border-radius:6px;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text);
+    font-size:13px; cursor:pointer; text-align:left;
+  }
+  .tool-btn:hover{ border-color:var(--accent-2); }
+  .tool-btn.active{ background:var(--accent); color:#1a1006; border-color:var(--accent); font-weight:700; }
+  .tool-btn .ico{ width:18px; text-align:center; font-size:14px; }
+
+  .action-btn{
+    display:block; width:100%; padding:9px 10px; margin-bottom:6px;
+    border-radius:6px; border:1px solid var(--line); background:var(--panel-2);
+    color:var(--text); font-size:13px; cursor:pointer; text-align:center;
+  }
+  .action-btn:hover{ border-color:var(--accent-2); }
+  .action-btn.danger:hover{ border-color:var(--danger); color:var(--danger); }
+  .action-btn.primary{ background:var(--accent-2); color:#052226; border-color:var(--accent-2); font-weight:700; }
+
+  #hint{
+    font-size:11.5px; line-height:1.5; color:var(--text-dim);
+    background:var(--panel-2); border:1px solid var(--line); border-radius:6px;
+    padding:8px 9px; margin-top:8px;
+  }
+
+  #layerlist{ font-size:12.5px; }
+  .layer-row{
+    display:flex; align-items:center; gap:7px; padding:5px 4px; border-radius:4px;
+  }
+  .layer-row:hover{ background:var(--panel-2); }
+  .layer-row input{ accent-color: var(--accent); flex-shrink:0; }
+  .layer-row label{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; cursor:pointer; }
+  #layerlist-empty{ font-size:11.5px; color:var(--text-dim); }
+
+  #canvas-wrap{ flex:1; position:relative; background:#0c1015; overflow:hidden; }
+  svg#stage{ width:100%; height:100%; display:block; cursor:crosshair; }
+  #stage.select-mode{ cursor:default; }
+  #stage.pan-drag{ cursor:grabbing; }
+
+  #empty-msg{
+    position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px; color:var(--text-dim); pointer-events:none; text-align:center;
+    padding:0 20px;
+  }
+  #empty-msg .big{ font-size:15px; color:var(--text); font-weight:700; }
+  #empty-msg .small{ font-size:12.5px; max-width:360px; }
+
+  #zoom-controls{
+    position:absolute; right:14px; bottom:14px; display:flex; flex-direction:column; gap:6px;
+  }
+  #zoom-controls button{
+    width:34px; height:34px; border-radius:6px; border:1px solid var(--line);
+    background:var(--panel); color:var(--text); font-size:16px; cursor:pointer;
+  }
+  #zoom-controls button:hover{ border-color:var(--accent-2); }
+  #zoom-pct{
+    position:absolute; right:14px; top:14px; font-family:var(--mono); font-size:11px;
+    color:var(--text-dim); background:var(--panel); border:1px solid var(--line);
+    border-radius:5px; padding:4px 8px;
+  }
+
+  #inline-editor{
+    position:absolute; display:none; z-index:20;
+    background:var(--panel-2); border:1px solid var(--accent); border-radius:6px;
+    padding:4px; box-shadow:0 4px 16px rgba(0,0,0,.5);
+  }
+  #inline-editor input{
+    background:#0c1015; border:1px solid var(--line); color:var(--text);
+    border-radius:4px; padding:6px 8px; font-size:13px; width:160px; font-family:var(--sans);
+  }
+  #inline-editor .row{ display:flex; gap:4px; margin-top:4px; }
+  #inline-editor button{
+    flex:1; border:none; border-radius:4px; padding:5px 0; font-size:12px; cursor:pointer; font-weight:700;
+  }
+  #inline-editor .ok{ background:var(--accent); color:#1a1006; }
+  #inline-editor .cancel{ background:var(--panel); color:var(--text-dim); border:1px solid var(--line); }
+
+  #annlist-panel{
+    width:220px; background:var(--panel); border-left:1px solid var(--line);
+    padding:14px 12px; overflow-y:auto; flex-shrink:0;
+  }
+  #annlist-panel h2{
+    font-size:11px; text-transform:uppercase; letter-spacing:.08em;
+    color:var(--text-dim); margin:0 0 10px; font-weight:700;
+  }
+  .ann-item{
+    display:flex; align-items:center; gap:8px; padding:7px 8px; margin-bottom:5px;
+    border-radius:5px; background:var(--panel-2); border:1px solid var(--line); font-size:12.5px;
+    cursor:pointer;
+  }
+  .ann-item:hover{ border-color:var(--accent-2); }
+  .ann-item.selected{ border-color:var(--accent); }
+  .ann-item .tag{
+    flex-shrink:0; width:20px; height:20px; border-radius:4px; display:flex; align-items:center;
+    justify-content:center; background:var(--accent); color:#1a1006; font-size:11px; font-weight:700;
+  }
+  .ann-item .lbl{ flex:1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; color:var(--text); }
+  .ann-item .del{ flex-shrink:0; color:var(--text-dim); font-size:14px; cursor:pointer; }
+  .ann-item .del:hover{ color:var(--danger); }
+  #annlist-empty{ font-size:12px; color:var(--text-dim); line-height:1.6; }
+
+  .ann-svg-text{ font-family:var(--sans); font-weight:700; fill:var(--accent); paint-order:stroke; stroke:#0c1015; stroke-width:3px; cursor:move; }
+  .ann-svg-symbol{ fill:var(--accent); stroke:#0c1015; stroke-width:2px; paint-order:stroke; cursor:move; }
+  .ann-selected-ring{ fill:none; stroke:var(--accent-2); stroke-width:1.5px; stroke-dasharray:3 3; }
+</style>
+</head>
+<body>
+<div id="app">
+  <header>
+    <h1>CAD<span>뷰어</span> + 주석</h1>
+    <label class="filebtn">파일 열기 (.dxf)
+      <input type="file" id="fileInput" accept=".dxf,.DXF">
+    </label>
+    <span id="filename">불러온 파일 없음</span>
+    <button class="hbtn" id="btnUndo" disabled title="Ctrl+Z">↶ 실행취소</button>
+    <button class="hbtn" id="btnRedo" disabled title="Ctrl+Y">↷ 다시실행</button>
+    <span id="status"></span>
+  </header>
+
+  <main>
+    <div id="toolbar">
+      <h2>도구</h2>
+      <button class="tool-btn active" data-tool="select"><span class="ico">↖</span> 선택 / 이동</button>
+      <button class="tool-btn" data-tool="text"><span class="ico">T</span> 텍스트 추가</button>
+      <button class="tool-btn" data-tool="number"><span class="ico">#</span> 숫자 추가</button>
+      <button class="tool-btn" data-tool="symbol-circle"><span class="ico">○</span> 기호: 원</button>
+      <button class="tool-btn" data-tool="symbol-arrow"><span class="ico">→</span> 기호: 화살표</button>
+      <button class="tool-btn" data-tool="symbol-check"><span class="ico">✓</span> 기호: 체크</button>
+      <button class="tool-btn" data-tool="symbol-star"><span class="ico">★</span> 기호: 별</button>
+
+      <h2>내보내기</h2>
+      <button class="action-btn primary" id="btnExportPng">PNG로 저장</button>
+      <button class="action-btn primary" id="btnExportDxf">DXF로 저장 (주석 포함)</button>
+      <button class="action-btn danger" id="btnClearAnn">모든 주석 지우기</button>
+
+      <h2>레이어</h2>
+      <div id="layerlist"><div id="layerlist-empty">파일을 불러오면 표시됩니다</div></div>
+
+      <div id="hint">
+        <b>선택/이동</b>: 주석을 클릭해 선택, 드래그로 이동, 더블클릭으로 내용 수정, 선택 후 Delete 키로 삭제.<br><br>
+        휠: 확대/축소 · 빈 곳 드래그: 화면 이동 · Ctrl+Z / Ctrl+Y: 실행취소 / 다시실행
+      </div>
+    </div>
+
+    <div id="canvas-wrap">
+      <svg id="stage" class="select-mode">
+        <g id="world"></g>
+      </svg>
+      <div id="empty-msg">
+        <div class="big">불러온 도면이 없습니다</div>
+        <div class="small">위에서 .dxf 파일을 선택하세요. .dwg 파일을 가지고 계시다면 무료 변환 도구(예: ODA File Converter, CloudConvert 등)로 .dxf로 먼저 바꿔주시면 열 수 있습니다.</div>
+      </div>
+      <div id="zoom-pct">100%</div>
+      <div id="zoom-controls">
+        <button id="zoomIn" title="확대">+</button>
+        <button id="zoomOut" title="축소">−</button>
+        <button id="zoomFit" title="전체 보기">⤢</button>
+      </div>
+      <div id="inline-editor">
+        <input type="text" id="inlineInput" placeholder="내용 입력">
+        <div class="row">
+          <button class="ok" id="inlineOk">확인</button>
+          <button class="cancel" id="inlineCancel">취소</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="annlist-panel">
+      <h2>주석 목록</h2>
+      <div id="annlist"></div>
+    </div>
+  </main>
+</div>
+
+<script>
+(function(){
+  "use strict";
+
+  // ---------- state ----------
+  let rawText = null;          // normalized original dxf text (for export)
+  let entities = [];           // render-space geometry (y already flipped), each has .layer
+  let bbox = null;             // {minX,minY,maxX,maxY} in render space
+  let annotations = [];        // {id, kind, x, y, content}
+  let annIdSeq = 1;
+  let currentTool = 'select';
+  let selectedAnnId = null;
+  let layers = {};             // {layerName: true/false}
+
+  // undo/redo: snapshots of annotations array
+  let undoStack = [];
+  let redoStack = [];
+
+  // view transform (world/render space -> screen px)
+  let view = { scale: 1, tx: 0, ty: 0 };
+  let dragMode = null;         // null | 'pan' | 'moveAnn'
+  let dragStart = null, viewStart = null, moveAnnStart = null;
+  let pendingPlacement = null; // world coords waiting on inline editor (new annotation)
+  let editingAnnId = null;     // annotation being edited via inline editor (existing)
+
+  const svg = document.getElementById('stage');
+  const world = document.getElementById('world');
+  const wrap = document.getElementById('canvas-wrap');
+  const emptyMsg = document.getElementById('empty-msg');
+  const statusEl = document.getElementById('status');
+  const filenameEl = document.getElementById('filename');
+  const annlistEl = document.getElementById('annlist');
+  const layerlistEl = document.getElementById('layerlist');
+  const inlineEditor = document.getElementById('inline-editor');
+  const inlineInput = document.getElementById('inlineInput');
+  const zoomPctEl = document.getElementById('zoom-pct');
+  const btnUndo = document.getElementById('btnUndo');
+  const btnRedo = document.getElementById('btnRedo');
+
+  const SYMBOLS = {
+    'symbol-circle': '○',
+    'symbol-arrow': '→',
+    'symbol-check': '✓',
+    'symbol-star': '★'
+  };
+  const SYMBOL_LABELS = {
+    'symbol-circle':'원 기호','symbol-arrow':'화살표 기호','symbol-check':'체크 기호','symbol-star':'별 기호'
+  };
+
+  // ---------- undo / redo ----------
+  function snapshotAnnotations(){
+    return annotations.map(a=>({id:a.id, kind:a.kind, x:a.x, y:a.y, content:a.content}));
+  }
+  function pushUndo(){
+    undoStack.push(snapshotAnnotations());
+    if(undoStack.length>50) undoStack.shift();
+    redoStack = [];
+    updateUndoRedoButtons();
+  }
+  function undo(){
+    if(undoStack.length===0) return;
+    redoStack.push(snapshotAnnotations());
+    annotations = undoStack.pop();
+    selectedAnnId = null;
+    refreshAnnList(); renderAnnotations(); updateUndoRedoButtons();
+  }
+  function redo(){
+    if(redoStack.length===0) return;
+    undoStack.push(snapshotAnnotations());
+    annotations = redoStack.pop();
+    selectedAnnId = null;
+    refreshAnnList(); renderAnnotations(); updateUndoRedoButtons();
+  }
+  function resetUndoRedo(){
+    undoStack = []; redoStack = []; updateUndoRedoButtons();
+  }
+  function updateUndoRedoButtons(){
+    btnUndo.disabled = undoStack.length===0;
+    btnRedo.disabled = redoStack.length===0;
+  }
+  btnUndo.addEventListener('click', undo);
+  btnRedo.addEventListener('click', redo);
+
+  // ---------- DXF parsing ----------
+  function parseDXF(text){
+    const lines = text.split('\n');
+    const tags = [];
+    for(let i=0;i+1<lines.length;i+=2){
+      const code = parseInt(lines[i].trim(),10);
+      tags.push([code, lines[i+1]]);
+    }
+    let start=-1;
+    for(let i=0;i<tags.length-1;i++){
+      if(tags[i][0]===2 && tags[i][1].trim()==='ENTITIES'){ start=i+1; break; }
+    }
+    if(start===-1) return [];
+    let end=tags.length;
+    for(let i=start;i<tags.length;i++){
+      if(tags[i][0]===0 && tags[i][1].trim()==='ENDSEC'){ end=i; break; }
+    }
+    const seg = tags.slice(start,end);
+    const out = [];
+    let i=0;
+    while(i<seg.length){
+      const code = seg[i][0], val = (seg[i][1]||'').trim();
+      if(code!==0){ i++; continue; }
+      const type = val;
+
+      if(type==='POLYLINE'){
+        let j=i+1, flag=0, layer='0';
+        while(j<seg.length && seg[j][0]!==0){
+          if(seg[j][0]===70) flag=parseInt(seg[j][1]);
+          if(seg[j][0]===8) layer=(seg[j][1]||'0').trim();
+          j++;
+        }
+        const pts=[];
+        while(j<seg.length && seg[j][0]===0 && (seg[j][1]||'').trim()==='VERTEX'){
+          j++; let vx=null, vy=null;
+          while(j<seg.length && seg[j][0]!==0){
+            if(seg[j][0]===10) vx=parseFloat(seg[j][1]);
+            if(seg[j][0]===20) vy=parseFloat(seg[j][1]);
+            j++;
+          }
+          if(vx!==null && vy!==null) pts.push([vx,vy]);
+        }
+        if(j<seg.length && (seg[j][1]||'').trim()==='SEQEND') j++;
+        if(pts.length>1) out.push({type:'polyline', points:pts, closed:false, layer:layer});
+        i=j; continue;
+      }
+
+      if(['LINE','CIRCLE','ARC','LWPOLYLINE','TEXT','MTEXT','POINT'].includes(type)){
+        let j=i+1;
+        const d = {layer:'0'}; const verts=[]; let curX=null;
+        while(j<seg.length && seg[j][0]!==0){
+          const c = seg[j][0], v = (seg[j][1]||'').trim();
+          switch(c){
+            case 8: d.layer = v || '0'; break;
+            case 10:
+              if(type==='LWPOLYLINE') curX=parseFloat(v); else d.x1=parseFloat(v);
+              break;
+            case 20:
+              if(type==='LWPOLYLINE'){ verts.push([curX, parseFloat(v)]); curX=null; }
+              else d.y1=parseFloat(v);
+              break;
+            case 11: d.x2=parseFloat(v); break;
+            case 21: d.y2=parseFloat(v); break;
+            case 40: d.r=parseFloat(v); d.height=parseFloat(v); break;
+            case 50: d.a1=parseFloat(v); d.rot=parseFloat(v); break;
+            case 51: d.a2=parseFloat(v); break;
+            case 70: d.flag=parseInt(v); break;
+            case 1: d.text=(d.text?d.text:'')+v; break;
+          }
+          j++;
+        }
+        if(type==='LINE' && isFinite(d.x1) && isFinite(d.y1) && isFinite(d.x2) && isFinite(d.y2)){
+          out.push({type:'line', x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2, layer:d.layer});
+        } else if(type==='CIRCLE' && isFinite(d.x1) && isFinite(d.r)){
+          out.push({type:'circle', cx:d.x1, cy:d.y1, r:d.r, layer:d.layer});
+        } else if(type==='ARC' && isFinite(d.x1) && isFinite(d.r)){
+          const a1 = d.a1||0, a2raw = d.a2!==undefined?d.a2:360;
+          const a2 = a2raw < a1 ? a2raw+360 : a2raw;
+          const pts=[]; const steps=24;
+          for(let s=0;s<=steps;s++){
+            const t = a1 + (a2-a1)*s/steps;
+            const rad = t*Math.PI/180;
+            pts.push([d.x1 + d.r*Math.cos(rad), d.y1 + d.r*Math.sin(rad)]);
+          }
+          out.push({type:'polyline', points:pts, closed:false, layer:d.layer});
+        } else if(type==='LWPOLYLINE' && verts.length>1){
+          out.push({type:'polyline', points:verts, closed: !!(d.flag & 1), layer:d.layer});
+        } else if(type==='POINT' && isFinite(d.x1)){
+          out.push({type:'point', x:d.x1, y:d.y1, layer:d.layer});
+        } else if((type==='TEXT'||type==='MTEXT') && d.text!==undefined && isFinite(d.x1)){
+          let txt = d.text.replace(/\\P/g,'\n').replace(/\{|\}/g,'').replace(/\\[A-Za-z][^;]*;/g,'');
+          out.push({type:'text', x:d.x1, y:d.y1, text:txt, height:d.height||2.5, rot: -(d.rot||0), layer:d.layer});
+        }
+        i=j; continue;
+      }
+      i++;
+    }
+    return out;
+  }
+
+  // flip y (DXF is y-up, screen is y-down) — self-inverse
+  function flipY(ent){
+    switch(ent.type){
+      case 'line': return {type:'line', x1:ent.x1, y1:-ent.y1, x2:ent.x2, y2:-ent.y2, layer:ent.layer};
+      case 'circle': return {type:'circle', cx:ent.cx, cy:-ent.cy, r:ent.r, layer:ent.layer};
+      case 'point': return {type:'point', x:ent.x, y:-ent.y, layer:ent.layer};
+      case 'polyline': return {type:'polyline', closed:ent.closed, points:ent.points.map(p=>[p[0],-p[1]]), layer:ent.layer};
+      case 'text': return {type:'text', x:ent.x, y:-ent.y, text:ent.text, height:ent.height, rot:ent.rot, layer:ent.layer};
+    }
+    return ent;
+  }
+
+  function computeBbox(list){
+    let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+    function acc(x,y){ if(x<minX)minX=x; if(x>maxX)maxX=x; if(y<minY)minY=y; if(y>maxY)maxY=y; }
+    list.forEach(e=>{
+      if(e.type==='line'){ acc(e.x1,e.y1); acc(e.x2,e.y2); }
+      else if(e.type==='circle'){ acc(e.cx-e.r,e.cy-e.r); acc(e.cx+e.r,e.cy+e.r); }
+      else if(e.type==='point'){ acc(e.x,e.y); }
+      else if(e.type==='polyline'){ e.points.forEach(p=>acc(p[0],p[1])); }
+      else if(e.type==='text'){ acc(e.x,e.y); acc(e.x+e.height*(e.text.length||1)*0.6, e.y+e.height); }
+    });
+    if(!isFinite(minX)) return {minX:0,minY:0,maxX:100,maxY:100};
+    return {minX,minY,maxX,maxY};
+  }
+
+  // ---------- layers ----------
+  function buildLayers(){
+    layers = {};
+    entities.forEach(e=>{ layers[e.layer||'0'] = true; });
+  }
+  function refreshLayerList(){
+    const names = Object.keys(layers).sort();
+    if(names.length===0){
+      layerlistEl.innerHTML = '<div id="layerlist-empty">파일을 불러오면 표시됩니다</div>';
+      return;
+    }
+    layerlistEl.innerHTML = '';
+    names.forEach(name=>{
+      const row = document.createElement('div');
+      row.className = 'layer-row';
+      const cid = 'layer_'+name.replace(/[^a-zA-Z0-9_]/g,'_');
+      row.innerHTML = `<input type="checkbox" id="${cid}" ${layers[name]?'checked':''}><label for="${cid}"></label>`;
+      row.querySelector('label').textContent = name;
+      row.querySelector('input').addEventListener('change', (e)=>{
+        layers[name] = e.target.checked;
+        renderGeometry();
+      });
+      layerlistEl.appendChild(row);
+    });
+  }
+
+  // ---------- rendering (interactive, pan/zoom) ----------
+  function svgEl(tag, attrs){
+    const el = document.createElementNS('http://www.w3.org/2000/svg', tag);
+    for(const k in attrs){ if(attrs[k]!==null && attrs[k]!==undefined) el.setAttribute(k, attrs[k]); }
+    return el;
+  }
+
+  function renderGeometry(){
+    const old = document.getElementById('geo-layer');
+    if(old) old.remove();
+    const g = svgEl('g', {id:'geo-layer', stroke:'#c7d4e0', 'stroke-width': Math.max(0.15, 1/view.scale), fill:'none'});
+    entities.forEach(e=>{
+      if(layers[e.layer||'0']===false) return;
+      if(e.type==='line'){
+        g.appendChild(svgEl('line', {x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2}));
+      } else if(e.type==='circle'){
+        g.appendChild(svgEl('circle', {cx:e.cx, cy:e.cy, r:e.r}));
+      } else if(e.type==='point'){
+        g.appendChild(svgEl('circle', {cx:e.x, cy:e.y, r:Math.max(0.3,1/view.scale), fill:'#c7d4e0'}));
+      } else if(e.type==='polyline'){
+        const pts = e.points.map(p=>p[0]+','+p[1]).join(' ');
+        g.appendChild(svgEl(e.closed?'polygon':'polyline', {points:pts}));
+      } else if(e.type==='text'){
+        const t = svgEl('text', {
+          x:e.x, y:e.y, fill:'#c7d4e0', stroke:'none',
+          'font-size': e.height, transform: e.rot ? `rotate(${e.rot} ${e.x} ${e.y})` : null
+        });
+        t.textContent = e.text;
+        g.appendChild(t);
+      }
+    });
+    world.insertBefore(g, world.firstChild ? world.firstChild : null);
+  }
+
+  function worldToScreen(x,y){
+    return { x: x*view.scale + view.tx, y: y*view.scale + view.ty };
+  }
+  function screenToWorld(x,y){
+    return { x: (x - view.tx)/view.scale, y: (y - view.ty)/view.scale };
+  }
+
+  function renderAnnotations(){
+    let ag = document.getElementById('ann-layer');
+    if(ag) ag.remove();
+    ag = svgEl('g', {id:'ann-layer'});
+    annotations.forEach(a=>{
+      const p = worldToScreen(a.x, a.y);
+      const selected = a.id===selectedAnnId;
+      if(selected){
+        ag.appendChild(svgEl('circle', {cx:p.x, cy:p.y, r:16, class:'ann-selected-ring'}));
+      }
+      if(a.kind==='text' || a.kind==='number'){
+        const t = svgEl('text', {
+          x:p.x, y:p.y, class:'ann-svg-text', 'font-size':15,
+          'data-id':a.id
+        });
+        t.textContent = a.content;
+        ag.appendChild(t);
+      } else {
+        const glyph = SYMBOLS[a.kind] || '●';
+        const t = svgEl('text', {
+          x:p.x, y:p.y, class:'ann-svg-symbol', 'font-size':20,
+          'text-anchor':'middle', 'data-id':a.id
+        });
+        t.textContent = glyph;
+        ag.appendChild(t);
+      }
+    });
+    svg.appendChild(ag);
+  }
+
+  function applyViewTransform(){
+    world.setAttribute('transform', `translate(${view.tx} ${view.ty}) scale(${view.scale})`);
+    renderGeometry();
+    renderAnnotations();
+    zoomPctEl.textContent = Math.round(view.scale/baseScale*100) + '%';
+  }
+
+  let baseScale = 1;
+  function fitView(){
+    if(!bbox) return;
+    const w = wrap.clientWidth, h = wrap.clientHeight;
+    const bw = Math.max(bbox.maxX-bbox.minX, 1e-6);
+    const bh = Math.max(bbox.maxY-bbox.minY, 1e-6);
+    const scale = Math.min(w/bw, h/bh) * 0.85;
+    baseScale = scale;
+    view.scale = scale;
+    view.tx = w/2 - scale*(bbox.minX+bbox.maxX)/2;
+    view.ty = h/2 - scale*(bbox.minY+bbox.maxY)/2;
+    applyViewTransform();
+  }
+
+  // ---------- annotation list panel ----------
+  function refreshAnnList(){
+    annlistEl.innerHTML = '';
+    if(annotations.length===0){
+      annlistEl.innerHTML = '<div id="annlist-empty">아직 추가된 주석이 없습니다. 왼쪽 도구를 선택하고 도면을 클릭하세요.</div>';
+      return;
+    }
+    annotations.forEach(a=>{
+      const row = document.createElement('div');
+      row.className = 'ann-item' + (a.id===selectedAnnId ? ' selected':'');
+      const tagChar = a.kind==='text' ? 'T' : a.kind==='number' ? '#' : (SYMBOLS[a.kind]||'●');
+      row.innerHTML = `<div class="tag">${tagChar}</div><div class="lbl"></div><div class="del">✕</div>`;
+      row.querySelector('.lbl').textContent = a.kind.startsWith('symbol') ? SYMBOL_LABELS[a.kind] : a.content;
+      row.addEventListener('click', (ev)=>{
+        if(ev.target.classList.contains('del')){
+          pushUndo();
+          annotations = annotations.filter(x=>x.id!==a.id);
+          if(selectedAnnId===a.id) selectedAnnId=null;
+          refreshAnnList(); renderAnnotations();
+          return;
+        }
+        selectedAnnId = a.id;
+        refreshAnnList(); renderAnnotations();
+      });
+      annlistEl.appendChild(row);
+    });
+  }
+
+  // ---------- tool selection ----------
+  function setTool(t){
+    currentTool = t;
+    document.querySelectorAll('.tool-btn').forEach(b=>b.classList.toggle('active', b.dataset.tool===currentTool));
+    svg.classList.toggle('select-mode', currentTool==='select');
+    hideInlineEditor();
+  }
+  document.querySelectorAll('.tool-btn').forEach(btn=>{
+    btn.addEventListener('click', ()=> setTool(btn.dataset.tool));
+  });
+
+  // ---------- inline text editor (create or edit) ----------
+  function showInlineEditorForNew(screenX, screenY, worldX, worldY){
+    editingAnnId = null;
+    pendingPlacement = {x:worldX, y:worldY};
+    inlineEditor.style.left = screenX+'px';
+    inlineEditor.style.top = screenY+'px';
+    inlineEditor.style.display = 'block';
+    inlineInput.value = '';
+    inlineInput.placeholder = currentTool==='number' ? '숫자 입력 (예: 12.5)' : '텍스트 입력';
+    inlineInput.focus();
+  }
+  function showInlineEditorForEdit(ann){
+    editingAnnId = ann.id;
+    pendingPlacement = null;
+    const p = worldToScreen(ann.x, ann.y);
+    inlineEditor.style.left = p.x+'px';
+    inlineEditor.style.top = p.y+'px';
+    inlineEditor.style.display = 'block';
+    inlineInput.value = ann.content;
+    inlineInput.placeholder = '내용 수정';
+    inlineInput.focus();
+    inlineInput.select();
+  }
+  function hideInlineEditor(){
+    inlineEditor.style.display = 'none';
+    pendingPlacement = null;
+    editingAnnId = null;
+  }
+  document.getElementById('inlineOk').addEventListener('click', commitInline);
+  document.getElementById('inlineCancel').addEventListener('click', hideInlineEditor);
+  inlineInput.addEventListener('keydown', (e)=>{
+    if(e.key==='Enter') commitInline();
+    if(e.key==='Escape') hideInlineEditor();
+    e.stopPropagation();
+  });
+  function commitInline(){
+    const val = inlineInput.value.trim();
+    if(val && editingAnnId!==null){
+      pushUndo();
+      const a = annotations.find(x=>x.id===editingAnnId);
+      if(a) a.content = val;
+      refreshAnnList(); renderAnnotations();
+    } else if(val && pendingPlacement){
+      pushUndo();
+      annotations.push({
+        id: annIdSeq++,
+        kind: currentTool,
+        x: pendingPlacement.x, y: pendingPlacement.y,
+        content: val
+      });
+      refreshAnnList();
+      renderAnnotations();
+    }
+    hideInlineEditor();
+  }
+
+  // ---------- hit testing ----------
+  function hitTestAnnotation(sx, sy, threshold){
+    threshold = threshold || 18;
+    let best=null, bestD=threshold;
+    annotations.forEach(a=>{
+      const p = worldToScreen(a.x,a.y);
+      const d = Math.hypot(p.x-sx, p.y-sy);
+      if(d<bestD){ bestD=d; best=a; }
+    });
+    return best;
+  }
+
+  // ---------- canvas interaction ----------
+  svg.addEventListener('mousedown', (e)=>{
+    if(!bbox) return;
+    const rect = svg.getBoundingClientRect();
+    const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+
+    if(currentTool==='select'){
+      const hit = hitTestAnnotation(sx, sy);
+      if(hit){
+        selectedAnnId = hit.id;
+        refreshAnnList(); renderAnnotations();
+        dragMode = 'moveAnn';
+        dragStart = {x:e.clientX, y:e.clientY};
+        moveAnnStart = {x:hit.x, y:hit.y};
+        return;
+      } else {
+        selectedAnnId = null;
+        refreshAnnList(); renderAnnotations();
+      }
+    }
+    // pan (select tool on empty space, or any non-placement drag)
+    dragMode = 'pan';
+    svg.classList.add('pan-drag');
+    dragStart = {x:e.clientX, y:e.clientY};
+    viewStart = {tx:view.tx, ty:view.ty};
+  });
+
+  window.addEventListener('mousemove', (e)=>{
+    if(dragMode==='pan'){
+      view.tx = viewStart.tx + (e.clientX - dragStart.x);
+      view.ty = viewStart.ty + (e.clientY - dragStart.y);
+      applyViewTransform();
+    } else if(dragMode==='moveAnn' && selectedAnnId!==null){
+      const dx = (e.clientX - dragStart.x)/view.scale;
+      const dy = (e.clientY - dragStart.y)/view.scale;
+      const a = annotations.find(x=>x.id===selectedAnnId);
+      if(a){ a.x = moveAnnStart.x + dx; a.y = moveAnnStart.y + dy; renderAnnotations(); }
+    }
+  });
+  window.addEventListener('mouseup', ()=>{
+    if(dragMode==='moveAnn'){ pushUndo(); }
+    dragMode = null;
+    svg.classList.remove('pan-drag');
+  });
+
+  svg.addEventListener('dblclick', (e)=>{
+    if(!bbox) return;
+    const rect = svg.getBoundingClientRect();
+    const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+    const hit = hitTestAnnotation(sx, sy);
+    if(hit && (hit.kind==='text' || hit.kind==='number')){
+      selectedAnnId = hit.id;
+      refreshAnnList(); renderAnnotations();
+      showInlineEditorForEdit(hit);
+    }
+  });
+
+  svg.addEventListener('wheel', (e)=>{
+    if(!bbox) return;
+    e.preventDefault();
+    const rect = svg.getBoundingClientRect();
+    const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+    const before = screenToWorld(sx, sy);
+    const factor = e.deltaY < 0 ? 1.15 : 1/1.15;
+    view.scale *= factor;
+    const after = worldToScreen(before.x, before.y);
+    view.tx += sx - after.x;
+    view.ty += sy - after.y;
+    applyViewTransform();
+  }, {passive:false});
+
+  svg.addEventListener('click', (e)=>{
+    if(!bbox) return;
+    if(currentTool==='select') return; // handled by mousedown/mouseup
+    if(dragMode) return;
+    const rect = svg.getBoundingClientRect();
+    const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+    const w = screenToWorld(sx, sy);
+
+    if(currentTool==='text' || currentTool==='number'){
+      showInlineEditorForNew(sx, sy, w.x, w.y);
+      return;
+    }
+    if(currentTool.startsWith('symbol')){
+      pushUndo();
+      annotations.push({id:annIdSeq++, kind:currentTool, x:w.x, y:w.y, content:SYMBOLS[currentTool]});
+      refreshAnnList(); renderAnnotations();
+    }
+  });
+
+  // ---------- keyboard shortcuts ----------
+  window.addEventListener('keydown', (e)=>{
+    const tag = (document.activeElement && document.activeElement.tagName) || '';
+    if(tag==='INPUT' || tag==='TEXTAREA') return;
+
+    if((e.ctrlKey||e.metaKey) && !e.shiftKey && e.key.toLowerCase()==='z'){ e.preventDefault(); undo(); return; }
+    if((e.ctrlKey||e.metaKey) && (e.key.toLowerCase()==='y' || (e.shiftKey && e.key.toLowerCase()==='z'))){ e.preventDefault(); redo(); return; }
+
+    if((e.key==='Delete' || e.key==='Backspace') && selectedAnnId!==null){
+      e.preventDefault();
+      pushUndo();
+      annotations = annotations.filter(x=>x.id!==selectedAnnId);
+      selectedAnnId = null;
+      refreshAnnList(); renderAnnotations();
+      return;
+    }
+    if(e.key==='Escape'){ selectedAnnId=null; refreshAnnList(); renderAnnotations(); }
+  });
+
+  document.getElementById('zoomIn').addEventListener('click', ()=>{ view.scale*=1.25; applyViewTransform(); });
+  document.getElementById('zoomOut').addEventListener('click', ()=>{ view.scale/=1.25; applyViewTransform(); });
+  document.getElementById('zoomFit').addEventListener('click', fitView);
+  document.getElementById('btnClearAnn').addEventListener('click', ()=>{
+    if(annotations.length && confirm('모든 주석을 삭제할까요?')){
+      pushUndo();
+      annotations = []; selectedAnnId=null; refreshAnnList(); renderAnnotations();
+    }
+  });
+
+  window.addEventListener('resize', ()=>{ if(bbox) fitView(); });
+
+  // ---------- file loading ----------
+  document.getElementById('fileInput').addEventListener('change', (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const lower = file.name.toLowerCase();
+    if(lower.endsWith('.dwg')){
+      alert('.dwg 파일은 독점 바이너리 형식이라 브라우저에서 직접 열 수 없습니다.\n무료 변환 도구(ODA File Converter, CloudConvert 등)로 .dxf로 변환한 뒤 다시 열어주세요.');
+      e.target.value = '';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(ev){
+      try{
+        rawText = ev.target.result.replace(/\r\n/g, '\n');
+        const parsed = parseDXF(rawText);
+        if(parsed.length===0){
+          statusEl.textContent = '경고: 도면 요소를 찾지 못했습니다';
+        } else {
+          statusEl.textContent = `요소 ${parsed.length}개 로드됨`;
+        }
+        entities = parsed.map(flipY);
+        bbox = computeBbox(entities);
+        buildLayers();
+        refreshLayerList();
+        annotations = [];
+        selectedAnnId = null;
+        resetUndoRedo();
+        filenameEl.textContent = file.name;
+        emptyMsg.style.display = 'none';
+        setTool('select');
+        refreshAnnList();
+        fitView();
+      } catch(err){
+        console.error(err);
+        alert('파일을 읽는 중 오류가 발생했습니다: ' + err.message);
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // ---------- export: PNG ----------
+  function buildExportSvgString(){
+    const bw = Math.max(bbox.maxX-bbox.minX, 1);
+    const bh = Math.max(bbox.maxY-bbox.minY, 1);
+    const pad = Math.max(bw,bh)*0.05;
+    const vx = bbox.minX-pad, vy = bbox.minY-pad, vw = bw+pad*2, vh = bh+pad*2;
+    const diag = Math.hypot(bw,bh);
+    const fontSize = Math.max(diag*0.014, 1);
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vx} ${vy} ${vw} ${vh}" width="1600" height="${Math.round(1600*vh/vw)}">`;
+    s += `<rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="#0c1015"/>`;
+    s += `<g stroke="#c7d4e0" stroke-width="${Math.max(diag*0.0012,0.05)}" fill="none">`;
+    entities.forEach(e=>{
+      if(layers[e.layer||'0']===false) return;
+      if(e.type==='line') s += `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"/>`;
+      else if(e.type==='circle') s += `<circle cx="${e.cx}" cy="${e.cy}" r="${e.r}"/>`;
+      else if(e.type==='point') s += `<circle cx="${e.x}" cy="${e.y}" r="${diag*0.002}" fill="#c7d4e0"/>`;
+      else if(e.type==='polyline'){
+        const pts = e.points.map(p=>p[0]+','+p[1]).join(' ');
+        s += `<${e.closed?'polygon':'polyline'} points="${pts}"/>`;
+      } else if(e.type==='text'){
+        const rotAttr = e.rot ? ` transform="rotate(${e.rot} ${e.x} ${e.y})"` : '';
+        s += `<text x="${e.x}" y="${e.y}" font-size="${e.height}" fill="#c7d4e0" stroke="none"${rotAttr}>${escapeXml(e.text)}</text>`;
+      }
+    });
+    s += `</g>`;
+    annotations.forEach(a=>{
+      if(a.kind==='text'||a.kind==='number'){
+        s += `<text x="${a.x}" y="${a.y}" font-size="${fontSize}" fill="#ff8a3d" font-weight="700">${escapeXml(a.content)}</text>`;
+      } else {
+        s += `<text x="${a.x}" y="${a.y}" font-size="${fontSize*1.3}" fill="#ff8a3d" text-anchor="middle" font-weight="700">${escapeXml(SYMBOLS[a.kind]||'')}</text>`;
+      }
+    });
+    s += `</svg>`;
+    return s;
+  }
+  function escapeXml(str){
+    return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  document.getElementById('btnExportPng').addEventListener('click', ()=>{
+    if(!bbox){ alert('먼저 도면을 불러오세요.'); return; }
+    const svgStr = buildExportSvgString();
+    const blob = new Blob([svgStr], {type:'image/svg+xml'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = function(){
+      const canvas = document.createElement('canvas');
+      canvas.width = 1600;
+      canvas.height = img.height * (1600/img.width) || 1000;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function(pngBlob){
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(pngBlob);
+        a.download = (filenameEl.textContent.replace(/\.dxf$/i,'') || 'drawing') + '_annotated.png';
+        a.click();
+      });
+    };
+    img.src = url;
+  });
+
+  // ---------- export: annotated DXF ----------
+  document.getElementById('btnExportDxf').addEventListener('click', ()=>{
+    if(!rawText){ alert('먼저 도면을 불러오세요.'); return; }
+    if(annotations.length===0){ alert('추가된 주석이 없습니다.'); }
+    const bw = Math.max(bbox.maxX-bbox.minX, 1);
+    const bh = Math.max(bbox.maxY-bbox.minY, 1);
+    const diag = Math.hypot(bw,bh);
+    const height = Math.max(diag*0.012, 1);
+
+    let block = '';
+    annotations.forEach(a=>{
+      const dxfX = a.x, dxfY = -a.y; // un-flip back to DXF space
+      const content = (a.kind==='text'||a.kind==='number') ? a.content : (SYMBOLS[a.kind]||'*');
+      block += `0\nTEXT\n8\nANNOTATIONS\n10\n${dxfX}\n20\n${dxfY}\n40\n${height}\n1\n${content}\n`;
+    });
+
+    const idxEntities = rawText.indexOf('ENTITIES');
+    let out;
+    if(idxEntities===-1){
+      alert('원본 파일에서 ENTITIES 구역을 찾지 못해 주석만 별도로 내보냅니다.');
+      out = rawText + '\n' + block;
+    } else {
+      const idxEndsecNL = rawText.indexOf('\nENDSEC', idxEntities);
+      if(idxEndsecNL===-1){
+        out = rawText + '\n' + block;
+      } else {
+        const valueLineStart = idxEndsecNL+1;
+        const codeLineEnd = valueLineStart-1;
+        const codeLineStart = rawText.lastIndexOf('\n', codeLineEnd-1)+1;
+        out = rawText.slice(0, codeLineStart) + block + rawText.slice(codeLineStart);
+      }
+    }
+    const blob = new Blob([out], {type:'application/dxf'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = (filenameEl.textContent.replace(/\.dxf$/i,'') || 'drawing') + '_annotated.dxf';
+    a.click();
+  });
+
+})();
+</script>
+</body>
+</html>

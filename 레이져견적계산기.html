@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@500;700;800&display=swap" rel="stylesheet">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <style id="tailwind-offline">
 *,:after,:before{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgba(59,130,246,.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/*! tailwindcss v3.4.19 | MIT License | https://tailwindcss.com*/*,:after,:before{box-sizing:border-box;border:0 solid #e5e7eb}:after,:before{--tw-content:""}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;-o-tab-size:4;tab-size:4;font-family:ui-sans-serif,system-ui,sans-serif,Apple Color Emoji,Segoe UI Emoji,Segoe UI Symbol,Noto Color Emoji;font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0}fieldset,legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::-moz-placeholder,textarea::-moz-placeholder{opacity:1;color:#9ca3af}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.mx-auto{margin-left:auto;margin-right:auto}.my-1{margin-top:.25rem;margin-bottom:.25rem}.mb-0\.5{margin-bottom:.125rem}.mb-1{margin-bottom:.25rem}.mb-2{margin-bottom:.5rem}.mb-3{margin-bottom:.75rem}.mb-4{margin-bottom:1rem}.mb-5{margin-bottom:1.25rem}.mb-6{margin-bottom:1.5rem}.ml-1{margin-left:.25rem}.ml-auto{margin-left:auto}.mr-1{margin-right:.25rem}.mt-1{margin-top:.25rem}.mt-2{margin-top:.5rem}.mt-3{margin-top:.75rem}.mt-4{margin-top:1rem}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.table{display:table}.grid{display:grid}.hidden{display:none}.h-3{height:.75rem}.h-4{height:1rem}.h-5{height:1.25rem}.h-6{height:1.5rem}.h-full{height:100%}.w-20{width:5rem}.w-3{width:.75rem}.w-4{width:1rem}.w-5{width:1.25rem}.w-6{width:1.5rem}.w-full{width:100%}.max-w-5xl{max-width:64rem}.flex-1{flex:1 1 0%}.flex-grow{flex-grow:1}.cursor-pointer{cursor:pointer}.resize-none{resize:none}.grid-cols-1{grid-template-columns:repeat(1,minmax(0,1fr))}.grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}.grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.flex-col{flex-direction:column}.flex-wrap{flex-wrap:wrap}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.justify-around{justify-content:space-around}.gap-1{gap:.25rem}.gap-2{gap:.5rem}.gap-3{gap:.75rem}.gap-4{gap:1rem}.gap-5{gap:1.25rem}.gap-6{gap:1.5rem}.space-y-2>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.5rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.5rem*var(--tw-space-y-reverse))}.space-y-3>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(.75rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(.75rem*var(--tw-space-y-reverse))}.space-y-4>:not([hidden])~:not([hidden]){--tw-space-y-reverse:0;margin-top:calc(1rem*(1 - var(--tw-space-y-reverse)));margin-bottom:calc(1rem*var(--tw-space-y-reverse))}.overflow-hidden{overflow:hidden}.overflow-x-auto{overflow-x:auto}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:.25rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-t{border-top-width:1px}.border-amber-200{--tw-border-opacity:1;border-color:rgb(253 230 138/var(--tw-border-opacity,1))}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254/var(--tw-border-opacity,1))}.border-blue-300{--tw-border-opacity:1;border-color:rgb(147 197 253/var(--tw-border-opacity,1))}.border-blue-400{--tw-border-opacity:1;border-color:rgb(96 165 250/var(--tw-border-opacity,1))}.border-blue-600{--tw-border-opacity:1;border-color:rgb(37 99 235/var(--tw-border-opacity,1))}.border-blue-700{--tw-border-opacity:1;border-color:rgb(29 78 216/var(--tw-border-opacity,1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235/var(--tw-border-opacity,1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219/var(--tw-border-opacity,1))}.border-green-200{--tw-border-opacity:1;border-color:rgb(187 247 208/var(--tw-border-opacity,1))}.border-green-300{--tw-border-opacity:1;border-color:rgb(134 239 172/var(--tw-border-opacity,1))}.border-orange-200{--tw-border-opacity:1;border-color:rgb(254 215 170/var(--tw-border-opacity,1))}.border-orange-300{--tw-border-opacity:1;border-color:rgb(253 186 116/var(--tw-border-opacity,1))}.border-orange-400{--tw-border-opacity:1;border-color:rgb(251 146 60/var(--tw-border-opacity,1))}.border-purple-200{--tw-border-opacity:1;border-color:rgb(233 213 255/var(--tw-border-opacity,1))}.border-red-200{--tw-border-opacity:1;border-color:rgb(254 202 202/var(--tw-border-opacity,1))}.border-yellow-300{--tw-border-opacity:1;border-color:rgb(253 224 71/var(--tw-border-opacity,1))}.border-yellow-400{--tw-border-opacity:1;border-color:rgb(250 204 21/var(--tw-border-opacity,1))}.bg-amber-50{--tw-bg-opacity:1;background-color:rgb(255 251 235/var(--tw-bg-opacity,1))}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254/var(--tw-bg-opacity,1))}.bg-blue-100\/60{background-color:rgba(219,234,254,.6)}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255/var(--tw-bg-opacity,1))}.bg-blue-500{--tw-bg-opacity:1;background-color:rgb(59 130 246/var(--tw-bg-opacity,1))}.bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235/var(--tw-bg-opacity,1))}.bg-blue-700{--tw-bg-opacity:1;background-color:rgb(29 78 216/var(--tw-bg-opacity,1))}.bg-blue-800{--tw-bg-opacity:1;background-color:rgb(30 64 175/var(--tw-bg-opacity,1))}.bg-gray-200{--tw-bg-opacity:1;background-color:rgb(229 231 235/var(--tw-bg-opacity,1))}.bg-gray-50{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity,1))}.bg-gray-600{--tw-bg-opacity:1;background-color:rgb(75 85 99/var(--tw-bg-opacity,1))}.bg-gray-700{--tw-bg-opacity:1;background-color:rgb(55 65 81/var(--tw-bg-opacity,1))}.bg-green-100{--tw-bg-opacity:1;background-color:rgb(220 252 231/var(--tw-bg-opacity,1))}.bg-green-50{--tw-bg-opacity:1;background-color:rgb(240 253 244/var(--tw-bg-opacity,1))}.bg-green-500{--tw-bg-opacity:1;background-color:rgb(34 197 94/var(--tw-bg-opacity,1))}.bg-green-600{--tw-bg-opacity:1;background-color:rgb(22 163 74/var(--tw-bg-opacity,1))}.bg-green-700{--tw-bg-opacity:1;background-color:rgb(21 128 61/var(--tw-bg-opacity,1))}.bg-orange-50{--tw-bg-opacity:1;background-color:rgb(255 247 237/var(--tw-bg-opacity,1))}.bg-purple-50{--tw-bg-opacity:1;background-color:rgb(250 245 255/var(--tw-bg-opacity,1))}.bg-purple-600{--tw-bg-opacity:1;background-color:rgb(147 51 234/var(--tw-bg-opacity,1))}.bg-red-50{--tw-bg-opacity:1;background-color:rgb(254 242 242/var(--tw-bg-opacity,1))}.bg-red-500{--tw-bg-opacity:1;background-color:rgb(239 68 68/var(--tw-bg-opacity,1))}.bg-red-600{--tw-bg-opacity:1;background-color:rgb(220 38 38/var(--tw-bg-opacity,1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255/var(--tw-bg-opacity,1))}.bg-yellow-50{--tw-bg-opacity:1;background-color:rgb(254 252 232/var(--tw-bg-opacity,1))}.bg-gradient-to-r{background-image:linear-gradient(to right,var(--tw-gradient-stops))}.from-gray-800{--tw-gradient-from:#1f2937 var(--tw-gradient-from-position);--tw-gradient-to:rgba(31,41,55,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.from-indigo-900{--tw-gradient-from:#312e81 var(--tw-gradient-from-position);--tw-gradient-to:rgba(49,46,129,0) var(--tw-gradient-to-position);--tw-gradient-stops:var(--tw-gradient-from),var(--tw-gradient-to)}.to-gray-700{--tw-gradient-to:#374151 var(--tw-gradient-to-position)}.to-indigo-700{--tw-gradient-to:#4338ca var(--tw-gradient-to-position)}.p-1{padding:.25rem}.p-2{padding:.5rem}.p-3{padding:.75rem}.p-4{padding:1rem}.p-5{padding:1.25rem}.px-1{padding-left:.25rem;padding-right:.25rem}.px-2{padding-left:.5rem;padding-right:.5rem}.px-3{padding-left:.75rem;padding-right:.75rem}.px-4{padding-left:1rem;padding-right:1rem}.px-5{padding-left:1.25rem;padding-right:1.25rem}.py-0\.5{padding-top:.125rem;padding-bottom:.125rem}.py-1{padding-top:.25rem;padding-bottom:.25rem}.py-1\.5{padding-top:.375rem;padding-bottom:.375rem}.py-2{padding-top:.5rem;padding-bottom:.5rem}.py-3{padding-top:.75rem;padding-bottom:.75rem}.pb-2{padding-bottom:.5rem}.pb-3{padding-bottom:.75rem}.pt-2{padding-top:.5rem}.pt-3{padding-top:.75rem}.text-center{text-align:center}.text-right{text-align:right}.font-mono{font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,Liberation Mono,Courier New,monospace}.text-2xl{font-size:1.5rem;line-height:2rem}.text-3xl{font-size:1.875rem;line-height:2.25rem}.text-\[10px\]{font-size:10px}.text-\[11px\]{font-size:11px}.text-base{font-size:1rem;line-height:1.5rem}.text-lg{font-size:1.125rem;line-height:1.75rem}.text-sm{font-size:.875rem;line-height:1.25rem}.text-xl{font-size:1.25rem;line-height:1.75rem}.text-xs{font-size:.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-normal{font-weight:400}.font-semibold{font-weight:600}.tracking-tight{letter-spacing:-.025em}.text-amber-600{--tw-text-opacity:1;color:rgb(217 119 6/var(--tw-text-opacity,1))}.text-amber-700{--tw-text-opacity:1;color:rgb(180 83 9/var(--tw-text-opacity,1))}.text-amber-800{--tw-text-opacity:1;color:rgb(146 64 14/var(--tw-text-opacity,1))}.text-blue-500{--tw-text-opacity:1;color:rgb(59 130 246/var(--tw-text-opacity,1))}.text-blue-600{--tw-text-opacity:1;color:rgb(37 99 235/var(--tw-text-opacity,1))}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216/var(--tw-text-opacity,1))}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175/var(--tw-text-opacity,1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219/var(--tw-text-opacity,1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175/var(--tw-text-opacity,1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128/var(--tw-text-opacity,1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99/var(--tw-text-opacity,1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81/var(--tw-text-opacity,1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55/var(--tw-text-opacity,1))}.text-green-700{--tw-text-opacity:1;color:rgb(21 128 61/var(--tw-text-opacity,1))}.text-green-800{--tw-text-opacity:1;color:rgb(22 101 52/var(--tw-text-opacity,1))}.text-indigo-300{--tw-text-opacity:1;color:rgb(165 180 252/var(--tw-text-opacity,1))}.text-orange-600{--tw-text-opacity:1;color:rgb(234 88 12/var(--tw-text-opacity,1))}.text-orange-700{--tw-text-opacity:1;color:rgb(194 65 12/var(--tw-text-opacity,1))}.text-orange-800{--tw-text-opacity:1;color:rgb(154 52 18/var(--tw-text-opacity,1))}.text-purple-800{--tw-text-opacity:1;color:rgb(107 33 168/var(--tw-text-opacity,1))}.text-red-500{--tw-text-opacity:1;color:rgb(239 68 68/var(--tw-text-opacity,1))}.text-red-600{--tw-text-opacity:1;color:rgb(220 38 38/var(--tw-text-opacity,1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255/var(--tw-text-opacity,1))}.text-yellow-700{--tw-text-opacity:1;color:rgb(161 98 7/var(--tw-text-opacity,1))}.text-yellow-800{--tw-text-opacity:1;color:rgb(133 77 14/var(--tw-text-opacity,1))}.opacity-70{opacity:.7}.opacity-80{opacity:.8}.opacity-90{opacity:.9}.shadow-md{--tw-shadow:0 4px 6px -1px rgba(0,0,0,.1),0 2px 4px -2px rgba(0,0,0,.1);--tw-shadow-colored:0 4px 6px -1px var(--tw-shadow-color),0 2px 4px -2px var(--tw-shadow-color)}.shadow-md,.shadow-sm{box-shadow:var(--tw-ring-offset-shadow,0 0 #0000),var(--tw-ring-shadow,0 0 #0000),var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgba(0,0,0,.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color)}.outline{outline-style:solid}.filter{filter:var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)}.transition{transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,-webkit-backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter;transition-property:color,background-color,border-color,text-decoration-color,fill,stroke,opacity,box-shadow,transform,filter,backdrop-filter,-webkit-backdrop-filter;transition-timing-function:cubic-bezier(.4,0,.2,1);transition-duration:.15s}.hover\:bg-blue-100:hover{--tw-bg-opacity:1;background-color:rgb(219 234 254/var(--tw-bg-opacity,1))}.hover\:bg-blue-200:hover{--tw-bg-opacity:1;background-color:rgb(191 219 254/var(--tw-bg-opacity,1))}.hover\:bg-blue-400:hover{--tw-bg-opacity:1;background-color:rgb(96 165 250/var(--tw-bg-opacity,1))}.hover\:bg-blue-50:hover{--tw-bg-opacity:1;background-color:rgb(239 246 255/var(--tw-bg-opacity,1))}.hover\:bg-blue-500:hover{--tw-bg-opacity:1;background-color:rgb(59 130 246/var(--tw-bg-opacity,1))}.hover\:bg-gray-300:hover{--tw-bg-opacity:1;background-color:rgb(209 213 219/var(--tw-bg-opacity,1))}.hover\:bg-gray-50:hover{--tw-bg-opacity:1;background-color:rgb(249 250 251/var(--tw-bg-opacity,1))}.hover\:bg-gray-500:hover{--tw-bg-opacity:1;background-color:rgb(107 114 128/var(--tw-bg-opacity,1))}.hover\:bg-gray-600:hover{--tw-bg-opacity:1;background-color:rgb(75 85 99/var(--tw-bg-opacity,1))}.hover\:bg-green-400:hover{--tw-bg-opacity:1;background-color:rgb(74 222 128/var(--tw-bg-opacity,1))}.hover\:bg-green-500:hover{--tw-bg-opacity:1;background-color:rgb(34 197 94/var(--tw-bg-opacity,1))}.hover\:bg-green-600:hover{--tw-bg-opacity:1;background-color:rgb(22 163 74/var(--tw-bg-opacity,1))}.hover\:bg-purple-500:hover{--tw-bg-opacity:1;background-color:rgb(168 85 247/var(--tw-bg-opacity,1))}.hover\:bg-red-400:hover{--tw-bg-opacity:1;background-color:rgb(248 113 113/var(--tw-bg-opacity,1))}.hover\:bg-red-500:hover{--tw-bg-opacity:1;background-color:rgb(239 68 68/var(--tw-bg-opacity,1))}.hover\:text-blue-600:hover{--tw-text-opacity:1;color:rgb(37 99 235/var(--tw-text-opacity,1))}.hover\:text-gray-200:hover{--tw-text-opacity:1;color:rgb(229 231 235/var(--tw-text-opacity,1))}.hover\:text-indigo-200:hover{--tw-text-opacity:1;color:rgb(199 210 254/var(--tw-text-opacity,1))}.focus\:outline-none:focus{outline:2px solid transparent;outline-offset:2px}@media (min-width:768px){.md\:grid-cols-3{grid-template-columns:repeat(3,minmax(0,1fr))}.md\:grid-cols-4{grid-template-columns:repeat(4,minmax(0,1fr))}.md\:p-6{padding:1.5rem}}@media (min-width:1024px){.lg\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}@media (min-width:1280px){.xl\:col-span-2{grid-column:span 2/span 2}.xl\:grid-cols-2{grid-template-columns:repeat(2,minmax(0,1fr))}}
     </style>
@@ -397,6 +398,10 @@ button:active{ transform: translateY(0); }
           <button onclick="dxfApplyToCalc()" class="ml-auto bg-green-600 hover:bg-green-500 text-white text-xs font-bold px-3 py-1.5 rounded">
             ⬇ 계산기에 적용
           </button>
+          <button onclick="document.getElementById('dxfFileInput2').click()" class="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-3 py-1.5 rounded">
+            🧩＋ 다른 도면 추가
+          </button>
+          <input type="file" id="dxfFileInput2" accept=".dxf" class="hidden" onchange="dxfAddDxfFile(this)">
           <button onclick="dxfClear()" class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs font-bold px-2 py-1.5 rounded">✕ 지우기</button>
         </div>
         <table>
@@ -413,6 +418,33 @@ button:active{ transform: translateY(0); }
             </td>
           </tr>
         </table>
+
+        <div id="dxfHoleArea" class="hidden mt-2 border border-teal-200 rounded p-2 bg-teal-50" style="display:none !important;">
+          <div class="font-bold text-teal-800 text-xs mb-1">⚪ 홀(원형) 크기별 가공비 — 두께에 따라 자동 계산</div>
+          <table>
+            <thead><tr><th style="width:32%">홀 지름</th><th>개수</th><th>레이저 가공비</th></tr></thead>
+            <tbody id="dxfHoleItemsBody"></tbody>
+          </table>
+          <div class="flex justify-between text-[12px] font-bold text-teal-800 mt-1 px-1">
+            <span>홀 가공비 합계</span><span id="dxfHoleTotal">0 원</span>
+          </div>
+          <p class="text-[10px] text-gray-500 mt-1">※ 절단 길이(원 둘레 × 개수) × 분당 가공단가 + 피어싱(개당 단가) 기준이며, 위 전체 견적에 이미 정확히 반영되어 있습니다. 이 표는 홀 종류·크기별로 얼마씩인지 확인용입니다.</p>
+        </div>
+
+        <div id="dxfBendArea" class="hidden mt-2 border border-purple-200 rounded p-2 bg-purple-50" style="display:none !important;">
+          <div class="font-bold text-purple-800 text-xs mb-1">📐 절곡선 자동 인식 — 절곡 품목</div>
+          <div class="flex items-center gap-2 text-[11px] text-gray-600 mb-1.5 flex-wrap">
+            <span>④ 절곡 단가표(두께별·길이구간별) 기준 적용 — 현재 두께: <b id="dxfBendThickLbl">—</b></span>
+          </div>
+          <table>
+            <thead><tr><th style="width:32%">절곡선</th><th>길이(mm)</th><th>구간</th><th>단가</th></tr></thead>
+            <tbody id="dxfBendItemsBody"></tbody>
+          </table>
+          <div class="flex justify-between text-[12px] font-bold text-purple-800 mt-1 px-1">
+            <span>절곡비 합계</span><span id="dxfBendTotal">0 원</span>
+          </div>
+          <p class="text-[10px] text-gray-500 mt-1">※ 절곡선(점선 표시)은 실제 레이저 절단 대상이 아니므로 위 절단 경로 길이·재료 계산에서는 제외되며, 이 절곡비로 별도 집계됩니다. 단가는 왼쪽 ④ 절곡 단가표(두께별·길이구간별) 설정을 그대로 사용합니다.</p>
+        </div>
 
         <!-- 부품 자동 인식 & 견적용 네스팅 (베타) -->
         <div class="mt-3 border-t border-green-200 pt-2">
@@ -464,6 +496,7 @@ button:active{ transform: translateY(0); }
               <tr><td>네스팅 외곽 / 면적</td><td id="dxfNestBox">—</td></tr>
               <tr><td>절감 면적 / 절감률</td><td id="dxfNestSaving">—</td></tr>
               <tr id="dxfNestScrapRow" class="hidden"><td>지정 짜투리 규격 / 필요 매수</td><td id="dxfNestScrapSheets">—</td></tr>
+              <tr><td>💰 예상 판재비 (재료비 기준)</td><td id="dxfNestPrice">—</td></tr>
             </table>
             <div id="dxfNestScrapWarn" class="hidden text-[11px] text-red-600 mt-1 bg-red-50 border border-red-200 rounded p-1.5"></div>
             <div class="text-[10px] text-gray-500 mt-1">
@@ -475,7 +508,7 @@ button:active{ transform: translateY(0); }
               <div class="text-[11px] font-bold text-gray-700 mb-1">🔢 부품별 수량 조정</div>
               <div class="text-[10px] text-gray-500 mb-1">아래 미리보기의 빨간 번호가 부품 번호입니다. 특정 번호만 수량을 늘리거나 줄인 뒤 재배치할 수 있습니다.</div>
               <table>
-                <tr><th style="width:16%">번호</th><th style="width:44%">크기</th><th>수량</th></tr>
+                <tr><th style="width:12%">번호</th><th style="width:32%">크기</th><th style="width:16%">수량</th><th>레이저 가공비</th></tr>
                 <tbody id="dxfNestQtyList"></tbody>
               </table>
               <button onclick="dxfRenestWithQty()" class="mt-2 bg-green-600 hover:bg-green-500 text-white text-[11px] font-bold px-2 py-1 rounded">
@@ -491,15 +524,23 @@ button:active{ transform: translateY(0); }
             </button>
             <div id="dxfNestPreviewWrap" class="hidden mt-2">
               <div class="text-[11px] font-bold text-gray-700 mb-1">📐 재배치 미리보기 (치수선·텍스트 제외)</div>
-              <div id="dxfNestPreviewBox" class="border border-green-200 rounded bg-white" style="width:100%;aspect-ratio:1/1;min-height:200px;max-height:320px;overflow:hidden"></div>
+              <div style="position:relative">
+                <div id="dxfNestPreviewBox" onclick="openPreviewWindow('dxfNestPreviewBox','네스팅 재배치 미리보기')" class="border border-green-200 rounded bg-white cursor-zoom-in" title="클릭하면 새 창에서 확대 (가공 시뮬레이션 · 단가표 포함)" style="width:100%;aspect-ratio:1/1;min-height:200px;max-height:320px;overflow:hidden"></div>
+                <button onclick="event.stopPropagation(); dxfSaveNestPreviewPdf();" title="이 미리보기 화면만 PDF로 저장"
+                  style="position:absolute; top:8px; right:8px; background:rgba(22,163,74,0.55); color:#fff; border:1px solid rgba(255,255,255,0.6); backdrop-filter:blur(2px); font-size:11px; font-weight:700; padding:5px 9px; border-radius:6px; cursor:pointer; box-shadow:0 1px 4px rgba(0,0,0,0.25); transition:background 0.15s;"
+                  onmouseover="this.style.background='rgba(22,163,74,0.85)'" onmouseout="this.style.background='rgba(22,163,74,0.55)'">
+                  📄 PDF 저장
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
         <!-- 실시간 미리보기 -->
         <div class="mt-2 flex flex-col sm:flex-row gap-2">
-          <div id="dxfPreviewBox" class="flex-1 border border-green-200 rounded bg-white" style="width:100%;aspect-ratio:1/1;min-height:200px;max-height:300px;overflow:hidden"></div>
+          <div id="dxfPreviewBox" onclick="openPreviewWindow('dxfPreviewBox','도면 미리보기')" class="flex-1 border border-green-200 rounded bg-white cursor-zoom-in" title="클릭하면 새 창에서 확대 (홀 가공비 · 절곡비 내역 포함)" style="width:100%;aspect-ratio:1/1;min-height:200px;max-height:300px;overflow:hidden"></div>
           <div class="sm:w-36 flex sm:flex-col gap-2 text-[11px] text-gray-700">
+            <div class="text-[10px] text-gray-400 leading-snug">🔍 도면을 클릭하면 확대와 함께 홀 가공비 · 절곡비 상세 내역이 함께 표시됩니다.</div>
             <div class="bg-green-50 border border-green-200 rounded p-2 flex-1">
               <div class="text-gray-500">외곽 크기</div>
               <div id="dxfPreviewSize" class="font-bold text-green-800">—</div>
@@ -558,6 +599,9 @@ button:active{ transform: translateY(0); }
       <div id="sheet1Warning" class="mt-2 hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2 font-bold">
         ⚠️ 재질과 두께를 먼저 입력하세요. 나머지 항목이 잠겨있습니다.
       </div>
+      <div id="sheetOversizeWarning" class="mt-2 hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2 font-bold">
+        ⚠️ 일부 부재의 치수가 현재 선택된 판재 규격보다 커서 이 판재로는 제작할 수 없습니다 — 더 큰 판재를 선택하거나 부재 치수를 확인하세요. (아래 필요 판재수는 정확하지 않을 수 있습니다)
+      </div>
     </div>
 
     <!-- ② 이후 입력 — 잠금 -->
@@ -573,10 +617,12 @@ button:active{ transform: translateY(0); }
       <!-- 제품 타입 -->
       <div class="mb-3">
         <label class="block text-xs font-bold text-gray-700 mb-1">제품 타입</label>
-        <div class="flex gap-2">
-          <button id="btnTypeRect" onclick="changeType('rect')" class="flex-1 py-2 text-sm font-bold rounded border bg-blue-600 text-white border-blue-600">사각/평판</button>
-          <button id="btnTypeCone" onclick="changeType('cone')" class="flex-1 py-2 text-sm font-bold rounded border bg-white text-gray-600 border-gray-300">원뿔/깔대기</button>
-          <button id="btnTypeHopper" onclick="changeType('hopper')" class="flex-1 py-2 text-sm font-bold rounded border bg-white text-gray-600 border-gray-300">호퍼(원통+콘)</button>
+        <div class="flex flex-wrap gap-2">
+          <button id="btnTypeRect" onclick="changeType('rect')" class="flex-1 min-w-[100px] py-2 text-sm font-bold rounded border bg-blue-600 text-white border-blue-600">사각/평판</button>
+          <button id="btnTypeCone" onclick="changeType('cone')" class="flex-1 min-w-[100px] py-2 text-sm font-bold rounded border bg-white text-gray-600 border-gray-300">원뿔/깔대기</button>
+          <button id="btnTypeHopper" onclick="changeType('hopper')" class="flex-1 min-w-[100px] py-2 text-sm font-bold rounded border bg-white text-gray-600 border-gray-300">호퍼(원통+콘)</button>
+          <button id="btnTypePyr" onclick="changeType('pyr')" class="flex-1 min-w-[100px] py-2 text-sm font-bold rounded border bg-white text-gray-600 border-gray-300">사각뿔대 호퍼</button>
+          <button id="btnTypeSqHopper" onclick="changeType('sqhopper')" class="flex-1 min-w-[100px] py-2 text-sm font-bold rounded border bg-white text-gray-600 border-gray-300">호퍼(사각+콘)</button>
         </div>
       </div>
 
@@ -589,7 +635,7 @@ button:active{ transform: translateY(0); }
               <div><label class="block text-[11px] text-gray-500 mb-0.5">가로 (mm)</label><input type="number" id="w"   placeholder="1000" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
               <div><label class="block text-[11px] text-gray-500 mb-0.5">세로 (mm)</label><input type="number" id="h"   placeholder="500"  class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
               <div><label class="block text-[11px] text-yellow-700 mb-0.5">높이(mm)</label><input type="number" id="ht"  placeholder="0"    class="block w-full border border-yellow-300 rounded p-2 text-sm bg-yellow-50" oninput="updateRectCapVisibility();calculate()"></div>
-              <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="qty" value="1" min="1"   class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="qty" value="1" min="1" step="1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
             </div>
             <div id="rectCapRow" class="mt-2 hidden">
               <label class="flex items-center gap-2 text-xs font-bold text-gray-700 bg-yellow-50 border border-yellow-300 rounded p-2 cursor-pointer">
@@ -611,7 +657,7 @@ button:active{ transform: translateY(0); }
             <span class="text-[11px] font-bold text-gray-700">🧷 전개도(평면 전개) 미리보기</span>
             <button onclick="addDevToNesting('rect')" class="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded">🧩 네스팅에 추가</button>
           </div>
-          <div id="devPreviewRect" style="min-height:180px" class="flex items-center justify-center text-xs text-gray-400">치수를 입력하면 전개도가 표시됩니다</div>
+          <div id="devPreviewRect" onclick="openPreviewWindow('devPreviewRect','사각통 전개도')" style="min-height:180px" class="flex items-center justify-center text-xs text-gray-400 cursor-zoom-in" title="클릭하면 새 창에서 확대">치수를 입력하면 전개도가 표시됩니다</div>
         </div>
       </div>
 
@@ -624,7 +670,7 @@ button:active{ transform: translateY(0); }
               <div><label class="block text-[11px] text-orange-600 mb-0.5 font-bold">하단Ø D1(mm)</label><input type="number" id="coneD1" placeholder="큰지름" class="block w-full border border-orange-300 rounded p-2 text-sm bg-orange-50" oninput="calculate()"></div>
               <div><label class="block text-[11px] text-orange-600 mb-0.5 font-bold">상단Ø D2(mm)</label><input type="number" id="coneD2" placeholder="0=꼭짓점" class="block w-full border border-orange-300 rounded p-2 text-sm bg-orange-50" oninput="calculate()"></div>
               <div><label class="block text-[11px] text-gray-500 mb-0.5">높이 H(mm)</label><input type="number" id="coneH" placeholder="수직높이" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
-              <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="coneQty" value="1" min="1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="coneQty" value="1" min="1" step="1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
             </div>
             <div class="mt-2">
               <label class="flex items-center gap-2 text-xs font-bold text-gray-700 bg-orange-50 border border-orange-300 rounded p-2 cursor-pointer">
@@ -646,7 +692,7 @@ button:active{ transform: translateY(0); }
             <span class="text-[11px] font-bold text-gray-700">🧷 전개도(평면 전개) 미리보기</span>
             <button onclick="addDevToNesting('cone')" class="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded">🧩 네스팅에 추가</button>
           </div>
-          <div id="devPreviewCone" style="min-height:180px" class="flex items-center justify-center text-xs text-gray-400">치수를 입력하면 전개도가 표시됩니다</div>
+          <div id="devPreviewCone" onclick="openPreviewWindow('devPreviewCone','원뿔/깔대기 전개도')" style="min-height:180px" class="flex items-center justify-center text-xs text-gray-400 cursor-zoom-in" title="클릭하면 새 창에서 확대">치수를 입력하면 전개도가 표시됩니다</div>
         </div>
       </div>
 
@@ -674,7 +720,7 @@ button:active{ transform: translateY(0); }
                 <label class="block text-[11px] text-gray-500 mb-0.5">경사각(°) <span class="text-gray-400">(선택)</span></label>
                 <input type="number" id="hopAngle" placeholder="예:45" step="0.1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="hopAngleToH2()">
               </div>
-              <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="hopQty" value="1" min="1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="hopQty" value="1" min="1" step="1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
             </div>
             <div class="text-[10px] text-gray-400 mb-2">※ 경사각 입력 시 D·d·각도로 콘 높이 H2를 자동 역산합니다 (수직 기준 각도).</div>
             <div class="mb-2">
@@ -702,7 +748,124 @@ button:active{ transform: translateY(0); }
             <span class="text-[11px] font-bold text-gray-700">🧷 전개도(원통부·콘부 각각 평면 전개) 미리보기</span>
             <button onclick="addDevToNesting('hopper')" class="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded">🧩 네스팅에 추가</button>
           </div>
-          <div id="devPreviewHopper" style="min-height:180px" class="flex items-center justify-center text-xs text-gray-400">치수를 입력하면 전개도가 표시됩니다</div>
+          <div id="devPreviewHopper" onclick="openPreviewWindow('devPreviewHopper','호퍼 전개도')" style="min-height:180px" class="flex items-center justify-center text-xs text-gray-400 cursor-zoom-in" title="클릭하면 새 창에서 확대">치수를 입력하면 전개도가 표시됩니다</div>
+        </div>
+      </div>
+
+      <!-- 사각뿔대 호퍼(각뿔대 / 사각-원형 변환관) -->
+      <div id="inputPyr" class="mb-3 hidden">
+        <div class="bg-teal-50 border border-teal-200 rounded p-2 mb-2 text-xs text-teal-700">
+          📐 사각뿔대 호퍼: 상부 사각형 → 하부 사각형(또는 배출구 원형 파이프)으로 좁아지는 호퍼. 하부를 사각형으로 두면 4개의 사다리꼴 판재로, 원형(배출구)으로 두면 삼각분할(트라이앵귤레이션) 전개로 계산합니다.
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- 왼쪽: 입력값 -->
+          <div>
+            <div class="text-[11px] font-bold text-gray-600 mb-1">① 상부 (사각형)</div>
+            <div class="grid grid-cols-2 gap-2 mb-2">
+              <div><label class="block text-[11px] text-teal-600 mb-0.5 font-bold">상부 가로(mm)</label><input type="number" id="pyrW1" placeholder="예:600" class="block w-full border border-teal-300 rounded p-2 text-sm bg-teal-50" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-teal-600 mb-0.5 font-bold">상부 세로(mm)</label><input type="number" id="pyrD1" placeholder="예:600" class="block w-full border border-teal-300 rounded p-2 text-sm bg-teal-50" oninput="calculate()"></div>
+            </div>
+
+            <div class="text-[11px] font-bold text-gray-600 mb-1">② 하부(배출구) 형태</div>
+            <div class="flex gap-2 mb-2">
+              <button type="button" id="btnPyrOutRect" onclick="setPyrOutlet('rect')" class="flex-1 py-1.5 text-xs font-bold rounded border bg-blue-600 text-white border-blue-600">사각형</button>
+              <button type="button" id="btnPyrOutRound" onclick="setPyrOutlet('round')" class="flex-1 py-1.5 text-xs font-bold rounded border bg-white text-gray-600 border-gray-300">원형(배출구)</button>
+            </div>
+
+            <div id="pyrRectBox" class="grid grid-cols-2 gap-2 mb-1">
+              <div><label class="block text-[11px] text-orange-600 mb-0.5 font-bold">하부 가로(mm)</label><input type="number" id="pyrW2" placeholder="0=꼭짓점" class="block w-full border border-orange-300 rounded p-2 text-sm bg-orange-50" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-orange-600 mb-0.5 font-bold">하부 세로(mm)</label><input type="number" id="pyrD2" placeholder="0=꼭짓점" class="block w-full border border-orange-300 rounded p-2 text-sm bg-orange-50" oninput="calculate()"></div>
+            </div>
+            <div id="pyrRoundBox" class="grid grid-cols-2 gap-2 mb-1 hidden">
+              <div class="col-span-2"><label class="block text-[11px] text-orange-600 mb-0.5 font-bold">배출구 Ø(mm)</label><input type="number" id="pyrDia" placeholder="예:150" class="block w-full border border-orange-300 rounded p-2 text-sm bg-orange-50" oninput="calculate()"></div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-2 mb-1">
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">높이 H(mm)</label><input type="number" id="pyrH" placeholder="수직높이" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="pyrQty" value="1" min="1" step="1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+            </div>
+            <div id="pyrCapRow" class="mb-2">
+              <label class="flex items-center gap-2 text-xs font-bold text-gray-700 bg-teal-50 border border-teal-300 rounded p-2 cursor-pointer">
+                <input type="checkbox" id="pyrCapChk" class="w-4 h-4" onchange="calculate()">
+                하단 바닥판(마개) 추가 — 위·아래가 뚫린 형태를 바닥이 막힌 형태로 (하부가 사각형일 때만)
+              </label>
+            </div>
+            <div class="bg-teal-100 border border-teal-300 rounded p-2 flex justify-between items-center">
+              <span class="text-xs font-bold text-teal-800">내부 용량 (1개, 참고)</span>
+              <span id="resPyrVol" class="text-base font-bold text-teal-900">— L</span>
+            </div>
+          </div>
+
+          <!-- 오른쪽: 실시간 단면도 미리보기 -->
+          <div class="bg-white border border-gray-200 rounded p-2 flex items-center justify-center" style="min-height:280px">
+            <svg id="pyrSvg" viewBox="0 0 320 320" style="width:100%;max-width:280px;height:280px">
+              <text x="160" y="160" text-anchor="middle" fill="#aaa" font-size="12">치수를 입력하면 미리보기가 표시됩니다</text>
+            </svg>
+          </div>
+        </div>
+        <!-- 전개도(평면 전개) 미리보기 -->
+        <div class="mt-2 bg-white border border-gray-200 rounded p-2">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[11px] font-bold text-gray-700">🧷 전개도(사다리꼴/삼각분할 전개) 미리보기</span>
+            <button onclick="addDevToNesting('pyr')" class="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded">🧩 네스팅에 추가</button>
+          </div>
+          <div id="devPreviewPyr" onclick="openPreviewWindow('devPreviewPyr','사각뿔대 호퍼 전개도')" style="min-height:180px" class="flex items-center justify-center text-xs text-gray-400 cursor-zoom-in" title="클릭하면 새 창에서 확대">치수를 입력하면 전개도가 표시됩니다</div>
+        </div>
+      </div>
+
+      <!-- 호퍼(사각+콘) -->
+      <div id="inputSqHopper" class="mb-3 hidden">
+        <div class="bg-indigo-50 border border-indigo-200 rounded p-2 mb-2 text-xs text-indigo-700">
+          🧊 호퍼(사각통부+콘부 2단 구조): 상부는 사각통(절곡 4면), 하부는 사각→원형 변환콘(삼각분할 전개)으로 각각 전개하여 레이저 가공비를 합산합니다. 사각통 높이를 0으로 두면 변환콘만 계산됩니다.
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+          <!-- 왼쪽: 입력값 -->
+          <div>
+            <div class="text-[11px] font-bold text-gray-600 mb-1">① 사각통부 (호퍼 상부)</div>
+            <div class="grid grid-cols-3 gap-2 mb-2">
+              <div><label class="block text-[11px] text-indigo-600 mb-0.5 font-bold">가로 W(mm)</label><input type="number" id="shW" placeholder="예:600" class="block w-full border border-indigo-300 rounded p-2 text-sm bg-indigo-50" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-indigo-600 mb-0.5 font-bold">세로 D(mm)</label><input type="number" id="shD" placeholder="예:600" class="block w-full border border-indigo-300 rounded p-2 text-sm bg-indigo-50" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">사각통 높이 H1(mm)</label><input type="number" id="shH1" placeholder="0=없음" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+            </div>
+            <div class="text-[11px] font-bold text-gray-600 mb-1">② 콘부 (변환관 / 사각→원형 배출구)</div>
+            <div class="grid grid-cols-2 gap-2 mb-1">
+              <div><label class="block text-[11px] text-orange-600 mb-0.5 font-bold">배출구Ø d(mm)</label><input type="number" id="shDia" placeholder="예:150" class="block w-full border border-orange-300 rounded p-2 text-sm bg-orange-50" oninput="calculate()"></div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">콘 높이 H2(mm)</label><input type="number" id="shH2" placeholder="수직높이" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+            </div>
+            <div class="grid grid-cols-2 gap-2 mb-1">
+              <div>
+                <label class="block text-[11px] text-gray-500 mb-0.5">경사각(°) <span class="text-gray-400">(선택, 근사)</span></label>
+                <input type="number" id="shAngle" placeholder="예:45" step="0.1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="shAngleToH2()">
+              </div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="shQty" value="1" min="1" step="1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+            </div>
+            <div class="text-[10px] text-gray-400 mb-2">※ 배출구Ø d는 상부 가로/세로보다 작아야 하며, 콘부 계산에는 d와 H2가 모두 0보다 커야 합니다. 경사각 입력 시 평균 반경 기준으로 H2를 근사 역산합니다.</div>
+            <div class="mb-2">
+              <label class="flex items-center gap-2 text-xs font-bold text-gray-700 bg-indigo-50 border border-indigo-300 rounded p-2 cursor-pointer">
+                <input type="checkbox" id="shCapChk" class="w-4 h-4" onchange="calculate()">
+                하단(배출구) 마개 추가 — 위·아래가 뚫린 호퍼를 바닥이 막힌 형태로
+              </label>
+            </div>
+            <div class="bg-indigo-100 border border-indigo-300 rounded p-2 flex justify-between items-center">
+              <span class="text-xs font-bold text-indigo-800">호퍼 총 용량 (1개)</span>
+              <span id="resShVol" class="text-base font-bold text-indigo-900">— L</span>
+            </div>
+          </div>
+
+          <!-- 오른쪽: 실시간 단면도 미리보기 -->
+          <div class="bg-white border border-gray-200 rounded p-2 flex items-center justify-center" style="min-height:280px">
+            <svg id="sqHopperSvg" viewBox="0 0 320 320" style="width:100%;max-width:280px;height:280px">
+              <text x="160" y="160" text-anchor="middle" fill="#aaa" font-size="12">치수를 입력하면 미리보기가 표시됩니다</text>
+            </svg>
+          </div>
+        </div>
+        <!-- 전개도(평면 전개) 미리보기 -->
+        <div class="mt-2 bg-white border border-gray-200 rounded p-2">
+          <div class="flex items-center justify-between mb-1">
+            <span class="text-[11px] font-bold text-gray-700">🧷 전개도(사각통부·콘부 각각 평면 전개) 미리보기</span>
+            <button onclick="addDevToNesting('sqhopper')" class="bg-green-600 hover:bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded">🧩 네스팅에 추가</button>
+          </div>
+          <div id="devPreviewSqHopper" onclick="openPreviewWindow('devPreviewSqHopper','호퍼(사각+콘) 전개도')" style="min-height:180px" class="flex items-center justify-center text-xs text-gray-400 cursor-zoom-in" title="클릭하면 새 창에서 확대">치수를 입력하면 전개도가 표시됩니다</div>
         </div>
       </div>
 
@@ -713,13 +876,31 @@ button:active{ transform: translateY(0); }
 
       <!-- 홀 -->
       <div class="mb-3 bg-gray-50 rounded p-3 border border-gray-200">
-        <label class="block text-xs font-bold text-gray-700 mb-1">홀(타공) — 레이저 절단 경로 포함</label>
-        <div class="grid grid-cols-3 gap-2 items-end">
+        <div class="flex items-center justify-between mb-1">
+          <label class="block text-xs font-bold text-gray-700">홀(타공) — 레이저 절단 경로 포함</label>
+          <label class="flex items-center gap-1 text-[11px] text-gray-600 cursor-pointer">
+            <input type="checkbox" id="holeFaceModeChk" class="w-3.5 h-3.5" onchange="toggleHoleFaceMode()">
+            면(부재)별로 따로 입력
+          </label>
+        </div>
+
+        <!-- 단순 모드(기본): 지름·갯수 입력 시 실시간으로 현재 형상의 모든 면(플랩/전개면 등)에 자동 적용됨 -->
+        <div id="holeSimpleContainer" class="grid grid-cols-3 gap-2 items-end">
           <div><label class="block text-[11px] text-gray-500 mb-0.5">홀 지름(mm)</label><input type="number" id="holeDia" placeholder="예:10" min="0" step="0.1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
-          <div><label class="block text-[11px] text-gray-500 mb-0.5">갯수(개)</label><input type="number" id="holeCount" placeholder="0" min="0" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+          <div><label class="block text-[11px] text-gray-500 mb-0.5">갯수(개, 면당)</label><input type="number" id="holeCount" placeholder="0" min="0" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
           <div class="bg-blue-50 border border-blue-200 rounded p-2 text-center">
             <div class="text-[10px] text-gray-500">홀 레이저 경로</div>
             <div class="text-sm font-bold text-blue-700"><span id="resHolePerimeter">0</span> mm</div>
+          </div>
+        </div>
+        <div id="holeSimpleWarn" class="hidden mt-1.5 text-[11px] text-red-600 bg-red-50 border border-red-200 rounded p-1.5"></div>
+
+        <!-- 면별 모드: 사각통(플랩별)·원뿔/깔대기·호퍼(원통부/콘부) 등 부재 수만큼 행이 자동 생성됨 -->
+        <div id="holeFaceContainer" class="hidden">
+          <div id="holeFaceRows" class="space-y-1"></div>
+          <div class="bg-blue-50 border border-blue-200 rounded p-2 text-center mt-2">
+            <div class="text-[10px] text-gray-500">홀 레이저 경로 (전체 면 합계)</div>
+            <div class="text-sm font-bold text-blue-700"><span id="resHolePerimeterFace">0</span> mm · <span id="resHoleCountFace">0</span>개</div>
           </div>
         </div>
       </div>
@@ -727,6 +908,9 @@ button:active{ transform: translateY(0); }
       <!-- 절곡 -->
       <div class="mb-3">
         <label class="block text-xs font-bold text-gray-700 mb-1">절곡 — 두께에 따라 회당 단가 자동 적용</label>
+        <p id="bendAutoNote" class="hidden text-[10px] text-amber-700 bg-amber-50 border border-amber-200 rounded px-2 py-1 mb-1">
+          ⓘ 절곡 횟수가 치수(또는 도면의 절곡선)를 기준으로 자동 계산되어 채워졌습니다. 필요시 직접 수정하셔도 됩니다.
+        </p>
         <div class="grid grid-cols-2 gap-2">
           <div class="bg-white rounded border border-gray-300 p-2 shadow-sm">
             <div class="text-[11px] font-bold text-gray-700">① ~500mm</div>
@@ -796,7 +980,7 @@ button:active{ transform: translateY(0); }
           <div id="laserDetailText"></div>
         </div>
       </div>
-      <div class="mt-4 bg-blue-800 text-white p-4 rounded-lg flex flex-col gap-1">
+      <div id="finalQuoteBox" class="mt-4 bg-blue-800 text-white p-4 rounded-lg flex flex-col gap-1">
         <div class="flex justify-between items-center">
           <span class="text-sm opacity-80">총 필요 판재수</span>
           <span id="resSheetCount2" class="text-lg font-bold">0 장</span>
@@ -807,6 +991,11 @@ button:active{ transform: translateY(0); }
         </div>
       </div>
       <div class="mt-2 no-print" style="text-align:center">
+        <button onclick="dxfApplyNestingToCalc()"
+          onmouseover="this.style.background='#2563eb'" onmouseout="this.style.background='#3b82f6'"
+          style="background:#3b82f6;color:#ffffff;border:1px solid #3b82f6;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer;margin-right:6px">
+          ⬇ 네스팅 결과를 계산기에 적용
+        </button>
         <button onclick="saveLaserQuoteToFile()"
           onmouseover="this.style.background='#ecfdf5'" onmouseout="this.style.background='#ffffff'"
           style="background:#ffffff;color:#059669;border:1px solid #a7f3d0;border-radius:6px;padding:5px 12px;font-size:12px;font-weight:700;cursor:pointer">
@@ -851,7 +1040,7 @@ button:active{ transform: translateY(0); }
     </div>
     <div>
       <label class="block text-xs font-medium text-gray-600 mb-1">수량 (개)</label>
-      <input type="number" id="pmQty" value="1" min="1" class="inp" oninput="calcPlasticMaterial()">
+      <input type="number" id="pmQty" value="1" min="1" step="1" class="inp" oninput="calcPlasticMaterial()">
     </div>
     <div>
       <label class="block text-xs font-medium text-gray-600 mb-1">로스율 (%) <span class="text-[10px] text-gray-400">절단 손실</span></label>
@@ -895,7 +1084,7 @@ button:active{ transform: translateY(0); }
         </div>
         <!-- 실시간 미리보기 -->
         <div class="mt-2 flex flex-col sm:flex-row gap-2">
-          <div id="cncDxfPreviewBox" class="flex-1 border border-emerald-200 rounded bg-white" style="width:100%;aspect-ratio:1/1;min-height:180px;max-height:260px;overflow:hidden"></div>
+          <div id="cncDxfPreviewBox" onclick="openPreviewWindow('cncDxfPreviewBox','CNC 도면 미리보기')" class="flex-1 border border-emerald-200 rounded bg-white cursor-zoom-in" title="클릭하면 새 창에서 확대" style="width:100%;aspect-ratio:1/1;min-height:180px;max-height:260px;overflow:hidden"></div>
           <div class="sm:w-36 flex sm:flex-col gap-2 text-[11px] text-gray-700">
             <div class="bg-emerald-50 border border-emerald-200 rounded p-2 flex-1">
               <div class="text-gray-500">외곽 크기</div>
@@ -1044,11 +1233,11 @@ button:active{ transform: translateY(0); }
           <div class="mt-3 grid grid-cols-1 md:grid-cols-3 gap-3">
             <div class="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded p-2">
               <span class="text-xs font-bold text-blue-800 whitespace-nowrap">SS400 레이저 (원/분)</span>
-              <input type="number" id="min_ss"  value="1500" class="inp" style="max-width:90px" oninput="calculate()">
+              <input type="number" id="min_ss"  value="1500" class="inp" style="max-width:90px" oninput="calculate();_refreshDxfBendIfLoaded();_refreshDxfQtyCostsIfLoaded();">
             </div>
             <div class="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded p-2">
               <span class="text-xs font-bold text-orange-800 whitespace-nowrap">SUS304 레이저 (원/분)</span>
-              <input type="number" id="min_sus" value="2500" class="inp" style="max-width:90px" oninput="calculate()">
+              <input type="number" id="min_sus" value="2500" class="inp" style="max-width:90px" oninput="calculate();_refreshDxfBendIfLoaded();_refreshDxfQtyCostsIfLoaded();">
             </div>
             <div class="flex items-center gap-2 bg-green-50 border border-green-200 rounded p-2">
               <span class="text-xs font-bold text-green-800 whitespace-nowrap">전체 마진율 (%)</span>
@@ -1186,7 +1375,7 @@ button:active{ transform: translateY(0); }
             </div>
             <div>
               <label class="block text-xs font-bold text-gray-700 mb-1">레이저 피어싱 (원/회)</label>
-              <input type="number" id="pierce_price" value="80" class="inp" oninput="calculate()">
+              <input type="number" id="pierce_price" value="80" class="inp" oninput="calculate();_refreshDxfBendIfLoaded();_refreshDxfQtyCostsIfLoaded();">
               <p class="text-[10px] text-gray-400 mt-1">엑셀 기준 80원/회</p>
             </div>
             <div class="flex flex-col gap-2 justify-center">
@@ -1315,6 +1504,37 @@ button:active{ transform: translateY(0); }
 </div>
 
 <script>
+// ════ 수량(qty) 입력 검증 유틸 ════
+// 수량은 반드시 1 이상의 정수여야 합니다. parseInt()는 "1.5"를 1로 조용히
+// 잘라버려 사용자가 잘못 입력한 것을 알아채지 못한 채 다른 금액이 계산될 수
+// 있으므로, Number()로 변환한 뒤 Number.isInteger()로 검증하고, 유효하지
+// 않으면 경고를 띄우고 안전한 기본값(fallback)을 사용합니다.
+function getIntQty(id, fallback) {
+  fallback = (fallback === undefined) ? 1 : fallback;
+  const el = document.getElementById(id);
+  if (!el) return fallback;
+  const raw = el.value;
+  const num = Number(raw);
+  if (raw === '' || !Number.isFinite(num) || !Number.isInteger(num) || num < 1) {
+    showQtyWarning(id);
+    return fallback;
+  }
+  return num;
+}
+function showQtyWarning(id) {
+  const el = document.getElementById('saveToast');
+  if (!el) return;
+  el.innerText = '⚠️ 수량(' + id + ')은 1 이상의 정수만 입력할 수 있습니다.';
+  el.style.display = 'block';
+  el.style.background = '#dc2626';
+  clearTimeout(window._qtyWarnTimer);
+  window._qtyWarnTimer = setTimeout(() => {
+    el.style.display = 'none';
+    el.style.background = '';
+    el.innerText = '✅ 전체 저장 완료!';
+  }, 2500);
+}
+
 // ════ 단가표 하위 섹션(①~⑦) 개별 아코디언 토글 ════
 function toggleSubPanel(id) {
   const body = document.getElementById(id);
@@ -1375,7 +1595,8 @@ const K = {
   PRICE:'LE_P_V16', SHEET:'LE_S_V16', BEND:'LE_B_V16',
   SSFEED:'LE_SSF_V16', SUSFEED:'LE_SUSF_V16',
   KG:'LE_KG_V16', EXTRA:'LE_EX_V16', CALC:'LE_CALC_STATE_V22',
-  PLASTIC:'LE_PL_V22', CNCPROC:'LE_CNCP_V22', CNCEXTRA:'LE_CNCE_V22'
+  PLASTIC:'LE_PL_V22', CNCPROC:'LE_CNCP_V22', CNCEXTRA:'LE_CNCE_V22',
+  DXFBEND:'LE_DXFBEND_V1'
 };
 
 // ════════════════════════════════════════════════════════════
@@ -1655,13 +1876,15 @@ const CALC_STATE_FIELDS = [
   'w','h','ht','qty',
   'coneD1','coneD2','coneH','coneQty',
   'hopD','hopH1','hopD2','hopH2','hopAngle','hopQty',
+  'pyrW1','pyrD1','pyrW2','pyrD2','pyrDia','pyrH','pyrQty',
+  'shW','shD','shH1','shDia','shH2','shAngle','shQty',
   'holeDia','holeCount','bend500','bend1000','bend1500','bendMax'
 ];
-const CALC_STATE_CHECKS = ['chk_weld','chk_post','rectCapChk','coneCapChk','hopCapChk'];
+const CALC_STATE_CHECKS = ['chk_weld','chk_post','rectCapChk','coneCapChk','hopCapChk','pyrCapChk','shCapChk','holeFaceModeChk'];
 
 function saveCalcState() {
   try {
-    const state = { CType, values:{}, checks:{} };
+    const state = { CType, values:{}, checks:{}, pyrOutlet: window._pyrOutlet||'rect' };
     CALC_STATE_FIELDS.forEach(id=>{
       const el = document.getElementById(id);
       if(el) state.values[id] = el.value;
@@ -1670,6 +1893,7 @@ function saveCalcState() {
       const el = document.getElementById(id);
       if(el) state.checks[id] = el.checked;
     });
+    state.holeFaceCfg = window._holeFaceCfg || {};
     localStorage.setItem(K.CALC, JSON.stringify(state));
   } catch(e) { /* 저장 실패 시 무시 */ }
 }
@@ -1687,7 +1911,10 @@ function restoreCalcState() {
       const el = document.getElementById(id);
       if(el) el.checked = state.checks[id];
     });
+    if(state.holeFaceCfg) window._holeFaceCfg = state.holeFaceCfg;
+    if(state.pyrOutlet) setPyrOutlet(state.pyrOutlet);
     if(state.CType) changeType(state.CType);
+    toggleHoleFaceMode(true);
   } catch(e) { /* 복원 실패 시 무시 */ }
 }
 
@@ -1752,6 +1979,19 @@ const DEF_BEND = [
   {t:12,  b500:2000, b1000:4000, b1500:6000, bMax:9000},
 ];
 
+// 절곡선 길이(mm)를 ④ 절곡 단가표의 길이 구간(500/1000/1500/1500초과)에 매칭
+// → 'bend500'|'bend1000'|'bend1500'|'bendMax' (입력칸 id) 형태로 반환.
+// bp객체(loadBend()의 한 행) 컬럼명은 'b'+접미사('b500'…'bMax')로 이 함수의 반환값에서 파생 가능.
+function bendBracketId(lenMm){
+  if(lenMm<=500) return 'bend500';
+  if(lenMm<=1000) return 'bend1000';
+  if(lenMm<=1500) return 'bend1500';
+  return 'bendMax';
+}
+function bendBracketLabel(bracketId){
+  return { bend500:'~500mm', bend1000:'~1000mm', bend1500:'~1500mm', bendMax:'1500mm~' }[bracketId] || '';
+}
+
 // 플라스틱/합성수지 원자재 단가 (원/kg) + 밀도 (g/cm³) — CNC 목공기계 가공용
 // 자재비 = 가로(mm)×세로(mm)×두께(mm)×밀도(g/cm³) / 1e6 (kg) × 원/kg
 const DEF_PLASTIC = [
@@ -1766,6 +2006,10 @@ const DEF_PLASTIC = [
   {name:'MC 나일론',     price:12000, density:1.15},
   {name:'베이클라이트',  price:13000, density:1.40},
 ];
+
+// DXF 도면에서 자동 인식한 절곡선의 가격 기준값 — 1T(두께 1mm) 기준 단가이며,
+// 실제 가격은 두께(t)에 정비례로 스케일된다(2T=2배, 3T=3배). 길이당 단가는 절곡선 길이(mm)에 비례 추가.
+const DEF_DXF_BEND = { base: 500, perMm: 2 }; // base: 1T 기준 절곡 1회당 기본 단가(원), perMm: 1T 기준 mm당 추가 단가(원)
 
 // 목공/플라스틱 CNC 가공비 단가 (원/분, 재질별) — 국내 평균 기준
 const DEF_CNC_PROC = [
@@ -1807,6 +2051,7 @@ function loadSusFeed(){ return load(K.SUSFEED, DEF_SUS_FEED); }
 function loadPlastic(){ return load(K.PLASTIC, DEF_PLASTIC); }
 function loadCncProc(){ return load(K.CNCPROC, DEF_CNC_PROC); }
 function loadCncExtra(){ return load(K.CNCEXTRA, DEF_CNC_EXTRA); }
+function loadDxfBend(){ return load(K.DXFBEND, DEF_DXF_BEND); }
 
 // ════ 유틸 ════
 function nearestByT(arr, t, field) {
@@ -1824,6 +2069,58 @@ function getFeed(mat, t) {
   return nearestByT(mat==='SS400'?loadSsFeed():loadSusFeed(), t, 'f') || 1000;
 }
 
+/* 판재 소요량 계산 — 한 아이템에 부재가 여러 개(예: 사각통 본체 + 하단 마개)일 때,
+   각 부재의 소요 판재수를 따로 계산해 단순히 더하면 작은 부재(마개 등)가 실제로는
+   본체와 같은 판재 여유 공간에 함께 잘리는데도 "최소 1장"으로 잡혀 판재수가
+   불필요하게 늘어난다. 아래는 가장 큰 부재를 기준으로 그리드를 먼저 배치하고,
+   그 그리드가 판재를 다 못 채워 생기는 여백(오른쪽 띠 / 아래쪽 띠)에 작은
+   부재들을 추가로 채워 넣어, 실제로 필요한 판재 수를 더 정확히 추정한다. */
+function calcCombinedSheetsNeeded(parts, qty, sw, sh){
+  const valid = parts.filter(p=> p.extW>0 && p.extH>0);
+  if(!valid.length) return { sheets:0, oversized:false };
+  const sorted = valid.slice().sort((a,b)=> (b.extW*b.extH)-(a.extW*a.extH));
+  // 판재 크기(가로×세로)를 넘어서는 부재가 있는지 먼저 확인 — 이런 부재는 몇 판을 써도
+  // 영원히 배치할 수 없으므로(이 함수는 부재 회전은 고려하지 않음) 아래 루프에서 매 판마다
+  // 헛돌며 guard 한계(예: 100000)까지 채워 "총 필요 판재수 100000장" 같은 비정상 값이 나오는
+  // 원인이 됨. 회전하면 들어갈 수 있는 경우도 이 함수는 회전을 시도하지 않으므로 함께 경고한다.
+  const oversized = sorted.some(p => p.extW>sw || p.extH>sh);
+  const remaining = sorted.map(()=> qty);
+  let sheets = 0;
+  let guard = 0;
+  while(remaining.some(r=>r>0) && guard < 2000){
+    guard++;
+    const main = sorted[0];
+    const cols = Math.max(0, Math.floor(sw/main.extW));
+    const rows = Math.max(0, Math.floor(sh/main.extH));
+    const placedMain = Math.min(remaining[0], cols*rows);
+    const usedW = cols*main.extW, usedH = rows*main.extH;
+    // 오른쪽 여백 띠 (usedW ~ sw, 세로 0~sh) / 아래쪽 여백 띠 (가로 0~usedW, usedH ~ sh)
+    const stripRightW = sw-usedW, stripRightH = sh;
+    const stripBottomW = usedW,  stripBottomH = sh-usedH;
+    let placedAny = placedMain>0;
+    remaining[0] -= placedMain;
+    for(let i=1;i<sorted.length;i++){
+      if(remaining[i]<=0) continue;
+      const p = sorted[i];
+      let capacity = 0;
+      if(stripRightW>=p.extW && stripRightH>=p.extH){
+        capacity += Math.floor(stripRightW/p.extW) * Math.floor(stripRightH/p.extH);
+      }
+      if(stripBottomW>=p.extW && stripBottomH>=p.extH){
+        capacity += Math.floor(stripBottomW/p.extW) * Math.floor(stripBottomH/p.extH);
+      }
+      const placed = Math.min(remaining[i], capacity);
+      if(placed>0) placedAny = true;
+      remaining[i] -= placed;
+    }
+    sheets++;
+    // 이번 판재에서 어떤 부재도 하나도 배치하지 못했다면(치수 초과 등으로 영원히 못 들어감),
+    // 더 반복해도 상황이 나아지지 않으므로 무한 루프 방지를 위해 즉시 중단한다.
+    if(!placedAny) break;
+  }
+  return { sheets, oversized };
+}
+
 // ════ 잠금 제어 ════
 function isReady() {
   return document.getElementById('mat').value !== '' && (parseFloat(document.getElementById('t').value)||0) > 0;
@@ -1833,8 +2130,17 @@ function updateLock() {
   document.getElementById('lockOverlay').style.display   = ok?'none':'flex';
   document.getElementById('sheet1Warning').classList.toggle('hidden', ok);
 }
-function onMatChange() { autoSheet(); updateLock(); calculate(); }
-function onTChange()   { autoSheet(); updateLock(); calculate(); }
+function onMatChange() {
+  autoSheet(); updateLock(); calculate();
+  _refreshDxfBendIfLoaded();
+  _refreshDxfQtyCostsIfLoaded();
+}
+function onTChange()   {
+  autoSheet(); updateLock(); calculate();
+  _refreshDxfBendIfLoaded();
+  _refreshDxfNestPriceIfLoaded();
+  _refreshDxfQtyCostsIfLoaded();
+}
 
 // ════ 초기화 ════
 window.onload = function() {
@@ -2150,6 +2456,85 @@ function applyPasteImport() {
 
 // ════ 제품 타입 ════
 let CType='rect';
+window._pyrOutlet = 'rect';
+
+// ── 사각뿔대 호퍼 실시간 미리보기 (SVG, 간이 등각투상) ──
+function _isoProj(p, scale, ox, oy){
+  const x=p[0], y=p[1], z=p[2];
+  return { x: ox + scale*0.866*(x-z), y: oy - scale*y + scale*0.5*(x+z) };
+}
+function _isoLine(a,b,color,width,dashed){
+  return `<line x1="${a.x.toFixed(1)}" y1="${a.y.toFixed(1)}" x2="${b.x.toFixed(1)}" y2="${b.y.toFixed(1)}" stroke="${color}" stroke-width="${width}"${dashed?' stroke-dasharray="4,3"':''}/>`;
+}
+function _isoPolyFill(pts,fill,opacity){
+  return `<polygon points="${pts.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')}" fill="${fill}" fill-opacity="${opacity}"/>`;
+}
+function drawPyrDiagram(W1, D1, W2o, D2o, dia, H, outletMode, capped){
+  const svg = document.getElementById('pyrSvg');
+  if(!svg) return;
+  if(!(W1>0) || !(D1>0) || !(H>0)) {
+    svg.innerHTML = '<text x="160" y="160" text-anchor="middle" fill="#aaa" font-size="12">치수를 입력하면 미리보기가 표시됩니다</text>';
+    return;
+  }
+  const isRound = outletMode==='round';
+  const W2 = isRound ? (dia||0) : (W2o||0);
+  const D2 = isRound ? (dia||0) : (D2o||0);
+  const hw1=W1/2, hd1=D1/2, hw2=W2/2, hd2=D2/2;
+
+  const topPts = [[-hw1,H,hd1],[hw1,H,hd1],[hw1,H,-hd1],[-hw1,H,-hd1]];
+  let botPts, circlePts=null, pipePts=null;
+  if(isRound && dia>0){
+    const N=24, r=dia/2;
+    circlePts=[]; for(let i=0;i<N;i++){ const a=i*2*Math.PI/N; circlePts.push([r*Math.cos(a),0,r*Math.sin(a)]); }
+    const pipeLen = Math.max(H*0.12, dia*0.25);
+    pipePts=[]; for(let i=0;i<N;i++){ const a=i*2*Math.PI/N; pipePts.push([r*Math.cos(a),-pipeLen,r*Math.sin(a)]); }
+    botPts = circlePts;
+  } else {
+    botPts = [[-hw2,0,hd2],[hw2,0,hd2],[hw2,0,-hd2],[-hw2,0,-hd2]];
+  }
+
+  const allPts3d = topPts.concat(botPts).concat(pipePts||[]);
+  const raw = allPts3d.map(p=>_isoProj(p,1,0,0));
+  const minx=Math.min(...raw.map(r=>r.x)), maxx=Math.max(...raw.map(r=>r.x));
+  const miny=Math.min(...raw.map(r=>r.y)), maxy=Math.max(...raw.map(r=>r.y));
+  const spanX=(maxx-minx)||1, spanY=(maxy-miny)||1;
+  const margin=36;
+  const scale=Math.min((320-2*margin)/spanX, (300-2*margin)/spanY);
+  const ox = 160 - scale*(minx+maxx)/2;
+  const oy = 155 - scale*(miny+maxy)/2;
+  const P = (arr)=>arr.map(p=>_isoProj(p,scale,ox,oy));
+  const T = P(topPts);
+
+  let s='';
+  // 상단면 채움
+  s += _isoPolyFill(T, '#0d9488', 0.10);
+  // 상단 사각형 외곽선
+  for(let i=0;i<4;i++) s += _isoLine(T[i], T[(i+1)%4], '#0d9488', 2, false);
+
+  if(isRound && dia>0){
+    const B = P(circlePts);
+    const PP = P(pipePts);
+    // 상단 각 모서리 → 원 둘레 대응점(코너 방향) 연결선
+    const N = circlePts.length;
+    const cornerIdx = [ Math.round(N*0.125), Math.round(N*0.375), Math.round(N*0.625), Math.round(N*0.875) ];
+    for(let k=0;k<4;k++){ s += _isoLine(T[k], B[cornerIdx[k]%N], '#ea580c', 1.6, false); }
+    // 원(배출구) 테두리
+    s += `<polygon points="${B.map(p=>p.x.toFixed(1)+','+p.y.toFixed(1)).join(' ')}" fill="#ea580c" fill-opacity="0.08" stroke="#ea580c" stroke-width="1.6"/>`;
+    // 파이프(짧은 배출관)
+    const pipeLenVal = Math.max(H*0.12, dia*0.25);
+    const pipeCenter = _isoProj([0,-pipeLenVal,0], scale, ox, oy);
+    s += _isoLine(B[0], PP[0], '#94a3b8', 1.4, false);
+    s += _isoLine(B[Math.round(N/2)], PP[Math.round(N/2)], '#94a3b8', 1.4, false);
+    s += `<ellipse cx="${pipeCenter.x.toFixed(1)}" cy="${pipeCenter.y.toFixed(1)}" rx="${(scale*dia/2*0.866).toFixed(1)}" ry="${(scale*dia/2*0.5).toFixed(1)}" fill="none" stroke="${capped?'#1e293b':'#94a3b8'}" stroke-width="${capped?3:1.4}"/>`;
+  } else {
+    const B = P(botPts);
+    for(let i=0;i<4;i++) s += _isoLine(B[i], B[(i+1)%4], capped?'#1e293b':'#ea580c', capped?3:2, false);
+    if(capped) s += _isoPolyFill(B, '#1e293b', 0.85);
+    for(let i=0;i<4;i++) s += _isoLine(T[i], B[i], '#64748b', 1.4, false);
+  }
+
+  svg.innerHTML = s;
+}
 
 // ── 호퍼 단면도 실시간 미리보기 (SVG) ──
 function drawHopperDiagram(D, H1, d, H2, capped) {
@@ -2249,6 +2634,110 @@ function drawHopperDiagram(D, H1, d, H2, capped) {
       s += `<text x="${centerX}" y="${dimY+13}" text-anchor="middle" font-size="11" fill="#c2410c" font-weight="bold">d ${d}</text>`;
     } else {
       s += `<text x="${centerX}" y="${dimY+13}" text-anchor="middle" font-size="11" fill="#c2410c" font-weight="bold">꼭짓점(d=0)</text>`;
+    }
+  }
+
+  svg.innerHTML = s;
+}
+
+// ── 호퍼(사각+콘) 단면도 실시간 미리보기 (SVG) ──
+function drawSqHopperDiagram(W, D, H1, dia, H2, capped) {
+  const svg = document.getElementById('sqHopperSvg');
+  if(!svg) return;
+  if(!(W>0) || !(D>0) || !((H1>0) || (H2>0))) {
+    svg.innerHTML = '<text x="160" y="160" text-anchor="middle" fill="#aaa" font-size="12">치수를 입력하면 미리보기가 표시됩니다</text>';
+    return;
+  }
+
+  const centerX = 120;
+  const topY = 26, bottomMaxY = 260;
+  const totalH = H1 + H2;
+  const availW = 150;
+  const availH = bottomMaxY - topY;
+  const scale = Math.min(availW / W, availH / (totalH||1));
+
+  const ductW = W*scale;
+  const ductH = H1*scale;
+  const coneW2 = dia*scale;
+  const coneH = H2*scale;
+
+  const x0 = centerX - ductW/2, x1 = centerX + ductW/2;
+  const yTop = topY;
+  const yDuctBot = topY + ductH;
+  const yConeBot = yDuctBot + coneH;
+  const xd0 = centerX - coneW2/2, xd1 = centerX + coneW2/2;
+  const hasCone = (H2>0 && dia>0);
+
+  let s = '';
+  // 중심축(1점쇄선)
+  s += `<line x1="${centerX}" y1="${yTop-8}" x2="${centerX}" y2="${yConeBot+8}" stroke="#c7c7c7" stroke-width="1" stroke-dasharray="6,3,1,3"/>`;
+
+  // 사각통부 (H1>0일 때만)
+  if(H1>0){
+    s += `<line x1="${x0}" y1="${yTop}" x2="${x0}" y2="${yDuctBot}" stroke="#4338ca" stroke-width="2"/>`;
+    s += `<line x1="${x1}" y1="${yTop}" x2="${x1}" y2="${yDuctBot}" stroke="#4338ca" stroke-width="2"/>`;
+    s += `<line x1="${x0}" y1="${yTop}" x2="${x1}" y2="${yTop}" stroke="#4338ca" stroke-width="2"/>`;
+    s += `<rect x="${x0}" y="${yTop}" width="${ductW}" height="${ductH}" fill="#4338ca" fill-opacity="0.06"/>`;
+  }
+
+  // 콘부(변환관, H2>0 & dia>0 일 때만)
+  if(hasCone){
+    s += `<line x1="${x0}" y1="${yDuctBot}" x2="${xd0}" y2="${yConeBot}" stroke="#ea580c" stroke-width="2"/>`;
+    s += `<line x1="${x1}" y1="${yDuctBot}" x2="${xd1}" y2="${yConeBot}" stroke="#ea580c" stroke-width="2"/>`;
+    s += `<polygon points="${x0},${yDuctBot} ${x1},${yDuctBot} ${xd1},${yConeBot} ${xd0},${yConeBot}" fill="#ea580c" fill-opacity="0.08"/>`;
+    s += `<ellipse cx="${centerX}" cy="${yConeBot}" rx="${coneW2/2}" ry="${Math.max(3,coneW2*0.14)}" fill="none" stroke="#ea580c" stroke-width="1.4" stroke-dasharray="3,2"/>`;
+  }
+
+  // ── 하단(배출구) 개방/마개 표시 ──
+  const bY  = hasCone ? yConeBot : yDuctBot;
+  const bX0 = hasCone ? xd0 : x0;
+  const bX1 = hasCone ? xd1 : x1;
+  if(bX1 > bX0){
+    const capLabelY = bY + (hasCone ? 40 : 22);
+    if(capped){
+      s += `<rect x="${bX0}" y="${bY-3}" width="${bX1-bX0}" height="6" fill="#1e293b"/>`;
+      s += `<line x1="${bX0}" y1="${bY}" x2="${bX1}" y2="${bY}" stroke="#1e293b" stroke-width="3"/>`;
+      s += `<text x="${centerX}" y="${capLabelY}" text-anchor="middle" font-size="11" fill="#1e293b" font-weight="bold">🔒 마개(밀폐)</text>`;
+    } else {
+      s += `<line x1="${bX0}" y1="${bY}" x2="${bX1}" y2="${bY}" stroke="#94a3b8" stroke-width="2" stroke-dasharray="4,3"/>`;
+      s += `<text x="${centerX}" y="${capLabelY}" text-anchor="middle" font-size="10" fill="#94a3b8">개방(마개없음)</text>`;
+    }
+  }
+
+  // 사각통↔콘 경계선 (둘 다 있을 때 살짝 강조)
+  if(H1>0 && hasCone){
+    s += `<line x1="${x0}" y1="${yDuctBot}" x2="${x1}" y2="${yDuctBot}" stroke="#999" stroke-width="1" stroke-dasharray="3,2"/>`;
+  }
+
+  // ── 치수선: W (상단 가로) ──
+  if(H1>0 || !hasCone){
+    const dimY = yTop - 14;
+    s += dimLineH(x0, x1, dimY);
+    s += `<text x="${centerX}" y="${dimY-4}" text-anchor="middle" font-size="11" fill="#3730a3" font-weight="bold">W ${W}</text>`;
+  }
+
+  // ── 치수선: H1 (우측 세로, 사각통) ──
+  if(H1>0){
+    const dimX = x1 + 14;
+    s += dimLineV(dimX, yTop, yDuctBot);
+    s += `<text x="${dimX+4}" y="${(yTop+yDuctBot)/2+4}" font-size="11" fill="#3730a3" font-weight="bold">H1 ${H1}</text>`;
+  }
+
+  // ── 치수선: H2 (우측 세로, 콘) ──
+  if(H2>0){
+    const dimX = x1 + 14;
+    s += dimLineV(dimX, yDuctBot, yConeBot);
+    s += `<text x="${dimX+4}" y="${(yDuctBot+yConeBot)/2+4}" font-size="11" fill="#c2410c" font-weight="bold">H2 ${H2}</text>`;
+  }
+
+  // ── 치수선: d (하단 가로, 배출구) ──
+  if(H2>0){
+    const dimY = yConeBot + 16;
+    if(dia>0){
+      s += dimLineH(xd0, xd1, dimY);
+      s += `<text x="${centerX}" y="${dimY+13}" text-anchor="middle" font-size="11" fill="#c2410c" font-weight="bold">Ø${dia}</text>`;
+    } else {
+      s += `<text x="${centerX}" y="${dimY+13}" text-anchor="middle" font-size="11" fill="#c2410c" font-weight="bold">배출구Ø 미입력</text>`;
     }
   }
 
@@ -2390,9 +2879,37 @@ function hopAngleToH2() {
   calculate();
 }
 
+function setPyrOutlet(mode){
+  window._pyrOutlet = mode;
+  document.getElementById('btnPyrOutRect').className = (mode==='rect')
+    ? "flex-1 py-1.5 text-xs font-bold rounded border bg-blue-600 text-white border-blue-600"
+    : "flex-1 py-1.5 text-xs font-bold rounded border bg-white text-gray-600 border-gray-300";
+  document.getElementById('btnPyrOutRound').className = (mode==='round')
+    ? "flex-1 py-1.5 text-xs font-bold rounded border bg-blue-600 text-white border-blue-600"
+    : "flex-1 py-1.5 text-xs font-bold rounded border bg-white text-gray-600 border-gray-300";
+  document.getElementById('pyrRectBox').classList.toggle('hidden', mode!=='rect');
+  document.getElementById('pyrRoundBox').classList.toggle('hidden', mode!=='round');
+  document.getElementById('pyrCapRow').classList.toggle('hidden', mode!=='rect');
+  calculate();
+}
+
+function shAngleToH2() {
+  const W  = parseFloat(document.getElementById('shW').value)||0;
+  const D  = parseFloat(document.getElementById('shD').value)||0;
+  const d  = parseFloat(document.getElementById('shDia').value)||0;
+  const ang= parseFloat(document.getElementById('shAngle').value);
+  if(W>0 && D>0 && !isNaN(ang) && ang>0 && ang<90){
+    const Ravg = (W+D)/4; // 사각형 상부의 평균 반경 근사(가로/세로 평균의 절반)
+    const R2 = d/2;
+    const h = (Ravg-R2)/Math.tan(ang*Math.PI/180);
+    if(h>0) document.getElementById('shH2').value = Math.round(h*100)/100;
+  }
+  calculate();
+}
+
 function changeType(type) {
   CType=type;
-  ['Rect','Cone','Hopper'].forEach(n=>{
+  ['Rect','Cone','Hopper','Pyr','SqHopper'].forEach(n=>{
     const lc=n.toLowerCase();
     document.getElementById('btnType'+n).className=(lc===type)
       ?"flex-1 py-2 text-sm font-bold rounded border bg-blue-600 text-white border-blue-600"
@@ -2426,9 +2943,23 @@ function resetCalculator() {
   document.getElementById('hopQty').value = '1';
   document.getElementById('hopCapChk').checked = false;
 
+  // 사각뿔대 호퍼
+  ['pyrW1','pyrD1','pyrW2','pyrD2','pyrDia','pyrH'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('pyrQty').value = '1';
+  document.getElementById('pyrCapChk').checked = false;
+  setPyrOutlet('rect');
+
+  // 호퍼(사각+콘)
+  ['shW','shD','shH1','shDia','shH2','shAngle'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('shQty').value = '1';
+  document.getElementById('shCapChk').checked = false;
+
   // 홀(타공)
   document.getElementById('holeDia').value   = '';
   document.getElementById('holeCount').value = '';
+  document.getElementById('holeFaceModeChk').checked = false;
+  window._holeFaceCfg = {};
+  toggleHoleFaceMode(true);
 
   // 절곡
   ['bend500','bend1000','bend1500','bendMax'].forEach(id=>document.getElementById(id).value='');
@@ -2465,6 +2996,8 @@ function resetResultDisplay() {
   zeroPlain.forEach(id=>{ const el=document.getElementById(id); if(el) el.innerText='0'; });
 
   const hopperVol = document.getElementById('resHopperVol'); if(hopperVol) hopperVol.innerText='— L';
+  const pyrVol = document.getElementById('resPyrVol'); if(pyrVol) pyrVol.innerText='— L';
+  const shVol = document.getElementById('resShVol'); if(shVol) shVol.innerText='— L';
   const laserDetail = document.getElementById('laserDetailText'); if(laserDetail) laserDetail.innerHTML='';
   const modeLabel = document.getElementById('modeLabel'); if(modeLabel) modeLabel.innerText='평판';
 
@@ -2532,7 +3065,7 @@ function renderSheetTable() {
     tbody.appendChild(tr);
   });
 }
-function onSheetChange(i,f,v){const r=loadSheet();r[i][f]=(f==='size')?v:(parseFloat(v)||0);localStorage.setItem(K.SHEET,JSON.stringify(r));scheduleFolderSync();autoSheet();}
+function onSheetChange(i,f,v){const r=loadSheet();r[i][f]=(f==='size')?v:(parseFloat(v)||0);localStorage.setItem(K.SHEET,JSON.stringify(r));scheduleFolderSync();autoSheet();_refreshDxfNestPriceIfLoaded();}
 function addSheetRow(){const r=loadSheet();r.push({t:0,size:'1219x2438',price:0});localStorage.setItem(K.SHEET,JSON.stringify(r));scheduleFolderSync();renderSheetTable();}
 function delSheetRow(i){if(!confirm('이 행을 삭제할까요?')) return; const r=loadSheet();r.splice(i,1);localStorage.setItem(K.SHEET,JSON.stringify(r));scheduleFolderSync();renderSheetTable();autoSheet();}
 
@@ -2654,7 +3187,7 @@ function calcPlasticMaterial() {
   const W = parseFloat(document.getElementById('pmW').value)||0;
   const H = parseFloat(document.getElementById('pmH').value)||0;
   const T = parseFloat(document.getElementById('pmT').value)||0;
-  const qty = parseFloat(document.getElementById('pmQty').value)||1;
+  const qty = getIntQty('pmQty');
   const loss = parseFloat(document.getElementById('pmLoss').value)||0;
   const margin = parseFloat(document.getElementById('pmMargin').value)||0;
   const price = row ? row.price : 0;
@@ -2808,9 +3341,15 @@ function renderBendTable() {
     tbody.appendChild(tr);
   });
 }
-function onBendChange(i,f,v){const r=loadBend();r[i][f]=parseFloat(v)||0;localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();calculate();}
-function addBendRow(){const r=loadBend();r.push({t:0,b500:0,b1000:0,b1500:0,bMax:0});localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();renderBendTable();calculate();}
-function delBendRow(i){if(!confirm('이 행을 삭제할까요?')) return; const r=loadBend();r.splice(i,1);localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();renderBendTable();calculate();}
+function _refreshDxfBendIfLoaded(){
+  if(typeof _dxfData!=='undefined' && _dxfData){
+    _dxfRenderBendItems(_dxfData.entities, _dxfData._selectedLayers || null);
+    if(_dxfData._metrics) _dxfRenderHoleBreakdown(_dxfData._metrics.circles);
+  }
+}
+function onBendChange(i,f,v){const r=loadBend();r[i][f]=parseFloat(v)||0;localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();calculate();_refreshDxfBendIfLoaded();}
+function addBendRow(){const r=loadBend();r.push({t:0,b500:0,b1000:0,b1500:0,bMax:0});localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();renderBendTable();calculate();_refreshDxfBendIfLoaded();}
+function delBendRow(i){if(!confirm('이 행을 삭제할까요?')) return; const r=loadBend();r.splice(i,1);localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();renderBendTable();calculate();_refreshDxfBendIfLoaded();}
 
 // ════ SS 속도 테이블 ════
 function renderSsFeedTable() {
@@ -2907,7 +3446,7 @@ function calculate() {
     const w=parseFloat(document.getElementById('w').value)||0;
     const h=parseFloat(document.getElementById('h').value)||0;
     const ht=parseFloat(document.getElementById('ht').value)||0;
-    qty=parseFloat(document.getElementById('qty').value)||1;
+    qty=getIntQty('qty');
     if(w>0&&h>0) {
       extW = w+(ht>0?ht*2:0)+20;
       extH = h+(ht>0?ht*2:0)+20;
@@ -2928,12 +3467,36 @@ function calculate() {
           details.push(`바닥판(마개): ${w}×${h}mm, 둘레 ${Math.round(capPath).toLocaleString()}mm`);
         }
         drawRectDiagram(w, h, ht, capActive);
+
+        // 절곡 자동 계산: 사각통은 바닥면 4변을 따라 4회 절곡됨(가로변 2회 + 세로변 2회).
+        // 각 변의 길이를 ④ 절곡 단가표 길이구간에 매칭해 회수칸에 자동으로 채워넣는다.
+        {
+          const bendCounts = { bend500:0, bend1000:0, bend1500:0, bendMax:0 };
+          bendCounts[bendBracketId(w)] += 2*qty;
+          bendCounts[bendBracketId(h)] += 2*qty;
+          Object.keys(bendCounts).forEach(id=>{
+            const el = document.getElementById(id);
+            if(el) el.value = bendCounts[id] || '';
+          });
+          const noteEl = document.getElementById('bendAutoNote');
+          if(noteEl) noteEl.classList.remove('hidden');
+        }
       } else {
         drawRectDiagram(w, h, 0, false);
         laserPath=(w+h)*2;
         document.getElementById('modeLabel').innerText='평판';
         details=[`외곽절단: ${Math.round(laserPath).toLocaleString()}mm`];
         inputSize = `${w}×${h}`;
+        // 평판(높이 없음)은 절곡이 없으므로, 사각통 기준으로 자동 채워졌던 값을 정리
+        // (단, DXF 절곡선 자동인식 결과가 채워져 있다면 그걸 지우지 않는다)
+        if(!(typeof _dxfData!=='undefined' && _dxfData)){
+          ['bend500','bend1000','bend1500','bendMax'].forEach(id=>{
+            const el = document.getElementById(id);
+            if(el) el.value = '';
+          });
+          const noteEl = document.getElementById('bendAutoNote');
+          if(noteEl) noteEl.classList.add('hidden');
+        }
       }
     } else {
       drawRectDiagram(0,0,0,false);
@@ -2945,7 +3508,7 @@ function calculate() {
     const coneD2raw = document.getElementById('coneD2').value.trim();
     const D2 = (coneD2raw===''||coneD2raw===null) ? 0 : (parseFloat(coneD2raw)||0);
     const H  = parseFloat(document.getElementById('coneH').value)||0;
-    qty = parseFloat(document.getElementById('coneQty').value)||1;
+    qty = getIntQty('coneQty');
 
     if(D1>0 && H>0) {
       // 유효성 검사 — D2가 D1보다 클 때만 오류 (같으면 원통으로 처리)
@@ -3044,7 +3607,7 @@ function calculate() {
     const d2raw = document.getElementById('hopD2').value.trim();
     const d   = (d2raw===''||d2raw===null) ? 0 : (parseFloat(d2raw)||0);
     const H2  = parseFloat(document.getElementById('hopH2').value)||0;
-    qty = parseFloat(document.getElementById('hopQty').value)||1;
+    qty = getIntQty('hopQty');
 
     if(D>0 && d>D){
       document.getElementById('modeLabel').innerText='⚠ 배출구Ø d는 D보다 작아야';
@@ -3150,19 +3713,253 @@ function calculate() {
     }
 
     drawHopperDiagram(D, H1, d, H2, capActive);
+
+  } else if(CType==='pyr') {
+    // ── 사각뿔대 호퍼 (사각→사각 / 사각→원형 배출구) ──
+    const pW1 = parseFloat(document.getElementById('pyrW1').value)||0;
+    const pD1 = parseFloat(document.getElementById('pyrD1').value)||0;
+    const isRound = (window._pyrOutlet==='round');
+    const pW2 = parseFloat(document.getElementById('pyrW2').value)||0;
+    const pD2 = parseFloat(document.getElementById('pyrD2').value)||0;
+    const pDia = parseFloat(document.getElementById('pyrDia').value)||0;
+    const pH = parseFloat(document.getElementById('pyrH').value)||0;
+    qty = getIntQty('pyrQty');
+
+    if(!isRound && (pW2>pW1 || pD2>pD1)){
+      document.getElementById('modeLabel').innerText='⚠ 하부치수는 상부보다 작아야';
+      document.getElementById('resSize').innerText='하부 ≤ 상부 확인 필요';
+      document.getElementById('resTotalCost').innerText='— 원';
+      document.getElementById('resPyrVol').innerText='— L';
+      drawPyrDiagram(pW1,pD1,pW2,pD2,pDia,pH,window._pyrOutlet,false);
+      return;
+    }
+    if(isRound && pDia>0 && pDia>=Math.min(pW1,pD1) && pW1>0 && pD1>0){
+      document.getElementById('modeLabel').innerText='⚠ 배출구Ø는 상부치수보다 작아야';
+      document.getElementById('resSize').innerText='Ø < 상부 가로/세로 확인 필요';
+      document.getElementById('resTotalCost').innerText='— 원';
+      document.getElementById('resPyrVol').innerText='— L';
+      drawPyrDiagram(pW1,pD1,pW2,pD2,pDia,pH,window._pyrOutlet,false);
+      return;
+    }
+
+    const pdev = (pW1>0 && pD1>0 && pH>0 && (isRound ? pDia>0 : true)) ? pyrDevelop(pW1,pD1,pW2,pD2,pDia,pH,isRound,t,density) : null;
+    if(pdev){
+      weight = pdev.totalWeight;
+      laserPath = pdev.totalPath;
+      pierceCount = pdev.totalPierce;
+      const bboxes = pdev.parts.map(p=>({extW:Math.round(p.w)+20, extH:Math.round(p.h)+20, count:p.count}));
+      extW = Math.max(...bboxes.map(b=>b.extW));
+      extH = bboxes.reduce((s,b)=>s+b.extH*b.count,0);
+      window._hopperParts = [];
+      bboxes.forEach(b=>{ for(let i=0;i<b.count;i++) window._hopperParts.push({extW:b.extW, extH:b.extH}); });
+      const totalVolL = pdev.totalVolMM3/1e6;
+      document.getElementById('resPyrVol').innerText = (totalVolL>=1000 ? (totalVolL/1000).toFixed(3)+' m³ ('+totalVolL.toFixed(1)+' L)' : totalVolL.toFixed(1)+' L');
+      document.getElementById('modeLabel').innerText = isRound ? '사각뿔대 호퍼(사각→원형)' : '사각뿔대 호퍼(사각→사각)';
+      inputSize = `상${pW1}×${pD1} → 하${isRound?('Ø'+pDia):(pW2+'×'+pD2)} H${pH}`;
+      details = pdev.details;
+
+      // 절곡 자동 계산(사각→원형 배출구): 상부 사각형 4개 코너에서 생기는 절곡선 4개(그중 2개는
+      // 분할 절단선 겸용)의 길이를 ④ 절곡 단가표 길이구간에 매칭해 회수칸에 자동으로 채워넣는다.
+      if(pdev.bendLines && pdev.bendLines.length){
+        const bendCounts = { bend500:0, bend1000:0, bend1500:0, bendMax:0 };
+        pdev.bendLines.forEach(bl=>{ bendCounts[bendBracketId(bl.length)] += qty; });
+        Object.keys(bendCounts).forEach(id=>{
+          const el = document.getElementById(id);
+          if(el) el.value = bendCounts[id] || '';
+        });
+        const noteEl = document.getElementById('bendAutoNote');
+        if(noteEl) noteEl.classList.remove('hidden');
+      }
+
+      const pyrCapChk = document.getElementById('pyrCapChk');
+      if(!isRound && pyrCapChk && pyrCapChk.checked && pW2>0 && pD2>0){
+        capActive = true;
+        capWeight = (pW2*pD2*t*density)/1e6;
+        capPath   = 2*(pW2+pD2);
+        capPierce = 1;
+        capExtW = pW2+20; capExtH = pD2+20;
+        details.push(`하단 마개(바닥판 ${pW2}×${pD2}): 둘레 ${Math.round(capPath).toLocaleString()}mm`);
+      }
+      drawPyrDiagram(pW1,pD1,pW2,pD2,pDia,pH,window._pyrOutlet,capActive);
+    } else {
+      window._hopperParts = null;
+      document.getElementById('resPyrVol').innerText='— L';
+      drawPyrDiagram(0,0,0,0,0,0,window._pyrOutlet,false);
+    }
+
+  } else if(CType==='sqhopper') {
+    // ── 호퍼(사각+콘) — 사각통부(절곡 4면) + 사각→원형 변환콘부(삼각분할) 2단 구조 ──
+    const shWv = parseFloat(document.getElementById('shW').value)||0;
+    const shDv = parseFloat(document.getElementById('shD').value)||0;
+    const shH1v = parseFloat(document.getElementById('shH1').value)||0;
+    const shDiaRaw = document.getElementById('shDia').value.trim();
+    const shDiaV = (shDiaRaw===''||shDiaRaw===null) ? 0 : (parseFloat(shDiaRaw)||0);
+    const shH2v = parseFloat(document.getElementById('shH2').value)||0;
+    qty = getIntQty('shQty');
+
+    if(shWv>0 && shDv>0 && shDiaV>0 && shDiaV>=Math.min(shWv,shDv)){
+      document.getElementById('modeLabel').innerText='⚠ 배출구Ø는 상부 가로/세로보다 작아야';
+      document.getElementById('resSize').innerText='Ø < 가로/세로 확인 필요';
+      document.getElementById('resTotalCost').innerText='— 원';
+      document.getElementById('resShVol').innerText='— L';
+      drawSqHopperDiagram(shWv, shDv, 0, 0, 0, false);
+      return;
+    }
+
+    let ductPath=0, ductWeight=0, ductPierce=0, ductExtW=0, ductExtH=0, ductVolMM3=0;
+    let conePath=0, coneWeight=0, conePierce=0, coneExtW=0, coneExtH=0, coneVolMM3=0;
+    let shDetails=[]; let shBendLines=null;
+
+    // ① 사각통부 (선택 — W,D>0, H1>0) — 둘레 띠(strip) 형태로 한 장에 전개, 절곡 3회
+    if(shWv>0 && shDv>0 && shH1v>0){
+      const stripW = 2*(shWv+shDv);
+      ductExtW = Math.round(stripW)+20;
+      ductExtH = Math.round(shH1v)+20;
+      ductWeight = (stripW*shH1v*t*density)/1e6;
+      ductPath = 2*(stripW+shH1v);
+      ductPierce = 1;
+      ductVolMM3 = shWv*shDv*shH1v;
+      shDetails.push(`[사각통부] 전개(둘레×높이): ${Math.round(stripW)}×${Math.round(shH1v)}mm, 외곽둘레: ${Math.round(ductPath).toLocaleString()}mm`);
+    }
+
+    // ② 콘부(변환관, 사각→원형 배출구 — W,D>0, dia>0, H2>0)
+    if(shWv>0 && shDv>0 && shDiaV>0 && shH2v>0){
+      const pdevSh = pyrDevelop(shWv, shDv, 0, 0, shDiaV, shH2v, true, t, density);
+      if(pdevSh){
+        conePath = pdevSh.totalPath;
+        coneWeight = pdevSh.totalWeight;
+        conePierce = pdevSh.totalPierce;
+        const part = pdevSh.parts[0];
+        coneExtW = Math.round(part.w)+20;
+        coneExtH = Math.round(part.h)+20;
+        coneVolMM3 = pdevSh.totalVolMM3;
+        shBendLines = pdevSh.bendLines;
+        shDetails.push(...pdevSh.details.map(d=>'[콘부] '+d));
+      }
+    }
+
+    weight = ductWeight + coneWeight;
+    laserPath = ductPath + conePath;
+    pierceCount = ductPierce + conePierce;
+    if(pierceCount===0) pierceCount = 1;
+    extW = Math.max(ductExtW, coneExtW);
+    extH = ductExtH + coneExtH; // 참고용 표시
+    const shTotalVolMM3 = ductVolMM3 + coneVolMM3;
+    const shTotalVolL = shTotalVolMM3/1e6;
+    document.getElementById('resShVol').innerText = (shTotalVolL>=1000 ? (shTotalVolL/1000).toFixed(3)+' m³ ('+shTotalVolL.toFixed(1)+' L)' : shTotalVolL.toFixed(1)+' L');
+
+    document.getElementById('modeLabel').innerText='호퍼(사각+콘)';
+    inputSize = `${shWv}×${shDv}` + (shH1v>0?` H1=${shH1v}`:'') + (shDiaV>0?` Ø${shDiaV}`:' Ø미입력') + (shH2v>0?` H2=${shH2v}`:'');
+    details = shDetails;
+
+    // 판재 소요량은 사각통부/콘부 부재를 각각 별도 시트로 취급하여 합산
+    window._hopperParts = [];
+    if(ductExtW>0) window._hopperParts.push({extW:ductExtW, extH:ductExtH});
+    if(coneExtW>0) window._hopperParts.push({extW:coneExtW, extH:coneExtH});
+
+    // 절곡 자동 계산: 사각통부(둘레 절곡선 3개, 길이=H1) + 콘부(코너 절곡선 4개, 사각뿔대 변환관과 동일 로직)
+    {
+      const bendCounts = { bend500:0, bend1000:0, bend1500:0, bendMax:0 };
+      let hasBend=false;
+      if(shH1v>0){
+        bendCounts[bendBracketId(shH1v)] += 3*qty;
+        hasBend=true;
+      }
+      if(shBendLines && shBendLines.length){
+        shBendLines.forEach(bl=>{ bendCounts[bendBracketId(bl.length)] += qty; });
+        hasBend=true;
+      }
+      if(hasBend){
+        Object.keys(bendCounts).forEach(id=>{
+          const el = document.getElementById(id);
+          if(el) el.value = bendCounts[id] || '';
+        });
+        const noteEl = document.getElementById('bendAutoNote');
+        if(noteEl) noteEl.classList.remove('hidden');
+      }
+    }
+
+    // 하단(배출구) 마개 — 콘부가 있을 때만 원형 마개(Ø shDiaV)
+    const shCapChk = document.getElementById('shCapChk');
+    if(shCapChk && shCapChk.checked && shDiaV>0 && shH2v>0){
+      capActive = true;
+      const RcSh = shDiaV/2;
+      capWeight = (Math.PI*RcSh*RcSh*t*density)/1e6;
+      capPath   = 2*Math.PI*RcSh;
+      capPierce = 1;
+      capExtW = shDiaV+20; capExtH = shDiaV+20;
+      details.push(`하단 마개(바닥원판 Ø${shDiaV}): 둘레 ${Math.round(capPath).toLocaleString()}mm`);
+    }
+
+    drawSqHopperDiagram(shWv, shDv, shH1v, shDiaV, shH2v, capActive);
   }
 
-  if(CType!=='hopper') window._hopperParts = null;
+  if(CType!=='hopper' && CType!=='pyr' && CType!=='sqhopper') window._hopperParts = null;
 
-  // 전개도(평면 전개) 미리보기 갱신
+  // 홀 — 면(부재)별 모드인지 단순 모드인지에 따라 분기. 전개도 미리보기가 이 결과를
+  // 참조하므로(각 면에 홀을 그려 넣기 위해) updateAllDevPreviews()보다 먼저 계산한다.
+  const holeFaceMode = document.getElementById('holeFaceModeChk') && document.getElementById('holeFaceModeChk').checked;
+  window._resolvedHoleFaces = null;
+  let holePath = 0, holeTotalCount = 0;
+  if(holeFaceMode){
+    // 치수가 바뀌어 면 크기 표시가 갱신돼야 할 수 있으나, 사용자가 홀 입력칸에
+    // 입력 중이면(포커스가 그 안에 있으면) 다시 그리지 않아 입력 커서가 끊기지 않게 한다.
+    const active = document.activeElement;
+    const isEditingFaceInput = active && document.getElementById('holeFaceRows') && document.getElementById('holeFaceRows').contains(active);
+    if(!isEditingFaceInput) renderHoleFaceRows();
+    const resolved = resolveHoleFaces();
+    window._resolvedHoleFaces = resolved.faces;
+    holePath = resolved.totalPath;
+    holeTotalCount = resolved.totalCount;
+    if(holeTotalCount>0){
+      laserPath += holePath; pierceCount += holeTotalCount;
+      details.push(...resolved.details);
+    }
+    document.getElementById('resHolePerimeterFace').innerText = Math.round(holePath).toLocaleString();
+    document.getElementById('resHoleCountFace').innerText = holeTotalCount.toLocaleString();
+  } else {
+    const holeDia   = parseFloat(document.getElementById('holeDia').value)||0;
+    const holeCount = parseFloat(document.getElementById('holeCount').value)||0;
+    const warnEl = document.getElementById('holeSimpleWarn');
+    if(holeDia>0 && holeCount>0){
+      const faces = getShapeFaces();
+      if(faces.length>1){
+        // 여러 면(플랩/원통부·콘부 등)이 있는 형상 — 입력한 지름/개수를 모든 면에 동일 적용
+        const r = resolveHoleUniform(holeDia, holeCount);
+        window._resolvedHoleFaces = r.faces;
+        holePath = r.totalPath;
+        holeTotalCount = r.totalCount;
+        laserPath += holePath; pierceCount += holeTotalCount;
+        details.push(...r.details);
+        if(warnEl){
+          if(r.overLimit.length){
+            warnEl.textContent = '⚠ 범위를 벗어났습니다 — ' + r.overLimit.join(', ');
+            warnEl.classList.remove('hidden');
+          } else warnEl.classList.add('hidden');
+        }
+      } else {
+        // 단일 면(평판 등) — 기존 방식대로 1세트만 계산
+        holePath = Math.PI*holeDia*holeCount;
+        holeTotalCount = holeCount;
+        laserPath += holePath; pierceCount += holeCount;
+        details.push(`홀(${holeCount}개): ${Math.round(holePath).toLocaleString()}mm`);
+        if(warnEl){
+          const f0 = faces[0];
+          const maxCount = f0 ? Math.max(0, Math.floor(f0.w/holeDia)) * Math.max(0, Math.floor(f0.h/holeDia)) : 0;
+          if(maxCount>0 && holeCount>maxCount){
+            warnEl.textContent = '⚠ 범위를 벗어났습니다 — 최대 ' + maxCount + '개까지 가능';
+            warnEl.classList.remove('hidden');
+          } else warnEl.classList.add('hidden');
+        }
+      }
+    } else if(warnEl){
+      warnEl.classList.add('hidden');
+    }
+    document.getElementById('resHolePerimeter').innerText = Math.round(holePath).toLocaleString();
+  }
+
+  // 전개도(평면 전개) 미리보기 갱신 (위에서 계산한 면별 홀 정보 반영)
   updateAllDevPreviews();
-
-  // 홀
-  const holeDia   = parseFloat(document.getElementById('holeDia').value)||0;
-  const holeCount = parseFloat(document.getElementById('holeCount').value)||0;
-  const holePath  = Math.PI*holeDia*holeCount;
-  if(holeCount>0){ laserPath+=holePath; pierceCount+=holeCount; details.push(`홀(${holeCount}개): ${Math.round(holePath).toLocaleString()}mm`); }
-  document.getElementById('resHolePerimeter').innerText = Math.round(holePath).toLocaleString();
 
   // ── DXF 경로 오버라이드 (DXF 불러오기 적용 시) ──
   if(window._dxfPathOverride && window._dxfPathOverride > 0) {
@@ -3200,19 +3997,19 @@ function calculate() {
     sheetParts.push({extW:capExtW, extH:capExtH});
   }
 
-  let sheetNeed=0, sheetBuyCost=0;
+  let sheetNeed=0, sheetBuyCost=0, sheetOversized=false;
   const sheetBest = nearestByT(loadSheet(), t);
   if(sheetParts.length>0 && sheetBest.price>0){
     const p=sheetBest.size.split('x'), sw=parseFloat(p[0]), sh=parseFloat(p[1]);
     if(sw>0 && sh>0){
-      sheetParts.forEach(part=>{
-        const perSheet=Math.max(1, Math.floor(sw/part.extW) * Math.floor(sh/part.extH));
-        const need = Math.ceil(qty/perSheet);
-        sheetNeed += need;
-        sheetBuyCost += need*sheetBest.price;
-      });
+      const sc = calcCombinedSheetsNeeded(sheetParts, qty, sw, sh);
+      sheetNeed = sc.sheets;
+      sheetOversized = sc.oversized;
+      sheetBuyCost = sheetNeed*sheetBest.price;
     }
   }
+  const sheetOversizeEl = document.getElementById('sheetOversizeWarning');
+  if(sheetOversizeEl) sheetOversizeEl.classList.toggle('hidden', !sheetOversized);
 
   // 절곡비
   const bp = nearestByT(loadBend(), t);
@@ -3380,7 +4177,7 @@ function showToast2(msg) {
 // ════ 초기 공급자 자동 불러오기 (window.onload로 이동됨) ════
 
 function copyAll(){
-  const qEl = CType==='cone' ? 'coneQty' : (CType==='hopper' ? 'hopQty' : 'qty');
+  const qEl = CType==='cone' ? 'coneQty' : (CType==='hopper' ? 'hopQty' : (CType==='pyr' ? 'pyrQty' : (CType==='sqhopper' ? 'shQty' : 'qty')));
   const q = document.getElementById(qEl).value;
   const t = `=== 견적결과 ===
 타입: ${document.getElementById('modeLabel').innerText}
@@ -3444,7 +4241,94 @@ function dxfReadFile(file){
   reader.readAsText(file, 'utf-8');
 }
 
+/* ── 도면 추가(합치기): 이미 불러온 도면에 또 다른 DXF 파일을 이어붙여
+   두 도면의 부품을 한 번에 네스팅할 수 있게 한다. 겹치지 않도록
+   기존 도형의 오른쪽으로 충분히 띄워서 합친다. ── */
+function dxfAddDxfFile(input){
+  const file = input.files && input.files[0];
+  if(!file) return;
+  if(!file.name.toLowerCase().endsWith('.dxf')){
+    alert('DXF 파일(.dxf)만 지원합니다.');
+    input.value = '';
+    return;
+  }
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const text = e.target.result;
+    try {
+      const parsed = parseDXF(text);
+      if(!parsed.entities.length){
+        alert('추가한 도면(' + file.name + ')에서 인식 가능한 도형을 찾지 못했습니다.');
+        return;
+      }
+
+      if(!_dxfData){
+        _dxfData = { fileName: file.name, entities: [], layers: [], _selectedLayers: null };
+      }
+
+      // 기존 도형 오른쪽으로 여유를 두고 이어붙인다 (겹치면 서로 다른 부품이 하나로 잘못 인식될 수 있음)
+      // 주의: 새로 추가하는 도면 자체의 원점이 0이 아닐 수 있으므로(좌표가 음수에서 시작하는 경우 포함),
+      // 반드시 새 도면 자신의 최소X(newBx1)를 함께 보정해야 실제로 겹치지 않는다.
+      let offsetX = 0;
+      const newM = calcDxfMetrics(parsed.entities, null);
+      const newBx1 = isFinite(newM.bx1) ? newM.bx1 : 0;
+      if(_dxfData.entities.length){
+        const m = calcDxfMetrics(_dxfData.entities, null);
+        if(isFinite(m.bx2)) offsetX = (m.bx2 + 50) - newBx1;
+      } else {
+        offsetX = -newBx1; // 첫 도면인 경우에도 원점(0)에서 시작하도록 정렬
+      }
+
+      const translated = parsed.entities.map(ent=>{
+        const ne = { type: ent.type, layer: ent.layer, props: Object.assign({}, ent.props) };
+        const p = ne.props;
+        if(p.x1!==undefined) p.x1 += offsetX;
+        if(p.x2!==undefined) p.x2 += offsetX;
+        if(p.vx) p.vx = p.vx.map(v=>v+offsetX);
+        return ne;
+      });
+
+      _dxfData.entities.push(...translated);
+      parsed.layers.forEach(l=>{ if(!_dxfData.layers.includes(l)) _dxfData.layers.push(l); });
+      _dxfData.fileName = (_dxfData.fileName || '기존 도면') + ' + ' + file.name;
+
+      showDxfResult(_dxfData);
+      if(typeof dxfRunNesting==='function') dxfRunNesting();
+
+      if(typeof showToast2==='function'){
+        showToast2('"' + file.name + '" 도면을 합쳐서 함께 네스팅했습니다.');
+      } else {
+        alert('"' + file.name + '" 도면을 합쳐서 함께 네스팅했습니다.');
+      }
+      const resEl = document.getElementById('dxfResult');
+      if(resEl) resEl.scrollIntoView({behavior:'smooth', block:'start'});
+    } catch(err){
+      alert('DXF 분석 오류: ' + err.message);
+      console.error(err);
+    } finally {
+      input.value = '';
+    }
+  };
+  reader.readAsText(file, 'utf-8');
+}
+
 /* ── DXF 파서 ── */
+/* DXF의 선종류(linetype, 그룹코드 6)가 CONTINUOUS가 아닌 경우(DASHED/DASHDOT/DASHEDDOT/
+   CENTER/PHANTOM/HIDDEN 등) — 실제 레이저로 절단하는 외곽/윤곽선이 아니라 절곡선·중심선 같은
+   "참고선"으로 간주한다. 이런 선은 실제 레이저 가공 시 자르지 않으므로, 절단 길이·외곽 크기
+   계산과 부품 인식(bbox)에서 제외하고 미리보기에서는 점선으로 구분해 표시한다. */
+function _dxfIsFoldLinetype(lt){
+  if(!lt) return false;
+  const s = String(lt).trim().toUpperCase();
+  return s!=='' && s!=='CONTINUOUS' && s!=='BYLAYER' && s!=='BYBLOCK';
+}
+
+/* 레이저로 실제 절단하는 형상만 골라내기 위한 도형 종류 화이트리스트.
+   TEXT/MTEXT/MULTILEADER/DIMENSION/INSERT 등 주석·지시선·치수 요소는 절단 대상이 아니므로
+   외곽 크기(bbox)·절단 길이 계산에서 제외한다 (해당 요소의 좌표가 부품 바깥에 있을 경우
+   외곽 크기가 잘못 커지는 것을 방지). */
+const DXF_CUTTABLE_TYPES = new Set(['LINE','ARC','CIRCLE','ELLIPSE','LWPOLYLINE','POLYLINE','SPLINE']);
+
 function parseDXF(text) {
   // 그룹코드/값 쌍으로 토큰화
   const lines = text.replace(/\r/g,'').split('\n');
@@ -3480,6 +4364,7 @@ function parseDXF(text) {
     }
     if(!cur) continue;
     if(code===8)  cur.layer = value;
+    if(code===6)  cur.linetype = value; // 절곡선 등 비연속선(DASHED/DASHDOT 등) 판별용
     if(code===10) cur.props.x1 = parseFloat(value);
     if(code===20) cur.props.y1 = parseFloat(value);
     if(code===11) cur.props.x2 = parseFloat(value);
@@ -3508,9 +4393,198 @@ function parseDXF(text) {
   if(cur) entities.push(cur);
 
   // 레이어 목록
-  const layers = [...new Set(entities.map(e=>e.layer))].sort();
+  let layers = [...new Set(entities.map(e=>e.layer))].sort();
+
+  // 절곡선(비연속 선종류) 양옆에 붙어 있는 "절곡 범위 표시선"(실선, 절곡선과 거의 같은 구간을
+  // 아주 가깝게 나란히 지나가는 선) 제거 — 실제 절단선이 아니라 절곡 범위를 벗어나지 말라는
+  // 참고용 표시일 뿐이므로, 도면에서 완전히 제외한다.
+  _dxfStripBendZoneLines(entities);
+  layers = [...new Set(entities.map(e=>e.layer))].sort();
 
   return { entities, layers, fileName:'' };
+}
+
+/* 절곡선(DASHEDDOT 등)과 평행하며, 아주 가까운 거리(offsetTol 이내)에서 거의 같은 구간을
+   지나가는 실선(Continuous) LINE들을 찾아 배열에서 제거한다. 이런 선은 "절곡 범위(밴딩 존)를
+   벗어나지 말라"는 표시일 뿐 실제로 레이저가 자르는 선이 아니다. */
+function _dxfStripBendZoneLines(entities){
+  const eps = 0.05;       // 완전 수직/수평 판정 오차(mm)
+  const offsetTol = 8;    // 절곡선과의 최대 이격 거리(mm) — 실사례는 약 1.3mm
+  const spanTol = 5;      // 절곡선과 구간(길이) 일치 허용 오차(mm)
+  const folds = entities.filter(e => e.type==='LINE' && _dxfIsFoldLinetype(e.linetype));
+  if(!folds.length) return;
+  const toRemove = new Set();
+  entities.forEach((e,idx)=>{
+    if(e.type!=='LINE' || _dxfIsFoldLinetype(e.linetype)) return;
+    const p=e.props, x1=p.x1||0, y1=p.y1||0, x2=p.x2||0, y2=p.y2||0;
+    const isVert = Math.abs(x1-x2) < eps;
+    const isHorz = Math.abs(y1-y2) < eps;
+    if(!isVert && !isHorz) return;
+    for(const f of folds){
+      const fp=f.props, fx1=fp.x1||0, fy1=fp.y1||0, fx2=fp.x2||0, fy2=fp.y2||0;
+      if(isVert && Math.abs(fx1-fx2)<eps){
+        const off = Math.abs(x1-fx1);
+        if(off>0.01 && off<=offsetTol){
+          const a1=Math.min(y1,y2), a2=Math.max(y1,y2);
+          const b1=Math.min(fy1,fy2), b2=Math.max(fy1,fy2);
+          if(Math.abs(a1-b1)<=spanTol && Math.abs(a2-b2)<=spanTol){ toRemove.add(idx); return; }
+        }
+      } else if(isHorz && Math.abs(fy1-fy2)<eps){
+        const off = Math.abs(y1-fy1);
+        if(off>0.01 && off<=offsetTol){
+          const a1=Math.min(x1,x2), a2=Math.max(x1,x2);
+          const b1=Math.min(fx1,fx2), b2=Math.max(fx1,fx2);
+          if(Math.abs(a1-b1)<=spanTol && Math.abs(a2-b2)<=spanTol){ toRemove.add(idx); return; }
+        }
+      }
+    }
+  });
+  if(toRemove.size){
+    // 뒤에서부터 제거해야 인덱스가 안 밀림
+    [...toRemove].sort((a,b)=>b-a).forEach(idx => entities.splice(idx,1));
+  }
+}
+
+/* 절곡선(DASHEDDOT 등) 각각의 길이를 뽑아 "절곡 품목" 목록으로 반환 */
+function _dxfFoldItems(entities, selectedLayers){
+  const sel = selectedLayers ? new Set(selectedLayers) : null;
+  const items = [];
+  entities.forEach(e=>{
+    if(e.type!=='LINE' || !_dxfIsFoldLinetype(e.linetype)) return;
+    if(sel && !sel.has(e.layer)) return;
+    const p=e.props;
+    const dx=(p.x2||0)-(p.x1||0), dy=(p.y2||0)-(p.y1||0);
+    const len = Math.sqrt(dx*dx+dy*dy);
+    if(len>0) items.push({ length: len });
+  });
+  return items;
+}
+
+/* 현재 선택된 재질/두께 기준 가공단가(분당단가, mm/분 이송속도, 피어싱단가)를 반환.
+   메인 계산기(calculate())의 가공비 공식과 동일한 값을 그대로 사용한다. */
+function _currentMachineRates(){
+  const mat  = document.getElementById('mat').value;
+  const t    = parseFloat(document.getElementById('t').value)||0;
+  const isSS = mat==='SS400';
+  const feed = getFeed(mat, t);
+  const minutePrice = isSS
+    ? (parseFloat(document.getElementById('min_ss').value)||1500)
+    : (parseFloat(document.getElementById('min_sus').value)||2500);
+  const piercePrice = parseFloat(document.getElementById('pierce_price').value)||0;
+  return { feed, minutePrice, piercePrice };
+}
+
+/* 도면에서 인식한 원형 홀들을 지름 기준으로 그룹핑(0.5mm 단위 반올림)하고,
+   그룹별 개수·레이저 가공비(절단길이 가공비 + 피어싱비)를 표로 렌더링한다.
+   전체 견적에는 이미 각 홀의 정확한 실측값이 반영되어 있으며, 이 표는 크기별 확인용이다. */
+function _dxfRenderHoleBreakdown(circles){
+  const area = document.getElementById('dxfHoleArea');
+  const body = document.getElementById('dxfHoleItemsBody');
+  if(!circles || !circles.length){ area.classList.add('hidden'); return; }
+  area.classList.remove('hidden');
+
+  // 절곡 자동 입력(_dxfRenderBendItems)과 동일하게, DXF에서 인식된 홀을
+  // "② 추가 가공 > 홀" 입력칸에도 자동으로 채워 넣는다(단순 모드).
+  // 지름이 여러 종류면 개수가 가장 많은 지름을 대표값으로 사용한다.
+  (function _autoFillHoleInputs(){
+    const diaEl = document.getElementById('holeDia');
+    const cntEl = document.getElementById('holeCount');
+    const faceModeChk = document.getElementById('holeFaceModeChk');
+    if(!diaEl || !cntEl) return;
+    if(faceModeChk && faceModeChk.checked) return; // 면별 입력 모드에서는 수동 입력을 덮어쓰지 않음
+
+    const cnt = {};
+    circles.forEach(c=>{
+      const key = (Math.round(c.d*2)/2).toFixed(1);
+      cnt[key] = (cnt[key]||0) + 1;
+    });
+    let bestKey = null, bestCount = -1;
+    Object.keys(cnt).forEach(k=>{ if(cnt[k]>bestCount){ bestCount=cnt[k]; bestKey=k; } });
+
+    if(bestKey!=null){
+      diaEl.value = bestKey;
+      cntEl.value = bestCount;
+      if(Object.keys(cnt).length>1){
+        const noteId = 'holeAutoNote';
+        let note = document.getElementById(noteId);
+        if(!note){
+          note = document.createElement('div');
+          note.id = noteId;
+          note.className = 'mt-1.5 text-[11px] text-amber-700 bg-amber-50 border border-amber-200 rounded p-1.5';
+          diaEl.closest('#holeSimpleContainer').insertAdjacentElement('afterend', note);
+        }
+        note.textContent = `⚠ DXF에서 서로 다른 지름의 홀 ${Object.keys(cnt).length}종류가 감지되었습니다. 가장 많은 Ø${bestKey}mm(${bestCount}개)를 자동 입력했으며, 나머지는 위 "홀 크기별 가공비" 표를 참고해 필요시 직접 조정하세요.`;
+      } else {
+        const note = document.getElementById('holeAutoNote');
+        if(note) note.remove();
+      }
+    }
+  })();
+
+  const { feed, minutePrice, piercePrice } = _currentMachineRates();
+
+  // 지름 0.5mm 단위로 그룹핑(같은 규격 구멍이 미세한 오차로 다르게 잡히는 것 방지)
+  const groups = {};
+  circles.forEach(c=>{
+    const key = (Math.round(c.d*2)/2).toFixed(1); // 0.5mm 단위 반올림
+    if(!groups[key]) groups[key] = { d: parseFloat(key), count: 0 };
+    groups[key].count++;
+  });
+  const rows = Object.values(groups).sort((a,b)=>a.d-b.d);
+
+  let total = 0;
+  body.innerHTML = rows.map(r=>{
+    const pathLen = Math.PI * r.d * r.count;
+    const cutCost = feed>0 ? (pathLen/feed)*minutePrice : 0;
+    const pierceCost = r.count * piercePrice;
+    const cost = cutCost + pierceCost;
+    total += cost;
+    return `<tr><td>Ø${r.d}mm</td><td>${r.count}개</td><td>${Math.round(cost).toLocaleString()} 원</td></tr>`;
+  }).join('');
+  document.getElementById('dxfHoleTotal').textContent = Math.round(total).toLocaleString()+' 원';
+}
+
+/* 절곡선 1개(길이 lenMm)의 가격 — ④ 절곡 단가표(두께별·길이구간별)에서 두께에 가장 가까운 행을 찾아
+   길이구간에 맞는 단가를 그대로 사용(수동 절곡 입력과 동일한 기준) */
+function _dxfBendItemPrice(lenMm, bp){
+  const bracketId = bendBracketId(lenMm); // 'bend500'|'bend1000'|'bend1500'|'bendMax'
+  const col = bracketId.replace('bend','b'); // 'b500'|'b1000'|'b1500'|'bMax'
+  return bp[col] || 0;
+}
+
+/* DXF 패널의 절곡 품목 표 + 합계를 렌더링하고, 동시에 감지된 절곡선 개수를 길이구간별로 집계해
+   메인 "② 추가 가공 > 절곡" 횟수 입력칸(bend500 등)에 자동으로 채워넣는다.
+   (점선 1개 = 절곡 1회로 카운트, 길이가 같은 점선이 여러 개면 그 개수만큼 합산) */
+function _dxfRenderBendItems(entities, selectedLayers){
+  const area = document.getElementById('dxfBendArea');
+  const body = document.getElementById('dxfBendItemsBody');
+  const items = _dxfFoldItems(entities, selectedLayers);
+  const tEl = document.getElementById('t');
+  const t = tEl ? (parseFloat(tEl.value)||0) : 0;
+  document.getElementById('dxfBendThickLbl').textContent = t>0 ? t+'T' : '—';
+  const bp = nearestByT(loadBend(), t);
+
+  // 메인 절곡 횟수 입력칸 자동 채우기
+  const counts = { bend500:0, bend1000:0, bend1500:0, bendMax:0 };
+  items.forEach(it=>{ counts[bendBracketId(it.length)]++; });
+  ['bend500','bend1000','bend1500','bendMax'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = counts[id] || '';
+  });
+  const noteEl = document.getElementById('bendAutoNote');
+  if(noteEl) noteEl.classList.toggle('hidden', items.length===0);
+
+  if(!items.length){ area.classList.add('hidden'); if(typeof calculate==='function') calculate(); return; }
+  area.classList.remove('hidden');
+  let total = 0;
+  body.innerHTML = items.map((it,i)=>{
+    const bracketId = bendBracketId(it.length);
+    const price = _dxfBendItemPrice(it.length, bp);
+    total += price;
+    return `<tr><td>절곡선 ${i+1}</td><td>${it.length.toFixed(1)}</td><td>${bendBracketLabel(bracketId)}</td><td>${Math.round(price).toLocaleString()} 원</td></tr>`;
+  }).join('');
+  document.getElementById('dxfBendTotal').textContent = Math.round(total).toLocaleString()+' 원';
+  if(typeof calculate==='function') calculate();
 }
 
 /* ── 경로 계산 ── */
@@ -3525,6 +4599,8 @@ function calcDxfMetrics(entities, selectedLayers) {
 
   for(const e of entities){
     if(sel && !sel.has(e.layer)) continue;
+    if(_dxfIsFoldLinetype(e.linetype)) continue; // 절곡선 등 비연속선은 실제 절단 대상이 아니므로 제외
+    if(!DXF_CUTTABLE_TYPES.has(e.type)) continue; // 텍스트/지시선/치수 등 비절단 요소 제외
     const t = e.type;
     const p = e.props;
     if(!entitySummary[t]) entitySummary[t]=0;
@@ -3601,6 +4677,8 @@ function calcDxfMetrics(entities, selectedLayers) {
   let bx1=Infinity,bx2=-Infinity,by1=Infinity,by2=-Infinity;
   for(const e of entities){
     if(sel && !sel.has(e.layer)) continue;
+    if(_dxfIsFoldLinetype(e.linetype)) continue; // 절곡선 등 비연속선은 외곽 크기 산정에서 제외
+    if(!DXF_CUTTABLE_TYPES.has(e.type)) continue; // 텍스트/지시선/치수 등 비절단 요소 제외
     const p=e.props;
     const xs2=[p.x1,p.x2,...(p.vx||[])].filter(v=>v!==undefined);
     const ys2=[p.y1,p.y2,...(p.vy||[])].filter(v=>v!==undefined);
@@ -3712,6 +4790,7 @@ function dxfGroupParts(entities, tol){
     let bx1=Infinity, bx2=-Infinity, by1=Infinity, by2=-Infinity;
     list.forEach(i=>{
       const e=entities[i], p=e.props;
+      if(_dxfIsFoldLinetype(e.linetype)) return; // 절곡선 등 비연속선은 실제 부품 치수(bbox)에서 제외
       const xs=[p.x1,p.x2,...(p.vx||[])].filter(v=>v!==undefined);
       const ys=[p.y1,p.y2,...(p.vy||[])].filter(v=>v!==undefined);
       xs.forEach(v=>{ if(v<bx1)bx1=v; if(v>bx2)bx2=v; });
@@ -3966,7 +5045,7 @@ function dxfNestParts(outerParts, gap, allowRotate, opts){
 
 /* 부품(및 내부 홀)의 각 엔티티 좌표를 새 배치 위치로 이동/회전한 복사본 생성 */
 function dxfTransformEntity(e, bx1, by1, h, px, py, rotated){
-  const ne = { type: e.type, layer: e.layer, props: Object.assign({}, e.props) };
+  const ne = { type: e.type, layer: e.layer, linetype: e.linetype, props: Object.assign({}, e.props) };
   const p = ne.props;
   const tp = (x, y) => {
     const lx = x - bx1, ly = y - by1;
@@ -4014,21 +5093,67 @@ function dxfRunNesting(){
   _dxfRenderQtyTable();
   _dxfPerformNesting();
   showToast2('부품 '+grouped.outerParts.length+'개 인식 · 네스팅 계산 완료!');
+  _dxfScrollToFinalQuote();
+}
+
+/* 네스팅 계산 직후 최종 견적 합계 박스가 화면 아래로 밀려 안 보이는 문제를 막기 위해,
+   결과가 갱신되면 해당 박스로 자동 스크롤해 준다. (좁은 화면에서는 좌/우 2단 레이아웃이
+   1단으로 바뀌어 결과 박스가 페이지 하단으로 밀려나기 때문) */
+function _dxfScrollToFinalQuote(){
+  setTimeout(()=>{
+    const el = document.getElementById('finalQuoteBox');
+    if(el) el.scrollIntoView({ behavior:'smooth', block:'center' });
+  }, 80);
 }
 
 /* 부품별 수량 입력 테이블 렌더링 */
+/* 부품 하나(바운딩박스 사각 근사 + 내부 홀)의 레이저 가공비(절단시간×분당단가 + 피어싱비)를 계산.
+   두께(T)가 입력되지 않았으면 null. */
+function _dxfPartMachiningCost(p){
+  const t = parseFloat(document.getElementById('t').value)||0;
+  if(!t) return null;
+  const mat = document.getElementById('mat').value;
+  const piercePrice = parseFloat(document.getElementById('pierce_price').value)||0;
+  const feed = getFeed(mat, t);
+  const isSS = mat==='SS400';
+  const minutePrice = isSS
+    ? (parseFloat(document.getElementById('min_ss').value)||1500)
+    : (parseFloat(document.getElementById('min_sus').value)||2500);
+
+  const holes = (_dxfGroupedParts && _dxfGroupedParts.holes) ? _dxfGroupedParts.holes.filter(h=>h.containerId===p.id) : [];
+  const outerPerimeter = 2*(p.w+p.h);
+  const holePerimeter  = holes.reduce((s,h)=> s + 2*(h.w+h.h), 0);
+  const laserPath = outerPerimeter + holePerimeter;
+  const pierceCount = 1 + holes.length; // 외곽 1회 + 내부 홀 개수만큼 피어싱
+
+  const laserTime = feed>0 ? laserPath/feed : 0;
+  const cost = laserTime*minutePrice + pierceCount*piercePrice;
+  return { cost, laserPath, pierceCount, holeCount: holes.length };
+}
+
+/* 계산기 하단 "최종 견적 합계" 값을 숫자로 읽어온다. (예: "33,510 원" → 33510) */
+function _dxfGetFinalQuoteTotal(){
+  const el = document.getElementById('resTotalCost');
+  if(!el) return 0;
+  const n = parseFloat(String(el.innerText).replace(/[^0-9.]/g,''));
+  return Number.isFinite(n) ? n : 0;
+}
+
 function _dxfRenderQtyTable(){
   if(!_dxfGroupedParts) return;
   const rows = _dxfGroupedParts.outerParts.map((p, i)=>{
     const num = i+1;
+    const qty = _dxfPartQty[p.id];
     return `<tr>
       <td class="text-center"><span class="dxf-partlabel-num">${num}</span></td>
       <td>${Math.round(p.w)} × ${Math.round(p.h)} mm</td>
-      <td><input type="number" min="0" step="1" value="${_dxfPartQty[p.id]}" data-part-id="${p.id}" class="dxf-qty-input" oninput="_dxfQtyInputChanged(this)"></td>
+      <td><input type="number" min="0" step="1" value="${qty}" data-part-id="${p.id}" class="dxf-qty-input" oninput="_dxfQtyInputChanged(this)"></td>
+      <td class="text-[11px] dxf-cost-cell">—</td>
     </tr>`;
   }).join('');
   document.getElementById('dxfNestQtyList').innerHTML = rows;
   document.getElementById('dxfNestQtyPanel').classList.remove('hidden');
+  _dxfRefreshQtyCostCells();
 }
 
 function _dxfQtyInputChanged(el){
@@ -4036,13 +5161,74 @@ function _dxfQtyInputChanged(el){
   let v = parseInt(el.value, 10);
   if(!Number.isFinite(v) || v<0) v = 0;
   _dxfPartQty[id] = v;
+  _dxfRefreshQtyCostCells();
+}
+
+/* 부품별 가공비 칸을 다시 계산해서 갱신한다.
+   계산기 하단에 "최종 견적 합계"가 이미 나와 있으면(=네스팅 결과를 계산기에 적용한 뒤라면),
+   그 최종 합계금액은 그대로 두고 — 각 부품의 (개별 가공비×수량) 비율대로 합계를 나눠서
+   부품별 금액의 합이 정확히 최종 합계와 일치하도록 배분해서 보여준다.
+   아직 최종 합계가 없으면(적용 전) 부품별 개별 가공비를 참고용으로 그대로 보여준다. */
+function _dxfRefreshQtyCostCells(){
+  if(!_dxfGroupedParts) return;
+  const listEl = document.getElementById('dxfNestQtyList');
+  if(!listEl) return;
+  const parts = _dxfGroupedParts.outerParts;
+
+  const rows = parts.map(p=>{
+    const qty = _dxfPartQty[p.id]||0;
+    const mc = _dxfPartMachiningCost(p);
+    return { p, qty, mc, raw: mc ? mc.cost*qty : 0 };
+  });
+  const rawSum = rows.reduce((s,r)=> s+r.raw, 0);
+  const finalTotal = _dxfGetFinalQuoteTotal();
+  const useProrate = finalTotal>0 && rawSum>0;
+  const scale = useProrate ? (finalTotal/rawSum) : 1;
+
+  // 반올림 오차 때문에 배분 합계가 최종 합계와 1~2원 어긋나지 않도록,
+  // 가장 금액이 큰 행에 남는 차액을 몰아서 정확히 일치시킨다.
+  const allocated = rows.map(r=> Math.round(r.raw*scale));
+  if(useProrate && allocated.length>0){
+    const diff = Math.round(finalTotal) - allocated.reduce((s,v)=>s+v,0);
+    if(diff!==0){
+      let maxIdx = 0;
+      for(let i=1;i<allocated.length;i++) if(allocated[i]>allocated[maxIdx]) maxIdx=i;
+      allocated[maxIdx] += diff;
+    }
+  }
+
+  rows.forEach((r,i)=>{
+    const row = listEl.children[i];
+    const cell = row ? row.querySelector('.dxf-cost-cell') : null;
+    if(!cell) return;
+    if(!r.mc){
+      cell.innerHTML = '<span class="text-gray-400 text-[11px]">T 입력 필요</span>';
+      return;
+    }
+    const totalDisp = useProrate ? allocated[i] : Math.round(r.raw);
+    const unitDisp = r.qty>0 ? Math.round(totalDisp/r.qty) : Math.round(r.mc.cost);
+    let html = `<span class="font-bold text-blue-700">${unitDisp.toLocaleString()}원</span>`
+      + (r.qty>1 ? ` × ${r.qty} = <span class="font-bold text-blue-700">${totalDisp.toLocaleString()}원</span>` : '');
+    if(r.mc.holeCount>0){
+      html += `<br><span class="text-[10px] text-gray-500">피어싱 ${r.mc.pierceCount}회(홀 ${r.mc.holeCount}개 포함)</span>`;
+    }
+    if(useProrate){
+      html += `<br><span class="text-[10px] text-emerald-600">※ 최종 합계 비율 배분</span>`;
+    }
+    cell.innerHTML = html;
+  });
+}
+
+/* 두께(T)/재질/단가 등이 바뀌면 부품별 가공비 표를 실시간으로 다시 계산한다 */
+function _refreshDxfQtyCostsIfLoaded(){
+  if(_dxfGroupedParts) _dxfRefreshQtyCostCells();
 }
 
 /* "수량 반영해서 재배치" 버튼 — 이미 인식된 부품 구성을 그대로 쓰고 수량만 바꿔 재계산 */
 function dxfRenestWithQty(){
   if(!_dxfGroupedParts){ alert('먼저 "부품 분리 & 네스팅 계산"을 실행하세요.'); return; }
   const ok = _dxfPerformNesting();
-  if(ok) showToast2('수량을 반영해 다시 배치했습니다!');
+  if(ok){ showToast2('수량을 반영해 다시 배치했습니다!'); _dxfScrollToFinalQuote(); }
 }
 
 /* 짜투리 판재 규격 입력칸 표시/숨김 */
@@ -4051,6 +5237,44 @@ function _dxfToggleScrapInputs(){
   const box = document.getElementById('dxfNestScrapInputs');
   box.style.display = chk.checked ? 'inline-flex' : 'none';
 }
+
+/* 네스팅된 판재 크기(nestW×nestH, 필요시 sheetsNeeded)를 현재 두께(T) 설정된
+   "판재 규격" 단가표(loadSheet())의 가장 가까운 두께 행과 면적 비례로 환산해
+   예상 판재비(재료비)를 계산한다. 두께가 입력되지 않았거나 단가표에 가격이 없으면 null. */
+function _dxfNestEstimatePrice(nestW, nestH, sheetsNeeded, scrapMode){
+  const t = parseFloat(document.getElementById('t').value)||0;
+  if(!t || !nestW || !nestH) return null;
+  const best = nearestByT(loadSheet(), t);
+  if(!best || !best.price) return null;
+  const sizeParts = String(best.size).split(/[xX×]/).map(s=>parseFloat(s)||0);
+  const stdW = sizeParts[0]||0, stdH = sizeParts[1]||0;
+  const stdArea = stdW*stdH; // mm²
+  if(stdArea<=0) return null;
+  const pricePerMm2 = best.price/stdArea;
+  const nestArea = nestW*nestH;
+  const sheets = scrapMode ? Math.max(1, sheetsNeeded||1) : 1;
+  const cost = pricePerMm2*nestArea*sheets;
+  return { cost, sheets, refSize: best.size, refT: best.t, refPrice: best.price };
+}
+
+/* 네스팅 결과 표의 "예상 판재비" 셀을 갱신한다. 네스팅이 아직 실행되지 않았으면 아무 것도 하지 않는다.
+   두께(T) 입력값이 바뀔 때도 재배치 버튼을 다시 누르지 않고 실시간으로 갱신되도록 onTChange 등에서 호출한다. */
+function _dxfRefreshNestPrice(){
+  const priceEl = document.getElementById('dxfNestPrice');
+  if(!priceEl || !_dxfNestData) return;
+  const { nestW, nestH, sheetsNeeded, scrapMode } = _dxfNestData;
+  const info = _dxfNestEstimatePrice(nestW, nestH, sheetsNeeded, scrapMode);
+  if(info){
+    priceEl.textContent = Math.round(info.cost).toLocaleString()+' 원'
+      + (scrapMode ? '  ('+info.sheets+'장 기준)' : '')
+      + '  [T'+info.refT+' '+info.refSize+' = '+info.refPrice.toLocaleString()+'원 판재 기준 면적 환산]';
+    priceEl.className = 'font-bold text-blue-700';
+  } else {
+    priceEl.textContent = '두께(T)를 입력하면 표시됩니다';
+    priceEl.className = 'text-gray-400';
+  }
+}
+function _refreshDxfNestPriceIfLoaded(){ if(_dxfNestData) _dxfRefreshNestPrice(); }
 
 /* 저장된 부품 구성(_dxfGroupedParts)과 수량(_dxfPartQty)을 기준으로 네스팅을 실행하고 결과를 화면에 반영 */
 function _dxfPerformNesting(){
@@ -4102,6 +5326,7 @@ function _dxfPerformNesting(){
   const savingPct  = origArea>0 ? (savingArea/origArea*100) : 0;
 
   _dxfNestData = { gap, allowRotate, direction, nestW, nestH, partCount: expanded.length, typeCount: grouped.outerParts.length, holeCount: grouped.holes.length, scrapMode, sheetsNeeded };
+  _dxfRefreshNestPrice();
 
   document.getElementById('dxfNestPartCount').textContent =
     expanded.length + '개 (부품 종류 ' + grouped.outerParts.length + '종)' + (grouped.holes.length ? ' · 내부 홀 '+grouped.holes.length+'개 별도' : '');
@@ -4166,8 +5391,37 @@ function _dxfPerformNesting(){
   nestPreviewBox.style.aspectRatio = nestRatio.toFixed(3);
   document.getElementById('dxfNestPreviewBox').innerHTML = buildDxfPreviewSvg(nestedEntities, null, labels);
   document.getElementById('dxfNestPreviewWrap').classList.remove('hidden');
+  _dxfFixLabelSizes(document.getElementById('dxfNestPreviewBox'));
 
   return true;
+}
+
+/* 부품 번호 배지가 도면 실측 크기(mm)에 비례해 그려지면, 도면이 클수록 화면 미리보기(최대 320px)에서
+   배지가 점처럼 작아져 숫자가 안 보이는 문제가 있다. SVG가 실제 DOM에 삽입된 뒤 렌더링된 픽셀 폭을
+   측정해, 배지 반지름/글자 크기가 도면 크기와 무관하게 항상 일정한 화면 픽셀 크기로 보이도록 보정한다. */
+function _dxfFixLabelSizes(container){
+  const svg = container && container.querySelector('svg');
+  if(!svg || !svg.viewBox || !svg.viewBox.baseVal) return;
+  const vbW = svg.viewBox.baseVal.width;
+  const rectW = container.getBoundingClientRect().width;
+  if(!(vbW>0) || !(rectW>0)) return;
+  const pxPerUnit = rectW / vbW;
+  const targetRadiusPx = 17, targetFontPx = 17; // 화면에서 항상 보장하고 싶은 최소 배지 크기
+  const rUnits = targetRadiusPx / pxPerUnit;
+  const fUnits = targetFontPx / pxPerUnit;
+  const strokeUnits = 1.5 / pxPerUnit;
+  svg.querySelectorAll('.dxf-partlabel circle').forEach(c=>{
+    c.setAttribute('r', rUnits);
+    c.style.strokeWidth = strokeUnits + 'px';
+    c.style.fillOpacity = '0.72'; // 살짝 투명하게 해서 밑에 도면 선이 비쳐 보이도록
+  });
+  svg.querySelectorAll('.dxf-partlabel text').forEach(t=>{
+    t.style.fontSize = fUnits + 'px';
+    t.setAttribute('dy', (fUnits*0.35));
+    t.style.paintOrder = 'stroke';
+    t.style.stroke = '#dc2626';
+    t.style.strokeWidth = (fUnits*0.14) + 'px'; // 반투명 배경 위에서도 숫자가 또렷하게 보이도록 외곽선 추가
+  });
 }
 
 /* ── UI: 네스팅 결과(최소 판재 크기)를 계산기에 적용 ── */
@@ -4178,7 +5432,10 @@ function dxfApplyNestingToCalc(){
   document.getElementById('h').value  = _dxfNestData.nestH;
   document.getElementById('ht').value = 0;
   calculate();
+  _refreshDxfQtyCostsIfLoaded(); // 최종 견적 합계가 나왔으니 부품별 가공비를 그 합계에 맞춰 다시 배분
   showToast2('네스팅 결과(최소 판재 크기)를 계산기에 적용했습니다!');
+  const finalBox = document.getElementById('finalQuoteBox');
+  if(finalBox) finalBox.scrollIntoView({behavior:'smooth', block:'center'});
 }
 
 /* 내부 엔티티 목록(props 구조)을 DXF 문자열로 변환.
@@ -4302,6 +5559,86 @@ function dxfExportNestedDxf(){
   showToast2(filename+' 다운로드를 시작했습니다.');
 }
 
+/* ── UI: 네스팅 재배치 미리보기 화면만 별도로 PDF 저장 ── */
+function dxfSaveNestPreviewPdf(){
+  const box = document.getElementById('dxfNestPreviewBox');
+  const svgEl = box ? box.querySelector('svg') : null;
+  if(!svgEl){
+    alert('먼저 "부품 분리 & 네스팅 계산"을 실행해서 재배치 미리보기를 생성해 주세요.');
+    return;
+  }
+  if(!(window.jspdf && window.jspdf.jsPDF)){
+    alert('PDF 저장 기능을 불러오지 못했습니다. 인터넷 연결을 확인한 뒤 다시 시도해 주세요.');
+    return;
+  }
+
+  // SVG 크기 파악 (viewBox 우선)
+  let vbW = 0, vbH = 0;
+  const vb = svgEl.getAttribute('viewBox');
+  if(vb){
+    const p = vb.trim().split(/\s+/).map(Number);
+    if(p.length===4){ vbW = p[2]; vbH = p[3]; }
+  }
+  if(!vbW || !vbH){
+    const rect = box.getBoundingClientRect();
+    vbW = rect.width || 600; vbH = rect.height || 600;
+  }
+
+  // 흰 배경을 명시한 SVG 문자열 생성 (원본은 그대로 두고 복제본만 수정)
+  const svgClone = svgEl.cloneNode(true);
+  svgClone.setAttribute('width', vbW);
+  svgClone.setAttribute('height', vbH);
+  if(!svgClone.getAttribute('viewBox')) svgClone.setAttribute('viewBox', `0 0 ${vbW} ${vbH}`);
+  const bg = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  bg.setAttribute('x','0'); bg.setAttribute('y','0');
+  bg.setAttribute('width', String(vbW)); bg.setAttribute('height', String(vbH));
+  bg.setAttribute('fill', '#ffffff');
+  svgClone.insertBefore(bg, svgClone.firstChild);
+
+  const svgString = new XMLSerializer().serializeToString(svgClone);
+  const svgDataUrl = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+
+  const scale = 3; // 고해상도 렌더링
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(vbW*scale);
+  canvas.height = Math.round(vbH*scale);
+  const ctx = canvas.getContext('2d');
+
+  const img = new Image();
+  img.onload = function(){
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(0,0,canvas.width,canvas.height);
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+    const imgData = canvas.toDataURL('image/png', 1.0);
+    const { jsPDF } = window.jspdf;
+    const orientation = vbW >= vbH ? 'landscape' : 'portrait';
+    const pdf = new jsPDF({ orientation, unit:'mm', format:'a4' });
+    const pageW = pdf.internal.pageSize.getWidth();
+    const pageH = pdf.internal.pageSize.getHeight();
+    const margin = 10;
+    const availW = pageW - margin*2;
+    const availH = pageH - margin*2;
+    const ratio = Math.min(availW/vbW, availH/vbH);
+    const drawW = vbW*ratio, drawH = vbH*ratio;
+    const offX = (pageW-drawW)/2, offY = (pageH-drawH)/2;
+
+    pdf.setFontSize(11);
+    pdf.text('네스팅 재배치 미리보기', margin, margin);
+    pdf.addImage(imgData, 'PNG', offX, offY, drawW, drawH);
+
+    const now2 = new Date();
+    const stamp2 = `${now2.getFullYear()}${String(now2.getMonth()+1).padStart(2,'0')}${String(now2.getDate()).padStart(2,'0')}_${String(now2.getHours()).padStart(2,'0')}${String(now2.getMinutes()).padStart(2,'0')}`;
+    const baseName2 = ((_dxfData && _dxfData.fileName) ? _dxfData.fileName.replace(/\.dxf$/i,'') : '네스팅결과').replace(/[\\/:*?"<>|]/g,'_');
+    pdf.save(`${baseName2}_네스팅미리보기_${stamp2}.pdf`);
+    if(typeof showToast2==='function') showToast2('네스팅 미리보기 PDF 저장을 시작했습니다.');
+  };
+  img.onerror = function(){
+    alert('미리보기를 이미지로 변환하는 중 오류가 발생했습니다.');
+  };
+  img.src = svgDataUrl;
+}
+
 /* ── 실시간 미리보기 SVG 생성 (DXF 형상 + 치수선) ──
    labels: [{x,y,text}, ...] 선택적 — 부품 번호 배지를 원본 좌표(y 반전 전)로 표시할 때 사용 */
 function buildDxfPreviewSvg(entities, selectedLayers, labels){
@@ -4313,13 +5650,15 @@ function buildDxfPreviewSvg(entities, selectedLayers, labels){
   for(const e of entities){
     if(sel && !sel.has(e.layer)) continue;
     const p = e.props;
+    const foldCls = ((e.layer==='FOLD') || _dxfIsFoldLinetype(e.linetype)) ? ' dxf-fold' : '';
+    const splitCls = (e.layer==='SPLIT') ? ' dxf-split' : '';
     if(e.type==='LINE'){
       const x1=p.x1||0, y1=-(p.y1||0), x2=p.x2||0, y2=-(p.y2||0);
-      shapes += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="dxf-shape"/>`;
+      shapes += `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" class="dxf-shape${foldCls}${splitCls}"/>`;
       upd(x1,y1); upd(x2,y2);
     } else if(e.type==='CIRCLE'){
       const cx=p.x1||0, cy=-(p.y1||0), r=p.r||0;
-      shapes += `<circle cx="${cx}" cy="${cy}" r="${r}" class="dxf-shape" fill="none"/>`;
+      shapes += `<circle cx="${cx}" cy="${cy}" r="${r}" class="dxf-shape${foldCls}" fill="none"/>`;
       upd(cx-r,cy-r); upd(cx+r,cy+r);
     } else if(e.type==='ARC'){
       const cx=p.x1||0, cy0=p.y1||0, r=p.r||0;
@@ -4328,12 +5667,12 @@ function buildDxfPreviewSvg(entities, selectedLayers, labels){
       const x1=cx+r*Math.cos(sa), y1=-(cy0+r*Math.sin(sa));
       const x2=cx+r*Math.cos(ea), y2=-(cy0+r*Math.sin(ea));
       const largeArc=(ea-sa)>Math.PI?1:0;
-      shapes += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 0 ${x2} ${y2}" class="dxf-shape" fill="none"/>`;
+      shapes += `<path d="M ${x1} ${y1} A ${r} ${r} 0 ${largeArc} 0 ${x2} ${y2}" class="dxf-shape${foldCls}" fill="none"/>`;
       upd(cx-r,-(cy0-r)); upd(cx+r,-(cy0+r));
     } else if(e.type==='ELLIPSE'){
       const cx=p.x1||0, cy=-(p.y1||0);
       const a=p.r||0, b=a*(p.ratio||1);
-      shapes += `<ellipse cx="${cx}" cy="${cy}" rx="${a}" ry="${b}" class="dxf-shape" fill="none"/>`;
+      shapes += `<ellipse cx="${cx}" cy="${cy}" rx="${a}" ry="${b}" class="dxf-shape${foldCls}" fill="none"/>`;
       upd(cx-a,cy-b); upd(cx+a,cy+b);
     } else if(e.type==='LWPOLYLINE' || e.type==='POLYLINE' || e.type==='SPLINE'){
       const xs=p.vx||[], ys=p.vy||[];
@@ -4343,7 +5682,7 @@ function buildDxfPreviewSvg(entities, selectedLayers, labels){
         for(let i=1;i<xs.length;i++){ d+=` L ${xs[i]} ${-(ys[i])}`; upd(xs[i],-(ys[i])); }
         const flags=p.flags||0;
         if((flags&1) && xs.length>1) d+=' Z';
-        shapes += `<path d="${d}" class="dxf-shape" fill="none"/>`;
+        shapes += `<path d="${d}" class="dxf-shape${foldCls}" fill="none"/>`;
       }
     }
   }
@@ -4383,6 +5722,8 @@ function buildDxfPreviewSvg(entities, selectedLayers, labels){
   return `<svg viewBox="${vbX} ${vbY} ${vbW} ${vbH}" preserveAspectRatio="xMidYMid meet" xmlns="http://www.w3.org/2000/svg" style="width:100%;height:100%;display:block">
     <style>
       .dxf-shape{stroke:#059669;stroke-width:1.6;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round;}
+      .dxf-shape.dxf-fold{stroke:#9333ea;stroke-width:1.1;stroke-dasharray:6 4;}
+      .dxf-shape.dxf-split{stroke:#dc2626;stroke-width:3;stroke-linecap:round;}
       .dxf-dim line{stroke:#9ca3af;stroke-width:1;vector-effect:non-scaling-stroke;}
       .dxf-dim text{font-size:${fontSize}px;fill:#6b7280;font-family:sans-serif;}
       .dxf-partlabel circle{fill:#dc2626;stroke:#fff;stroke-width:${Math.max(unit*0.004,1)};vector-effect:non-scaling-stroke;}
@@ -4406,6 +5747,37 @@ function _mkLine(x1,y1,x2,y2){ return { type:'LINE', layer:'GEN', props:{ x1,y1,
 function _mkRectPoly(w,h){ return { type:'LWPOLYLINE', layer:'GEN', props:{ vx:[0,w,w,0], vy:[0,0,h,h], flags:1 } }; }
 function _mkCircle(cx,cy,r){ return { type:'CIRCLE', layer:'GEN', props:{ x1:cx, y1:cy, r:r } }; }
 
+// 부채꼴(원뿔/콘부 전개면) 안에만 들어가도록 극좌표 격자로 홀을 배치.
+// 사각형 바운딩박스 기준 격자를 그대로 쓰면 부채꼴 바깥(모서리 빈 공간)에 구멍이 찍히므로,
+// 반지름[rMin,rMax] × 각도[aMin,aMax] 범위 안에서만 격자를 만들어 항상 도형 내부에 위치하게 한다.
+function _holeCirclesInSector(sR1, sR2, theta, dia, count){
+  if(!(dia>0) || !(count>0) || !(theta>0)) return [];
+  const r = dia/2;
+  const margin = r*1.4; // 테두리(호/직선)와 구멍 사이 최소 여백
+  const rMin = sR2 + margin;
+  const rMax = sR1 - margin;
+  if(rMax<=rMin) return [];
+  const avgR = (rMin+rMax)/2;
+  const aMargin = margin/avgR;
+  const aMin = aMargin, aMax = theta - aMargin;
+  if(aMax<=aMin) return [];
+  const radialSpan = rMax-rMin;
+  const arcLen = (aMax-aMin)*avgR; // 평균 반지름에서의 호 길이(가로 폭에 해당)
+  const cols = Math.min(count, Math.max(1, Math.round(Math.sqrt(count*arcLen/radialSpan)||1)));
+  const rows = Math.ceil(count/cols);
+  const arr = [];
+  let n=0;
+  for(let ry=1; ry<=rows && n<count; ry++){
+    const rad = rMin + radialSpan*ry/(rows+1);
+    for(let cx=1; cx<=cols && n<count; cx++){
+      const ang = aMin + (aMax-aMin)*cx/(cols+1);
+      arr.push(_mkCircle(rad*Math.cos(ang), rad*Math.sin(ang), r));
+      n++;
+    }
+  }
+  return arr;
+}
+
 function _holeCircles(w,h,dia,count){
   const arr=[]; if(!(dia>0) || !(count>0)) return arr;
   const r=dia/2;
@@ -4419,66 +5791,574 @@ function _holeCircles(w,h,dia,count){
   return arr;
 }
 
+// 간격(gap, mm) 지정 시 — 개수 대신 간격으로 격자 배치하고 실제 배치된 개수를 함께 반환
+function _holeCirclesByGap(w,h,dia,gap){
+  if(!(dia>0) || !(gap>0)) return { entities:[], count:0 };
+  const cols = Math.max(1, Math.floor(w/gap));
+  const rows = Math.max(1, Math.floor(h/gap));
+  const count = cols*rows;
+  return { entities:_holeCircles(w,h,dia,count), count };
+}
+
+// 엔티티 목록의 (원본 좌표계 기준, 화면표시용 y반전 이전) 바운딩박스
+function _bboxOfEntities(entities){
+  let x1=Infinity,x2=-Infinity,y1=Infinity,y2=-Infinity;
+  const upd=(x,y)=>{ if(x<x1)x1=x; if(x>x2)x2=x; if(y<y1)y1=y; if(y>y2)y2=y; };
+  (entities||[]).forEach(e=>{
+    const p=e.props||{};
+    if(e.type==='LINE'){ upd(p.x1||0,p.y1||0); upd(p.x2||0,p.y2||0); }
+    else if(e.type==='CIRCLE'){ const r=p.r||0; upd((p.x1||0)-r,(p.y1||0)-r); upd((p.x1||0)+r,(p.y1||0)+r); }
+    else if(e.type==='ARC'){
+      const r=p.r||0; upd((p.x1||0)-r,(p.y1||0)-r); upd((p.x1||0)+r,(p.y1||0)+r);
+    } else if(e.type==='LWPOLYLINE'||e.type==='POLYLINE'||e.type==='SPLINE'){
+      (p.vx||[]).forEach((vx,i)=> upd(vx, (p.vy||[])[i]||0));
+    }
+  });
+  if(x1===Infinity) return {x1:0,y1:0,x2:0,y2:0,w:0,h:0};
+  return { x1,y1,x2,y2, w:x2-x1, h:y2-y1 };
+}
+
+function _translateCircles(circles, dx, dy){
+  return circles.map(c=>({ type:c.type, layer:c.layer, props: Object.assign({}, c.props, { x1:(c.props.x1||0)+dx, y1:(c.props.y1||0)+dy }) }));
+}
+
+/* 현재 선택된 형상(CType)과 입력된 치수를 기준으로, 홀을 면(부재)별로 따로 뚫을 수 있는
+   면 목록을 반환한다. rect(사각통)은 바닥면+플랩4면(최대 5면), 원뿔/깔대기는 전개면 1개,
+   호퍼는 원통부·콘부 각 1면씩 반환. */
+/* 사각뿔대(각뿔대) 호퍼 전개 엔진.
+   isRound=false: 상부 W1×D1 → 하부 W2×D2 인 각뿔대 — 정확한 사다리꼴 4장(가로측×2, 세로측×2)으로 전개.
+   isRound=true : 상부 W1×D1(사각) → 하부 Ø(원형 배출구) 인 변환관(트랜지션) — 삼각분할(triangulation)로 근사 전개. */
+function _trapPoly(topW, botW, height){
+  return [ [0,0], [botW,0], [(botW+topW)/2, height], [(botW-topW)/2, height] ];
+}
+function _rayRectPt(hw, hd, ang){
+  const c=Math.cos(ang), s=Math.sin(ang);
+  const tx = Math.abs(c)>1e-9 ? hw/Math.abs(c) : Infinity;
+  const ty = Math.abs(s)>1e-9 ? hd/Math.abs(s) : Infinity;
+  const tmin = Math.min(tx,ty);
+  return { x:c*tmin, y:s*tmin };
+}
+function pyrDevelop(W1, D1, W2, D2, dia, H, isRound, t, density){
+  if(!(W1>0) || !(D1>0) || !(H>0)) return null;
+  if(!isRound){
+    W2 = W2||0; D2 = D2||0;
+    const dw=(W1-W2)/2, dd=(D1-D2)/2;
+    const Lhip = Math.sqrt(dw*dw + dd*dd + H*H);
+    const hW = Math.sqrt(Math.max(0, Lhip*Lhip - dw*dw));
+    const hD = Math.sqrt(Math.max(0, Lhip*Lhip - dd*dd));
+    const areaW = (W1+W2)/2*hW, pathW = W1+W2+2*Lhip;
+    const areaD = (D1+D2)/2*hD, pathD = D1+D2+2*Lhip;
+    const wTrapPts = _trapPoly(W1,W2,hW), dTrapPts = _trapPoly(D1,D2,hD);
+    const wEnt = { type:'LWPOLYLINE', layer:'GEN', props:{ vx:wTrapPts.map(p=>p[0]), vy:wTrapPts.map(p=>p[1]), flags:1 } };
+    const dEnt = { type:'LWPOLYLINE', layer:'GEN', props:{ vx:dTrapPts.map(p=>p[0]), vy:dTrapPts.map(p=>p[1]), flags:1 } };
+    const wWeight = (areaW*t*density)/1e6, dWeight = (areaD*t*density)/1e6;
+    const parts = [
+      { key:'pw', label:'① 가로측 사다리꼴(앞/뒤, ×2)', w:Math.max(W1,W2), h:hW, entities:[wEnt], weight:wWeight, path:pathW, pierce:1, count:2 },
+      { key:'pd', label:'② 세로측 사다리꼴(좌/우, ×2)', w:Math.max(D1,D2), h:hD, entities:[dEnt], weight:dWeight, path:pathD, pierce:1, count:2 }
+    ];
+    const totalVolMM3 = H/3*(W1*D1 + W2*D2 + Math.sqrt(W1*D1*W2*D2));
+    return {
+      parts,
+      totalWeight: wWeight*2 + dWeight*2,
+      totalPath: pathW*2 + pathD*2,
+      totalPierce: 4,
+      totalVolMM3,
+      details:[
+        `[가로측 사다리꼴×2] 상${Math.round(W1)}/하${Math.round(W2)}/사변${Math.round(Lhip)}mm, 둘레${Math.round(pathW).toLocaleString()}mm`,
+        `[세로측 사다리꼴×2] 상${Math.round(D1)}/하${Math.round(D2)}/사변${Math.round(Lhip)}mm, 둘레${Math.round(pathD).toLocaleString()}mm`
+      ]
+    };
+  }
+
+  // ── 사각→원형 배출구 (변환관) — 삼각분할 전개 ──
+  if(!(dia>0)) return null;
+  const r=dia/2, hw=W1/2, hd=D1/2;
+  // 상부 사각형의 4개 모서리(코너) 각도 — 이 지점들이 실제 절곡/분할 절단선이 지나가는 위치이므로
+  // 균등분할 샘플과 별개로 반드시 샘플 각도 배열에 정확히 포함되도록 구간을 나눠 생성한다.
+  const _c0 = Math.atan2(hd,hw), _c1 = Math.PI-_c0, _c2 = Math.PI+_c0, _c3 = 2*Math.PI-_c0;
+  const _breaks = [0, _c0, _c1, _c2, _c3, 2*Math.PI];
+  const _baseSeg = 2*Math.PI/24; // 기준 분할각(약 24분할 수준의 매끄러움 유지)
+  const angles = [];
+  const cornerIdx = []; // _c0,_c1,_c2,_c3 각각에 대응하는 angles 배열 내 인덱스(모서리 4곳)
+  for(let s=0;s<5;s++){
+    const a0=_breaks[s], a1=_breaks[s+1];
+    const span = a1-a0;
+    const segs = Math.max(1, Math.round(span/_baseSeg));
+    for(let k=0;k<segs;k++){
+      if(s>0 && k===0) cornerIdx.push(angles.length);
+      angles.push(a0 + span*k/segs);
+    }
+  }
+  const N = angles.length;
+  const T3=[], B3=[];
+  for(let i=0;i<N;i++){
+    const ang = angles[i];
+    const rp = _rayRectPt(hw,hd,ang);
+    T3.push({x:rp.x, y:rp.y, z:H});
+    B3.push({x:r*Math.cos(ang), y:r*Math.sin(ang), z:0});
+  }
+  const dist3 = (p,q)=>Math.sqrt((p.x-q.x)**2+(p.y-q.y)**2+(p.z-q.z)**2);
+  const T2=[], B2=[];
+  T2[0]={x:0,y:0};
+  const d0=dist3(T3[0],B3[0]);
+  B2[0]={x:d0,y:0};
+  let cx=(T2[0].x+B2[0].x)/2, cy=(T2[0].y+B2[0].y)/2, cnt=2;
+  function place(pA,pB,lenA,lenB){
+    const dx=pB.x-pA.x, dy=pB.y-pA.y;
+    const d=Math.sqrt(dx*dx+dy*dy)||1e-9;
+    const a=(lenA*lenA-lenB*lenB+d*d)/(2*d);
+    let h2=lenA*lenA-a*a; if(h2<0) h2=0;
+    const h=Math.sqrt(h2);
+    const xm=pA.x+a*dx/d, ym=pA.y+a*dy/d;
+    const rx=-dy/d, ry=dx/d;
+    const c1={x:xm+h*rx,y:ym+h*ry}, c2={x:xm-h*rx,y:ym-h*ry};
+    const dd1=(c1.x-cx)*(c1.x-cx)+(c1.y-cy)*(c1.y-cy);
+    const dd2=(c2.x-cx)*(c2.x-cx)+(c2.y-cy)*(c2.y-cy);
+    return dd1>=dd2 ? c1 : c2;
+  }
+  for(let i=0;i<N;i++){
+    const ni=(i+1)%N;
+    if(ni===0) break;
+    const lenA = dist3(T3[i],T3[ni]);
+    const lenB = dist3(B3[i],T3[ni]);
+    T2[ni] = place(T2[i],B2[i],lenA,lenB);
+    cx=(cx*cnt+T2[ni].x)/(cnt+1); cy=(cy*cnt+T2[ni].y)/(cnt+1); cnt++;
+    const lenC = dist3(B3[i],B3[ni]);
+    const lenD = dist3(T3[ni],B3[ni]);
+    B2[ni] = place(B2[i],T2[ni],lenC,lenD);
+    cx=(cx*cnt+B2[ni].x)/(cnt+1); cy=(cy*cnt+B2[ni].y)/(cnt+1); cnt++;
+  }
+  const outline = T2.concat(B2.slice().reverse());
+  const ent = { type:'LWPOLYLINE', layer:'GEN', props:{ vx:outline.map(p=>p.x), vy:outline.map(p=>p.y), flags:1 } };
+  let area=0;
+  for(let i=0;i<outline.length;i++){
+    const p=outline[i], q=outline[(i+1)%outline.length];
+    area += p.x*q.y - q.x*p.y;
+  }
+  area = Math.abs(area)/2;
+  const weight = (area*t*density)/1e6;
+  const topPerimeter = 2*(W1+D1);
+  const botPerimeter = 2*Math.PI*r;
+  const seam = d0*2;
+
+  // ── 4개 코너(모서리) 절곡선 — 상부 사각형의 4개 꼭짓점에서 하부 원까지 이어지는 사선.
+  // 실사례처럼 한 번에 절곡이 불가능하므로 이 중 2개(마주보는 코너)는 레이저로 실제 분할
+  // 절단하고, 나머지 2개는 절곡선(점선)으로만 표시한다. 4개 모두 절곡 단가표 대상이다.
+  const bendLines = cornerIdx.map((idx,k)=>({
+    idx,
+    length: dist3(T3[idx], B3[idx]),
+    isSplit: (k===0 || k===2) // 4개 중 마주보는 2개(첫/셋째)를 분할 절단선으로 지정
+  }));
+  const bendEntities = bendLines.map(bl=>{
+    const ln = _mkLine(T2[bl.idx].x, T2[bl.idx].y, B2[bl.idx].x, B2[bl.idx].y);
+    ln.layer = bl.isSplit ? 'SPLIT' : 'FOLD';
+    return ln;
+  });
+  const splitLines = bendLines.filter(b=>b.isSplit);
+  const splitLen = splitLines.reduce((s,b)=>s+b.length,0);
+
+  // 분할 절단선(2개)은 실제 레이저 절단 대상이므로 절단 경로 길이·피어싱 횟수에 포함한다.
+  // (절곡선(점선, 나머지 2개)은 다른 절곡선들과 동일하게 절단 경로에서는 제외되고 절곡비로만 집계)
+  const path = topPerimeter + botPerimeter + seam + splitLen;
+  const pierce = 3 + splitLines.length;
+  const bb = _bboxOfEntities([ent]);
+  const totalVolMM3 = (H/3)*(W1*D1 + Math.PI*r*r + Math.sqrt(W1*D1*Math.PI*r*r));
+  return {
+    parts:[{ key:'prt', label:'삼각분할 전개(사각→원형 배출구)', w:bb.w, h:bb.h, entities:[ent, ...bendEntities], weight, path, pierce, count:1 }],
+    totalWeight: weight,
+    totalPath: path,
+    totalPierce: pierce,
+    totalVolMM3,
+    bendLines,
+    details:[
+      `상단둘레(사각): ${Math.round(topPerimeter).toLocaleString()}mm`,
+      `하단둘레(Ø${Math.round(dia)}): ${Math.round(botPerimeter).toLocaleString()}mm`,
+      `솔기×2: ${Math.round(seam).toLocaleString()}mm`,
+      `분할 절단선(코너) 2개: ${splitLines.map(b=>Math.round(b.length)).join('mm, ')}mm — 레이저 절단 경로에 포함(빨간선)`,
+      `절곡선(코너) 4개 자동 생성: ${bendLines.map(b=>Math.round(b.length)+'mm').join(', ')} — ④ 절곡 단가표 자동 적용(점선 2개는 절단 제외)`,
+      `삼각분할(${N}분할) 근사 전개 — 실제 제작 시 여유 다듬질 권장`
+    ]
+  };
+}
+
+function getShapeFaces(){
+  if(CType==='rect'){
+    const w=parseFloat(document.getElementById('w').value)||0;
+    const h=parseFloat(document.getElementById('h').value)||0;
+    const ht=parseFloat(document.getElementById('ht').value)||0;
+    if(!(w>0)||!(h>0)) return [];
+    if(ht>0){
+      const capChk = document.getElementById('rectCapChk');
+      const hasCap = !!(capChk && capChk.checked);
+      if(hasCap){
+        return [
+          {key:'c', label:'① 바닥면(중앙)', w:w,  h:h,  ox:ht,   oy:ht},
+          {key:'t', label:'② 상단 플랩',   w:w,  h:ht, ox:ht,   oy:0},
+          {key:'l', label:'③ 좌측 플랩',   w:ht, h:h,  ox:0,    oy:ht},
+          {key:'r', label:'④ 우측 플랩',   w:ht, h:h,  ox:ht+w, oy:ht},
+          {key:'b', label:'⑤ 하단 플랩',   w:w,  h:ht, ox:ht,   oy:ht+h},
+        ];
+      }
+      // 마개 없음 — 위·아래가 뚫린 사각통: 바닥면 없이 4개 측면을 띠(strip) 형태로 한 줄에 전개
+      return [
+        {key:'s1', label:'① 측면1', w:w, h:ht, ox:0,       oy:0},
+        {key:'s2', label:'② 측면2', w:h, h:ht, ox:w,       oy:0},
+        {key:'s3', label:'③ 측면3', w:w, h:ht, ox:w+h,     oy:0},
+        {key:'s4', label:'④ 측면4', w:h, h:ht, ox:2*w+h,   oy:0},
+      ];
+    }
+    return [{key:'p', label:'평판', w:w, h:h, ox:0, oy:0}];
+  }
+  if(CType==='cone'){
+    const D1=parseFloat(document.getElementById('coneD1').value)||0;
+    const raw=document.getElementById('coneD2').value.trim();
+    const D2=(raw===''||raw===null)?0:(parseFloat(raw)||0);
+    const H=parseFloat(document.getElementById('coneH').value)||0;
+    const cd = devConeEntities(D1,D2,H);
+    if(!cd) return [];
+    const bb = _bboxOfEntities(cd.entities);
+    // 원뿔 전개면은 물리적으로 1장이지만, 서로 다른 크기/갯수의 홀을 함께 뚫는 경우가 많아
+    // 입력 편의를 위해 "1번면"/"2번면" 두 그룹으로 나누어 각각 지름·갯수를 지정할 수 있게 한다.
+    // (uniformGroup: 단순모드에서 동일 전개면에 중복 적용되지 않도록 표시)
+    return [
+      {key:'cone1', label:'1번면', w:bb.w, h:bb.h, ox:bb.x1, oy:bb.y1, uniformGroup:'cone'},
+      {key:'cone2', label:'2번면', w:bb.w, h:bb.h, ox:bb.x1, oy:bb.y1, uniformGroup:'cone'}
+    ];
+  }
+  if(CType==='hopper'){
+    const D=parseFloat(document.getElementById('hopD').value)||0;
+    const H1=parseFloat(document.getElementById('hopH1').value)||0;
+    const raw=document.getElementById('hopD2').value.trim();
+    const d=(raw===''||raw===null)?0:(parseFloat(raw)||0);
+    const H2=parseFloat(document.getElementById('hopH2').value)||0;
+    const hd = (D>0 && !(d>D)) ? devHopperEntities(D,H1,d,H2) : [];
+    return hd.map((p,i)=>{
+      const bb=_bboxOfEntities(p.entities);
+      return {key:'h'+i, label:(i===0?'① 원통부':'② 콘부'), w:bb.w, h:bb.h, ox:bb.x1, oy:bb.y1};
+    });
+  }
+  if(CType==='pyr'){
+    const pW1=parseFloat(document.getElementById('pyrW1').value)||0;
+    const pD1=parseFloat(document.getElementById('pyrD1').value)||0;
+    const isRound = (window._pyrOutlet==='round');
+    const pW2=parseFloat(document.getElementById('pyrW2').value)||0;
+    const pD2=parseFloat(document.getElementById('pyrD2').value)||0;
+    const pDia=parseFloat(document.getElementById('pyrDia').value)||0;
+    const pH=parseFloat(document.getElementById('pyrH').value)||0;
+    const pdev = (pW1>0 && pD1>0 && pH>0 && (isRound?pDia>0:true)) ? pyrDevelop(pW1,pD1,pW2,pD2,pDia,pH,isRound,1,1) : null;
+    if(!pdev) return [];
+    return pdev.parts.map((p,i)=>{
+      const bb=_bboxOfEntities(p.entities);
+      return {key:p.key, label:p.label, w:bb.w, h:bb.h, ox:bb.x1, oy:bb.y1};
+    });
+  }
+  if(CType==='sqhopper'){
+    const W=parseFloat(document.getElementById('shW').value)||0;
+    const D=parseFloat(document.getElementById('shD').value)||0;
+    const H1=parseFloat(document.getElementById('shH1').value)||0;
+    const raw=document.getElementById('shDia').value.trim();
+    const dia=(raw===''||raw===null)?0:(parseFloat(raw)||0);
+    const H2=parseFloat(document.getElementById('shH2').value)||0;
+    const shd = (W>0 && D>0) ? devSqHopperEntities(W,D,H1,dia,H2) : [];
+    return shd.map((p,i)=>{
+      const bb=_bboxOfEntities(p.entities);
+      return {key:'sh'+i, label:(i===0?'① 사각통부':'② 콘부'), w:bb.w, h:bb.h, ox:bb.x1, oy:bb.y1};
+    });
+  }
+  return [];
+}
+
+/* 단순 모드(면별 체크 없음)에서 입력한 홀 지름/개수를, 현재 형상의 모든 면
+   (플랩/전개면 등)에 동일하게 자동 적용한다. 면 크기 대비 개수가 물리적으로
+   들어갈 수 없는 수준이면 overLimit에 해당 면을 기록해 경고 문구로 표시한다. */
+function resolveHoleUniform(dia, count){
+  const allFaces = getShapeFaces();
+  // uniformGroup이 같은 면(예: 원뿔의 1번면/2번면 — 물리적으로 같은 전개면)은
+  // 단순모드(면별 지정 없이 지름/갯수 1세트만 입력)에서 중복 적용되지 않도록 대표 1개만 사용
+  const seenGroups = new Set();
+  const faces = allFaces.filter(f=>{
+    if(!f.uniformGroup) return true;
+    if(seenGroups.has(f.uniformGroup)) return false;
+    seenGroups.add(f.uniformGroup);
+    return true;
+  });
+  let totalPath=0, totalCount=0; const details=[]; const overLimit=[];
+  const resolved = faces.map(f=>{
+    const path = Math.PI*dia*count;
+    totalPath += path; totalCount += count;
+    details.push(`홀-${f.label}(${count}개): ${Math.round(path).toLocaleString()}mm`);
+    const maxCount = Math.max(0, Math.floor(f.w/dia)) * Math.max(0, Math.floor(f.h/dia));
+    if(maxCount>0 && count>maxCount) overLimit.push(`${f.label}(최대 ${maxCount}개)`);
+    return Object.assign({}, f, { dia, count });
+  });
+  return { faces: resolved, totalPath, totalCount, details, overLimit };
+}
+
+/* 면별 홀 입력값(_holeFaceCfg)을 실제 개수/경로로 환산 */
+function resolveHoleFaces(){
+  const faces = getShapeFaces();
+  window._holeFaceCfg = window._holeFaceCfg || {};
+  let totalPath=0, totalCount=0; const details=[];
+  const resolved = faces.map(f=>{
+    const cfg = window._holeFaceCfg[f.key] || {};
+    const dia = parseFloat(cfg.dia)||0;
+    let count = 0;
+    if(dia>0){
+      if(cfg.mode==='gap'){
+        const gap = parseFloat(cfg.val)||0;
+        count = gap>0 ? Math.max(1,Math.floor(f.w/gap)) * Math.max(1,Math.floor(f.h/gap)) : 0;
+      } else {
+        count = parseFloat(cfg.val)||0;
+      }
+    }
+    if(dia>0 && count>0){
+      const path = Math.PI*dia*count;
+      totalPath += path; totalCount += count;
+      details.push(`홀-${f.label}(${count}개): ${Math.round(path).toLocaleString()}mm`);
+    }
+    return Object.assign({}, f, { dia, count });
+  });
+  return { faces:resolved, totalPath, totalCount, details };
+}
+
+/* 홀 입력 모드(단순/면별) 토글 — silent=true면 계산을 다시 트리거하지 않음(상태 복원 시 사용) */
+function toggleHoleFaceMode(silent){
+  const chk = document.getElementById('holeFaceModeChk');
+  const isFace = chk && chk.checked;
+  document.getElementById('holeSimpleContainer').classList.toggle('hidden', isFace);
+  document.getElementById('holeFaceContainer').classList.toggle('hidden', !isFace);
+  if(isFace) renderHoleFaceRows();
+  if(!silent) calculate();
+}
+
+/* 면별 입력 행 렌더 — 현재 형상의 면 개수만큼 자동 생성, 이전 입력값은 key 기준으로 유지 */
+function renderHoleFaceRows(){
+  const wrap = document.getElementById('holeFaceRows');
+  if(!wrap) return;
+  const faces = getShapeFaces();
+  window._holeFaceCfg = window._holeFaceCfg || {};
+  if(!faces.length){
+    wrap.innerHTML = '<div class="text-xs text-gray-400 text-center py-2">치수를 입력하면 면 목록이 표시됩니다</div>';
+    return;
+  }
+  wrap.innerHTML = faces.map(f=>{
+    const cfg = window._holeFaceCfg[f.key] || {};
+    const mode = cfg.mode==='gap' ? 'gap' : 'count';
+    const dia = cfg.dia!==undefined ? cfg.dia : '';
+    const val = cfg.val!==undefined ? cfg.val : '';
+    return `<div class="grid grid-cols-12 gap-1 items-center bg-white border border-gray-200 rounded p-1.5">
+      <div class="col-span-3 text-[11px] font-bold text-gray-600">${f.label}<div class="text-[10px] font-normal text-gray-400">${Math.round(f.w)}×${Math.round(f.h)}mm</div></div>
+      <div class="col-span-3">
+        <input type="number" placeholder="지름(mm)" min="0" step="0.1" value="${dia}"
+          class="w-full border border-gray-300 rounded p-1.5 text-xs"
+          oninput="updateHoleFaceCfg('${f.key}','dia',this.value)">
+      </div>
+      <div class="col-span-3">
+        <select class="w-full border border-gray-300 rounded p-1.5 text-xs" onchange="updateHoleFaceCfg('${f.key}','mode',this.value)">
+          <option value="count" ${mode==='count'?'selected':''}>개수</option>
+          <option value="gap" ${mode==='gap'?'selected':''}>간격(mm)</option>
+        </select>
+      </div>
+      <div class="col-span-3">
+        <input type="number" placeholder="${mode==='gap'?'간격mm':'개수'}" min="0" value="${val}"
+          class="w-full border border-gray-300 rounded p-1.5 text-xs"
+          oninput="updateHoleFaceCfg('${f.key}','val',this.value)">
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateHoleFaceCfg(key, field, value){
+  window._holeFaceCfg = window._holeFaceCfg || {};
+  window._holeFaceCfg[key] = window._holeFaceCfg[key] || {};
+  window._holeFaceCfg[key][field] = value;
+  if(field==='mode') renderHoleFaceRows(); // 개수↔간격 전환 시 placeholder 갱신
+  calculate();
+}
+
 /* 원뿔/원통/원뿔대(깔대기) 전개 — calculate()의 원뿔 계산식과 동일한 공식 사용 */
-function devConeEntities(D1, D2, H){
+function devConeEntities(D1, D2, H, holeSpec){
   if(!(D1>0) || !(H>0)) return null;
   const R1=D1/2, R2=(D2||0)/2;
   if(R2>R1+1e-9) return null;
+  let shape;
+  let sectorInfo = null; // { R:sR1, r:sR2, theta } — 홀을 부채꼴 내부에만 배치하기 위한 정보
   if(R2===0){
     const L=Math.sqrt(R1*R1+H*H);
     const theta=(2*Math.PI*R1)/L;
-    return { w:L*2, h:L, label:'원뿔(완전) 전개', entities:[
+    shape = { w:L*2, h:L, label:'원뿔(완전) 전개', entities:[
       _mkArc(0,0,L,0,theta),
       _mkLine(0,0,L*Math.cos(0),L*Math.sin(0)),
       _mkLine(0,0,L*Math.cos(theta),L*Math.sin(theta))
     ]};
+    sectorInfo = { R:L, r:0, theta };
   } else if(Math.abs(R1-R2)<0.001){
     const circumference=2*Math.PI*R1;
-    return { w:circumference, h:H, label:'원통 전개', entities:[ _mkRectPoly(circumference,H) ] };
+    shape = { w:circumference, h:H, label:'원통 전개', entities:[ _mkRectPoly(circumference,H) ] };
   } else {
     const L=Math.sqrt((R1-R2)*(R1-R2)+H*H);
     const sR1=(R1*L)/(R1-R2), sR2=(R2*L)/(R1-R2);
     const theta=(2*Math.PI*R1)/sR1;
     const p0o=[sR1*Math.cos(0), sR1*Math.sin(0)], p0i=[sR2*Math.cos(0), sR2*Math.sin(0)];
     const p1o=[sR1*Math.cos(theta), sR1*Math.sin(theta)], p1i=[sR2*Math.cos(theta), sR2*Math.sin(theta)];
-    return { w:sR1*2, h:sR1, label:'원뿔대(깔대기) 전개', entities:[
+    shape = { w:sR1*2, h:sR1, label:'원뿔대(깔대기) 전개', entities:[
       _mkArc(0,0,sR1,0,theta), _mkArc(0,0,sR2,0,theta),
       _mkLine(p0i[0],p0i[1],p0o[0],p0o[1]),
       _mkLine(p1i[0],p1i[1],p1o[0],p1o[1])
     ]};
+    sectorInfo = { R:sR1, r:sR2, theta };
   }
+  // 홀(부재별 모드) — 원통부는 사각형 격자, 콘부(부채꼴)는 부채꼴 내부에만 들어가도록 극좌표 격자로 배치
+  // (예전 방식은 부채꼴의 사각형 바운딩박스 기준으로만 배치해, 부채꼴 바깥 빈 공간에 구멍이
+  //  찍히는 문제가 있었음)
+  // holeSpec은 단일 {dia,count} 객체(호퍼의 콘부 등) 또는 배열(원뿔 단독 형상의
+  // "1번면"/"2번면" 두 그룹)로 모두 전달될 수 있어, 배열로 정규화한 뒤 각 그룹을 순서대로 뚫는다.
+  const holeSpecs = Array.isArray(holeSpec) ? holeSpec : (holeSpec ? [holeSpec] : []);
+  holeSpecs.forEach(hs=>{
+    if(!(hs && hs.dia>0 && hs.count>0)) return;
+    if(sectorInfo){
+      shape.entities.push(..._holeCirclesInSector(sectorInfo.R, sectorInfo.r, sectorInfo.theta, hs.dia, hs.count));
+    } else {
+      const bb = _bboxOfEntities(shape.entities);
+      shape.entities.push(..._translateCircles(_holeCircles(bb.w,bb.h,hs.dia,hs.count), bb.x1, bb.y1));
+    }
+  });
+  return shape;
 }
 
 /* 호퍼 = 원통부 + 콘부, 두 부재를 각각 별도 전개도(별도 부품)로 반환 */
-function devHopperEntities(D, H1, d, H2){
+function devHopperEntities(D, H1, d, H2, faceHoles){
   const parts=[];
+  const cylHole = faceHoles && faceHoles[0];
+  const coneHole = faceHoles && faceHoles[1];
   if(D>0 && H1>0){
     const circumference=2*Math.PI*(D/2);
-    parts.push({ w:circumference, h:H1, label:'원통부 전개', entities:[ _mkRectPoly(circumference,H1) ] });
+    const entities=[ _mkRectPoly(circumference,H1) ];
+    if(cylHole && cylHole.dia>0 && cylHole.count>0) entities.push(..._holeCircles(circumference,H1,cylHole.dia,cylHole.count));
+    parts.push({ w:circumference, h:H1, label:'원통부 전개', entities });
   }
   if(D>0 && H2>0){
-    const cone = devConeEntities(D, d, H2);
+    const cone = devConeEntities(D, d, H2, coneHole);
     if(cone){ cone.label='콘부 전개'; parts.push(cone); }
   }
   return parts;
 }
 
-/* 사각/평판 — 평판은 그 자체가 전개도, 사각통(높이>0)은 절곡 전 평판(1장)으로 전개 */
-function devRectEntities(w, h, ht, holeDia, holeCount){
+/* 호퍼(사각+콘) = 사각통부(둘레 띠 전개, 절곡 3회) + 콘부(사각→원형 변환관, 삼각분할 전개),
+   두 부재를 각각 별도 전개도(별도 부품)로 반환 */
+function devSqHopperEntities(W, D, H1, dia, H2, faceHoles){
+  const parts=[];
+  const ductHole = faceHoles && faceHoles[0];
+  const coneHole = faceHoles && faceHoles[1];
+  if(W>0 && D>0 && H1>0){
+    const stripW = 2*(W+D);
+    const entities = [ _mkRectPoly(stripW, H1) ];
+    const b1=W, b2=W+D, b3=2*W+D;
+    [b1,b2,b3].forEach(bx=>{ const ln=_mkLine(bx,0,bx,H1); ln.layer='FOLD'; entities.push(ln); });
+    if(ductHole && ductHole.dia>0 && ductHole.count>0) entities.push(..._holeCircles(stripW,H1,ductHole.dia,ductHole.count));
+    parts.push({ w:stripW, h:H1, label:'사각통부 전개', entities });
+  }
+  if(W>0 && D>0 && dia>0 && H2>0){
+    const pdev = pyrDevelop(W, D, 0, 0, dia, H2, true, 1, 1);
+    if(pdev){
+      const p = pdev.parts[0];
+      const entities = p.entities.slice();
+      if(coneHole && coneHole.dia>0 && coneHole.count>0){
+        const bb=_bboxOfEntities(entities);
+        entities.push(..._translateCircles(_holeCircles(bb.w,bb.h,coneHole.dia,coneHole.count), bb.x1, bb.y1));
+      }
+      parts.push({ w:p.w, h:p.h, label:'콘부 전개(사각→원형)', entities });
+    }
+  }
+  return parts;
+}
+
+/* 사각뿔대 호퍼 = (사각→사각) 사다리꼴 2종×각2장, 또는 (사각→원형) 삼각분할 전개 1장 —
+   각 부재를 별도 전개도(별도 부품)로 반환. faceHoles가 있으면 각 부재 중앙 부근에 격자로 배치. */
+function devPyrEntities(W1, D1, W2, D2, dia, H, isRound, faceHoles){
+  if(!(W1>0) || !(D1>0) || !(H>0)) return [];
+  if(isRound && !(dia>0)) return [];
+  const pdev = pyrDevelop(W1,D1,W2,D2,dia,H,isRound,1,1);
+  if(!pdev) return [];
+  return pdev.parts.map((p,i)=>{
+    const entities = p.entities.slice();
+    const fh = faceHoles && faceHoles[i];
+    if(fh && fh.dia>0 && fh.count>0){
+      const bb=_bboxOfEntities(entities);
+      entities.push(..._translateCircles(_holeCircles(bb.w,bb.h,fh.dia,fh.count), bb.x1, bb.y1));
+    }
+    return { w:p.w, h:p.h, label:p.label + (p.count>1?` (×${p.count})`:''), entities };
+  });
+}
+
+/* 사각/평판 — 평판은 그 자체가 전개도, 사각통(높이>0)은 절곡 전 평판(1장)으로 전개
+   faceHoles가 주어지면(면별 모드) 각 면(바닥/상단/좌/우/하단 플랩)에 각각 홀을 배치하고,
+   없으면 기존처럼 holeDia/holeCount(단순 모드, 평판에만 적용)를 사용한다. */
+function devRectEntities(w, h, ht, holeDia, holeCount, faceHoles, hasCap){
   if(!(w>0) || !(h>0)) return null;
   if(ht>0){
-    const nw=w+2*ht, nh=h+2*ht;
-    return { w:nw, h:nh, label:'사각통 전개(절곡 전 평판)', entities:[
-      _mkRectPoly(nw,nh),
-      _mkLine(ht,0,ht,nh), _mkLine(nw-ht,0,nw-ht,nh),
-      _mkLine(0,ht,nw,ht), _mkLine(0,nh-ht,nw,nh-ht)
-    ]};
+    const entities = [];
+    if(hasCap){
+      // 하단 마개 있음 — 십자(+)형 전개: 중앙(바닥면) + 4방향 플랩(측벽).
+      // 네 모서리의 ht×ht 정사각형을 잘라내어(노치) 4면이 서로 간섭·중첩되지 않고
+      // 독립적으로 90도 절곡될 수 있도록 함.
+      const nw=w+2*ht, nh=h+2*ht;
+      const outline = { type:'LWPOLYLINE', layer:'GEN', props:{
+        vx:[ht, ht+w, ht+w, nw,  nw,  ht+w, ht+w, ht,   ht,  0,   0,  ht],
+        vy:[0,  0,    ht,   ht,  ht+h, ht+h, nh,   nh,   ht+h, ht+h, ht, ht],
+        flags:1
+      }};
+      entities.push(outline);
+      // 절곡선(점선) — 중앙 바닥면의 4변, 즉 각 플랩이 접히는 경계
+      const foldLinesCap = [
+        _mkLine(ht,    ht,    ht+w,  ht   ), // 하단 플랩 경계
+        _mkLine(ht+w,  ht,    ht+w,  ht+h ), // 우측 플랩 경계
+        _mkLine(ht+w,  ht+h,  ht,    ht+h ), // 상단 플랩 경계
+        _mkLine(ht,    ht+h,  ht,    ht   )  // 좌측 플랩 경계
+      ];
+      foldLinesCap.forEach(l=>l.layer='FOLD');
+      entities.push(...foldLinesCap);
+      // 면별 홀(바닥면/상단·좌·우·하단 플랩) — 각 면의 로컬 좌표를 전체 전개도 좌표로 이동해 배치
+      if(faceHoles && faceHoles.length){
+        faceHoles.forEach(f=>{
+          if(f.dia>0 && f.count>0){
+            entities.push(..._translateCircles(_holeCircles(f.w,f.h,f.dia,f.count), f.ox, f.oy));
+          }
+        });
+      }
+      return { w:nw, h:nh, label:'사각통 전개(절곡 전 평판, 바닥 포함)', entities };
+    }
+    // 하단 마개 없음 — 위·아래가 뚫린 사각통: 바닥면이 없으므로 4개 측벽을 이어붙인
+    // 띠(strip) 형태로 한 줄에 전개한다. 전체 폭 = 둘레(2w+2h), 높이 = ht.
+    // (예: 100×100×H100 → 400×100 띠 전개, 이전의 십자형 바운딩 300×300은 바닥면이
+    //  없는데도 있는 것처럼 잘못 계산되던 문제를 수정)
+    const stripW = 2*(w+h), stripH = ht;
+    entities.push(_mkRectPoly(stripW, stripH));
+    // 절곡선(점선) — 4개 측벽의 경계(w, h, w, h 순서로 이어붙인 각 이음매)
+    const b1=w, b2=w+h, b3=2*w+h;
+    const foldLinesStrip = [
+      _mkLine(b1,0,b1,stripH),
+      _mkLine(b2,0,b2,stripH),
+      _mkLine(b3,0,b3,stripH)
+    ];
+    foldLinesStrip.forEach(l=>l.layer='FOLD');
+    entities.push(...foldLinesStrip);
+    if(faceHoles && faceHoles.length){
+      faceHoles.forEach(f=>{
+        if(f.dia>0 && f.count>0){
+          entities.push(..._translateCircles(_holeCircles(f.w,f.h,f.dia,f.count), f.ox, f.oy));
+        }
+      });
+    }
+    return { w:stripW, h:stripH, label:'사각통 전개(절곡 전 평판, 마개 없음)', entities };
   }
-  return { w, h, label:'평판', entities:[ _mkRectPoly(w,h), ..._holeCircles(w,h,holeDia,holeCount) ] };
+  // 평판(높이 0) — 면별 모드에서도 면이 1개뿐이므로 faceHoles[0]을 사용, 없으면 기존 단순 입력값 사용
+  const flatHole = (faceHoles && faceHoles[0]) || { dia:holeDia, count:holeCount };
+  return { w, h, label:'평판', entities:[ _mkRectPoly(w,h), ..._holeCircles(w,h,flatHole.dia,flatHole.count) ] };
 }
 
 /* 전개도 미리보기 렌더 — buildDxfPreviewSvg 재사용 */
-function renderDevPreview(containerId, partOrParts){
+function renderDevPreview(containerId, partOrParts, faceLabels){
   const el = document.getElementById(containerId);
   if(!el) return;
   if(!partOrParts || (Array.isArray(partOrParts) && partOrParts.length===0)){
@@ -4486,32 +6366,43 @@ function renderDevPreview(containerId, partOrParts){
     return;
   }
   const parts = Array.isArray(partOrParts) ? partOrParts : [partOrParts];
-  el.innerHTML = parts.map(p=>{
-    const svg = buildDxfPreviewSvg(p.entities, null, null);
+  el.innerHTML = parts.map((p,i)=>{
+    const svg = buildDxfPreviewSvg(p.entities, null, (i===0 && faceLabels && faceLabels.length) ? faceLabels : null);
     return `<div class="mb-2"><div class="text-[10px] font-bold text-gray-500 mb-1">${p.label||''} (${Math.round(p.w)}×${Math.round(p.h)}mm)</div><div style="height:180px">${svg}</div></div>`;
   }).join('');
 }
 
-/* calculate() 끝에서 매번 호출 — 현재 화면에 보이는 타입뿐 아니라 3종 모두 최신화 */
+/* calculate() 끝에서 매번 호출 — 현재 화면에 보이는 타입뿐 아니라 3종 모두 최신화
+   window._resolvedHoleFaces: 면별 모드일 때 calculate()가 미리 계산해 둔, 현재 CType 기준
+   면별 홀(dia/count) 정보. 단순 모드이거나 없으면 undefined이며 기존 동작 그대로 유지된다. */
 function updateAllDevPreviews(){
+  const faceHoles = (window._resolvedHoleFaces && CType) ? window._resolvedHoleFaces : null;
+  // 면별 모드일 때, 입력 행의 ①②③... 번호와 동일한 번호를 전개도 위 각 면 중앙에 표시해
+  // "어느 입력칸이 도면의 어느 면인지" 한눈에 매칭되도록 한다.
+  const faceNumberLabels = (faceHoles && faceHoles.length)
+    ? faceHoles.map((f,i)=>({ x: f.ox + f.w/2, y: f.oy + f.h/2, text: String(i+1) }))
+    : null;
+
   // 사각/평판
   const w  = parseFloat(document.getElementById('w').value)||0;
   const h  = parseFloat(document.getElementById('h').value)||0;
   const ht = parseFloat(document.getElementById('ht').value)||0;
-  const qtyR = parseFloat(document.getElementById('qty').value)||1;
+  const qtyR = getIntQty('qty');
   const holeDia   = parseFloat(document.getElementById('holeDia').value)||0;
   const holeCount = parseFloat(document.getElementById('holeCount').value)||0;
-  const rd = devRectEntities(w,h,ht,holeDia,holeCount);
+  const rectCapChkEl = document.getElementById('rectCapChk');
+  const rectHasCap = !!(rectCapChkEl && rectCapChkEl.checked);
+  const rd = devRectEntities(w,h,ht,holeDia,holeCount, CType==='rect' ? faceHoles : null, rectHasCap);
   window._devShapes.rect = rd ? { parts:[Object.assign({},rd,{qty:qtyR})] } : null;
-  renderDevPreview('devPreviewRect', rd);
+  renderDevPreview('devPreviewRect', rd, CType==='rect' ? faceNumberLabels : null);
 
   // 원뿔/깔대기
   const D1 = parseFloat(document.getElementById('coneD1').value)||0;
   const coneD2raw = document.getElementById('coneD2').value.trim();
   const D2 = (coneD2raw===''||coneD2raw===null) ? 0 : (parseFloat(coneD2raw)||0);
   const H  = parseFloat(document.getElementById('coneH').value)||0;
-  const qtyC = parseFloat(document.getElementById('coneQty').value)||1;
-  const cd = devConeEntities(D1,D2,H);
+  const qtyC = getIntQty('coneQty');
+  const cd = devConeEntities(D1,D2,H, (CType==='cone' && faceHoles) ? faceHoles : null);
   window._devShapes.cone = cd ? { parts:[Object.assign({},cd,{qty:qtyC})] } : null;
   renderDevPreview('devPreviewCone', cd);
 
@@ -4521,10 +6412,35 @@ function updateAllDevPreviews(){
   const d2raw = document.getElementById('hopD2').value.trim();
   const d  = (d2raw===''||d2raw===null) ? 0 : (parseFloat(d2raw)||0);
   const H2 = parseFloat(document.getElementById('hopH2').value)||0;
-  const qtyH = parseFloat(document.getElementById('hopQty').value)||1;
-  const hd = (D>0 && !(d>D)) ? devHopperEntities(D,H1,d,H2) : [];
+  const qtyH = getIntQty('hopQty');
+  const hd = (D>0 && !(d>D)) ? devHopperEntities(D,H1,d,H2, (CType==='hopper') ? faceHoles : null) : [];
   window._devShapes.hopper = hd.length ? { parts: hd.map(p=>Object.assign({},p,{qty:qtyH})) } : null;
   renderDevPreview('devPreviewHopper', hd.length ? hd : null);
+
+  // 사각뿔대 호퍼
+  const pW1 = parseFloat(document.getElementById('pyrW1').value)||0;
+  const pD1 = parseFloat(document.getElementById('pyrD1').value)||0;
+  const pIsRound = (window._pyrOutlet==='round');
+  const pW2 = parseFloat(document.getElementById('pyrW2').value)||0;
+  const pD2 = parseFloat(document.getElementById('pyrD2').value)||0;
+  const pDia = parseFloat(document.getElementById('pyrDia').value)||0;
+  const pH = parseFloat(document.getElementById('pyrH').value)||0;
+  const qtyP = getIntQty('pyrQty');
+  const pd = devPyrEntities(pW1,pD1,pW2,pD2,pDia,pH,pIsRound, (CType==='pyr') ? faceHoles : null);
+  window._devShapes.pyr = pd.length ? { parts: pd.map(p=>Object.assign({},p,{qty:qtyP})) } : null;
+  renderDevPreview('devPreviewPyr', pd.length ? pd : null);
+
+  // 호퍼(사각+콘)
+  const shW = parseFloat(document.getElementById('shW').value)||0;
+  const shD = parseFloat(document.getElementById('shD').value)||0;
+  const shH1 = parseFloat(document.getElementById('shH1').value)||0;
+  const shDiaRaw = document.getElementById('shDia').value.trim();
+  const shDia = (shDiaRaw===''||shDiaRaw===null) ? 0 : (parseFloat(shDiaRaw)||0);
+  const shH2 = parseFloat(document.getElementById('shH2').value)||0;
+  const qtySh = getIntQty('shQty');
+  const shd = (shW>0 && shD>0) ? devSqHopperEntities(shW,shD,shH1,shDia,shH2, (CType==='sqhopper') ? faceHoles : null) : [];
+  window._devShapes.sqhopper = shd.length ? { parts: shd.map(p=>Object.assign({},p,{qty:qtySh})) } : null;
+  renderDevPreview('devPreviewSqHopper', shd.length ? shd : null);
 }
 
 /* "🧩 네스팅에 추가" — 생성된 전개도를 위쪽 DXF 네스팅 엔진(부품 자동 인식 & 네스팅) 목록에 합류시킨다.
@@ -4538,16 +6454,23 @@ function addDevToNesting(type){
   }
 
   if(!_dxfData){
-    _dxfData = { fileName: '자동생성 전개도(' + (type==='rect'?'사각/평판':type==='cone'?'원뿔/깔대기':'호퍼') + ')', entities: [], layers: ['GEN'], _selectedLayers: null };
+    _dxfData = { fileName: '자동생성 전개도(' + (type==='rect'?'사각/평판':type==='cone'?'원뿔/깔대기':type==='pyr'?'사각뿔대호퍼':type==='sqhopper'?'호퍼(사각+콘)':'호퍼') + ')', entities: [], layers: ['GEN'], _selectedLayers: null };
   } else if(!_dxfData.layers.includes('GEN')){
     _dxfData.layers.push('GEN');
   }
 
   // 기존 도형 오른쪽으로 여유를 두고 이어붙인다 (겹치면 서로 다른 부품이 하나로 잘못 인식될 수 있음)
+  // 새로 추가하는 전개도 자체의 원점이 0이 아닐 수 있으므로(예: 중심 기준으로 생성되어 좌표가
+  // 음수에서 시작하는 경우) 새 도형들의 최소X도 함께 보정해야 실제로 겹치지 않는다.
   let offsetX = 0;
+  const allNewEntities = shape.parts.reduce((acc,part)=> acc.concat(part.entities), []);
+  const newM = calcDxfMetrics(allNewEntities, null);
+  const newBx1 = isFinite(newM.bx1) ? newM.bx1 : 0;
   if(_dxfData.entities.length){
     const m = calcDxfMetrics(_dxfData.entities, null);
-    if(isFinite(m.bx2)) offsetX = m.bx2 + 50;
+    if(isFinite(m.bx2)) offsetX = (m.bx2 + 50) - newBx1;
+  } else {
+    offsetX = -newBx1;
   }
 
   const addedSizes = [];
@@ -4643,6 +6566,545 @@ function showDxfResult(parsed){
   document.getElementById('dxfPreviewBox').innerHTML = buildDxfPreviewSvg(parsed.entities, null);
   document.getElementById('dxfPreviewSize').textContent = Math.round(metrics.width).toLocaleString()+' × '+Math.round(metrics.height).toLocaleString()+' mm';
   document.getElementById('dxfPreviewLen').textContent  = Math.round(metrics.totalPath).toLocaleString()+' mm';
+  _dxfRenderBendItems(parsed.entities, null);
+  _dxfRenderHoleBreakdown(metrics.circles);
+}
+
+/* 전개도/도면 미리보기 박스를 클릭하면 새 창에서 확대해서 보여준다.
+   (주의) 개별 <svg>마다 96vw/96vh로 강제로 늘리면, 부품이 2개 이상 겹쳐 있는 미리보기(예:
+   호퍼처럼 svg가 여러 장 나오는 경우) 레이아웃이 깨지고 치수 글씨까지 함께 과도하게 커져
+   버린다. 원본 레이아웃/비율은 그대로 두고, 전체 블록을 transform:scale로 통째로 확대한다. */
+/* 도면 미리보기(dxfPreviewBox) 팝업에 함께 넣을 "홀 가공비 / 절곡비 상세 내역" HTML을 만든다.
+   메인 화면에서는 복잡해서 숨겨두고(#dxfHoleArea, #dxfBendArea에 style="display:none"),
+   이미 계산되어 채워져 있는 내용을 그대로 읽어와 팝업 전용 스타일로 다시 그려준다. */
+function _buildDxfPopupExtrasHtml(){
+  let html = '';
+  const holeArea = document.getElementById('dxfHoleArea');
+  const bendArea = document.getElementById('dxfBendArea');
+
+  if(holeArea && !holeArea.classList.contains('hidden')){
+    const rows  = document.getElementById('dxfHoleItemsBody').innerHTML;
+    const total = document.getElementById('dxfHoleTotal').textContent;
+    html +=
+      '<div class="pv-box pv-hole">'+
+        '<div class="pv-box-title">⚪ 홀(원형) 크기별 가공비 — 두께에 따라 자동 계산</div>'+
+        '<table class="pv-table"><thead><tr><th style="width:32%">홀 지름</th><th>개수</th><th>레이저 가공비</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody></table>'+
+        '<div class="pv-box-total"><span>홀 가공비 합계</span><span>'+total+'</span></div>'+
+        '<p class="pv-note">※ 절단 길이(원 둘레 × 개수) × 분당 가공단가 + 피어싱(개당 단가) 기준이며, 위 전체 견적에 이미 정확히 반영되어 있습니다. 이 표는 홀 종류·크기별로 얼마씩인지 확인용입니다.</p>'+
+      '</div>';
+  }
+
+  if(bendArea && !bendArea.classList.contains('hidden')){
+    const rows  = document.getElementById('dxfBendItemsBody').innerHTML;
+    const total = document.getElementById('dxfBendTotal').textContent;
+    const thick = document.getElementById('dxfBendThickLbl').textContent;
+    html +=
+      '<div class="pv-box pv-bend">'+
+        '<div class="pv-box-title">📐 절곡선 자동 인식 — 절곡 품목</div>'+
+        '<div class="pv-box-sub">④ 절곡 단가표(두께별·길이구간별) 기준 적용 — 현재 두께: <b>'+thick+'</b></div>'+
+        '<table class="pv-table"><thead><tr><th style="width:32%">절곡선</th><th>길이(mm)</th><th>구간</th><th>단가</th></tr></thead>'+
+        '<tbody>'+rows+'</tbody></table>'+
+        '<div class="pv-box-total"><span>절곡비 합계</span><span>'+total+'</span></div>'+
+        '<p class="pv-note">※ 절곡선(점선 표시)은 실제 레이저 절단 대상이 아니므로 위 절단 경로 길이·재료 계산에서는 제외되며, 이 절곡비로 별도 집계됩니다. 단가는 왼쪽 ④ 절곡 단가표(두께별·길이구간별) 설정을 그대로 사용합니다.</p>'+
+      '</div>';
+  }
+  return html;
+}
+
+/* 도면 미리보기(dxfPreviewBox) 팝업에 넣을 "레이저 가공 시뮬레이션" 패널 HTML.
+   절단 이송시간 = 총 절단경로(mm) ÷ 두께별 이송속도(⑤⑥ 레이저 절단 속도표, getFeed 그대로 사용)
+   피어싱시간 = 홀 개수 × 두께 기준 대략값(참고용) — 실제 견적 금액에는 영향 없음(표시용 추정치). */
+function _buildDxfSimPanelHtml(){
+  if(!_dxfData || !_dxfData._metrics) return '';
+  const m = _dxfData._metrics;
+  const totalPath = m.totalPath || 0;
+  if(totalPath <= 0) return '';
+  const holeCount = (m.circles||[]).length;
+  const mat = document.getElementById('mat') ? document.getElementById('mat').value : '';
+  const t   = document.getElementById('t') ? (parseFloat(document.getElementById('t').value)||0) : 0;
+  const feed = (mat && t>0) ? (getFeed(mat, t)||0) : 0;
+  const cutSec = feed>0 ? (totalPath/feed)*60 : 0;
+  const pierceSecPerHole = Math.min(3, Math.max(0.3, 0.3 + t*0.12)); // 두께가 두꺼울수록 피어싱(구멍 뚫기)에 시간이 더 걸리는 경향을 반영한 대략값
+  const pierceSec = holeCount * pierceSecPerHole;
+  const totalSec = cutSec + pierceSec;
+  const fmt = s=>{ s=Math.round(s); const mnt=Math.floor(s/60), sec=s%60; return (mnt>0 ? mnt+'분 ' : '')+sec+'초'; };
+
+  const matLbl = mat ? mat : '재질 미선택';
+  const feedLbl = feed>0 ? Math.round(feed).toLocaleString()+' mm/분' : '—';
+
+  return (
+    '<div class="pv-box pv-sim">'+
+      '<div class="pv-box-title">🔴 레이저 가공 시뮬레이션</div>'+
+      '<div class="pv-box-sub">'+matLbl+(t>0 ? ' '+t+'T' : '')+' · 이송속도 '+feedLbl+' (⑤⑥ 레이저 절단 속도표 기준)</div>'+
+      '<button id="simBtn" class="pv-sim-btn" onclick="_dxfScrollTopAndSim()">🔴 레이저 가공 시뮬레이션 시작</button>'+
+      '<div class="pv-sim-progwrap"><div id="simProgBar" class="pv-sim-progbar"></div></div>'+
+      '<div class="pv-sim-time">'+
+        '<div>절단 이송시간 <b>'+fmt(cutSec)+'</b></div>'+
+        '<div>홀 피어싱시간 <b>'+fmt(pierceSec)+'</b> ('+holeCount+'개 × 약 '+pierceSecPerHole.toFixed(1)+'초)</div>'+
+        '<div class="pv-sim-total">예상 총 가공시간 <b id="simTotalTime">'+fmt(totalSec)+'</b></div>'+
+      '</div>'+
+      '<p class="pv-note">※ 절단 이송시간은 총 절단 경로(mm) ÷ 두께별 이송속도(⑤⑥ 설정)로 계산하며, 피어싱 시간은 두께 기준 참고값(대략치)입니다. 화면에서는 실제 절단처럼 도형 안쪽(스크랩 쪽)에서 노란색으로 피어싱한 뒤 절단선까지 짧게 진입선을 그리며 절단을 시작합니다. 애니메이션 재생 속도는 보기 편하도록 일정하게 고정되어 있으며, 실제 가공시간과는 별개입니다.</p>'+
+    '</div>'
+  );
+}
+
+/* 팝업창(새 창) 안에서 실행될 "레이저 가공 시뮬레이션" 스크립트를 문자열로 반환한다.
+   팝업은 별도의 document이므로, 필요한 함수를 문자열로 통째로 주입한다.
+   동작: 도면의 절단 선(.dxf-shape, 절곡 점선 제외)을 순서대로 빨간색으로 트레이싱하며
+   그려 나가고(레이저가 지나가는 듯한 효과), 진행률 바를 함께 채운다. */
+function _dxfLaserSimScript(){
+  return `
+    function _dxfShapeLength(el){
+      const tag = el.tagName.toLowerCase();
+      if(tag==='line'){
+        const x1=parseFloat(el.getAttribute('x1')||0), y1=parseFloat(el.getAttribute('y1')||0);
+        const x2=parseFloat(el.getAttribute('x2')||0), y2=parseFloat(el.getAttribute('y2')||0);
+        return Math.hypot(x2-x1, y2-y1);
+      }
+      if(tag==='circle'){
+        return 2*Math.PI*parseFloat(el.getAttribute('r')||0);
+      }
+      if(tag==='ellipse'){
+        const rx=parseFloat(el.getAttribute('rx')||0), ry=parseFloat(el.getAttribute('ry')||0);
+        return Math.PI*(3*(rx+ry) - Math.sqrt((3*rx+ry)*(rx+3*ry))); // Ramanujan 근사식
+      }
+      try{ if(typeof el.getTotalLength==='function') return el.getTotalLength(); }catch(e){}
+      return 1;
+    }
+    function _dxfShapePoint(el, local){ // local: 0~1
+      const tag = el.tagName.toLowerCase();
+      if(tag==='line'){
+        const x1=parseFloat(el.getAttribute('x1')||0), y1=parseFloat(el.getAttribute('y1')||0);
+        const x2=parseFloat(el.getAttribute('x2')||0), y2=parseFloat(el.getAttribute('y2')||0);
+        return { x: x1+(x2-x1)*local, y: y1+(y2-y1)*local };
+      }
+      if(tag==='circle'){
+        const cx=parseFloat(el.getAttribute('cx')||0), cy=parseFloat(el.getAttribute('cy')||0), r=parseFloat(el.getAttribute('r')||0);
+        const ang = local*2*Math.PI;
+        return { x: cx+r*Math.cos(ang), y: cy+r*Math.sin(ang) };
+      }
+      if(tag==='ellipse'){
+        const cx=parseFloat(el.getAttribute('cx')||0), cy=parseFloat(el.getAttribute('cy')||0);
+        const rx=parseFloat(el.getAttribute('rx')||0), ry=parseFloat(el.getAttribute('ry')||0);
+        const ang = local*2*Math.PI;
+        return { x: cx+rx*Math.cos(ang), y: cy+ry*Math.sin(ang) };
+      }
+      try{
+        if(typeof el.getPointAtLength==='function'){
+          const len = _dxfShapeLength(el);
+          return el.getPointAtLength(len*local);
+        }
+      }catch(e){}
+      return { x:0, y:0 };
+    }
+
+    function _dxfScrollTopAndSim(){
+      try{ window.scrollTo({top:0, left:0, behavior:'smooth'}); }catch(e){ window.scrollTo(0,0); }
+      _dxfRunLaserSim();
+    }
+
+    function _dxfRunLaserSim(){
+      const svg = document.querySelector('#pvWrap svg');
+      const btn = document.getElementById('simBtn');
+      const btnTop = document.getElementById('simBtnTop');
+      const bar = document.getElementById('simProgBar');
+      if(!svg || !btn) return;
+
+      // 이전 실행 흔적 정리
+      svg.querySelectorAll('.dxf-sim-overlay, .dxf-sim-lead, .dxf-sim-pierce').forEach(n=>n.remove());
+      const existingDot = document.getElementById('laserDot');
+      if(existingDot) existingDot.remove();
+
+      const baseShapes = Array.from(svg.querySelectorAll('.dxf-shape:not(.dxf-fold)'));
+      if(!baseShapes.length) return;
+
+      // 각 절단선 위에 빨간색으로 점점 그려지는 오버레이 복사본을 만든다(원본은 그대로 배경으로 유지)
+      const overlays = baseShapes.map(src=>{
+        const c = src.cloneNode(false);
+        c.classList.add('dxf-sim-overlay');
+        c.style.fill = 'none';
+        c.style.stroke = '#ef4444';
+        c.style.strokeWidth = '3';
+        c.style.vectorEffect = 'non-scaling-stroke';
+        c.style.filter = 'drop-shadow(0 0 2px rgba(239,68,68,.7))';
+        src.parentNode.appendChild(c);
+        return c;
+      });
+
+      // 실제 레이저/플라즈마 절단은 선 위의 아무 지점에서나 바로 시작하지 않는다.
+      // 먼저 도형 안쪽(스크랩이 되는 쪽)에서 피어싱(구멍 뚫기)을 한 뒤, 절단선까지
+      // 짧게 진입선(리드인)을 그리며 다가가 절단을 시작한다. 끝점→다음 시작점이
+      // 공차 내로 붙어 있으면 같은 경로를 이어서 자르는 것으로 보고 한 "루프"로 묶어
+      // 루프당 한 번만 피어싱하도록 한다.
+      const TOL = 2;
+      const shapeInfo = overlays.map(el=>({ el, len: _dxfShapeLength(el), start: _dxfShapePoint(el,0), end: _dxfShapePoint(el,1) }));
+      const loops = [];
+      let cur = [];
+      shapeInfo.forEach(it=>{
+        if(cur.length){
+          const prevEnd = cur[cur.length-1].end;
+          if(Math.hypot(it.start.x-prevEnd.x, it.start.y-prevEnd.y) > TOL){ loops.push(cur); cur=[]; }
+        }
+        cur.push(it);
+      });
+      if(cur.length) loops.push(cur);
+
+      loops.forEach(loop=>{
+        const pts = [];
+        loop.forEach(it=>{ pts.push(it.start, it.end); });
+        let minX=Infinity,maxX=-Infinity,minY=Infinity,maxY=-Infinity;
+        pts.forEach(p=>{ if(p.x<minX)minX=p.x; if(p.x>maxX)maxX=p.x; if(p.y<minY)minY=p.y; if(p.y>maxY)maxY=p.y; });
+        const cx=(minX+maxX)/2, cy=(minY+maxY)/2, diag=Math.hypot(maxX-minX, maxY-minY);
+        const entry = loop[0].start;
+        let dx=cx-entry.x, dy=cy-entry.y;
+        let dist=Math.hypot(dx,dy);
+        if(dist<0.01){ dx=1; dy=0; dist=1; }
+        const leadDist = Math.max(2, Math.min(diag*0.18, 14, dist*0.7));
+        loop.pierce = { x: entry.x+(dx/dist)*leadDist, y: entry.y+(dy/dist)*leadDist };
+        loop.entry = entry;
+        loop.leadLen = leadDist;
+        loop.bbox = { minX, maxX, minY, maxY };
+        loop.area = Math.max(0, maxX-minX) * Math.max(0, maxY-minY);
+      });
+
+      // 실제 가공 순서: 부품이 판재에서 떨어져 나가면(외곽선을 자르고 나면) 더 이상 안전하게
+      // 위치를 보장할 수 없으므로, 항상 "테두리 안쪽(홀 등 내부 도형)을 먼저 자르고
+      // 마지막에 바깥 테두리(외곽선)를 자른다". 다른 루프의 bbox 안에 완전히 들어가는
+      // 루프(=내부 도형)를 먼저, 어디에도 속하지 않는 루프(=외곽선)를 나중에 배치한다.
+      const CTOL = 2;
+      loops.forEach(loop=>{
+        loop.isInner = loops.some(other=> other!==loop &&
+          loop.bbox.minX >= other.bbox.minX-CTOL && loop.bbox.maxX <= other.bbox.maxX+CTOL &&
+          loop.bbox.minY >= other.bbox.minY-CTOL && loop.bbox.maxY <= other.bbox.maxY+CTOL &&
+          other.area > loop.area + 1e-6
+        );
+      });
+      const orderedLoops = loops.filter(l=>l.isInner).concat(loops.filter(l=>!l.isInner));
+
+      const cutLen = loops.reduce((s,l)=> s + l.reduce((s2,it)=> s2+(it.len>0?it.len:0.001), 0), 0);
+      const leadLenTotal = loops.reduce((s,l)=> s + l.leadLen, 0);
+      const grandLen = (cutLen + leadLenTotal) || 1;
+      const ANIM_MS = 9000; // 화면 재생 시간(고정, 실제 가공시간과 무관) — 보기 편한 속도로 고정 재생
+      const PIERCE_MS = Math.max(40, Math.min(160, 4000/loops.length)); // 루프(구멍/외곽선)마다 짧게 멈춰 피어싱하는 느낌
+
+      const vb = svg.viewBox && svg.viewBox.baseVal ? svg.viewBox.baseVal : {width:100};
+      const pierceUnit = Math.max(vb.width*0.012, 1.4);
+
+      let cum = 0;
+      const timeline = [];
+      orderedLoops.forEach(loop=>{
+        const pierceEl = document.createElementNS('http://www.w3.org/2000/svg','circle');
+        pierceEl.setAttribute('class','dxf-sim-pierce');
+        pierceEl.setAttribute('r', pierceUnit);
+        pierceEl.setAttribute('cx', loop.pierce.x);
+        pierceEl.setAttribute('cy', loop.pierce.y);
+        pierceEl.style.fill = '#fbbf24';
+        pierceEl.style.opacity = '0';
+        pierceEl.style.filter = 'drop-shadow(0 0 4px rgba(251,191,36,.9))';
+        svg.appendChild(pierceEl);
+        timeline.push({ type:'pierce', el: pierceEl, start: cum, dur: PIERCE_MS });
+        cum += PIERCE_MS;
+
+        const leadDur = (loop.leadLen/grandLen)*ANIM_MS;
+        const leadEl = document.createElementNS('http://www.w3.org/2000/svg','line');
+        leadEl.setAttribute('class','dxf-sim-lead');
+        leadEl.setAttribute('x1', loop.pierce.x); leadEl.setAttribute('y1', loop.pierce.y);
+        leadEl.setAttribute('x2', loop.entry.x);  leadEl.setAttribute('y2', loop.entry.y);
+        leadEl.style.stroke = '#fbbf24';
+        leadEl.style.strokeWidth = '2';
+        leadEl.style.strokeDasharray = loop.leadLen+' '+loop.leadLen;
+        leadEl.style.strokeDashoffset = loop.leadLen;
+        leadEl.style.vectorEffect = 'non-scaling-stroke';
+        svg.appendChild(leadEl);
+        timeline.push({ type:'lead', el: leadEl, len: loop.leadLen, start: cum, dur: leadDur, pierce: loop.pierce });
+        cum += leadDur;
+
+        loop.forEach(it=>{
+          const len = it.len>0 ? it.len : 0.001;
+          const dur = (len/grandLen)*ANIM_MS;
+          it.el.style.strokeDasharray = len+' '+len;
+          it.el.style.strokeDashoffset = len;
+          timeline.push({ type:'cut', el: it.el, len, start: cum, dur });
+          cum += dur;
+        });
+      });
+
+      const totalMs = cum || 1;
+
+      const dot = document.createElementNS('http://www.w3.org/2000/svg','circle');
+      dot.setAttribute('id','laserDot');
+      dot.setAttribute('r', Math.max(vb.width*0.01, 1.2));
+      dot.setAttribute('fill', '#ef4444');
+      dot.style.filter = 'drop-shadow(0 0 5px rgba(239,68,68,.95))';
+      svg.appendChild(dot);
+
+      [btn, btnTop].forEach(b=>{
+        if(!b) return;
+        b.disabled = true;
+        b.textContent = '⏳ 가공 중...';
+      });
+      if(bar) bar.style.width = '0%';
+
+      const t0 = performance.now();
+      function frame(now){
+        const elapsed = now - t0;
+        const p = Math.min(1, elapsed/totalMs);
+        for(const seg of timeline){
+          const segElapsed = elapsed - seg.start;
+          if(seg.type==='pierce'){
+            if(segElapsed<=0 || segElapsed>=seg.dur){
+              seg.el.style.opacity = '0';
+            } else {
+              const local = segElapsed/seg.dur;
+              seg.el.style.opacity = String(Math.sin(local*Math.PI));
+              dot.setAttribute('cx', seg.el.getAttribute('cx'));
+              dot.setAttribute('cy', seg.el.getAttribute('cy'));
+            }
+          } else {
+            if(segElapsed >= seg.dur){
+              seg.el.style.strokeDashoffset = 0;
+            } else if(segElapsed <= 0){
+              seg.el.style.strokeDashoffset = seg.len;
+            } else {
+              const local = segElapsed/seg.dur;
+              seg.el.style.strokeDashoffset = seg.len*(1-local);
+              const pt = seg.type==='lead'
+                ? { x: seg.pierce.x + (parseFloat(seg.el.getAttribute('x2'))-seg.pierce.x)*local, y: seg.pierce.y + (parseFloat(seg.el.getAttribute('y2'))-seg.pierce.y)*local }
+                : _dxfShapePoint(seg.el, local);
+              dot.setAttribute('cx', pt.x);
+              dot.setAttribute('cy', pt.y);
+            }
+          }
+        }
+        if(bar) bar.style.width = (p*100).toFixed(0)+'%';
+        if(p<1){
+          requestAnimationFrame(frame);
+        } else {
+          dot.remove();
+          svg.querySelectorAll('.dxf-sim-pierce').forEach(n=> n.style.opacity='0');
+          [btn, btnTop].forEach(b=>{
+            if(!b) return;
+            b.disabled = false;
+            b.textContent = '🔴 가공 시뮬레이션 다시보기';
+          });
+        }
+      }
+      requestAnimationFrame(frame);
+    }
+  `;
+}
+
+
+/* 네스팅 미리보기(dxfNestPreviewBox) 팝업에 넣을 "네스팅 결과 단가표" HTML.
+   메인 화면의 #dxfNestResult 표에 이미 계산되어 채워진 값(원본/네스팅 외곽·절감률·예상 판재비)을
+   그대로 읽어와 팝업 전용 카드 스타일로 다시 그려준다. */
+function _buildDxfNestPricePanelHtml(){
+  if(!_dxfNestData) return '';
+  const { nestW, nestH, sheetsNeeded, scrapMode, partCount, typeCount, holeCount } = _dxfNestData;
+  const info = _dxfNestEstimatePrice(nestW, nestH, sheetsNeeded, scrapMode);
+  const get = id => { const el = document.getElementById(id); return el ? el.textContent : '—'; };
+  const origBoxText = get('dxfNestOrigBox');
+  const nestBoxText = get('dxfNestBox');
+  const savingText  = get('dxfNestSaving');
+  const priceText = info
+    ? Math.round(info.cost).toLocaleString()+' 원'
+      + (scrapMode ? '  ('+info.sheets+'장 기준)' : '')
+      + '  [T'+info.refT+' '+info.refSize+' = '+info.refPrice.toLocaleString()+'원 판재 기준 면적 환산]'
+    : '두께(T)를 입력하면 표시됩니다';
+  const scrapRowHtml = (scrapMode)
+    ? '<tr><td style="text-align:left">지정 짜투리 규격 / 필요 매수</td><td>'+get('dxfNestScrapSheets')+'</td></tr>'
+    : '';
+
+  return (
+    '<div class="pv-box pv-price">'+
+      '<div class="pv-box-title">💰 네스팅 결과 단가표</div>'+
+      '<table class="pv-table"><tbody>'+
+        '<tr><td style="text-align:left">인식된 부품 수</td><td>'+partCount+'개 (부품 종류 '+typeCount+'종)'+(holeCount?' · 내부 홀 '+holeCount+'개 별도':'')+'</td></tr>'+
+        '<tr><td style="text-align:left">원본 외곽 / 면적</td><td>'+origBoxText+'</td></tr>'+
+        '<tr><td style="text-align:left">네스팅 외곽 / 면적</td><td>'+nestBoxText+'</td></tr>'+
+        '<tr><td style="text-align:left">절감 면적 / 절감률</td><td>'+savingText+'</td></tr>'+
+        scrapRowHtml+
+        '<tr><td style="text-align:left">예상 판재비</td><td><b>'+priceText+'</b></td></tr>'+
+      '</tbody></table>'+
+      '<p class="pv-note">※ 재료비는 왼쪽 ③ 판재 규격 &amp; 장당 단가 표에서 현재 두께(T)와 가장 가까운 행의 ㎡당 단가를 네스팅 면적에 비례 환산한 값입니다. 실제 발주 시에는 실제 유통 판재 규격에 맞춰 다시 확인하세요.</p>'+
+    '</div>'
+  );
+}
+
+/* 네스팅 미리보기(dxfNestPreviewBox) 팝업에 넣을 "레이저 가공 시뮬레이션" 패널 HTML.
+   원본 도면 1개 기준이 아니라, 실제로 재배치된(수량 반영된) 모든 부품을 합산해 계산한다. */
+function _buildDxfNestSimPanelHtml(){
+  if(!_dxfNestedEntities || !_dxfNestedEntities.length) return '';
+  const m = calcDxfMetrics(_dxfNestedEntities, null);
+  const totalPath = m.totalPath || 0;
+  if(totalPath <= 0) return '';
+  const holeCount = (m.circles||[]).length;
+  const mat = document.getElementById('mat') ? document.getElementById('mat').value : '';
+  const t   = document.getElementById('t') ? (parseFloat(document.getElementById('t').value)||0) : 0;
+  const feed = (mat && t>0) ? (getFeed(mat, t)||0) : 0;
+  const cutSec = feed>0 ? (totalPath/feed)*60 : 0;
+  const pierceSecPerHole = Math.min(3, Math.max(0.3, 0.3 + t*0.12));
+  const pierceSec = holeCount * pierceSecPerHole;
+  const totalSec = cutSec + pierceSec;
+  const fmt = s=>{ s=Math.round(s); const mnt=Math.floor(s/60), sec=s%60; return (mnt>0 ? mnt+'분 ' : '')+sec+'초'; };
+
+  const matLbl = mat ? mat : '재질 미선택';
+  const feedLbl = feed>0 ? Math.round(feed).toLocaleString()+' mm/분' : '—';
+  const sheetsLbl = (_dxfNestData && _dxfNestData.scrapMode && _dxfNestData.sheetsNeeded>1)
+    ? ' · 판재 '+_dxfNestData.sheetsNeeded+'장 전체 기준'
+    : ' · 판재 1장(부품 '+(_dxfNestData?_dxfNestData.partCount:'')+'개) 기준';
+
+  return (
+    '<div class="pv-box pv-sim">'+
+      '<div class="pv-box-title">🔴 네스팅 레이저 가공 시뮬레이션</div>'+
+      '<div class="pv-box-sub">'+matLbl+(t>0 ? ' '+t+'T' : '')+' · 이송속도 '+feedLbl+sheetsLbl+'</div>'+
+      '<button id="simBtn" class="pv-sim-btn" onclick="_dxfScrollTopAndSim()">🔴 레이저 가공 시뮬레이션 시작</button>'+
+      '<div class="pv-sim-progwrap"><div id="simProgBar" class="pv-sim-progbar"></div></div>'+
+      '<div class="pv-sim-time">'+
+        '<div>절단 이송시간 <b>'+fmt(cutSec)+'</b></div>'+
+        '<div>홀 피어싱시간 <b>'+fmt(pierceSec)+'</b> ('+holeCount+'개 × 약 '+pierceSecPerHole.toFixed(1)+'초)</div>'+
+        '<div class="pv-sim-total">예상 총 가공시간 <b id="simTotalTime">'+fmt(totalSec)+'</b></div>'+
+      '</div>'+
+      '<p class="pv-note">※ 네스팅 배치된 모든 부품(수량 반영, 짜투리 규격 모드는 1장 기준)을 합산한 값입니다. 절단 이송시간은 총 절단 경로(mm) ÷ 두께별 이송속도(⑤⑥ 설정)로 계산하며, 피어싱 시간은 두께 기준 참고값(대략치)입니다. 화면에서는 실제 절단처럼 도형 안쪽(스크랩 쪽)에서 노란색으로 피어싱한 뒤 절단선까지 짧게 진입선을 그리며 절단을 시작합니다. 애니메이션 속도는 실제 가공시간과 무관하게 보기 편한 속도로 고정 재생됩니다.</p>'+
+    '</div>'
+  );
+}
+
+
+function openPreviewWindow(containerId, title){
+  const el = document.getElementById(containerId);
+  if(!el) return;
+  if(!el.querySelector('svg')) return; // 아직 표시된 도면이 없으면 무시
+  const w = window.open('', '_blank');
+  if(!w){ alert('팝업이 차단되었습니다. 브라우저의 팝업 차단 설정을 확인해주세요.'); return; }
+
+  // 도면 미리보기(dxfPreviewBox)일 때만 홀/절곡 상세 내역 + 가공 시뮬레이션 패널을 함께 붙인다.
+  // 혹시 계산 중 오류가 나더라도 기본 팝업(상단바 + 도면)은 항상 뜨도록 try/catch로 감싼다.
+  let extraHtml = '';
+  let simHtml = '';
+  if(containerId === 'dxfPreviewBox'){
+    try { extraHtml = _buildDxfPopupExtrasHtml() || ''; } catch(e){ extraHtml = ''; }
+    try { simHtml   = _buildDxfSimPanelHtml()   || ''; } catch(e){ simHtml = ''; }
+  } else if(containerId === 'dxfNestPreviewBox'){
+    try { extraHtml = _buildDxfNestPricePanelHtml() || ''; } catch(e){ extraHtml = ''; }
+    try { simHtml   = _buildDxfNestSimPanelHtml()   || ''; } catch(e){ simHtml = ''; }
+  }
+
+  w.document.write(
+    '<!DOCTYPE html><html><head><meta charset="utf-8"><title>'+(title||'도면 확대보기')+'</title>'+
+    '<style>'+
+    '*{box-sizing:border-box;}'+
+    'html{scroll-behavior:smooth;}'+
+    'html,body{margin:0;min-height:100%;background:#111827;}'+
+    'body{font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;}'+
+    /* 상단 고정 툴바: 어떤 브라우저에서도 항상 화면 맨 위에 보이도록 position:fixed 사용 */
+    '#pvTopBar{position:fixed;top:0;left:0;right:0;z-index:9999;display:flex;align-items:center;justify-content:space-between;'+
+    'gap:10px;padding:12px 16px;background:#111827;'+
+    'border-bottom:1px solid rgba(255,255,255,.1);box-shadow:0 2px 14px rgba(0,0,0,.4);}'+
+    '#pvTopBarTitle{color:#f3f4f6;font-size:13px;font-weight:700;letter-spacing:.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}'+
+    '#pvTopBarBtns{display:flex;align-items:center;gap:8px;flex-shrink:0;}'+
+    '.pv-btn{display:inline-flex;align-items:center;gap:6px;border:none;border-radius:8px;cursor:pointer;'+
+    'font-size:12.5px;font-weight:700;padding:9px 14px;transition:filter .15s,transform .1s;white-space:nowrap;}'+
+    '.pv-btn:active{transform:scale(.97);}'+
+    '.pv-btn:hover{filter:brightness(1.1);}'+
+    '.pv-btn-ghost{background:#374151;color:#f3f4f6;border:1px solid rgba(255,255,255,.16);}'+
+    '.pv-btn-ghost:hover{background:#4b5563;}'+
+    '.pv-btn-red{background:#dc2626;color:#fff;box-shadow:0 2px 8px rgba(220,38,38,.5);}'+
+    '.pv-btn-red:disabled{background:#7f1d1d;color:#fca5a5;cursor:default;box-shadow:none;filter:none;}'+
+    /* 본문 영역: 도면(왼쪽) + 정보 패널(오른쪽)을 나란히 배치, 창이 좁으면 자동으로 아래로 줄바꿈 */
+    '#pvContent{display:flex;flex-flow:row wrap;align-items:flex-start;justify-content:center;padding:76px 20px 60px;gap:24px;}'+
+    '#pvWrapOuter{flex:0 0 auto;}'+
+    '#pvWrap{background:#fff;padding:20px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.45);display:inline-block;}'+
+    '#pvWrap svg{display:block;max-width:none;}'+
+    '#pvWrap .mb-2{margin-bottom:8px}#pvWrap .mb-1{margin-bottom:4px}'+
+    '#pvWrap .font-bold{font-weight:700}#pvWrap .text-gray-500{color:#6b7280}'+
+    '#pvWrap .text-\\[10px\\]{font-size:10px}'+
+    '#pvSidePanel{display:flex;flex-direction:column;gap:18px;flex:1 1 360px;max-width:400px;min-width:280px;}'+
+    /* 정보 카드 공통 */
+    '.pv-box{margin:0;width:100%;border-radius:12px;padding:16px 18px;font-size:13px;'+
+    'box-sizing:border-box;background:#1f2937;border:1px solid rgba(255,255,255,.08);color:#e5e7eb;'+
+    'box-shadow:0 4px 16px rgba(0,0,0,.25);}'+
+    '.pv-hole{border-top:3px solid #2dd4bf;}'+
+    '.pv-bend{border-top:3px solid #c084fc;}'+
+    '.pv-sim{border-top:3px solid #f87171;}'+
+    '.pv-price{border-top:3px solid #60a5fa;}'+
+    '.pv-box-title{font-weight:800;margin-bottom:8px;font-size:13.5px;display:flex;align-items:center;gap:6px;}'+
+    '.pv-hole .pv-box-title{color:#5eead4;}'+
+    '.pv-bend .pv-box-title{color:#d8b4fe;}'+
+    '.pv-sim .pv-box-title{color:#fca5a5;}'+
+    '.pv-price .pv-box-title{color:#93c5fd;}'+
+    '.pv-box-sub{font-size:11px;color:#9ca3af;margin-bottom:10px;}'+
+    '.pv-table{width:100%;border-collapse:collapse;font-size:12px;background:#111827;border-radius:8px;overflow:hidden;}'+
+    '.pv-table th,.pv-table td{border:1px solid rgba(255,255,255,.08);padding:6px 7px;text-align:center;color:#e5e7eb;}'+
+    '.pv-table th{background:rgba(255,255,255,.06);color:#9ca3af;font-weight:700;}'+
+    '.pv-table tbody tr:nth-child(even){background:rgba(255,255,255,.03);}'+
+    '.pv-box-total{display:flex;justify-content:space-between;font-weight:800;margin-top:10px;padding:8px 10px;'+
+    'border-radius:8px;background:rgba(255,255,255,.05);font-size:12.5px;}'+
+    '.pv-hole .pv-box-total{color:#5eead4;}'+
+    '.pv-bend .pv-box-total{color:#d8b4fe;}'+
+    '.pv-note{font-size:10.5px;color:#9ca3af;margin-top:9px;line-height:1.5;}'+
+    /* 시뮬레이션 카드 */
+    '.pv-sim-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;border:none;border-radius:10px;'+
+    'padding:12px 16px;background:linear-gradient(135deg,#f87171,#dc2626);color:#fff;font-size:14px;font-weight:800;'+
+    'cursor:pointer;margin:2px 0 12px;box-shadow:0 3px 12px rgba(220,38,38,.4);transition:filter .15s,transform .1s;}'+
+    '.pv-sim-btn:hover{filter:brightness(1.08);}'+
+    '.pv-sim-btn:active{transform:scale(.98);}'+
+    '.pv-sim-btn:disabled{background:#7f1d1d;color:#fca5a5;cursor:default;box-shadow:none;filter:none;}'+
+    '.pv-sim-progwrap{width:100%;height:9px;background:rgba(255,255,255,.08);border-radius:999px;overflow:hidden;margin-bottom:12px;}'+
+    '.pv-sim-progbar{height:100%;width:0%;background:linear-gradient(90deg,#fca5a5,#ef4444);border-radius:999px;}'+
+    '.pv-sim-time{font-size:12.5px;color:#d1d5db;display:flex;flex-direction:column;gap:5px;'+
+    'background:rgba(255,255,255,.04);border-radius:8px;padding:10px 12px;}'+
+    '.pv-sim-time>div{display:flex;justify-content:space-between;}'+
+    '.pv-sim-time b{color:#fca5a5;font-weight:800;}'+
+    '.pv-sim-total{margin-top:2px;padding-top:8px;border-top:1px dashed rgba(255,255,255,.15);font-size:13.5px;}'+
+    '.pv-sim-total b{color:#fecaca;font-size:15px;}'+
+    '</style></head><body>'+
+    '<div id="pvTopBar">'+
+      '<div id="pvTopBarTitle">🖨️ '+(title||'도면 확대보기')+'</div>'+
+      '<div id="pvTopBarBtns">'+
+        (simHtml ? '<button id="simBtnTop" class="pv-btn pv-btn-red" onclick="_dxfScrollTopAndSim()">🔴 가공 시뮬레이션</button>' : '')+
+        '<button id="pvCloseBtn" class="pv-btn pv-btn-ghost" onclick="window.close()" title="닫기 (Esc)">✕ 닫기</button>'+
+      '</div>'+
+    '</div>'+
+    '<div id="pvContent">'+
+      '<div id="pvWrapOuter"><div id="pvWrap">'+el.innerHTML+'</div></div>'+
+      ((extraHtml || simHtml) ? '<div id="pvSidePanel">'+extraHtml+simHtml+'</div>' : '')+
+    '</div>'+
+    (simHtml ? '<script>'+_dxfLaserSimScript()+'<\/script>' : '')+
+    '</body></html>'
+  );
+  w.document.close();
+  // Esc 키로도 닫을 수 있게
+  w.document.addEventListener('keydown', (ev)=>{ if(ev.key==='Escape') w.close(); });
+  // 콘텐츠가 그려진 뒤 실제 크기를 재서, 창에 맞는 배율만큼 도면(svg)만 통째로 확대(비율/글자 크기 그대로 유지)
+  // 확대된 도면이 아래쪽 홀/절곡 표와 겹치지 않도록 확대된 만큼 아래쪽에 여백을 함께 채워준다.
+  const applyScale = () => {
+    try {
+      const wrap = w.document.getElementById('pvWrap');
+      const wrapOuter = w.document.getElementById('pvWrapOuter');
+      const sideEl = w.document.getElementById('pvSidePanel');
+      wrap.style.transform = 'none';
+      wrapOuter.style.width = 'auto';
+      wrapOuter.style.height = 'auto';
+      const rect = wrap.getBoundingClientRect();
+      if(rect.width<=0 || rect.height<=0) return;
+      const topBarH = 76;
+      // 창이 충분히 넓으면 도면과 정보패널이 좌우로 나란히 놓이므로, 정보패널 폭만큼 빼고 계산한다.
+      const wideEnoughForSideBySide = sideEl && w.innerWidth > 900;
+      const availW = wideEnoughForSideBySide ? Math.max(w.innerWidth-460, 260) : w.innerWidth*0.92;
+      const availH = (w.innerHeight-topBarH)*0.86;
+      const scale = Math.max(1, Math.min(availW/rect.width, availH/rect.height, 6));
+      // transform-origin을 좌상단으로 두고, 실제로 확대된 만큼 pvWrapOuter의 크기를 지정해서
+      // 레이아웃(가로+세로)에 정확히 그 공간을 예약한다 → 옆 패널과 절대 겹치지 않음
+      wrap.style.transformOrigin = 'top left';
+      wrap.style.transform = 'scale('+scale.toFixed(3)+')';
+      wrapOuter.style.width  = (rect.width*scale)+'px';
+      wrapOuter.style.height = (rect.height*scale)+'px';
+    } catch(err){ /* 무시 */ }
+  };
+  setTimeout(applyScale, 60);
+  w.onresize = applyScale;
 }
 
 function toggleEntityList(){
@@ -4683,6 +7145,8 @@ function dxfRecalcByLayer(){
   document.getElementById('dxfPreviewBox').innerHTML = buildDxfPreviewSvg(_dxfData.entities, sel);
   document.getElementById('dxfPreviewSize').textContent = Math.round(metrics.width).toLocaleString()+' × '+Math.round(metrics.height).toLocaleString()+' mm';
   document.getElementById('dxfPreviewLen').textContent  = Math.round(metrics.totalPath).toLocaleString()+' mm';
+  _dxfRenderBendItems(_dxfData.entities, sel);
+  _dxfRenderHoleBreakdown(metrics.circles);
 }
 
 /* ── 계산기에 적용 ── */
@@ -4736,6 +7200,18 @@ function dxfClear(){
   document.getElementById('dxfNestPreviewWrap').classList.add('hidden');
   document.getElementById('dxfNestQtyPanel').classList.add('hidden');
   document.getElementById('dxfNestPreviewBox').innerHTML='';
+  document.getElementById('dxfBendArea').classList.add('hidden');
+  document.getElementById('dxfBendItemsBody').innerHTML='';
+  document.getElementById('dxfBendTotal').textContent='0 원';
+  document.getElementById('dxfHoleArea').classList.add('hidden');
+  document.getElementById('dxfHoleItemsBody').innerHTML='';
+  document.getElementById('dxfHoleTotal').textContent='0 원';
+  // DXF 절곡선 기반으로 자동 채워졌던 메인 절곡 횟수도 함께 정리
+  ['bend500','bend1000','bend1500','bendMax'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = '';
+  });
+  { const noteEl = document.getElementById('bendAutoNote'); if(noteEl) noteEl.classList.add('hidden'); }
   calculate();
 }
 </script>
