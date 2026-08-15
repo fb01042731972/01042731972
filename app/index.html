@@ -136,7 +136,7 @@
   /* 개인 일정(달력) */
   .cal-btn{background:#7c3aed}
   .cal-btn:hover{background:#6d28d9}
-  .cal-day{position:relative;min-height:92px;border:1px solid #e5e7eb;border-radius:8px;padding:4px;cursor:pointer;background:#fff;font-size:11px;display:flex;flex-direction:column;transition:background .12s,border-color .12s}
+  .cal-day{position:relative;min-height:92px;min-width:0;max-width:100%;overflow:hidden;border:1px solid #e5e7eb;border-radius:8px;padding:4px;cursor:pointer;background:#fff;font-size:11px;display:flex;flex-direction:column;transition:background .12s,border-color .12s;box-sizing:border-box}
   .cal-day:hover{background:#f5f3ff;border-color:#c4b5fd}
   .cal-day.cal-otherMonth{opacity:.35}
   .cal-day.cal-today{border-color:#7c3aed;box-shadow:0 0 0 1px #7c3aed inset}
@@ -220,6 +220,62 @@
     <div class="flex gap-2 mt-5">
       <button onclick="resetTheme()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">기본값으로</button>
       <button onclick="saveTheme()" class="text-xs font-bold px-3 py-2 rounded" style="background:#146C8E;color:#fff;border:none;cursor:pointer;flex:1">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 🗄️ 자동 복구 / 백업 설정 모달 ════════════════════════ -->
+<div id="backupSettingsModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeBackupSettingsModal()">
+  <div style="background:#fff;border-radius:12px;max-width:440px;width:100%;padding:22px;box-shadow:0 20px 50px rgba(0,0,0,.25);max-height:90vh;overflow-y:auto">
+    <div class="flex justify-between items-center mb-3">
+      <div class="text-sm font-bold text-gray-800">🗄️ 자동 복구 / 백업 설정</div>
+      <button onclick="closeBackupSettingsModal()" style="border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
+    </div>
+
+    <div class="text-xs font-bold text-gray-700 mb-1">♻️ 자동 복구</div>
+    <p class="text-[11px] text-gray-500 mb-2">덮어쓰는 4초 자동저장과는 별도로, 정해진 시간마다 그 시점 전체 데이터를 새 파일로 남겨서 실수로 최신 내용을 잘못 덮어써도 되돌릴 수 있게 합니다.</p>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:11px 13px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#334155;cursor:pointer">
+        <input type="checkbox" id="bs_hourlyEnabled" checked>
+        <span>자동-복구 파일을 매</span>
+        <input type="number" id="bs_intervalMin" min="5" max="1440" value="60" class="inp" style="width:64px;text-align:center">
+        <span>분 마다 생성</span>
+      </label>
+    </div>
+
+    <div class="text-xs font-bold text-gray-700 mb-2">💾 백업</div>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:13px;display:flex;flex-direction:column;gap:12px;margin-bottom:16px">
+      <div style="display:flex;align-items:center;gap:8px">
+        <span style="font-size:12px;color:#334155;white-space:nowrap">백업할 최대 파일 수</span>
+        <input type="number" id="bs_keepCount" min="1" max="1000" value="72" class="inp" style="width:80px;text-align:center">
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#334155;cursor:pointer">
+        <input type="checkbox" id="bs_pruneByAgeEnabled">
+        <span>이전 백업 파일 제거</span>
+        <input type="number" id="bs_pruneByAgeDays" min="1" max="365" value="7" class="inp" style="width:64px;text-align:center">
+        <span>일자</span>
+      </label>
+      <div style="font-size:10px;color:#94a3b8;line-height:1.5">두 조건 중 하나라도 해당하면 그 백업 파일은 정리됩니다(최대 파일 수를 넘거나, 지정한 일수보다 오래된 경우).</div>
+
+      <div style="border-top:1px dashed #e2e8f0;margin-top:2px;padding-top:11px">
+        <div style="font-size:11px;color:#64748b;margin-bottom:3px">자동 저장 폴더</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div id="bs_primaryFolderName" style="flex:1;font-size:11px;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">(지정되지 않음)</div>
+          <button type="button" onclick="closeBackupSettingsModal();setupAutoOverwriteFile()" title="폴더 지정/변경" style="flex-shrink:0;font-size:11px;padding:6px 8px;border:1px solid #BFDDE6;border-radius:6px;background:#fff;color:#146C8E;cursor:pointer">📁</button>
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:3px">백업 USB 드라이브</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div id="bs_usbFolderName" style="flex:1;font-size:11px;color:#334155;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:6px 8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">(지정되지 않음)</div>
+          <button type="button" onclick="closeBackupSettingsModal();setupAutoOverwriteFileUSB()" title="폴더 지정/변경" style="flex-shrink:0;font-size:11px;padding:6px 8px;border:1px solid #BFDDE6;border-radius:6px;background:#fff;color:#146C8E;cursor:pointer">📁</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex gap-2 mt-2">
+      <button onclick="resetBackupSettings()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">기본값으로</button>
+      <button onclick="saveBackupSettingsModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#146C8E;color:#fff;border:none;cursor:pointer;flex:1">저장</button>
     </div>
   </div>
 </div>
@@ -345,10 +401,14 @@
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();setupAutoOverwriteFile()">🔁 자동 저장 폴더 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();setupAutoOverwriteFileUSB()">🔌 백업 USB 드라이브 설정 (별도 자동 저장)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();restoreFromAutoSaveFolder()">♻️ 자동 저장 폴더에서 복원</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();openBackupSettingsModal()">⚙️ 자동 복구 / 백업 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();document.getElementById('backupFileInput').click()">⬆️ 백업파일 불러오기</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9;color:#dc2626" onclick="closeDataMenu();restorePreRestoreSafetyBackup()" title="방금 실행한 복원이 실수였을 때, 복원을 실행하기 바로 직전 상태로 되돌립니다.">⏪ 복원 직전 상태로 되돌리기</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();exportSingleDoc()">📄 현재 문서만 파일로 저장</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();document.getElementById('singleDocFileInput').click()">📂 문서 파일 불러오기</div>
-          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeDataMenu();importCustomerOrderFile()" title="고객이 '발주서 작성' 페이지에서 저장해 보낸 파일을 견적서 탭 거래처 정보로 불러옵니다. 한 번 폴더를 지정해두면 다음부터는 그 폴더가 자동으로 열립니다">📥 고객 발주서 불러오기 (견적서 탭)</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();importCustomerOrderFile()" title="고객이 '발주서 작성' 페이지에서 저장해 보낸 파일을 견적서 탭 거래처 정보로 불러옵니다. 한 번 폴더를 지정해두면 다음부터는 그 폴더가 자동으로 열립니다">📥 고객 발주서 불러오기 (견적서 탭)</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-top:1px solid #f1f5f9" onclick="closeDataMenu();openCloudLinksModal()" title="네이버 MYBOX, 구글 드라이브, 회사/개인 NAS(IP 주소로 접속하는 드라이브) 등 백업용 폴더 주소를 원하는 만큼 등록해 둘 수 있습니다">☁️ 클라우드/개인 드라이브 바로가기 관리</div>
+          <div id="cloudLinksMenuArea"></div>
         </div>
       </div>
       <div style="position:relative;display:inline-block">
@@ -358,6 +418,40 @@
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeSettingsMenu();openHelpGuide()" title="처음 사용하시나요? 이 프로그램 사용법을 쉽게 안내해 드려요">❓ 도움말</div>
         </div>
       </div>
+
+      <!-- ☁️ 클라우드/개인 드라이브 바로가기 관리 모달 -->
+      <div id="cloudLinksModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:1400;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeCloudLinksModal()">
+        <div style="background:#fff;border-radius:12px;max-width:480px;width:100%;max-height:90vh;overflow-y:auto;box-shadow:0 20px 50px rgba(0,0,0,.3)">
+          <div style="position:sticky;top:0;background:#fff;padding:14px 16px;border-bottom:1px solid #e5e7eb;display:flex;justify-content:space-between;align-items:center;z-index:1">
+            <div class="text-sm font-bold" style="color:#0f766e">☁️ 클라우드/개인 드라이브 바로가기 관리</div>
+            <button onclick="closeCloudLinksModal()" style="border:none;background:none;font-size:20px;color:#9ca3af;cursor:pointer;line-height:1">✕</button>
+          </div>
+          <div style="padding:14px 16px">
+            <p class="text-gray-500" style="font-size:11px;margin-bottom:10px">네이버 MYBOX, 구글 드라이브, 회사/집 NAS(공유기·개인 IP 주소로 접속하는 드라이브) 등 자주 여는 백업 폴더 주소를 이름 붙여 등록해 두세요. 등록해두면 <b>💾 데이터</b> 메뉴에서 바로 눌러 열 수 있습니다. (이 앱이 그 드라이브에 자동으로 파일을 올려주지는 못해요 — 등록해둔 폴더를 열어서 백업 파일을 직접 옮겨 놓으시면 됩니다.)</p>
+
+            <div style="background:#fffbeb;border:1px solid #fde68a;border-radius:6px;padding:8px 10px;margin-bottom:10px">
+              <p style="font-size:10px;color:#92400e;line-height:1.5;margin:0">⚠️ <b>비밀번호는 암호화 없이 이 컴퓨터의 이 브라우저 안에 그대로 저장</b>됩니다. 이 컴퓨터를 다른 사람과 같이 쓰신다면 저장하지 않는 걸 권장해요. 가능하면 네이버 계정 로그인 비밀번호보다는, 그 <b>공유 폴더에만 걸어둔 "공유 비밀번호"</b>(있는 경우) 정도만 적어두시는 게 더 안전합니다.</p>
+            </div>
+
+            <div style="display:flex;gap:6px;margin-bottom:10px;flex-wrap:wrap">
+              <button type="button" onclick="addCloudLinkRow('구글 드라이브','','')" class="wo-tool-btn" style="color:#2563eb;border:1px solid #bfdbfe">+ 구글 드라이브</button>
+              <button type="button" onclick="addCloudLinkRow('네이버 MYBOX','','')" class="wo-tool-btn" style="color:#16a34a;border:1px solid #bbf7d0">+ 네이버 MYBOX</button>
+              <button type="button" onclick="addCloudLinkRow('개인/회사 드라이브 (IP 접속)','','')" class="wo-tool-btn" style="color:#9333ea;border:1px solid #e9d5ff">+ 개인 IP 드라이브</button>
+              <button type="button" onclick="addCloudLinkRow('','','')" class="wo-tool-btn" style="color:#475569;border:1px solid #e2e8f0">+ 빈 항목 추가</button>
+            </div>
+
+            <div id="cloudLinksRows" style="display:flex;flex-direction:column;gap:6px"></div>
+
+            <p class="text-gray-400" style="font-size:9px;margin-top:8px">개인 IP 드라이브 주소 예시: <code>http://192.168.0.10:5000/</code> (NAS 웹 접속 주소) 또는 <code>http://내도메인.com:포트/</code> 형태로 입력하시면 됩니다. 사업장 밖에서도 접속하려면 공유기에서 외부 접속(포트포워딩) 설정이 별도로 필요할 수 있어요.</p>
+
+            <div class="flex gap-2 mt-4">
+              <button onclick="closeCloudLinksModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">닫기</button>
+              <button onclick="saveCloudLinksModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#0f766e;color:#fff;border:none;cursor:pointer;flex:1">저장</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
       <input type="file" id="backupFileInput" accept=".json,application/json" class="hidden" onchange="handleBackupFileSelected(this)">
       <input type="file" id="singleDocFileInput" accept=".json,application/json" class="hidden" onchange="handleSingleDocFileSelected(this)">
       <input type="file" id="customerOrderFileInput" accept=".html,text/html" class="hidden" onchange="handleCustomerOrderFileSelected(this)">
@@ -371,7 +465,7 @@
       <button type="button" id="autoSaveHelpToggleBtn" onclick="toggleAutoSaveHelp()" class="no-print text-blue-600 underline whitespace-nowrap">자세히 보기</button>
     </div>
     <div id="autoSaveHelpDetail" class="hidden mt-1">
-      입력 내용은 이 브라우저에 자동 저장됩니다(새로고침해도 유지). <b>"💾 데이터 저장/백업"</b> 메뉴의 <b>"🔁 자동 저장 폴더 설정"</b>을 한 번 눌러 저장할 폴더를 지정해두면, 그 이후로는 <b>그 폴더 안의 정해진 파일 1개에 4초마다 저장</b>됩니다. 이 견적서 앱 파일 자체를 새 버전으로 교체(업그레이드)하더라도 <b>자동 저장 폴더의 파일은 그대로 유지</b>되며, 나중에 새 버전에서 같은 폴더를 다시 지정하면 기존 저장 내용을 지우지 않고 그대로 이어서 사용합니다(폴더를 다시 지정할 때 기존 저장 데이터가 있으면 불러올지 먼저 물어봅니다). 여기에 더해 <b>"🔌 백업 USB 드라이브 설정"</b>으로 USB 드라이브(또는 외장하드 등)를 <b>완전히 별도의 두 번째 저장 장치</b>로 지정할 수 있습니다 — PC 폴더와 USB 양쪽에 동시에 4초마다 저장되므로, 만약 PC 쪽에 문제가 생기더라도 USB 쪽 백업이 그대로 남아있습니다. 혹시 폴더/USB를 다시 지정하지 않고도 예전 자동저장 내용을 확인하고 싶다면 <b>"♻️ 자동 저장 폴더에서 복원"</b>을 이용하세요(USB를 선택해도 동작합니다). 다른 PC로 옮기려면 같은 메뉴의 <b>"전체 데이터 파일로 저장"</b>으로 별도 백업 파일을 받을 수도 있고, 지금 작성 중인 견적서/발주서/거래명세표/작업지시서 한 건만 옮기고 싶다면 <b>"📄 현재 문서만 파일로 저장"</b> → 다른 컴퓨터에서 <b>"📂 문서 파일 불러오기"</b>를 이용하세요. 또한 자동 저장 폴더(및 USB)를 지정해 두었다면, <b>"🗂 거래내역으로 등록"</b>을 누를 때마다 그 문서 1건이 저장 시각과 거래처명(성함)이 들어간 파일명으로 그 폴더 안 <b>"문서저장"</b> 하위 폴더에 자동으로 추가 저장되어(덮어쓰지 않고 계속 쌓임), 개별 문서를 수동으로 저장하는 것을 깜빡 잊더라도 안전합니다.
+      입력 내용은 이 브라우저에 자동 저장됩니다(새로고침해도 유지). <b>"💾 데이터 저장/백업"</b> 메뉴의 <b>"🔁 자동 저장 폴더 설정"</b>을 한 번 눌러 저장할 폴더를 지정해두면, 그 이후로는 <b>그 폴더 안의 정해진 파일 1개에 4초마다 저장</b>됩니다. 이 견적서 앱 파일 자체를 새 버전으로 교체(업그레이드)하더라도 <b>자동 저장 폴더의 파일은 그대로 유지</b>되며, 나중에 새 버전에서 같은 폴더를 다시 지정하면 기존 저장 내용을 지우지 않고 그대로 이어서 사용합니다(폴더를 다시 지정할 때 기존 저장 데이터가 있으면 불러올지 먼저 물어봅니다). 여기에 더해 <b>"🔌 백업 USB 드라이브 설정"</b>으로 USB 드라이브(또는 외장하드 등)를 <b>완전히 별도의 두 번째 저장 장치</b>로 지정할 수 있습니다 — PC 폴더와 USB 양쪽에 동시에 4초마다 저장되므로, 만약 PC 쪽에 문제가 생기더라도 USB 쪽 백업이 그대로 남아있습니다. <b>추가로, 자동 저장 폴더(및 USB) 안에는 "시간별_백업" 하위 폴더가 자동으로 만들어지고, 1시간에 한 번씩 그 시점의 전체 데이터가 시각이 들어간 새 파일로 별도 저장됩니다(기존 파일을 덮어쓰지 않고 계속 쌓이며, 오래된 것은 최근 72개만 남기고 자동 정리됩니다).</b> 4초 자동저장 파일은 항상 최신 내용 1개로 덮어써지는 방식이라 실수로 잘못된 내용을 저장해버리면 직전 내용을 되돌릴 수 없는데, 이 "시간별_백업" 폴더에 들어가서 원하는 시각의 파일을 <b>"📂 백업파일 불러오기"</b>로 선택하면 그 시점 상태로 되돌릴 수 있습니다. 혹시 폴더/USB를 다시 지정하지 않고도 예전 자동저장 내용을 확인하고 싶다면 <b>"♻️ 자동 저장 폴더에서 복원"</b>을 이용하세요(USB를 선택해도 동작합니다). 다른 PC로 옮기려면 같은 메뉴의 <b>"전체 데이터 파일로 저장"</b>으로 별도 백업 파일을 받을 수도 있고, 지금 작성 중인 견적서/발주서/거래명세표/작업지시서 한 건만 옮기고 싶다면 <b>"📄 현재 문서만 파일로 저장"</b> → 다른 컴퓨터에서 <b>"📂 문서 파일 불러오기"</b>를 이용하세요. 또한 자동 저장 폴더(및 USB)를 지정해 두었다면, <b>"🗂 거래내역으로 등록"</b>을 누를 때마다 그 문서 1건이 저장 시각과 거래처명(성함)이 들어간 파일명으로 그 폴더 안 <b>"문서저장"</b> 하위 폴더에 자동으로 추가 저장되어(덮어쓰지 않고 계속 쌓임), 개별 문서를 수동으로 저장하는 것을 깜빡 잊더라도 안전합니다.
     </div>
   </div>
   <div style="position:relative" class="mb-3">
@@ -1970,7 +2064,14 @@
         </div>
       </div>
 
-      <label class="text-gray-500 block text-xs" style="margin-bottom:2px">메모 (선택)</label>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:2px">
+        <label class="text-gray-500 block text-xs">메모 (선택)</label>
+        <div style="display:flex;gap:4px;align-items:center">
+          <select id="qi_memo_select" class="inp" style="font-size:10px;padding:3px 4px;max-width:150px" onchange="loadQiMemoPreset(this.value)"></select>
+          <button type="button" onclick="saveQiMemoPreset()" class="wo-tool-btn" style="color:#059669" title="지금 메모 내용을 이름 붙여 저장해두고 다음에도 불러다 쓸 수 있습니다">💾 저장</button>
+          <button type="button" onclick="delQiMemoPreset()" class="wo-tool-btn" style="color:#ef4444" title="위 목록에서 선택한 저장된 문구를 삭제합니다">🗑 삭제</button>
+        </div>
+      </div>
       <textarea id="qi_memo" rows="2" class="inp w-full text-xs" style="margin-bottom:8px" placeholder="규격, 요청사항 등"></textarea>
 
       <div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-bottom:8px;padding:6px 8px;border:1px dashed #cbd5e1;border-radius:6px;background:#f8fafc">
@@ -2910,6 +3011,9 @@
           <button onclick="checkAllLedgerRows(false)" class="add-btn">☐ 전체 해제</button>
           <button onclick="deleteCheckedLedgerRows()" class="add-btn" style="color:#ef4444;border-color:#fecaca">🗑 선택 삭제</button>
           <button onclick="exportLedgerXLSX()" class="add-btn" style="color:#0f766e;border-color:#99f6e4">📤 엑셀 내보내기</button>
+          <button onclick="exportLedgerJSON()" class="add-btn" style="color:#7c3aed;border-color:#ddd6fe;font-weight:700">💾 JSON 백업</button>
+          <button onclick="importLedgerJSON()" class="add-btn" style="color:#2563eb;border-color:#bfdbfe;font-weight:700">📂 JSON 복원</button>
+          <button onclick="openLedgerTrashModal()" class="add-btn" style="color:#b45309;border-color:#fde68a;font-weight:700">🗑 휴지통</button>
         </div>
       </div>
       <div class="text-[10px] text-gray-400 mt-2 no-print">(자동 집계된 항목은 원본 문서에서만 삭제할 수 있어 체크박스가 표시되지 않습니다)</div>
@@ -3412,6 +3516,41 @@
   <div id="matCamMsg" style="color:#fff;font-size:13px;margin-top:14px">카메라를 코드에 비춰주세요</div>
   <button class="add-btn" style="margin-top:14px;background:#fff" onclick="closeMatCameraScan()">✕ 닫기</button>
   <canvas id="matCamCanvas" style="display:none"></canvas>
+</div>
+
+<!-- ════════════════════════ 가계부 휴지통 모달 ════════════════════════ -->
+<div id="ledgerTrashModal" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:2000;align-items:flex-start;justify-content:center;padding:40px 16px;overflow-y:auto">
+  <div style="background:#fff;border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,.25);width:100%;max-width:700px;overflow:hidden">
+    <div style="background:linear-gradient(135deg,#7c3aed,#a855f7);color:#fff;padding:16px 20px;display:flex;justify-content:space-between;align-items:center">
+      <div>
+        <div style="font-size:16px;font-weight:700">🗑 가계부 휴지통</div>
+        <div style="font-size:11px;opacity:.8;margin-top:2px">삭제된 항목 — 30일 내 복구 가능</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="emptyLedgerTrash()" style="background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:5px 12px;font-size:11px;font-weight:700;cursor:pointer">🗑 전체 비우기</button>
+        <button onclick="closeLedgerTrashModal()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer;line-height:1">×</button>
+      </div>
+    </div>
+    <div style="padding:16px;overflow-x:auto">
+      <table style="width:100%;border-collapse:collapse;font-size:12px">
+        <thead>
+          <tr style="background:#f8fafc">
+            <th style="border:1px solid #e2e8f0;padding:6px 8px;text-align:left">날짜</th>
+            <th style="border:1px solid #e2e8f0;padding:6px 8px;text-align:left">구분</th>
+            <th style="border:1px solid #e2e8f0;padding:6px 8px;text-align:left">항목</th>
+            <th style="border:1px solid #e2e8f0;padding:6px 8px;text-align:right">금액</th>
+            <th style="border:1px solid #e2e8f0;padding:6px 8px;text-align:center">남은 기간 / 작업</th>
+          </tr>
+        </thead>
+        <tbody id="ledgerTrashBody">
+          <tr><td colspan="5" style="text-align:center;color:#94a3b8;padding:24px">휴지통이 비어 있습니다</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div style="padding:12px 16px;background:#f8fafc;border-top:1px solid #e2e8f0;font-size:11px;color:#64748b">
+      💡 30일이 지난 항목은 자동으로 영구 삭제됩니다. 복구하려면 [복구] 버튼을 클릭하세요.
+    </div>
+  </div>
 </div>
 
 <script>
@@ -16695,6 +16834,7 @@ function renderQuoteTable() {
     tbody.appendChild(tr);
   });
   updateQuoteTotals();
+  if (typeof renderStampDragLayer === 'function') renderStampDragLayer('q');
 }
 function updateQuoteAmount(i) {
   const r = quoteRows[i];
@@ -16909,6 +17049,7 @@ function renderOrderTable() {
     tbody.appendChild(tr);
   });
   updateOrderTotals();
+  if (typeof renderStampDragLayer === 'function') renderStampDragLayer('o');
 }
 function updateOrderAmount(i) {
   const r = orderRows[i];
@@ -16993,6 +17134,7 @@ function renderStatementTable() {
     tbody.appendChild(tr);
   });
   updateStatementTotals();
+  if (typeof renderStampDragLayer === 'function') renderStampDragLayer('s');
 }
 function updateStatementRowAmount(i) {
   const r = statementRows[i];
@@ -17698,6 +17840,65 @@ function saveQuickIntakeCustomFieldsTemplate() {
   autoSaveQuickIntakeCustomFieldsTemplate();
   showToast('추가 항목 구성을 저장했습니다. 다음 빠른접수부터 같은 항목 칸이 자동으로 나옵니다.');
 }
+
+// ────────────────────────────────────────────────────────────────
+// 🏷️ 빠른접수 — 메모 자주 쓰는 문구 저장/불러오기
+// (메모칸에 자주 적는 비슷한 문구를 이름 붙여 저장해 두고, 다음 접수 때 목록에서 골라 바로 불러옵니다)
+// ────────────────────────────────────────────────────────────────
+const K_QI_MEMO_PRESETS = 'QUICK_INTAKE_MEMO_PRESETS_V1';
+function loadQiMemoPresetList() {
+  try { const v = JSON.parse(localStorage.getItem(K_QI_MEMO_PRESETS)); return Array.isArray(v) ? v : []; }
+  catch (e) { return []; }
+}
+function saveQiMemoPresetList(list) {
+  try { localStorage.setItem(K_QI_MEMO_PRESETS, JSON.stringify(list)); } catch (e) {}
+}
+function renderQiMemoPresetSelect() {
+  const sel = document.getElementById('qi_memo_select');
+  if (!sel) return;
+  const list = loadQiMemoPresetList();
+  const sorted = list.map((n, i) => Object.assign({}, n, { _idx: i })).sort((a, b) => (a.name || '').localeCompare(b.name || '', 'ko'));
+  let html = '<option value="">— 자주 쓰는 문구 —</option>';
+  sorted.forEach(n => { html += '<option value="' + n._idx + '">' + escQ(n.name || '(이름없음)') + '</option>'; });
+  sel.innerHTML = html;
+}
+function saveQiMemoPreset() {
+  const textEl = document.getElementById('qi_memo');
+  const text = textEl ? textEl.value : '';
+  if (!text.trim()) { alert('저장할 메모 내용을 먼저 입력해 주세요.'); return; }
+  const defaultName = text.split('\n')[0].replace(/^[·\-\s]+/, '').slice(0, 20) || '문구';
+  const name = prompt('이 문구를 어떤 이름으로 저장할까요? (같은 이름이 있으면 내용을 덮어씁니다)', defaultName);
+  if (!name || !name.trim()) return;
+  const list = loadQiMemoPresetList();
+  const idx = list.findIndex(n => n.name === name.trim());
+  const d = { name: name.trim(), text };
+  if (idx >= 0) list[idx] = d; else list.push(d);
+  saveQiMemoPresetList(list);
+  renderQiMemoPresetSelect();
+  showToast('💾 메모 문구를 저장했습니다 (' + name.trim() + '). 다음 빠른접수부터 목록에서 바로 불러올 수 있어요.');
+}
+function loadQiMemoPreset(idx) {
+  if (idx === '' || idx === undefined) return;
+  const list = loadQiMemoPresetList();
+  const d = list[parseInt(idx, 10)];
+  if (!d) return;
+  const textEl = document.getElementById('qi_memo');
+  if (textEl) textEl.value = d.text;
+  showToast('\'' + d.name + '\' 문구를 불러왔습니다.');
+}
+function delQiMemoPreset() {
+  const sel = document.getElementById('qi_memo_select');
+  const idx = sel ? sel.value : '';
+  if (idx === '') { showToast('삭제할 문구를 목록에서 먼저 선택해 주세요.'); return; }
+  const list = loadQiMemoPresetList();
+  const name = (list[parseInt(idx, 10)] || {}).name || '';
+  if (!confirm('\'' + name + '\' 문구를 삭제할까요?')) return;
+  list.splice(parseInt(idx, 10), 1);
+  saveQiMemoPresetList(list);
+  renderQiMemoPresetSelect();
+  showToast('문구를 삭제했습니다.');
+}
+
 // ────────────────────────────────────────────────────────────────
 // 🏷️ 빠른접수 — 메모 저장 폴더 (자동 저장 폴더와는 별개로, 사용자가 직접 지정)
 // 한 번 폴더를 지정해두면(showDirectoryPicker) 그 핸들을 IndexedDB에 기억해 두고,
@@ -17803,6 +18004,7 @@ function openQuickIntakeModal() {
   populateQuickIntakeWorkboardPicker();
   restoreQuickIntakeLabelSizeChoice();
   restoreQuickIntakeMemoFolder();
+  renderQiMemoPresetSelect();
 }
 function populateQuickIntakeWorkboardPicker() {
   const sel = document.getElementById('qi_workboard_picker');
@@ -17981,6 +18183,15 @@ function printQuickLabel(data, sizeKey, fontScale) {
     '</div>'
   ).join('');
   const priceText = data.price ? Number(data.price).toLocaleString('ko-KR') + '원' : '';
+  const shareText = [
+    '📦 ' + (data.name || '받는 사람 미정'),
+    data.tel ? '연락처: ' + data.tel : '',
+    data.addr ? '주소: ' + data.addr : '',
+    data.item ? '물품명: ' + data.item + (data.qty ? ' × ' + data.qty : '') : '',
+    priceText ? '금액: ' + priceText : '',
+    data.memo ? '메모: ' + data.memo : '',
+    data.senderName ? '보내는곳: ' + data.senderName : ''
+  ].filter(Boolean).join('\n');
 
   const pad = sz.roll ? '2mm' : '4mm';
   const styles = [
@@ -17994,10 +18205,12 @@ function printQuickLabel(data, sizeKey, fontScale) {
     '.item{font-weight:700;margin-top:1.5mm}',
     '[contenteditable=true]{outline:none;border-bottom:1px dashed transparent;cursor:text;min-width:6px;display:inline-block}',
     '[contenteditable=true]:hover,[contenteditable=true]:focus{border-bottom:1px dashed #ea580c;background:#fff7ed}',
-    '@media print{.no-print{display:none!important}[contenteditable=true]{border-bottom:none!important;background:none!important}}'
+    '@media print{.no-print{display:none!important}[contenteditable=true]{border-bottom:none!important;background:none!important}}',
+    '#__qlContent{transform-origin:top left}'
   ].join('\n');
 
   const body = `
+  <div id="__qlContent">
     <div class="row" style="${senderDivCSS}font-size:${senderPx}px;font-weight:${senderBold}">
       <span class="lbl">보내는곳</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.senderName || '')}</span>
       ${data.senderTel ? ' · <span class="val" contenteditable="true" spellcheck="false">' + escQ(data.senderTel) + '</span>' : ' · <span class="val" contenteditable="true" spellcheck="false">☎ 010-0000-0000</span>'}
@@ -18011,25 +18224,60 @@ function printQuickLabel(data, sizeKey, fontScale) {
     <div class="row"><span class="lbl">물품가액</span><span class="val" contenteditable="true" spellcheck="false">${priceText}</span></div>
     <div class="row" style="${memoDivCSS}font-size:${memoPx}px;font-weight:${memoBold}"><span class="lbl">메모</span><span class="val" contenteditable="true" spellcheck="false">${escQ(data.memo || '')}</span></div>
     ${customRowsHTML}
+  </div>
   `;
   const printBtnBar =
     '<div class="no-print" style="position:sticky;top:0;z-index:999;background:#1e293b;padding:10px;display:flex;gap:10px;align-items:center;flex-wrap:wrap;box-shadow:0 2px 8px rgba(0,0,0,.2)">' +
       '<button onclick="__qlPrint()" style="background:#ea580c;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 라벨 인쇄</button>' +
+      '<button onclick="__qlShare()" style="background:#0f766e;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">📤 카카오톡/문자로 공유</button>' +
       '<span style="color:#cbd5e1;font-size:11px">라벨의 내용을 클릭하면 마지막으로 고칠 수 있어요. 칸을 더 넣으려면 작성창의 "+ 항목 추가"를 이용하세요.</span>' +
     '</div>';
   const rollWidthMM = parseFloat(sz.w) || 56;
   const popupScript = [
+    'var SHARE_TITLE=' + JSON.stringify('라벨 - ' + (data.name || '')) + ';',
+    'var SHARE_TEXT=' + JSON.stringify(shareText) + ';',
+    'async function __qlShare(){',
+    '  if(navigator.share){try{await navigator.share({title:SHARE_TITLE,text:SHARE_TEXT});return;}catch(e){if(e&&e.name==="AbortError")return;}}',
+    '  try{await navigator.clipboard.writeText(SHARE_TEXT);alert("이 화면은 바로 공유하기(카카오톡 등)를 지원하지 않는 환경이라, 내용을 클립보드에 복사했습니다.\\n카카오톡 PC판이나 문자 프로그램을 열어 붙여넣기(Ctrl+V) 해주세요.");}',
+    '  catch(err){window.location.href="sms:?body="+encodeURIComponent(SHARE_TEXT);}',
+    '}',
     'function __qlFitPage(){',
     (sz.roll
       ? '  try{ var h = document.body.scrollHeight; var mm = Math.ceil((h/96*25.4)+3); if(mm < 10) mm = 10; if(mm > 1000) mm = 1000; var st = document.getElementById("__qlPageStyle"); if(!st){ st = document.createElement("style"); st.id = "__qlPageStyle"; document.head.appendChild(st); } st.innerHTML = "@page{size:' + rollWidthMM + 'mm " + mm + "mm;margin:0}"; }catch(e){}'
       : ''),
     '}',
-    'function __qlPrint(){ __qlFitPage(); setTimeout(function(){ try{ window.print(); }catch(e){} }, 50); }',
+    // 고정 규격(예: 57x80mm)일 때, 내용이 지정한 높이를 넘으면 2페이지로 나뉘어 이어 찍히는 것을
+    // 막기 위해, 내용을 실제로 측정해서 넘치는 만큼 글자 전체를 자동으로 축소해 1장 안에 맞춥니다.
+    // 롤지(높이 자동) 모드는 위 __qlFitPage()가 페이지 길이를 늘려주므로 여기서는 건드리지 않습니다.
+    (sz.roll ? '' :
+      'function __qlAutoShrink(){' +
+      '  try{' +
+      '    var wrap = document.getElementById("__qlContent");' +
+      '    if(!wrap) return;' +
+      '    wrap.style.transform = "none";' +
+      '    wrap.style.width = "100%";' +
+      '    var mmToPx = 96/25.4;' +
+      '    var padPx = ' + (parseFloat(pad) || 4) + ' * mmToPx;' +
+      '    var targetPx = (' + (parseFloat(sz.h) || 0) + ' * mmToPx) - (padPx*2);' +
+      '    if (targetPx <= 0) return;' +
+      '    var contentH = wrap.scrollHeight;' +
+      '    if (contentH > targetPx){' +
+      '      var ratio = Math.max(0.35, targetPx / contentH);' +
+      '      wrap.style.transformOrigin = "top left";' +
+      '      wrap.style.transform = "scale(" + ratio + ")";' +
+      '      wrap.style.width = (100/ratio) + "%";' +
+      '    }' +
+      '  }catch(e){}' +
+      '}'
+    ),
+    'function __qlPrint(){ __qlFitPage(); ' + (sz.roll ? '' : '__qlAutoShrink(); ') + 'setTimeout(function(){ try{ window.print(); }catch(e){} }, 50); }',
     'window.addEventListener("load", function(){',
     '  var ready = (document.fonts && document.fonts.ready) ? document.fonts.ready : Promise.resolve();',
-    '  var start = function(){ setTimeout(__qlPrint, 300); };',
+    '  var start = function(){ ' + (sz.roll ? '' : '__qlAutoShrink(); ') + 'setTimeout(__qlPrint, 300); };',
     '  ready.then(start).catch(start);',
-    '});'
+    '});',
+    // 라벨 화면에서 글자를 직접 고쳤을 때(contenteditable)도 다시 넘치는지 확인해서 축소합니다.
+    (sz.roll ? '' : 'document.addEventListener("input", function(){ clearTimeout(window.__qlShrinkT); window.__qlShrinkT = setTimeout(__qlAutoShrink, 200); }, true);')
   ].join('\n');
   const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>라벨 - ' + escQ(data.name || '') + '</title><style>' + styles + '</style></head><body>' + printBtnBar + body + '<script>' + popupScript + '<\/script></body></html>';
   const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
@@ -18086,11 +18334,14 @@ function submitQuickIntake() {
   if (activeDocType === 'workorder') {
     if (!confirm('지금 작업지시서 화면에서 작성 중인 내용이 있다면, 빠른접수 처리 중 화면 내용이 바뀔 수 있습니다.\n계속할까요? (걱정되면 지금 작성 중인 작업지시서를 먼저 저장한 뒤 다시 눌러주세요)')) return;
   }
-  const quoteHasContent = quoteRows.some(r => r.name && r.name.trim()) || (document.getElementById('q_to_name').value || '').trim();
-  let doQuoteRegister = price > 0 && !!item;
-  if (doQuoteRegister && quoteHasContent) {
-    doQuoteRegister = confirm('지금 견적서 작성 화면에 이미 입력된 내용이 있습니다.\n빠른접수의 품목을 등록하면 그 내용과 섞이거나 견적번호가 겹치면 덮어써질 수 있어요.\n그래도 견적서·거래내역·가계부에 등록할까요?\n\n("취소"를 눌러도 업체정보·작업지시서·라벨 인쇄는 계속 진행됩니다)');
-  }
+  // 🛠 버그 수정: 예전에는 견적서 화면에 이미 내용이 있으면 "섞을까요?" confirm을 띄우고,
+  // 확인을 누르면 빠른접수 품목을 지금 화면의 quoteRows에 그대로 push했습니다. 이 때문에
+  // 빠른접수를 여러 번 실행하면 이전 품목이 화면에 계속 남아있는 채로 새 품목이 계속 쌓였고,
+  // 거래처명이 바뀔 때마다 "번호 겹침 방지"로 새 거래내역이 생기면서 그 누적된 품목·금액이
+  // 함께 저장되어 거래내역에 같은 문구·같은 금액이 반복해서 나타나는 원인이 되었습니다.
+  // 지금은 빠른접수가 지금 화면에 열려 있는 견적서를 전혀 건드리지 않고 완전히 별도의
+  // 견적 1건만 만들어 거래내역에 저장하므로, 이 확인창은 더 이상 필요하지 않습니다.
+  const doQuoteRegister = price > 0 && !!item;
 
   // 1) 업체관리에 자동 저장 — 이름/연락처/주소뿐 아니라, 이번에 적은 주문 내용
   //    (물품명·수량·단가·메모·추가항목)도 업체 메모에 그대로 남깁니다. 기존 메모는
@@ -18149,19 +18400,50 @@ function submitQuickIntake() {
   //      (거래내역에 등록되면 가계부에 "예상매출(견적서)"로 자동 집계되고,
   //       출고 예정일을 넣으면 "제품 진행중" 탭에도 자동으로 뜹니다)
   if (doQuoteRegister) {
-    const numEl = document.getElementById('q_num');
-    if (numEl && !numEl.value.trim()) numEl.value = generateDocNumber('Q');
-    const toNameEl = document.getElementById('q_to_name');
-    if (toNameEl) toNameEl.value = name;
-    quoteRows.push({ checked: false, name: item, spec: '', mat: '', qty: parseFloat(qty) || 1, unit: 'EA', price, note: memo || '' });
-    renderQuoteTable();
-    if (shipAt) { const shipEl = document.getElementById('q_shipAt'); if (shipEl) shipEl.value = shipAt; }
+    // 🛠 버그 수정 (근본 원인 해결): 이전에는 지금 화면에 열려 있는 견적서의 quoteRows에
+    // 직접 push하고 저장했기 때문에, 빠른접수를 여러 번 실행하면 이전 품목이 화면에 계속
+    // 남은 채로 새 품목이 쌓였고, 거래처명이 바뀔 때마다 "번호 겹침 방지"로 새 거래내역이
+    // 만들어지면서 그 누적된 품목·금액이 함께 저장되어 거래내역에 같은 문구·같은 금액이
+    // 반복해서 나타나는 원인이 되었습니다.
+    // 지금은 화면 상태(quoteRows·견적서 입력칸)를 잠시 저장해 두고, 빠른접수 품목 1건만
+    // 담긴 "완전히 새로운 견적"을 임시로 채워 거래내역에 저장한 뒤, 저장이 끝나면 원래 화면
+    // 내용을 그대로 복원합니다. 즉 지금 견적서 탭에서 무엇을 작성 중이었든 전혀 영향을
+    // 받지 않고, 빠른접수 1건은 항상 거래내역에 독립된 1건으로만 저장됩니다.
+    //
+    // 🛠 추가 개선: saveHistorySnapshot에는 지금 작성 중인 견적서의 수정/자동저장 세션
+    // ('quote')과는 완전히 별개인 sessionKey('quote_quickIntake')를 넘깁니다. 이렇게 하면
+    // 빠른접수가 historyEditRecordId.quote / historyAutosaveRecordId.quote 값을 아예
+    // 건드리지 않으므로, 나중에 (지금은 꺼져 있는) 자동 거래내역 저장 기능을 다시 켜더라도
+    // 두 세션이 서로 간섭할 여지 자체가 없습니다.
+    const savedQuoteRows = quoteRows;
+    const savedQuoteFields = collectSectionFields('quoteSection');
     try {
-      saveHistorySnapshot('quote', true);
+      quoteRows = [{ checked: false, name: item, spec: '', mat: '', qty: parseFloat(qty) || 1, unit: 'EA', price, note: memo || '' }];
+      const numEl = document.getElementById('q_num');
+      if (numEl) numEl.value = generateDocNumber('Q'); // 항상 새 번호 — 기존 견적번호와 절대 겹치지 않음
+      const toNameEl = document.getElementById('q_to_name');
+      if (toNameEl) toNameEl.value = name;
+      const shipEl = document.getElementById('q_shipAt');
+      if (shipEl) shipEl.value = shipAt || '';
+      renderQuoteTable();
+      saveHistorySnapshot('quote', true, 'quote_quickIntake');
       showToast('견적서·거래내역·가계부(예상매출)에 자동 등록되었습니다.' + (shipAt ? ' 제품 진행중에도 표시됩니다.' : ''));
     } catch (e) {
       console.error('빠른접수 → 견적서 자동등록 실패:', e);
       showToast('견적서 자동등록 중 문제가 있었어요. 견적서 탭에서 직접 확인해 주세요.');
+    } finally {
+      // 화면을 빠른접수 실행 전 상태로 원래대로 되돌립니다.
+      // (historyEditRecordId.quote / historyAutosaveRecordId.quote는 애초에 건드리지
+      //  않았으므로 되돌릴 필요가 없습니다.)
+      quoteRows = savedQuoteRows;
+      Object.keys(savedQuoteFields).forEach(id => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        if (el.type === 'checkbox') el.checked = savedQuoteFields[id];
+        else el.value = savedQuoteFields[id];
+      });
+      renderQuoteTable();
+      scheduleDraftSave();
     }
   }
 
@@ -20091,8 +20373,25 @@ function applyQuoteImages() {
 // 거래명세표)별로 각각 기억되며, 인쇄/PDF저장/서식복사에도 그대로 반영됩니다.
 // ════════════════════════════════════════
 const K_STAMP_POS = 'QUOTE_STAMP_POS_V1';
-const STAMP_POS_DEFAULT = { x: 78, y: 82, size: 78 }; // 컨테이너 대비 % 위치 + px 크기 (기본: 서명란 부근)
+// 🛠 변경: 세로 위치를 "컨테이너 전체 높이 대비 %(y)"가 아니라
+// "컨테이너 맨 아래로부터의 고정 px 거리(yBottom)"로 저장합니다.
+// 이유: 품목 표에 "＋ 빈 행 추가"로 행을 늘리면 문서(컨테이너) 전체 높이가 늘어나는데,
+// %는 늘어난 전체 높이를 기준으로 다시 계산되어 도장이 서명란/특기사항(기타) 밑으로
+// 점점 밀려 내려가 버렸습니다. 아래쪽(서명란) 기준 고정 거리로 앵커링하면 표 위쪽 행 수가
+// 바뀌어도 도장은 항상 같은 자리(서명란 부근)에 그대로 유지됩니다.
+const STAMP_POS_DEFAULT = { x: 78, yBottom: 90, anchor: 'bottom', size: 78 }; // x: 컨테이너 대비 %, yBottom: 컨테이너 하단 기준 px, size: px 크기
 const STAMP_SIZE_MIN = 30, STAMP_SIZE_MAX = 220;
+// 문서 종류(prefix)별 품목 테이블(<table>) 요소를 찾는다.
+// 이 테이블의 "위쪽 끝"은 행이 늘어나도 화면상 위치가 바뀌지 않고, "아래쪽 끝"만 행 수만큼 내려간다.
+// 그래서 도장이 표 위쪽(회사정보 영역)에 있는지 아래쪽(서명란 등)에 있는지에 따라
+// 서로 다른 기준으로 앵커링해야 행이 늘어나도 도장이 밀려 내려가지 않는다.
+const STAMP_TABLE_BODY_ID = { q: 'quoteTableBody', o: 'orderTableBody', s: 'statementTableBody' };
+function getStampItemTable(prefix) {
+  try {
+    const tbody = document.getElementById(STAMP_TABLE_BODY_ID[prefix] || '');
+    return tbody ? tbody.closest('table') : null;
+  } catch(e) { return null; }
+}
 function loadStampPosAll() {
   try {
     const v = JSON.parse(localStorage.getItem(K_STAMP_POS));
@@ -20109,10 +20408,33 @@ function loadStampPos(prefix) {
     const near = computeCeoAdjacentPos(prefix);
     if(near) return near;
   }
-  return Object.assign({}, STAMP_POS_DEFAULT, all[prefix] || {});
+  const saved = Object.assign({}, all[prefix] || {});
+  // 🆕 예전 버전(상단 기준 % 좌표)으로 저장된 데이터 1회 마이그레이션:
+  // yBottom이 없고 옛 y(%)만 있다면, 지금 화면에 보이는 컨테이너 높이를 기준으로
+  // 한 번만 px 거리로 환산해 둔다. (이후부터는 행 수가 바뀌어도 흔들리지 않음)
+  if(saved.yBottom === undefined && saved.yTop === undefined && saved.y !== undefined){
+    try {
+      const layer = document.getElementById(prefix+'_stamp_drag');
+      const container = layer ? layer.closest('.quote-wrap') : null;
+      const h = container ? container.getBoundingClientRect().height : 0;
+      if(h){
+        saved.yBottom = Math.max(0, h - (h * (saved.y/100)));
+        saved.anchor = 'bottom';
+        // 🛠 버그 수정: 이전에는 이 변환값을 저장하지 않아서, 품목을 추가할 때마다(=컨테이너
+        // 높이 h가 커질 때마다) 매번 다시 계산되어 결국 예전 %기준 버그가 그대로 재현되고
+        // 있었습니다(추가 버튼을 누를 때마다 도장/사진이 한 칸씩 아래로 밀림). 계산한 값을
+        // 즉시 저장해서, 이후로는 다시 계산하지 않고 고정된 px 값을 그대로 쓰도록 합니다.
+        saveStampPos(prefix, saved.x, saved.yBottom, saved.size, 'bottom');
+      }
+    } catch(e) {}
+  }
+  // 🛠 예전 저장 데이터(anchor 필드 없음)는 항상 'bottom' 기준이었으므로 그대로 둔다.
+  if(!saved.anchor) saved.anchor = (saved.yTop !== undefined && saved.yBottom === undefined) ? 'top' : 'bottom';
+  return Object.assign({}, STAMP_POS_DEFAULT, saved);
 }
 // "대표자" 입력칸(.ceo-stamp-wrap) 바로 오른쪽 옆 위치를, 문서 컨테이너(quote-wrap) 기준
-// 퍼센트 좌표로 계산. 탭이 화면에 보이지 않는 상태(display:none)면 계산할 수 없으므로 null 반환.
+// 좌표로 계산. 탭이 화면에 보이지 않는 상태(display:none)면 계산할 수 없으므로 null 반환.
+// 이 위치는 품목 표보다 위쪽(회사정보 영역)이므로 컨테이너 "위쪽" 기준(top px)으로 앵커링한다.
 function computeCeoAdjacentPos(prefix) {
   try {
     const layer = document.getElementById(prefix+'_stamp_drag');
@@ -20124,16 +20446,20 @@ function computeCeoAdjacentPos(prefix) {
     const wRect = wrap.getBoundingClientRect();
     if(!cRect.width || !cRect.height || !wRect.width) return null; // 숨겨진 탭이면 크기가 0
     let x = ((wRect.right - cRect.left) / cRect.width) * 100 + 6; // 입력칸 오른쪽에 살짝 띄워서 배치
-    let y = ((wRect.top + wRect.height/2 - cRect.top) / cRect.height) * 100;
+    // 🛠 변경: 컨테이너 "위쪽"으로부터의 거리(px)로 계산 — 품목 행이 늘어도(표는 이 위치보다
+    // 아래에 있으므로) 이 값은 그대로 유지된다.
+    let yTop = (wRect.top + wRect.height/2) - cRect.top;
     x = Math.max(3, Math.min(97, x));
-    y = Math.max(3, Math.min(97, y));
-    return { x, y, size: STAMP_POS_DEFAULT.size };
+    yTop = Math.max(0, yTop);
+    return { x, yTop, anchor: 'top', size: STAMP_POS_DEFAULT.size };
   } catch(e) { return null; }
 }
-function saveStampPos(prefix, x, y, size) {
+function saveStampPos(prefix, x, yFromEdge, size, anchor) {
   const all = loadStampPosAll();
   const prev = all[prefix] || {};
-  all[prefix] = { x, y, size: size !== undefined ? size : (prev.size || STAMP_POS_DEFAULT.size) };
+  const entry = { x, anchor: anchor || 'bottom', size: size !== undefined ? size : (prev.size || STAMP_POS_DEFAULT.size) };
+  if(entry.anchor === 'top') entry.yTop = yFromEdge; else entry.yBottom = yFromEdge;
+  all[prefix] = entry;
   localStorage.setItem(K_STAMP_POS, JSON.stringify(all));
 }
 function renderStampDragLayer(prefix, stampOverride) {
@@ -20146,10 +20472,22 @@ function renderStampDragLayer(prefix, stampOverride) {
   layer.classList.remove('hidden');
   const pos = loadStampPos(prefix);
   layer.style.left = pos.x + '%';
-  layer.style.top  = pos.y + '%';
+  if(pos.anchor === 'top'){
+    // 품목 표보다 위쪽(회사정보 영역 등)에 있는 도장: 컨테이너 "위쪽" 기준으로 고정.
+    // 표 아래에서 행이 늘어나도 이 위쪽 지점은 화면상 위치가 바뀌지 않으므로 도장도 그대로 유지된다.
+    layer.style.top    = pos.yTop + 'px';
+    layer.style.bottom = 'auto';
+    layer.style.transform = 'translate(-50%,-50%)';
+  } else {
+    // 품목 표와 같거나 그 아래쪽(서명란 등)에 있는 도장: 컨테이너 "아래쪽" 기준으로 고정.
+    // 표에 행이 늘어나면 서명란도 함께 아래로 밀리므로, 아래쪽 기준 고정 거리를 쓰면
+    // 도장이 서명란과 같은 폭만큼 함께 내려가 항상 같은 자리에 붙어 있게 된다.
+    layer.style.top    = 'auto';
+    layer.style.bottom = pos.yBottom + 'px';
+    layer.style.transform = 'translate(-50%,50%)';
+  }
   layer.style.width  = pos.size + 'px';
   layer.style.height = pos.size + 'px';
-  layer.style.transform = 'translate(-50%,-50%)';
 }
 let _stampDrag = null; // { prefix, container, layer }
 function stampDragStart(e, prefix) {
@@ -20168,27 +20506,44 @@ function stampDragMove(e) {
   if(!_stampDrag) return;
   e.preventDefault();
   const point = e.touches ? e.touches[0] : e;
-  const { container, layer } = _stampDrag;
+  const { prefix, container, layer } = _stampDrag;
   const rect = container.getBoundingClientRect();
   let xPct = ((point.clientX - rect.left) / rect.width) * 100;
-  let yPct = ((point.clientY - rect.top) / rect.height) * 100;
   xPct = Math.max(3, Math.min(97, xPct));
-  yPct = Math.max(3, Math.min(97, yPct));
   layer.style.left = xPct + '%';
-  layer.style.top  = yPct + '%';
+  // 🛠 커서가 품목 표의 "위쪽 끝"보다 위에 있으면(회사정보 영역 등) 위쪽 기준으로,
+  // 표와 같거나 그 아래(서명란 등)에 있으면 아래쪽 기준으로 임시 표시한다.
+  // (실제 저장은 stampDragEnd에서, 놓은 지점 기준으로 한 번만 계산)
+  const table = getStampItemTable(prefix);
+  const tableTop = table ? table.getBoundingClientRect().top : Infinity;
+  if(point.clientY < tableTop){
+    let yTop = point.clientY - rect.top;
+    yTop = Math.max(0, Math.min(rect.height, yTop));
+    layer.style.top    = yTop + 'px';
+    layer.style.bottom = 'auto';
+  } else {
+    let yBottom = rect.bottom - point.clientY;
+    yBottom = Math.max(0, Math.min(rect.height, yBottom));
+    layer.style.top    = 'auto';
+    layer.style.bottom = yBottom + 'px';
+  }
 }
 function stampDragEnd() {
   if(!_stampDrag) return;
   const { prefix, layer } = _stampDrag;
   layer.classList.remove('dragging');
   const x = parseFloat(layer.style.left) || STAMP_POS_DEFAULT.x;
-  const y = parseFloat(layer.style.top) || STAMP_POS_DEFAULT.y;
-  saveStampPos(prefix, x, y);
+  const anchor = (layer.style.bottom === 'auto') ? 'top' : 'bottom';
+  const yFromEdge = anchor === 'top'
+    ? (parseFloat(layer.style.top) || 0)
+    : (parseFloat(layer.style.bottom) || STAMP_POS_DEFAULT.yBottom);
+  saveStampPos(prefix, x, yFromEdge, undefined, anchor);
   document.removeEventListener('mousemove', stampDragMove);
   document.removeEventListener('mouseup', stampDragEnd);
   document.removeEventListener('touchmove', stampDragMove);
   document.removeEventListener('touchend', stampDragEnd);
   _stampDrag = null;
+  renderStampDragLayer(prefix); // 앵커 기준에 맞는 transform(중심 정렬)을 다시 적용
   showToast('도장 위치가 저장되었습니다.');
 }
 
@@ -20222,9 +20577,12 @@ function stampResizeEnd() {
   if(!_stampResize) return;
   const { prefix, layer } = _stampResize;
   const size = layer.offsetWidth;
-  const x = parseFloat(layer.style.left) || STAMP_POS_DEFAULT.x;
-  const y = parseFloat(layer.style.top) || STAMP_POS_DEFAULT.y;
-  saveStampPos(prefix, x, y, size);
+  // 🛠 크기 조절은 위치(앵커 기준)를 바꾸지 않으므로, 현재 저장된 위치/앵커를 그대로 유지한 채 크기만 갱신한다.
+  const cur = loadStampPos(prefix);
+  const x = parseFloat(layer.style.left) || cur.x;
+  const anchor = cur.anchor === 'top' ? 'top' : 'bottom';
+  const yFromEdge = anchor === 'top' ? cur.yTop : cur.yBottom;
+  saveStampPos(prefix, x, yFromEdge, size, anchor);
   document.removeEventListener('mousemove', stampResizeMove);
   document.removeEventListener('mouseup', stampResizeEnd);
   document.removeEventListener('touchmove', stampResizeMove);
@@ -21322,6 +21680,43 @@ function onWorkorderClientInput(inputEl) {
     (r) => { inputEl.value = r.name; }
   );
 }
+// ════════════════════════════════════════════════════════════════════
+// 📤 카카오톡 / 문자(SMS) 등으로 문서 바로 공유하기
+// 브라우저의 표준 "공유하기"(Web Share API)를 이용합니다 — 휴대폰의 크롬/사파리에서는
+// 누르는 순간 카카오톡·문자·이메일 등 폰에 설치된 앱 목록이 바로 뜨고, 그 중 골라서 보내면
+// 됩니다. PC 브라우저처럼 이 기능을 지원하지 않는 환경에서는 대신 내용을 클립보드에
+// 복사해 드리니, 카카오톡 PC판이나 문자 프로그램에 붙여넣기(Ctrl+V) 하시면 됩니다.
+// (이 앱은 정적 파일이라 카카오톡/문자로 실제 파일을 자동 첨부해 보내드릴 수는 없고,
+//  대신 문서 핵심 내용을 텍스트로 정리해서 공유합니다. 파일 자체를 보내고 싶다면
+//  "🖨️ 인쇄 / PDF로 저장"으로 PDF를 만든 뒤 그 파일을 직접 첨부해 보내시면 됩니다.)
+// ════════════════════════════════════════════════════════════════════
+function htmlToPlainText(html) {
+  const tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  tmp.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+  tmp.querySelectorAll('tr, p, div, h1, h2, h3, h4, li').forEach(el => { el.appendChild(document.createTextNode('\n')); });
+  let text = tmp.textContent || tmp.innerText || '';
+  text = text.replace(/[ \t]+/g, ' ');
+  text = text.split('\n').map(l => l.trim()).filter(Boolean).join('\n');
+  text = text.replace(/\n{3,}/g, '\n\n');
+  return text.trim();
+}
+// 인쇄 팝업(별도 창) 안에 넣을 "📤 공유" 버튼 + 그 버튼이 동작하는 데 필요한 스크립트를
+// 함께 만들어 돌려줍니다. shareTitle/shareText는 팝업이 열리기 전, 지금 창에서 미리 계산해 넘겨줍니다.
+function buildShareBarParts(shareTitle, shareText) {
+  const button = '<button onclick="shareThisDoc()" style="background:#ea580c;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">📤 카카오톡/문자로 공유</button>';
+  const script = '<script>' +
+    'var SHARE_TITLE=' + JSON.stringify(shareTitle || '문서') + ';' +
+    'var SHARE_TEXT=' + JSON.stringify(shareText || '') + ';' +
+    'async function shareThisDoc(){' +
+      'if(navigator.share){try{await navigator.share({title:SHARE_TITLE,text:SHARE_TEXT});return;}catch(e){if(e&&e.name==="AbortError")return;}}' +
+      'try{await navigator.clipboard.writeText(SHARE_TEXT);alert("이 화면은 바로 공유하기(카카오톡 등)를 지원하지 않는 환경이라, 내용을 클립보드에 복사했습니다.\\n카카오톡 PC판이나 문자 프로그램을 열어 붙여넣기(Ctrl+V) 해주세요.");}' +
+      'catch(err){window.location.href="sms:?body="+encodeURIComponent(SHARE_TEXT);}' +
+    '}' +
+  '<\\/script>';
+  return { button, script };
+}
+
 function printWorkorder() {
   const f = collectWorkorderFields();
   const imgData = woComposeCanvas().toDataURL('image/png');
@@ -21367,13 +21762,26 @@ function printWorkorder() {
             <td style="width:34%;background:#f8fafc;text-align:center">출고확인<br><br>${escQ(f.shipConfirm)}</td></tr>
       </table>
     </div>`;
+  const shareText = [
+    '📋 작업지시서',
+    f.client ? '거래처: ' + f.client : '',
+    f.item ? '품명: ' + f.item : '',
+    (f.qty || f.unit) ? '수량: ' + (f.qty || '') + ' ' + (f.unit || '') : '',
+    f.due ? '납기일: ' + f.due : '',
+    f.spec ? '규격: ' + f.spec : '',
+    f.workContent ? '작업내용: ' + f.workContent : '',
+    f.customerRequest ? '⭐ 고객요청: ' + f.customerRequest : '',
+    f.note ? '특이사항: ' + f.note : ''
+  ].filter(Boolean).join('\n');
+  const shareBar = buildShareBarParts('작업지시서', shareText);
   const printBtnBar =
     '<div class="no-print" style="position:sticky;top:0;z-index:999;background:#1e293b;padding:10px 16px;display:flex;gap:10px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2)">' +
       '<button onclick="window.print()" style="background:#146C8E;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 인쇄 / PDF로 저장</button>' +
+      shareBar.button +
       '<span style="color:#cbd5e1;font-size:12px">버튼을 누른 뒤, 인쇄 대화상자의 "대상/프린터"에서 <b style="color:#fff">PDF로 저장</b>을 선택하세요.</span>' +
     '</div>';
   const autoPrintScript = '<script>window.addEventListener("load",function(){ setTimeout(function(){ try{ window.print(); }catch(e){} }, 250); });<\/script>';
-  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>작업지시서</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyHtml + autoPrintScript + '</body></html>';
+  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>작업지시서</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyHtml + autoPrintScript + shareBar.script + '</body></html>';
   const blob = new Blob([fullHTML], { type: 'text/html;charset=utf-8' });
   const url = URL.createObjectURL(blob);
   const win = window.open(url, '_blank');
@@ -21609,7 +22017,16 @@ function buildClassicDocHTML(type) {
   let stampOverlayHtml = '';
   if (stampImgSrc) {
     const sp = loadStampPos(stampPrefix);
-    stampOverlayHtml = '<img src="' + stampImgSrc + '" style="position:absolute;left:' + sp.x + '%;top:' + sp.y + '%;transform:translate(-50%,-50%);width:' + sp.size + 'px;height:' + sp.size + 'px;object-fit:contain">';
+    // 🛠 변경: top(%) 대신 bottom(px)으로 앵커링 — 품목 행이 늘어도(빈 행 추가 등)
+    // 문서 하단(서명란) 기준 위치가 유지되어 도장이 아래로 밀려 내려가지 않음
+    // 🛠 버그 수정: 화면에서는 도장이 "위쪽 기준(top-anchor)"으로 저장될 수 있는데(예: 아직 한 번도
+    // 옮기지 않아 대표자 칸 옆에 놓인 기본 위치), 인쇄/PDF에서는 항상 bottom(px)만 사용하고 있어서
+    // sp.yBottom이 없는 경우 위치가 깨져 화면과 다른 곳(문서 맨 위 등)에 찍혔습니다.
+    // 화면(renderStampDragLayer)과 동일하게 anchor에 따라 top/bottom을 분기하도록 수정.
+    const stampPosStyle = (sp.anchor === 'top')
+      ? ('top:' + sp.yTop + 'px;bottom:auto;transform:translate(-50%,-50%)')
+      : ('top:auto;bottom:' + sp.yBottom + 'px;transform:translate(-50%,50%)');
+    stampOverlayHtml = '<img src="' + stampImgSrc + '" style="position:absolute;left:' + sp.x + '%;' + stampPosStyle + ';width:' + sp.size + 'px;height:' + sp.size + 'px;object-fit:contain">';
   }
 
   return ''
@@ -21666,8 +22083,27 @@ function forceSaveNow(type) {
   } catch(e) {}
 }
 
+function getDocPrintFileName(type) {
+  const gv = id => { const el = document.getElementById(id); return el ? (el.value !== undefined ? el.value : el.innerText) : ''; };
+  const cfg = getDocConfig(type);
+  let toName, dateVal;
+  if (type === 'order') { toName = gv('o_to_name'); dateVal = gv('o_date'); }
+  else if (type === 'statement') { toName = gv('s_cli_name'); dateVal = gv('s_date'); }
+  else { toName = gv('q_to_name'); dateVal = gv('q_date'); }
+  const now = new Date();
+  const hh = String(now.getHours()).padStart(2, '0');
+  const mm = String(now.getMinutes()).padStart(2, '0');
+  const dateStr = (dateVal || todayLocalISO()).replace(/[^0-9]/g, '');
+  const safe = s => (s || '').replace(/[\\/:*?"<>|]/g, '').trim();
+  const namePart = safe(toName) || '거래처미정';
+  return cfg.label + '_' + namePart + '_' + dateStr + '_' + hh + mm;
+}
+
 function printDoc(type) {
   forceSaveNow(type);
+  // 📌 견적서를 인쇄(=발주)하면, 그 내용을 거래내역에 저장하고 "대기" 상태로
+  // 작업현황판에 자동으로 준비해 둡니다. (같은 견적서를 다시 인쇄해도 중복 등록되지 않음)
+  if (type === 'quote') { try { registerQuotePendingOnIssue(false); } catch (e) { console.error('견적서 인쇄 시 대기 자동 등록 실패:', e); } }
   const cfg = getDocConfig(type);
   const docHtml = buildClassicDocHTML(type);
 
@@ -21679,9 +22115,11 @@ function printDoc(type) {
 
   // 화면에 보이는 "인쇄 / PDF로 저장" 안내 버튼 — 브라우저가 자동 인쇄창 띄우기를
   // 막는 경우(팝업 차단, 브라우저 정책 등)에도 사용자가 직접 눌러서 확실히 인쇄/저장할 수 있도록 함.
+  const shareBar = buildShareBarParts(cfg.label, htmlToPlainText(docHtml));
   const printBtnBar =
     '<div class="no-print" style="position:sticky;top:0;z-index:999;background:#1e293b;padding:10px 16px;display:flex;gap:10px;align-items:center;box-shadow:0 2px 8px rgba(0,0,0,.2)">' +
       '<button onclick="window.print()" style="background:#146C8E;color:#fff;border:none;padding:8px 16px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer">🖨️ 인쇄 / PDF로 저장</button>' +
+      shareBar.button +
       '<span style="color:#cbd5e1;font-size:12px">버튼을 누른 뒤, 인쇄 대화상자의 "대상/프린터"에서 <b style="color:#fff">PDF로 저장</b>을 선택하세요.</span>' +
     '</div>';
 
@@ -21691,7 +22129,8 @@ function printDoc(type) {
     '<script>window.addEventListener("load",function(){ setTimeout(function(){ try{ window.print(); }catch(e){} }, 250); });<\/script>';
 
   const bodyWrap = '<div style="padding:16px 0">' + docHtml + '</div>';
-  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>' + cfg.label + '</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyWrap + autoPrintScript + '</body></html>';
+  const printFileName = getDocPrintFileName(type);
+  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>' + escQ(printFileName) + '</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyWrap + autoPrintScript + shareBar.script + '</body></html>';
   const blob = new Blob([fullHTML], {type:'text/html;charset=utf-8'});
   const url  = URL.createObjectURL(blob);
   const win  = window.open(url, '_blank');
@@ -21977,6 +22416,7 @@ document.addEventListener('change', scheduleDraftSave, true);
 // ════════════════════════════════════════
 const K_HISTORY = 'QUOTE_HISTORY_V1';
 const K_HISTORY_BACKUP = 'QUOTE_HISTORY_V1_backup';
+const K_PRE_RESTORE_SAFETY = 'QUOTE_APP_PRE_RESTORE_SAFETY_V1'; // "복원" 실행 직전 현재 데이터를 잠시 담아두는 안전 백업 슬롯
 
 function loadHistory() {
   try {
@@ -22033,7 +22473,12 @@ function getDocKeyValue(type, fields) {
   const cfg = getDocConfig(type);
   return (fields[cfg.prefix+'_num']||'').trim();
 }
-function saveHistorySnapshot(type, manual) {
+function saveHistorySnapshot(type, manual, sessionKey) {
+  // sessionKey: historyEditRecordId/historyAutosaveRecordId를 어떤 "키"로 추적할지 지정합니다.
+  // 기본값은 type 그대로(일반적인 견적서/발주서/거래명세표 작성 세션)이지만, 빠른접수처럼
+  // 지금 화면에서 작성 중인 문서와는 완전히 별개인 임시 저장에는 다른 sessionKey를 넘겨서,
+  // 서로의 자동저장/수정 세션 상태를 절대 건드리지 않도록 합니다.
+  sessionKey = sessionKey || type;
   try {
     if(type !== 'quote' && type !== 'order' && type !== 'statement') return;
     const cfg = getDocConfig(type);
@@ -22072,24 +22517,29 @@ function saveHistorySnapshot(type, manual) {
     // ③ 다만 입력 중 자동저장(디바운스, manual이 아님)만큼은 타이핑할 때마다 새 기록이
     //    계속 쌓이지 않도록, 이번 작성 세션에서 방금 만든 새 기록을 이어서 갱신합니다.
     let idx = -1;
-    if (historyEditRecordId[type]) {
-      const editIdx = list.findIndex(h => h.id === historyEditRecordId[type]);
+    if (historyEditRecordId[sessionKey]) {
+      const editIdx = list.findIndex(h => h.id === historyEditRecordId[sessionKey]);
       if (editIdx >= 0) idx = editIdx;
-      else historyEditRecordId[type] = null; // 원본 기록이 삭제된 경우: 새 기록으로 추가
-    } else if (!manual && historyAutosaveRecordId[type]) {
+      else historyEditRecordId[sessionKey] = null; // 원본 기록이 삭제된 경우: 새 기록으로 추가
+    } else if (!manual && historyAutosaveRecordId[sessionKey]) {
       // (자동저장(디바운스)일 때만 이번 세션의 기존 기록을 이어서 갱신합니다.
       //  "🗂 거래내역으로 등록" 버튼을 직접 누르는(manual) 경우에는, 같은 내용을 여러 번
       //  등록해도(예: 동일한 견적을 여러 번 받는 경우) 매번 새 기록으로 남기고 싶다는
       //  요청에 따라 항상 새로 추가합니다.)
-      const sesIdx = list.findIndex(h => h.id === historyAutosaveRecordId[type]);
+      const sesIdx = list.findIndex(h => h.id === historyAutosaveRecordId[sessionKey]);
       if (sesIdx >= 0) idx = sesIdx;
-      else historyAutosaveRecordId[type] = null;
+      else historyAutosaveRecordId[sessionKey] = null;
     }
-    // 🔑 문서번호(키) 기준 최종 판단: 위 두 조건으로 아직 수정 대상을 찾지 못했다면,
-    // 같은 문서번호(key)를 가진 기존 기록이 있는지 확인해 있으면 그 기록을 "수정"으로 처리합니다.
-    // (거래처·품목이 같은 재주문이라도 문서번호가 다르면 새 기록으로 저장되고,
-    //  문서번호가 같으면 같은 문서를 다시 저장하는 것으로 보고 덮어씁니다.)
-    if (idx < 0) {
+    // 🔑 문서번호(키) 기준 최종 판단 — 단, "수동 등록"(manual=true)에는 적용하지 않습니다.
+    // 예전에는 이 조건이 manual 여부와 무관하게 동작해서, "🗂 거래내역으로 등록" 버튼을
+    // 직접 눌러도 문서번호가 이전 기록과 같으면 새로 추가되지 않고 조용히 덮어써지는
+    // 버그가 있었습니다(바로 위 주석의 "manual일 땐 항상 새로 추가한다"는 의도와 실제
+    // 동작이 어긋나 있었습니다). 이제 이 key 매칭은 manual이 아닌 경우(예: "새 문서 작성"
+    // 직전의 안전 저장, "가계부로 보내기" 직전의 강제 저장처럼, 페이지 새로고침 등으로
+    // 이번 세션의 자동저장 id를 잃어버렸을 때 같은 문서를 중복 생성하지 않기 위한
+    // 안전장치)에만 적용됩니다. manual=true(수동 등록, 빠른접수 포함)는 문서번호가
+    // 우연히 같더라도 항상 새 기록으로 추가됩니다.
+    if (idx < 0 && !manual) {
       const keyIdx = list.findIndex(h => h.key === key);
       if (keyIdx >= 0) idx = keyIdx;
     }
@@ -22117,8 +22567,8 @@ function saveHistorySnapshot(type, manual) {
         }
         key = newKey;
         idx = -1; // 새 기록으로 추가
-        historyEditRecordId[type] = null; // 거래처가 달라졌으므로 더 이상 그 기록의 수정 모드가 아님
-        historyAutosaveRecordId[type] = null;
+        historyEditRecordId[sessionKey] = null; // 거래처가 달라졌으므로 더 이상 그 기록의 수정 모드가 아님
+        historyAutosaveRecordId[sessionKey] = null;
         showToast(`⚠️ 거래처가 달라 기존 ${docLabelOf(type)}[${prevNum}]을(를) 덮어쓰지 않고 새 번호[${newKey}]로 별도 저장했습니다.`);
       }
     }
@@ -22170,7 +22620,7 @@ function saveHistorySnapshot(type, manual) {
     saveHistoryListToStorage(list);
     // 내역서에서 불러온 수정 모드가 아니라면, 이번 작성 세션 동안의 자동저장이 계속 같은
     // 새 기록을 이어서 갱신하도록 방금 저장/추가된 기록의 id를 세션값으로 기억해 둠.
-    if (!historyEditRecordId[type]) historyAutosaveRecordId[type] = record.id;
+    if (!historyEditRecordId[sessionKey]) historyAutosaveRecordId[sessionKey] = record.id;
     // 이미 "가계부 등록" 버튼으로 확정 등록된 건이라면, 문서를 수정해서 총액/거래처가
     // 바뀌었을 때 가계부에 저장된 금액도 함께 최신화(동기화)해서 서로 어긋나지 않도록 함
     syncLedgerEntryFromHistory(record);
@@ -22359,7 +22809,7 @@ function renderHistoryTable() {
       <td class="td-center">${escQ(h.date)}</td>
       <td>${escQ(h.partyName)}</td>
       <td>${escQ(h.supplierName)}</td>
-      <td class="td-num">${escQ(h.total)}${h.balanceText ? `<br><span style="font-size:10px;font-weight:700;color:${/완납/.test(h.balanceText)?'#16a34a':'#dc2626'}">${escQ(h.balanceText)}</span>${isOutstandingReceivable(h) ? `<br><button class="add-btn recv-settle-btn" onclick="settleReceivableAsIncome('${h.id}')" title="클릭하면 이 미수금을 수입으로 등록하고 미수금 목록에서 삭제합니다. 그냥 두면 미수금으로 계속 남습니다.">💰 수입처리(미수금 삭제)</button>` : ''}` : ''}</td>
+      <td class="td-num">${escQ(h.total)}${quoteDepositCellHtml(h)}</td>
       <td class="td-center">${historyShipBadge(h)}</td>
       <td class="td-center text-[11px] text-gray-500">
         ${formatDateTime(h.updatedAt)}
@@ -22498,6 +22948,240 @@ function ledgerButtonHtml(h) {
   }
   return `<button class="add-btn" style="padding:2px 8px;margin-top:0;color:#146C8E;border-color:#BFDDE6" onclick="addHistoryRecordToLedger('${h.id}')">${info.label}</button>`;
 }
+
+// ════════════════════════════════════════
+// 📌 견적서 "대기 → 입금/중도금 입금" 자동 연동
+//
+// ① 견적서를 인쇄하거나 "🗂 거래내역으로 등록"을 누르면, 그 견적서 내용이 그대로
+//    작업현황판(작업지시)에 "🕓 대기" 상태로 자동 준비됩니다(이미 있으면 최신 내용으로만 갱신).
+// ② 거래내역 목록의 견적서 줄에서 "💰 입금 처리" 버튼을 누르고 "입금"(완납) 또는
+//    "중도금"(일부 금액)을 선택해 확정하면, 그 자리에서
+//    거래내역(입금액·잔금 문구) · 작업현황판(상태·비고) · 달력(입금일 일정) · 가계부(확정 수입)
+//    네 곳에 한 번에 자동으로 반영됩니다.
+// ════════════════════════════════════════
+
+// 총액/입금액으로 "잔금 ○○○원 (○○% 입금)" / "완납 (100% 입금)" 문구를 만듭니다.
+// (saveHistorySnapshot 안의 동일 로직과 표현을 맞춰, 거래내역 화면에 항상 같은 문구로 보이게 함)
+function computeBalanceText(total, paid) {
+  const balance = total - paid;
+  const percent = total > 0 ? Math.round((paid / total) * 100) : 0;
+  if (paid <= 0) return '잔금 ' + total.toLocaleString() + '원 (0% 입금)';
+  if (balance <= 0) return '완납 (100% 입금)';
+  return '잔금 ' + balance.toLocaleString() + '원 (' + percent + '% 입금)';
+}
+
+// 거래내역 표의 금액 칸에 "대기" 배지와 "💰 입금 처리" 버튼을 덧붙입니다.
+// (기존 잔금/완납 문구·미수금 수입처리 버튼은 그대로 유지하고, 견적서에 한해 아래 내용을 추가로 보여줍니다)
+function quoteDepositCellHtml(h) {
+  let html = '';
+  if (h.balanceText) {
+    html += `<br><span style="font-size:10px;font-weight:700;color:${/완납/.test(h.balanceText) ? '#16a34a' : '#dc2626'}">${escQ(h.balanceText)}</span>`;
+    if (isOutstandingReceivable(h)) {
+      html += `<br><button class="add-btn recv-settle-btn" onclick="settleReceivableAsIncome('${h.id}')" title="클릭하면 이 미수금을 수입으로 등록하고 미수금 목록에서 삭제합니다. 그냥 두면 미수금으로 계속 남습니다.">💰 수입처리(미수금 삭제)</button>`;
+    }
+  }
+  if (h.type === 'quote') {
+    const totalNum = parseAmountFromText(h.total) || 0;
+    const paidAmt = parseFloat((h.fields || {})['q_paidAmt']) || 0;
+    if (totalNum > 0) {
+      if (paidAmt <= 0) {
+        html += `<br><span class="text-[10px] font-bold" style="color:#d97706">🕓 대기</span>`;
+      }
+      if (paidAmt < totalNum) {
+        html += `<br><button class="add-btn" style="padding:1px 6px;margin-top:2px;font-size:9px;color:#146C8E;border-color:#BFDDE6;font-weight:700" onclick="promptQuoteDeposit('${h.id}')" title="구매자/제작의뢰자의 입금 또는 중도금 입금을 기록하면 거래내역·작업현황판·달력·가계부에 자동 반영됩니다.">💰 입금 처리</button>`;
+      }
+    }
+  }
+  return html;
+}
+
+// 견적서 거래내역 1건을 "작업현황판"에 자동으로 반영합니다.
+// - 아직 연동된 항목이 없으면 "대기" 상태로 새로 만듭니다(견적서 내용 그대로: 거래처/품목/수량/금액).
+// - 이미 있으면(재인쇄·재등록 등) 거래처·품목·수량·금액만 최신 내용으로 갱신하고,
+//   담당자가 이미 진행 중/완료로 바꿔둔 작업상태나 직접 채운 작업자·운송 등은 그대로 둡니다.
+function ensureWorkboardFromQuoteRecord(rec) {
+  try {
+    if (!rec || rec.type !== 'quote') return null;
+    const wbId = 'wb_quote_' + rec.id;
+    const list = loadWorkboard();
+    const existing = list.find(w => w.id === wbId);
+    const rows = rec.rows || [];
+    const product = rows.map(r => r.name).filter(Boolean).join(', ');
+    const qty = rows.reduce((sum, r) => sum + (parseFloat(r.qty) || 0), 0);
+    const totalAmt = parseAmountFromText(rec.total) || 0;
+    const f = rec.fields || {};
+
+    const entry = {
+      id: wbId,
+      receivedDate: existing ? existing.receivedDate : (rec.date || todayLocalISO()),
+      company: rec.partyName || (existing ? existing.company : ''),
+      phone: existing ? existing.phone : (f['q_to_tel'] || ''),
+      address: existing ? existing.address : (f['q_to_addr'] || ''),
+      product: product || (existing ? existing.product : ''),
+      workDetail: existing ? existing.workDetail : (f['q_note'] || ''),
+      qty: qty ? String(qty) : (existing ? existing.qty : ''),
+      amount: totalAmt ? String(totalAmt) : (existing ? existing.amount : ''),
+      shipping: existing ? existing.shipping : '',
+      shipDate: existing ? existing.shipDate : (f['q_shipAt'] || ''),
+      worker: existing ? existing.worker : '',
+      note: existing ? existing.note : ('견적서 [' + (rec.num || '') + '] 자동 연동'),
+      status: existing ? existing.status : 'pending',
+      completedAt: existing ? existing.completedAt : '',
+      createdAt: existing ? existing.createdAt : new Date().toISOString(),
+      refQuoteHistoryId: rec.id
+    };
+
+    const newList = list.filter(w => w.id !== wbId);
+    newList.push(entry);
+    saveWorkboard(newList);
+    syncWorkboardCalendar(entry);
+    // 금액은 실제 "입금 처리" 시점에 가계부에 반영되므로, 대기 등록 단계에서는
+    // 가계부에 자동으로 올리지 않습니다(중복 방지). 필요하면 "📈 예상매출 등록" 버튼을 이용하세요.
+    if (activeDocType === 'workboard') renderWorkboard();
+    updateWorkboardBadge();
+    return entry;
+  } catch (e) { console.error('견적서 → 작업현황판 자동 등록 실패:', e); return null; }
+}
+
+// 견적서를 처음 인쇄하거나 "거래내역으로 등록"할 때 호출 — 지금 화면 내용을 거래내역에
+// 저장(번호가 없으면 아무것도 하지 않음)하고, 그 기록을 "대기" 상태로 작업현황판에 준비해 둡니다.
+// (같은 견적서를 여러 번 인쇄/등록해도 매번 새 작업현황판 항목이 생기지 않고 하나로 갱신됩니다)
+function registerQuotePendingOnIssue(manual) {
+  try {
+    saveHistorySnapshot('quote', !!manual);
+    const savedId = historyEditRecordId['quote'] || historyAutosaveRecordId['quote'];
+    if (!savedId) return;
+    const rec = loadHistory().find(h => h.id === savedId);
+    if (rec) ensureWorkboardFromQuoteRecord(rec);
+  } catch (e) { console.error('견적서 대기 자동 등록 실패:', e); }
+}
+
+// "💰 입금 처리" 버튼 — 입금(완납) 또는 중도금(일부 금액)을 선택해 확정합니다.
+function promptQuoteDeposit(historyId) {
+  const h = loadHistory().find(x => x.id === historyId);
+  if (!h || h.type !== 'quote') { showToast('견적서 거래내역만 입금 처리할 수 있습니다.'); return; }
+  const totalNum = parseAmountFromText(h.total) || 0;
+  if (!totalNum) { showToast('금액 정보가 없어 입금 처리할 수 없습니다.'); return; }
+  const currentPaid = parseFloat((h.fields || {})['q_paidAmt']) || 0;
+  const remain = Math.max(totalNum - currentPaid, 0);
+  if (remain <= 0) { showToast('이미 완납 처리된 건입니다.'); return; }
+
+  const kind = prompt(
+    `"${h.partyName || ''}" 견적서 [${h.num || ''}]\n` +
+    `총액 ${totalNum.toLocaleString()}원 · 남은 잔액 ${remain.toLocaleString()}원\n\n` +
+    `입금 종류를 적어주세요.\n` +
+    `· "입금"  → 남은 잔액을 전액 입금(완납) 처리\n` +
+    `· "중도금" → 일부 금액만 중도금으로 입금 처리`,
+    '입금'
+  );
+  if (kind === null) return; // 취소
+  const isPartial = kind.trim().indexOf('중도') === 0 || kind.trim().indexOf('중도금') >= 0;
+
+  let amount;
+  if (isPartial) {
+    const amtStr = prompt('중도금 입금액을 숫자로 입력해 주세요. (원)\n최대 ' + remain.toLocaleString() + '원', '');
+    if (amtStr === null) return;
+    amount = parseInt(String(amtStr).replace(/[^0-9]/g, ''), 10);
+    if (!amount || amount <= 0) { showToast('올바른 입금액을 입력해 주세요.'); return; }
+    if (amount > remain) amount = remain;
+  } else {
+    amount = remain;
+  }
+  applyQuoteDeposit(historyId, amount, isPartial);
+}
+
+// 입금/중도금 입금을 실제로 반영 — 거래내역·작업현황판·달력·가계부 네 곳에 동시 적용합니다.
+function applyQuoteDeposit(historyId, amount, isPartial) {
+  try {
+    const list = loadHistory();
+    const idx = list.findIndex(x => x.id === historyId);
+    if (idx < 0) { showToast('원본 거래내역을 찾을 수 없습니다.'); return; }
+    const rec = list[idx];
+    if (rec.type !== 'quote') return;
+    const totalNum = parseAmountFromText(rec.total) || 0;
+    const fields = rec.fields || (rec.fields = {});
+    const currentPaid = parseFloat(fields['q_paidAmt']) || 0;
+    const newPaid = Math.min(currentPaid + amount, totalNum);
+
+    // ① 거래내역: 입금액/잔금 문구 갱신
+    fields['q_paidAmt'] = String(newPaid);
+    rec.balanceText = computeBalanceText(totalNum, newPaid);
+    rec.updatedAt = new Date().toISOString();
+    list[idx] = rec;
+    saveHistoryListToStorage(list);
+
+    // 지금 화면에 이 견적서를 불러와 보고 있다면 입금액 입력칸도 함께 맞춰줌
+    if (historyEditRecordId['quote'] === historyId || historyAutosaveRecordId['quote'] === historyId) {
+      const paidEl = document.getElementById('q_paidAmt');
+      if (paidEl) paidEl.value = newPaid;
+    }
+
+    // ② 작업현황판(작업지시): 없으면 새로 만들고, 있으면 상태/비고 갱신 (대기 → 작업중)
+    ensureWorkboardFromQuoteRecord(rec);
+    const wbList = loadWorkboard();
+    const wbIdx = wbList.findIndex(w => w.id === ('wb_quote_' + historyId));
+    if (wbIdx >= 0) {
+      const w = wbList[wbIdx];
+      const payLabel = isPartial ? '중도금' : '입금';
+      const todayStr = todayLocalISO();
+      w.note = (`💰 ${todayStr} ${payLabel} ${amount.toLocaleString()}원 입금\n` + (w.note || '')).trim();
+      if (w.status === 'pending') w.status = 'inprogress';
+      wbList[wbIdx] = w;
+      saveWorkboard(wbList);
+      syncWorkboardCalendar(w);
+    }
+
+    // ③ 달력: 입금일 일정 추가
+    try {
+      const calList = loadPersonalSchedule();
+      calList.push({
+        id: 'cal_quote_pay_' + historyId + '_' + Date.now(),
+        date: todayLocalISO(), time: '', title: `💰 ${isPartial ? '중도금' : '입금'}: ${rec.partyName || ''} (${amount.toLocaleString()}원)`,
+        memo: '견적서 입금 처리 시 자동 등록됨', type: 'workboard', alarm: false, alarmFired: false, snoozeUntil: null,
+        createdAt: new Date().toISOString()
+      });
+      savePersonalSchedule(calList);
+      if (typeof updateCalendarBadge === 'function') updateCalendarBadge();
+    } catch (e) { console.error('입금 일정 등록 실패:', e); }
+
+    // ④ 가계부: 확정 수입으로 등록(입금분만큼 별도 항목 — 중도금/잔금을 각각 확인 가능)
+    try {
+      const ledgerList = loadLedgerManual();
+      ledgerList.push({
+        id: 'quote_pay_' + historyId + '_' + Date.now(),
+        date: todayLocalISO(),
+        type: 'income',
+        category: isPartial ? '중도금입금(견적서)' : '입금(견적서)',
+        memo: (rec.partyName || '') + (rec.num ? ` [${rec.num}]` : ''),
+        amount,
+        source: 'manual',
+        expected: false,
+        refHistoryId: historyId,
+        createdAt: new Date().toISOString()
+      });
+      saveLedgerManualList(ledgerList);
+    } catch (e) { console.error('입금 가계부 등록 실패:', e); }
+
+    // 기존에 "📈 예상매출 등록"으로 올려둔 항목이 있다면 총액 기준으로 계속 동기화
+    syncLedgerEntryFromHistory(rec);
+
+    renderHistoryTable();
+    if (activeDocType === 'workboard') renderWorkboard();
+    if (activeDocType === 'ledger') renderLedger();
+    updateWorkboardBadge();
+    renderDashboard();
+
+    const doneAll = newPaid >= totalNum;
+    showToast(
+      `✅ ${isPartial ? '중도금' : '입금'} ${amount.toLocaleString()}원 처리 완료` +
+      (doneAll ? ' (완납)' : ` (남은 잔액 ${(totalNum - newPaid).toLocaleString()}원)`) +
+      ' — 거래내역·작업현황판·달력·가계부에 자동 반영되었습니다.'
+    );
+  } catch (e) {
+    console.error('입금 처리 실패:', e);
+    showToast('입금 처리 중 오류가 발생했습니다.');
+  }
+}
 // 🛡 "🗂 거래내역으로 등록" 저장 직전, 이미 저장된 거래내역 중 지금 작성한 내용과
 // 글자 하나까지 완전히 동일한 기록이 있는지 확인합니다. (같은 기록을 다시 저장(수정)하는
 // 경우는 중복이 아니므로 검사에서 제외합니다.)
@@ -22543,6 +23227,8 @@ function addActiveDocToHistoryManually() {
   const savedId = historyEditRecordId[type] || historyAutosaveRecordId[type];
   const rec = loadHistory().find(h => h.id === savedId) || loadHistory().find(h => h.type === type && h.key === key);
   if (!rec) { showToast('저장할 내용이 없습니다. 거래처/품목 정보를 입력해 주세요.'); return; }
+  // 📌 견적서를 거래내역에 등록하면, 그 내용 그대로 "대기" 상태로 작업현황판에도 자동 준비해 둡니다.
+  if (type === 'quote') { try { ensureWorkboardFromQuoteRecord(rec); } catch (e) { console.error('견적서 → 작업현황판 자동 등록 실패:', e); } }
   const revCount = (rec.revisions || []).length;
   showToast(revCount > 0
     ? `내역서에 저장되었습니다. (✏️ ${revCount}차 수정 · 판매자만 확인 가능)`
@@ -24205,8 +24891,12 @@ function snoozeScheduleAlarm() {
 // ════════════════════════════════════════
 // 📒 가계부 (수입/지출 관리) — 견적서/발주서/거래명세표를 토대로 자동 집계 + 직접 입력
 // ════════════════════════════════════════
-const K_LEDGER = 'HOUSEHOLD_LEDGER_MANUAL_V1';       // 직접 입력한 수입/지출 목록
-const K_LEDGER_SETTINGS = 'HOUSEHOLD_LEDGER_SETTINGS_V1'; // 자동 반영 설정
+const K_LEDGER          = 'HOUSEHOLD_LEDGER_MANUAL_V1';       // 직접 입력한 수입/지출 목록
+const K_LEDGER_SETTINGS  = 'HOUSEHOLD_LEDGER_SETTINGS_V1'; // 자동 반영 설정
+const K_LEDGER_TRASH     = 'HOUSEHOLD_LEDGER_TRASH_V1';    // 휴지통 (소프트삭제)
+const K_LEDGER_BACKUP    = 'HOUSEHOLD_LEDGER_BACKUP_V1';   // JSON 수동 백업
+const K_LEDGER_AUTOBACK  = 'HOUSEHOLD_LEDGER_AUTOBACK_TS'; // 자동백업 마지막 시각
+const K_LEDGER_CRASH     = 'HOUSEHOLD_LEDGER_CRASH_V1';    // 크래시 감지용 임시저장
 
 function defaultLedgerSettings() {
   return { autoStatementIncome: true, autoOrderExpense: true, includeQuoteAsExpected: false };
@@ -24238,8 +24928,120 @@ function loadLedgerManual() {
   catch(e) { return []; }
 }
 function saveLedgerManualList(list) {
-  try { localStorage.setItem(K_LEDGER, JSON.stringify(list)); }
-  catch(e) { console.error('가계부 저장 실패:', e); }
+  try {
+    localStorage.setItem(K_LEDGER, JSON.stringify(list));
+    // ── 자동저장: 변경 즉시 크래시 복구용 임시본 저장 ──
+    localStorage.setItem(K_LEDGER_CRASH, JSON.stringify({ data: list, ts: new Date().toISOString() }));
+    // ── 자동백업: 1시간마다 자동 JSON 백업 ──
+    autoBackupLedgerIfNeeded(list);
+  } catch(e) { console.error('가계부 저장 실패:', e); }
+}
+
+// ── 자동백업: 1시간마다 한 번씩 자동으로 JSON 백업 저장 ──
+function autoBackupLedgerIfNeeded(list) {
+  try {
+    const last = localStorage.getItem(K_LEDGER_AUTOBACK);
+    const now  = Date.now();
+    if(last && (now - parseInt(last)) < 60 * 60 * 1000) return; // 1시간 미만이면 skip
+    localStorage.setItem(K_LEDGER_BACKUP, JSON.stringify({
+      version: 1,
+      backupAt: new Date().toISOString(),
+      type: 'auto',
+      data: list
+    }));
+    localStorage.setItem(K_LEDGER_AUTOBACK, String(now));
+  } catch(e) {}
+}
+
+// ── JSON 백업: 수동으로 파일 다운로드 ──
+function exportLedgerJSON() {
+  const list = loadLedgerManual();
+  if(!list.length) { showToast('가계부 데이터가 없습니다.'); return; }
+  const payload = {
+    version:  1,
+    backupAt: new Date().toISOString(),
+    type:     'manual',
+    count:    list.length,
+    data:     list
+  };
+  const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.href     = url;
+  a.download = '가계부_백업_' + new Date().toISOString().slice(0,10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+  // 백업 시각도 갱신
+  localStorage.setItem(K_LEDGER_BACKUP, JSON.stringify({ ...payload }));
+  localStorage.setItem(K_LEDGER_AUTOBACK, String(Date.now()));
+  showToast('✅ 가계부 JSON 백업 파일이 다운로드되었습니다.');
+}
+
+// ── JSON 복원: 파일 선택 ──
+function importLedgerJSON() {
+  const inp = document.createElement('input');
+  inp.type  = 'file';
+  inp.accept = '.json,application/json';
+  inp.onchange = function(e) {
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = function(ev) {
+      try {
+        const parsed = JSON.parse(ev.target.result);
+        let rows = [];
+        if(Array.isArray(parsed)) {
+          rows = parsed;
+        } else if(parsed.data && Array.isArray(parsed.data)) {
+          rows = parsed.data;
+        } else {
+          alert('올바른 가계부 백업 파일이 아닙니다.'); return;
+        }
+        // 검증
+        const valid = rows.filter(r => r && (r.id || r.date) && typeof r.amount === 'number');
+        if(!valid.length) { alert('복원할 수 있는 항목이 없습니다.'); return; }
+        const msg = parsed.backupAt
+          ? '백업일시: ' + parsed.backupAt.slice(0,16).replace('T',' ') + '\n항목 수: ' + valid.length + '개'
+          : '항목 수: ' + valid.length + '개';
+        if(!confirm('가계부 데이터를 복원합니다.\n' + msg + '\n\n기존 데이터는 덮어씁니다. 계속하시겠습니까?')) return;
+        saveLedgerManualList(valid);
+        renderLedger();
+        renderDashboard();
+        showToast('✅ ' + valid.length + '개 항목이 복원되었습니다.');
+      } catch(err) {
+        alert('JSON 파일 파싱 오류: ' + err.message);
+      }
+    };
+    reader.readAsText(file, 'utf-8');
+  };
+  inp.click();
+}
+
+// ── 실행 시 자동복구: 크래시 감지 및 복구 제안 ──
+function checkLedgerCrashRecovery() {
+  try {
+    const crash = JSON.parse(localStorage.getItem(K_LEDGER_CRASH));
+    if(!crash || !crash.data || !crash.ts) return;
+    const current = loadLedgerManual();
+    // 크래시본이 현재 데이터보다 항목이 많으면 → 복구 제안
+    if(crash.data.length > current.length) {
+      const diff = crash.data.length - current.length;
+      const ts   = crash.ts.slice(0,16).replace('T',' ');
+      if(confirm(
+        '⚠ 가계부 자동복구 알림\n\n' +
+        '마지막 저장: ' + ts + '\n' +
+        '복구 가능 항목: ' + diff + '개 더 많음\n\n' +
+        '자동 저장된 데이터로 복구하시겠습니까?'
+      )) {
+        saveLedgerManualList(crash.data);
+        renderLedger();
+        renderDashboard();
+        showToast('✅ 자동복구 완료: ' + crash.data.length + '개 항목 복원');
+      }
+    }
+    // 크래시 감지 키 초기화
+    localStorage.removeItem(K_LEDGER_CRASH);
+  } catch(e) {}
 }
 // 견적서/발주서/거래명세표의 "총액" 텍스트(예: "1,234,000 원")에서 숫자만 추출
 function parseAmountFromText(text) {
@@ -24301,12 +25103,105 @@ function addLedgerManualEntry() {
   renderDashboard();
   showToast('가계부에 추가되었습니다.');
 }
+// ── 휴지통 관련 ──
+function loadLedgerTrash() {
+  try { const v = JSON.parse(localStorage.getItem(K_LEDGER_TRASH)); return Array.isArray(v) ? v : []; }
+  catch(e) { return []; }
+}
+function saveLedgerTrash(list) {
+  try { localStorage.setItem(K_LEDGER_TRASH, JSON.stringify(list)); } catch(e) {}
+}
+
+// 삭제 → 휴지통 이동 (소프트삭제)
 function delLedgerManualEntry(id) {
-  if(!confirm('이 항목을 삭제하시겠습니까?')) return;
-  saveLedgerManualList(loadLedgerManual().filter(e => e.id !== id));
+  if(!confirm('이 항목을 휴지통으로 이동하시겠습니까?\n(30일 내 복구 가능)')) return;
+  const list  = loadLedgerManual();
+  const item  = list.find(e => e.id === id);
+  if(!item) return;
+  // 휴지통에 삭제 시각 추가 후 이동
+  const trash = loadLedgerTrash();
+  trash.push({ ...item, _deletedAt: new Date().toISOString() });
+  saveLedgerTrash(trash);
+  saveLedgerManualList(list.filter(e => e.id !== id));
   renderLedger();
   renderDashboard();
-  showToast('삭제되었습니다.');
+  showToast('🗑 휴지통으로 이동했습니다. (복구: 가계부 → 휴지통 버튼)');
+}
+
+// 휴지통에서 복구
+function restoreLedgerTrashEntry(id) {
+  const trash = loadLedgerTrash();
+  const item  = trash.find(e => e.id === id);
+  if(!item) return;
+  const { _deletedAt, ...restored } = item;
+  const list = loadLedgerManual();
+  list.push(restored);
+  saveLedgerManualList(list);
+  saveLedgerTrash(trash.filter(e => e.id !== id));
+  renderLedgerTrashModal();
+  renderLedger();
+  renderDashboard();
+  showToast('✅ 복구되었습니다.');
+}
+
+// 휴지통 영구삭제
+function deleteLedgerTrashEntry(id) {
+  if(!confirm('영구 삭제합니다. 복구할 수 없습니다.')) return;
+  saveLedgerTrash(loadLedgerTrash().filter(e => e.id !== id));
+  renderLedgerTrashModal();
+  showToast('영구 삭제되었습니다.');
+}
+
+// 휴지통 전체 비우기
+function emptyLedgerTrash() {
+  if(!loadLedgerTrash().length) { showToast('휴지통이 비어 있습니다.'); return; }
+  if(!confirm('휴지통을 모두 영구 삭제합니다. 복구할 수 없습니다.')) return;
+  saveLedgerTrash([]);
+  renderLedgerTrashModal();
+  showToast('휴지통을 비웠습니다.');
+}
+
+// 30일 지난 항목 자동 정리
+function purgeExpiredLedgerTrash() {
+  const cutoff = Date.now() - 30 * 24 * 60 * 60 * 1000;
+  const filtered = loadLedgerTrash().filter(e => new Date(e._deletedAt).getTime() > cutoff);
+  saveLedgerTrash(filtered);
+}
+
+// 휴지통 모달 렌더링
+function renderLedgerTrashModal() {
+  const modal = document.getElementById('ledgerTrashModal');
+  if(!modal) return;
+  const list = loadLedgerTrash();
+  if(!list.length) {
+    modal.querySelector('#ledgerTrashBody').innerHTML =
+      '<tr><td colspan="5" class="text-center text-gray-400 py-6">휴지통이 비어 있습니다</td></tr>';
+    return;
+  }
+  modal.querySelector('#ledgerTrashBody').innerHTML = list.map(e => {
+    const daysLeft = Math.max(0, 30 - Math.floor((Date.now() - new Date(e._deletedAt).getTime()) / 86400000));
+    return `<tr style="font-size:12px">
+      <td style="padding:5px 8px;border:1px solid #e2e8f0">${(e.date||'').slice(0,10)}</td>
+      <td style="padding:5px 8px;border:1px solid #e2e8f0">${e.type==='income'?'수입':'지출'}</td>
+      <td style="padding:5px 8px;border:1px solid #e2e8f0">${e.category||''} ${e.memo||''}</td>
+      <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:right">${(e.amount||0).toLocaleString()}원</td>
+      <td style="padding:5px 8px;border:1px solid #e2e8f0;text-align:center">
+        <span style="font-size:10px;color:#f59e0b">${daysLeft}일 남음</span>
+        <button onclick="restoreLedgerTrashEntry('${e.id}')" style="margin-left:4px;font-size:10px;color:#2563eb;background:none;border:1px solid #bfdbfe;border-radius:4px;padding:1px 6px;cursor:pointer">복구</button>
+        <button onclick="deleteLedgerTrashEntry('${e.id}')" style="margin-left:2px;font-size:10px;color:#ef4444;background:none;border:1px solid #fecaca;border-radius:4px;padding:1px 6px;cursor:pointer">영구삭제</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function openLedgerTrashModal() {
+  renderLedgerTrashModal();
+  const m = document.getElementById('ledgerTrashModal');
+  if(m){ m.style.display='flex'; }
+}
+function closeLedgerTrashModal() {
+  const m = document.getElementById('ledgerTrashModal');
+  if(m){ m.style.display='none'; }
 }
 
 // ── 가계부 엑셀(xlsx) 업로드 / 서식 다운로드 ──
@@ -26634,6 +27529,7 @@ function toggleDataMenu() {
   const menu = document.getElementById('dataMenu');
   if (!menu) return;
   menu.style.display = (menu.style.display === 'block') ? 'none' : 'block';
+  if (typeof renderCloudLinksMenu === 'function') renderCloudLinksMenu();
 }
 function closeDataMenu() {
   const menu = document.getElementById('dataMenu');
@@ -27113,8 +28009,115 @@ function openCaptureWindow(dataUrl) {
 
 
 // ════════════════════════════════════════
-// 전체 데이터 파일 백업(내보내기) / 불러오기 — 폴더 이동·PC 이전 시 사용
+// ☁️ 클라우드/개인 드라이브 백업 폴더 바로가기 (구글 드라이브 / 네이버 MYBOX /
+//    회사·집 NAS 같은 개인 IP 드라이브 등, 원하는 만큼 이름 붙여 등록)
+// (브라우저 보안 정책상 이 앱이 그 드라이브에 직접 파일을 올리거나 폴더 목록을
+//  읽어올 수는 없어서, 대신 자주 쓰는 폴더 주소를 저장해 두고 한 번에 열어보는
+//  '바로가기' 기능입니다. 실제 파일 백업은 위의 "⬇️ 전체 데이터 파일로 저장"으로 받은
+//  백업 파일을 그 드라이브 폴더 안에 직접 올려 두시면 됩니다.)
 // ════════════════════════════════════════
+const K_CLOUD_LINKS = 'QUOTE_CLOUD_BACKUP_LINKS_V1';
+const K_NAVER_CLOUD_LINK = 'QUOTE_NAVER_CLOUD_LINK_V1'; // 예전 버전(네이버 전용)과의 호환용
+
+function loadCloudLinks() {
+  let list = [];
+  try { const v = JSON.parse(localStorage.getItem(K_CLOUD_LINKS)); if (Array.isArray(v)) list = v; } catch (e) {}
+  // 예전 버전에서 등록해 둔 네이버 전용 주소가 있으면 한 번만 새 목록으로 옮겨줌
+  const oldNaver = localStorage.getItem(K_NAVER_CLOUD_LINK);
+  if (oldNaver && !list.some(x => x.url === oldNaver)) {
+    list.push({ name: '네이버 MYBOX', url: oldNaver });
+    localStorage.setItem(K_CLOUD_LINKS, JSON.stringify(list));
+    localStorage.removeItem(K_NAVER_CLOUD_LINK);
+  }
+  return list;
+}
+function saveCloudLinks(list) {
+  try { localStorage.setItem(K_CLOUD_LINKS, JSON.stringify(list)); } catch (e) {}
+}
+// 💾 데이터 메뉴 안에, 등록해 둔 바로가기들을 실제 클릭 가능한 항목으로 표시
+// (비밀번호가 있으면 폴더 열기와 별개로 "🔑 비번 복사" 버튼도 같이 보여줌)
+function renderCloudLinksMenu() {
+  const area = document.getElementById('cloudLinksMenuArea');
+  if (!area) return;
+  const list = loadCloudLinks();
+  if (!list.length) { area.innerHTML = ''; return; }
+  area.innerHTML = list.map(l =>
+    '<div style="border-top:1px solid #f1f5f9;display:flex;align-items:stretch">' +
+      '<div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;flex:1" onclick="closeDataMenu();window.open(' + JSON.stringify(l.url) + ',\'_blank\',\'noopener\')">📂 ' + escQ(l.name || l.url) + '</div>' +
+      (l.password ? '<div class="gs-item" style="padding:9px 10px;cursor:pointer;font-size:11px;color:#0f766e;white-space:nowrap" title="비밀번호를 클립보드에 복사합니다" onclick="event.stopPropagation();closeDataMenu();copyCloudLinkPassword(' + JSON.stringify(l.password) + ')">🔑 비번 복사</div>' : '') +
+    '</div>'
+  ).join('');
+}
+function copyCloudLinkPassword(pw) {
+  if (!pw) return;
+  const done = () => showToast('🔑 비밀번호를 클립보드에 복사했습니다. 폴더 열기 화면에 붙여넣기(Ctrl+V) 해주세요.');
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(pw).then(done).catch(() => alert('비밀번호: ' + pw));
+  } else {
+    alert('비밀번호: ' + pw);
+  }
+}
+function openCloudLinksModal() {
+  renderCloudLinksRows();
+  const m = document.getElementById('cloudLinksModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function closeCloudLinksModal() {
+  const m = document.getElementById('cloudLinksModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+function renderCloudLinksRows() {
+  const holder = document.getElementById('cloudLinksRows');
+  if (!holder) return;
+  const list = loadCloudLinks();
+  holder.innerHTML = '';
+  if (!list.length) {
+    holder.innerHTML = '<p class="text-gray-400" style="font-size:11px">등록된 바로가기가 없습니다. 위 버튼으로 추가해 보세요.</p>';
+    return;
+  }
+  list.forEach(l => addCloudLinkRow(l.name, l.url, l.password));
+}
+function addCloudLinkRow(name, url, password) {
+  const holder = document.getElementById('cloudLinksRows');
+  if (!holder) return;
+  if (holder.children.length === 1 && holder.querySelector('p')) holder.innerHTML = '';
+  const row = document.createElement('div');
+  row.className = 'cloud-link-row';
+  row.style.cssText = 'border:1px solid #f1f5f9;border-radius:6px;padding:6px;display:flex;flex-direction:column;gap:5px';
+  row.innerHTML =
+    '<div style="display:grid;grid-template-columns:110px 1fr auto;gap:6px;align-items:center">' +
+      '<input class="inp cl-name" placeholder="이름 (예: 구글 드라이브)" value="' + escQ(name || '') + '" style="font-size:11px;padding:5px 6px">' +
+      '<input class="inp cl-url" placeholder="주소 (https://... 또는 http://192.168.0.10:5000/ 같은 IP 주소)" value="' + escQ(url || '') + '" style="font-size:11px;padding:5px 6px">' +
+      '<button type="button" onclick="this.closest(\'.cloud-link-row\').remove()" style="border:none;background:none;color:#ef4444;cursor:pointer;font-size:16px;line-height:1;padding:2px 4px">✕</button>' +
+    '</div>' +
+    '<div style="display:grid;grid-template-columns:110px 1fr auto;gap:6px;align-items:center">' +
+      '<span style="font-size:10px;color:#94a3b8;text-align:right;padding-right:2px">비밀번호</span>' +
+      '<input type="password" class="inp cl-password" placeholder="(선택) 공유 폴더 비밀번호" value="' + escQ(password || '') + '" style="font-size:11px;padding:5px 6px">' +
+      '<button type="button" onclick="const i=this.previousElementSibling;i.type=(i.type===\'password\'?\'text\':\'password\')" style="border:none;background:none;color:#64748b;cursor:pointer;font-size:13px;padding:2px 4px" title="비밀번호 표시/숨기기">👁</button>' +
+    '</div>';
+  holder.appendChild(row);
+}
+function saveCloudLinksModal() {
+  const rows = Array.prototype.slice.call(document.querySelectorAll('#cloudLinksRows .cloud-link-row'));
+  const list = rows.map(row => ({
+    name: (row.querySelector('.cl-name').value || '').trim(),
+    url: (row.querySelector('.cl-url').value || '').trim(),
+    password: (row.querySelector('.cl-password').value || '').trim()
+  })).filter(l => l.url);
+  const bad = list.find(l => !/^https?:\/\//i.test(l.url));
+  if (bad) {
+    alert('"' + (bad.name || bad.url) + '" 항목의 주소가 http:// 또는 https:// 로 시작하지 않습니다. 주소를 다시 확인해 주세요.');
+    return;
+  }
+  list.forEach(l => { if (!l.name) l.name = l.url; });
+  saveCloudLinks(list);
+  renderCloudLinksMenu();
+  showToast('☁️ 클라우드/개인 드라이브 바로가기를 저장했습니다.');
+  closeCloudLinksModal();
+}
+
 async function exportAllBackup() {
   doSaveDraft(); // 내보내기 직전 최신 입력값 반영
   const backup = {
@@ -27125,6 +28128,10 @@ async function exportAllBackup() {
     clients: localStorage.getItem(K_CLIENTS),
     supplierList: localStorage.getItem(K_SUP_LIST),
     notePresets: localStorage.getItem(K_NOTE_LIST),
+    qiMemoPresets: localStorage.getItem(K_QI_MEMO_PRESETS),
+    qiCustomFields: localStorage.getItem(K_QI_CUSTOM_FIELDS),
+    qiLabelFieldStyle: localStorage.getItem('qi_labelFieldStyle'),
+    cloudBackupLinks: localStorage.getItem(K_CLOUD_LINKS),
     logo: localStorage.getItem(K_LOGO),
     stamp: localStorage.getItem(K_STAMP),
     draftRows: localStorage.getItem(K_DRAFT_ROWS),
@@ -27276,6 +28283,10 @@ function buildBackupObject() {
     clients: localStorage.getItem(K_CLIENTS),
     supplierList: localStorage.getItem(K_SUP_LIST),
     notePresets: localStorage.getItem(K_NOTE_LIST),
+    qiMemoPresets: localStorage.getItem(K_QI_MEMO_PRESETS),
+    qiCustomFields: localStorage.getItem(K_QI_CUSTOM_FIELDS),
+    qiLabelFieldStyle: localStorage.getItem('qi_labelFieldStyle'),
+    cloudBackupLinks: localStorage.getItem(K_CLOUD_LINKS),
     logo: localStorage.getItem(K_LOGO),
     stamp: localStorage.getItem(K_STAMP),
     draftRows: localStorage.getItem(K_DRAFT_ROWS),
@@ -27302,10 +28313,61 @@ function setAutoSaveStatus(targetKey, msg, isError) {
   el.style.color = isError ? '#dc2626' : '#0d9488';
 }
 
+// 🛡 "복원 전 확인" 안전장치
+// ────────────────────────────────────────────────────────────────
+// 복원(백업파일 불러오기 / 자동 저장 폴더에서 복원)은 지금 브라우저에 저장된 모든
+// 데이터를 다른 내용으로 완전히 덮어씁니다. 실수로 복원 버튼을 눌렀거나, 원하지 않는
+// (예: 오래된) 백업을 불러온 경우를 대비해, 복원을 실행하기 직전에 "지금 있는 데이터"를
+// 먼저 별도로 안전하게 남겨두고(① localStorage에 임시 보관 ② 파일로도 자동 다운로드),
+// 그 다음에 복원을 진행합니다. 잘못 복원했다면 "⏪ 복원 직전 상태로 되돌리기"로 되돌릴 수
+// 있습니다.
+function saveSafetyBackupBeforeRestore() {
+  try {
+    const backup = buildBackupObject();
+    localStorage.setItem(K_PRE_RESTORE_SAFETY, JSON.stringify(backup));
+    // 파일로도 함께 남겨서, 혹시 이후 복원 과정에서 localStorage 자체가 초기화되어도
+    // (드문 경우지만) 안전 백업 파일이 다운로드 폴더에 남아있도록 함
+    try {
+      const jsonStr = JSON.stringify(backup, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const now = new Date();
+      const stamp = `${now.getFullYear()}${String(now.getMonth()+1).padStart(2,'0')}${String(now.getDate()).padStart(2,'0')}_${String(now.getHours()).padStart(2,'0')}${String(now.getMinutes()).padStart(2,'0')}${String(now.getSeconds()).padStart(2,'0')}`;
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `복원_직전_안전백업_${stamp}.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (fileErr) {
+      console.error('복원 전 안전 백업 파일 다운로드 실패(localStorage에는 저장됨):', fileErr);
+    }
+    return true;
+  } catch (err) {
+    console.error('복원 전 안전 백업 실패:', err);
+    return false;
+  }
+}
+
+// ⏪ 방금 실행한 "복원"이 실수였을 때, 복원 직전 상태로 되돌립니다.
+function restorePreRestoreSafetyBackup() {
+  const raw = localStorage.getItem(K_PRE_RESTORE_SAFETY);
+  if (!raw) { alert('되돌릴 수 있는 "복원 직전 백업"이 없습니다.\n(복원을 한 번도 실행하지 않았거나, 이미 이 브라우저를 정리한 경우입니다)'); return; }
+  let backup;
+  try { backup = JSON.parse(raw); } catch (err) { alert('복원 직전 백업 데이터를 읽을 수 없습니다: ' + err.message); return; }
+  const when = backup._savedAt ? new Date(backup._savedAt).toLocaleString('ko-KR') : '(시각 정보 없음)';
+  if (!confirm(`가장 최근 "복원" 실행 직전(${when}) 상태로 되돌립니다.\n지금 브라우저에 저장된 데이터는 이 내용으로 덮어써집니다. 계속할까요?`)) return;
+  applyBackupObjectToStorage(backup);
+  alert('복원 직전 상태로 되돌렸습니다. 페이지를 새로고침합니다.');
+  location.reload();
+}
+
 // 백업 객체(backup)의 내용을 localStorage에 실제로 반영하는 공통 함수
 // (백업파일 불러오기 / 자동저장 폴더에서 복원, 양쪽에서 공용으로 사용)
 function applyBackupObjectToStorage(backup) {
   const setIf = (key, val) => { if (val !== null && val !== undefined) localStorage.setItem(key, val); };
+
   setIf(K_CATEGORIES, backup.categories);
   setIf(K_PRICE_LIST, backup.priceList);
   setIf(K_CLIENTS, backup.clients);
@@ -27324,6 +28386,10 @@ function applyBackupObjectToStorage(backup) {
   setIf(K_WB_PRESET.workDetail, backup.wbWorkDetailPresets);
   setIf(K_WB_PRESET.note, backup.wbNotePresets);
   setIf(K_WB_WORKERS, backup.wbWorkers);
+  setIf(K_QI_MEMO_PRESETS, backup.qiMemoPresets);
+  setIf(K_QI_CUSTOM_FIELDS, backup.qiCustomFields);
+  setIf('qi_labelFieldStyle', backup.qiLabelFieldStyle);
+  setIf(K_CLOUD_LINKS, backup.cloudBackupLinks);
   // 🛠️ 수정: 백업 파일에 로고/도장 값이 없다고 해서 현재 로고/도장을 지우지 않음.
   // (예전 백업 파일이나 도장 저장 전에 만든 백업을 불러오면 도장이 사라지던 원인이었음)
   if (backup.logo) localStorage.setItem(K_LOGO, backup.logo);
@@ -27351,13 +28417,14 @@ async function setupAutoSaveTarget(targetKey) {
       const loadExisting = confirm(
         `선택하신 폴더 "${dirHandle.name}"에 이미 자동 저장된 데이터가 있습니다.\n` +
         `(마지막 저장: ${when})\n\n` +
-        `[확인] = 그 데이터를 불러와서 이어서 사용합니다 (현재 화면 내용은 사라짐)\n` +
+        `[확인] = 그 데이터를 불러와서 이어서 사용합니다 (현재 화면 내용은 사라짐 — 단, 먼저 안전 백업으로 저장한 뒤 불러오며, 잘못됐다면 "⏪ 복원 직전 상태로 되돌리기"로 되돌릴 수 있습니다)\n` +
         `[취소] = 불러오지 않고, 지금 화면에 있는 내용을 기준으로 계속 자동 저장합니다`
       );
       if (loadExisting) {
+        saveSafetyBackupBeforeRestore();
         applyBackupObjectToStorage(existing);
         await idbSetAutoSave(cfg.dirKey, dirHandle);
-        alert(`${cfg.label}의 기존 데이터를 불러왔습니다. 페이지를 새로고침합니다.`);
+        alert(`${cfg.label}의 기존 데이터를 불러왔습니다. 페이지를 새로고침합니다.\n(복원 직전 데이터는 안전 백업으로 저장해 두었습니다 — 되돌리려면 "💾 데이터" 메뉴의 "⏪ 복원 직전 상태로 되돌리기"를 이용하세요)`);
         location.reload();
         return;
       }
@@ -27367,6 +28434,7 @@ async function setupAutoSaveTarget(targetKey) {
     await idbSetAutoSave(cfg.dirKey, dirHandle); // 다음에 페이지를 열어도 같은 폴더를 기억하도록 저장
     startAutoOverwriteLoop();
     await writeAutoSaveToTarget(targetKey); // 최초 1회 즉시 저장
+    await maybeWriteHourlySnapshot(targetKey); // 1시간 보조 백업도 최초 1회 즉시 만들어 둠
     showToast(`${cfg.label}이(가) "${dirHandle.name}"(으)로 설정되었습니다. 이제 4초마다 폴더 안의 파일에 덮어씁니다.`);
   } catch (err) {
     if (err && err.name === 'AbortError') return; // 사용자가 취소함
@@ -27397,47 +28465,82 @@ async function writeAutoSaveToTarget(targetKey) {
       setAutoSaveStatus(targetKey, `⚠️ ${cfg.label} 저장 권한 필요 — 메뉴에서 다시 설정해주세요.`, true);
       return;
     }
-    const backup = buildBackupObject();
-    const content = JSON.stringify(backup, null, 2);
 
+    const backup  = buildBackupObject();
+    const jsonStr = JSON.stringify(backup, null, 2);
+
+    // ── 안전한 원자적 저장 ──────────────────────────────────────────
+    // 핵심 원칙: 기존 파일을 절대 먼저 삭제하지 않습니다.
+    // 순서: ① 임시파일(.tmp)에 전체 쓰기 → ② close() 성공 확인
+    //        → ③ 기존 파일 교체(임시→정식) → 실패하면 기존 파일 그대로 보존
+    // ────────────────────────────────────────────────────────────────
+    const TMP_NAME  = AUTOSAVE_FILE_NAME + '.tmp';
     const RETRYABLE = ['NotFoundError', 'NoModificationAllowedError', 'InvalidStateError'];
     const MAX_TRIES = 5;
     let lastErr = null;
+
     for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
       try {
-        // 기존 파일이 있다면 먼저 지웁니다(없어도 오류 무시) — "덮어쓰기(rename)" 대신
-        // 항상 "새로 만들기"가 되도록 하기 위함입니다.
-        try { await st.dirHandle.removeEntry(AUTOSAVE_FILE_NAME); } catch (e) { /* 원래 없었으면 무시 */ }
-        const fileHandle = await st.dirHandle.getFileHandle(AUTOSAVE_FILE_NAME, { create: true });
-        const writable    = await fileHandle.createWritable();
-        await writable.write(content);
-        await writable.close();
+        // STEP 1: 임시 파일에 전체 데이터 쓰기
+        const tmpHandle   = await st.dirHandle.getFileHandle(TMP_NAME, { create: true });
+        const tmpWritable = await tmpHandle.createWritable();
+        await tmpWritable.write(jsonStr);
+        await tmpWritable.close(); // close() 성공 = 디스크에 완전히 기록됨
+
+        // STEP 2: 임시 파일 내용 검증 (JSON 파싱 가능한지 확인)
+        const tmpFile = await tmpHandle.getFile();
+        const tmpText = await tmpFile.text();
+        JSON.parse(tmpText); // 파싱 실패하면 예외 → 기존 파일 보존
+
+        // STEP 3: 기존 파일이 있으면 .bak으로 보관 후 임시→정식 교체
+        const BAK_NAME = AUTOSAVE_FILE_NAME + '.bak';
+        try {
+          // 기존 정식 파일 → .bak (이미 있으면 덮어씀)
+          const existHandle = await st.dirHandle.getFileHandle(AUTOSAVE_FILE_NAME, { create: false });
+          const existContent = await (await existHandle.getFile()).text();
+          const bakHandle = await st.dirHandle.getFileHandle(BAK_NAME, { create: true });
+          const bakWritable = await bakHandle.createWritable();
+          await bakWritable.write(existContent);
+          await bakWritable.close();
+        } catch(e) { /* 기존 파일 없으면 .bak 생략 */ }
+
+        // STEP 4: 임시 파일 내용을 정식 파일에 쓰기 (임시 파일 삭제 없이)
+        const finalHandle   = await st.dirHandle.getFileHandle(AUTOSAVE_FILE_NAME, { create: true });
+        const finalWritable = await finalHandle.createWritable();
+        await finalWritable.write(jsonStr);
+        await finalWritable.close();
+
+        // STEP 5: 임시 파일 정리 (교체 성공 후에만)
+        try { await st.dirHandle.removeEntry(TMP_NAME); } catch(e) {}
+
         lastErr = null;
         break; // 성공
       } catch (err) {
         lastErr = err;
+        // 임시 파일 쓰기 실패 → 기존 파일은 건드리지 않았으므로 안전
         const retryable = err && RETRYABLE.indexOf(err.name) !== -1;
         if (attempt < MAX_TRIES && retryable) {
-          // USB/동기화 폴더가 순간적으로 파일을 옮기는 중일 수 있으므로 잠깐 쉬었다가 재시도
           await new Promise(res => setTimeout(res, 300 * attempt));
           continue;
         }
-        break; // 재시도 대상이 아니거나 시도 횟수를 다 썼으면 중단
+        break;
       }
     }
     if (lastErr) throw lastErr;
 
     const now = new Date();
     const p = n => String(n).padStart(2, '0');
-    setAutoSaveStatus(targetKey, `🔁 ${cfg.label} 저장됨 (${st.dirHandle.name}/${AUTOSAVE_FILE_NAME}) · ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`, false);
+    setAutoSaveStatus(targetKey,
+      `🔁 ${cfg.label} 저장됨 (${st.dirHandle.name}/${AUTOSAVE_FILE_NAME}) · ${p(now.getHours())}:${p(now.getMinutes())}:${p(now.getSeconds())}`,
+      false);
+
   } catch (err) {
-    // 진단을 위해 오류의 실제 이름/메시지를 상태 표시줄에 함께 보여줌
-    // (자주 보는 원인: 권한 거부(NotAllowedError), 폴더/드라이브가 제거됨(NotFoundError),
-    //  다른 프로그램이 파일을 잠금(NoModificationAllowedError) 등 — 몇 차례 재시도해도
-    //  계속 실패하면 실제로 폴더/드라이브 연결에 문제가 있는 경우입니다)
     console.error(`${cfg.label} 저장 실패:`, err);
-    const detail = err && (err.name || err.message) ? `${err.name || ''}${err.message ? ': ' + err.message : ''}` : '';
-    setAutoSaveStatus(targetKey, `⚠️ ${cfg.label} 저장 중 오류가 발생했습니다.${detail ? ' (' + detail + ')' : ''}`, true);
+    const detail = err && (err.name || err.message)
+      ? `${err.name || ''}${err.message ? ': ' + err.message : ''}` : '';
+    setAutoSaveStatus(targetKey,
+      `⚠️ ${cfg.label} 저장 오류 — 기존 파일은 보존됨.${detail ? ' (' + detail + ')' : ''}`,
+      true);
   } finally {
     st.busy = false;
   }
@@ -27456,6 +28559,148 @@ async function writeAutoSaveFile() { return writeAutoSaveToTarget('primary'); }
 // - 저장 폴더가 아직 지정되어 있지 않다면 조용히 건너뜁니다(별도 안내는 상단 자동저장 상태에 이미 표시됨).
 // ════════════════════════════════════════
 const DOC_SNAPSHOT_SUBFOLDER = '문서저장';
+
+// ════════════════════════════════════════
+// 🕐 1시간 간격 "보조" 백업 (덮어쓰지 않고 별도 이름으로 계속 쌓임)
+//    - 위 4초 자동저장(이진주방산업_자동저장.json)은 항상 "같은 파일 1개"에 덮어쓰는 방식이라,
+//      실수로 오래된 백업파일을 "불러오기" 하지 않고 잘못 "저장"을 눌러버리는 등의 사고가 나면
+//      직전까지의 내용이 그대로 사라질 수 있습니다.
+//    - 이를 보완하기 위해, 자동 저장 폴더(및 USB)가 지정되어 있으면 그 안에 "시간별_백업" 하위
+//      폴더를 만들고, 1시간에 한 번씩 그 시점의 전체 데이터를 [시각이 들어간 새 파일명]으로
+//      추가 저장합니다(기존 파일을 지우지 않음). 그래서 몇 시간 전 상태로도 되돌릴 수 있습니다.
+//    - 파일이 무한히 쌓이지 않도록, 오래된 파일은 최근 HOURLY_SNAPSHOT_KEEP_COUNT개만 남기고
+//      자동으로 정리합니다(기본 72개 = 1시간 간격 기준 약 3일치).
+// ════════════════════════════════════════
+const HOURLY_SNAPSHOT_SUBFOLDER = '시간별_백업';
+const HOURLY_SNAPSHOT_FILE_PREFIX = '이진주방산업_시간백업_';
+const BACKUP_SETTINGS_KEY = 'backupSettings_v1';
+const BACKUP_SETTINGS_DEFAULT = {
+  hourlyEnabled: true,
+  intervalMin: 60,       // 자동-복구 파일을 몇 분마다 생성할지
+  keepCount: 72,          // 백업할 최대 파일 수(이 개수를 넘으면 오래된 것부터 정리)
+  pruneByAgeEnabled: false,
+  pruneByAgeDays: 7       // "이전 백업 파일 제거" 켰을 때, 이 일수보다 오래된 파일은 정리
+};
+
+function loadBackupSettings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(BACKUP_SETTINGS_KEY) || 'null');
+    if (!raw) return Object.assign({}, BACKUP_SETTINGS_DEFAULT);
+    return Object.assign({}, BACKUP_SETTINGS_DEFAULT, raw);
+  } catch (e) { return Object.assign({}, BACKUP_SETTINGS_DEFAULT); }
+}
+function saveBackupSettings(settings) {
+  try { localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
+}
+
+function openBackupSettingsModal() {
+  const s = loadBackupSettings();
+  document.getElementById('bs_hourlyEnabled').checked = !!s.hourlyEnabled;
+  document.getElementById('bs_intervalMin').value = s.intervalMin;
+  document.getElementById('bs_keepCount').value = s.keepCount;
+  document.getElementById('bs_pruneByAgeEnabled').checked = !!s.pruneByAgeEnabled;
+  document.getElementById('bs_pruneByAgeDays').value = s.pruneByAgeDays;
+  document.getElementById('bs_primaryFolderName').textContent = (_autoSaveState.primary.dirHandle && _autoSaveState.primary.dirHandle.name) ? _autoSaveState.primary.dirHandle.name : '(지정되지 않음)';
+  document.getElementById('bs_usbFolderName').textContent = (_autoSaveState.usb.dirHandle && _autoSaveState.usb.dirHandle.name) ? _autoSaveState.usb.dirHandle.name : '(지정되지 않음)';
+  const m = document.getElementById('backupSettingsModal');
+  m.classList.remove('hidden');
+  m.style.display = 'flex';
+}
+function closeBackupSettingsModal() {
+  const m = document.getElementById('backupSettingsModal');
+  m.classList.add('hidden');
+  m.style.display = 'none';
+}
+function resetBackupSettings() {
+  const s = Object.assign({}, BACKUP_SETTINGS_DEFAULT);
+  document.getElementById('bs_hourlyEnabled').checked = s.hourlyEnabled;
+  document.getElementById('bs_intervalMin').value = s.intervalMin;
+  document.getElementById('bs_keepCount').value = s.keepCount;
+  document.getElementById('bs_pruneByAgeEnabled').checked = s.pruneByAgeEnabled;
+  document.getElementById('bs_pruneByAgeDays').value = s.pruneByAgeDays;
+}
+function saveBackupSettingsModal() {
+  const intervalMin = Math.max(5, Math.min(1440, parseInt(document.getElementById('bs_intervalMin').value, 10) || 60));
+  const keepCount = Math.max(1, Math.min(1000, parseInt(document.getElementById('bs_keepCount').value, 10) || 72));
+  const pruneByAgeDays = Math.max(1, Math.min(365, parseInt(document.getElementById('bs_pruneByAgeDays').value, 10) || 7));
+  const settings = {
+    hourlyEnabled: document.getElementById('bs_hourlyEnabled').checked,
+    intervalMin, keepCount,
+    pruneByAgeEnabled: document.getElementById('bs_pruneByAgeEnabled').checked,
+    pruneByAgeDays
+  };
+  saveBackupSettings(settings);
+  // 간격을 줄였다면 바로 다음 저장 주기에 새로 생성되도록, "마지막 저장 시각" 기록을 초기화
+  localStorage.removeItem('hourlySnapshotLastAt_primary');
+  localStorage.removeItem('hourlySnapshotLastAt_usb');
+  showToast('🗄️ 자동 복구 / 백업 설정이 저장되었습니다.');
+  closeBackupSettingsModal();
+}
+
+function buildHourlySnapshotFileName() {
+  const now = new Date();
+  const p = n => String(n).padStart(2, '0');
+  return `${HOURLY_SNAPSHOT_FILE_PREFIX}${now.getFullYear()}${p(now.getMonth() + 1)}${p(now.getDate())}_${p(now.getHours())}${p(now.getMinutes())}.json`;
+}
+
+// 파일명(...YYYYMMDD_HHMM.json)에서 생성 시각을 역산
+function parseHourlySnapshotDate(name) {
+  const m = name.match(/(\d{8})_(\d{4})\.json$/);
+  if (!m) return null;
+  const d = m[1], t = m[2];
+  return new Date(+d.slice(0, 4), +d.slice(4, 6) - 1, +d.slice(6, 8), +t.slice(0, 2), +t.slice(2, 4));
+}
+
+// 오래된 시간별 백업 파일 정리 — 설정된 "최대 파일 수" 및(선택) "N일보다 오래된 파일" 기준을 함께 적용
+async function pruneOldHourlySnapshots(dirHandle, settings) {
+  try {
+    const subDir = await dirHandle.getDirectoryHandle(HOURLY_SNAPSHOT_SUBFOLDER, { create: false });
+    const names = [];
+    for await (const entry of subDir.values()) {
+      if (entry.kind === 'file' && entry.name.indexOf(HOURLY_SNAPSHOT_FILE_PREFIX) === 0) names.push(entry.name);
+    }
+    names.sort(); // 파일명에 날짜/시간이 포함돼 있어 이름순 정렬 = 시간순 정렬
+    const toDelete = new Set();
+    if (names.length > settings.keepCount) {
+      names.slice(0, names.length - settings.keepCount).forEach(n => toDelete.add(n));
+    }
+    if (settings.pruneByAgeEnabled) {
+      const cutoff = Date.now() - settings.pruneByAgeDays * 24 * 60 * 60 * 1000;
+      names.forEach(n => {
+        const d = parseHourlySnapshotDate(n);
+        if (d && d.getTime() < cutoff) toDelete.add(n);
+      });
+    }
+    for (const name of toDelete) {
+      try { await subDir.removeEntry(name); } catch (e) { /* 이미 지워졌으면 무시 */ }
+    }
+  } catch (e) { /* 아직 시간별_백업 폴더가 없으면 여기로 옴 — 무시 */ }
+}
+
+// targetKey('primary' 또는 'usb')에 대해, 설정한 간격이 지났으면 그 시점 전체 데이터를 새 파일로
+// 추가 저장함. 4초 자동저장 루프에서 매번 함께 호출되지만, 실제로는 설정한 분(기본 60분)에 한
+// 번만 파일이 새로 생김(그 사이에는 마지막 저장 시각만 확인하고 조용히 넘어감).
+async function maybeWriteHourlySnapshot(targetKey) {
+  try {
+    const settings = loadBackupSettings();
+    if (!settings.hourlyEnabled) return;
+    const st = _autoSaveState[targetKey];
+    if (!st.dirHandle) return;
+    const lastAtKey = 'hourlySnapshotLastAt_' + targetKey;
+    const lastAt = parseInt(localStorage.getItem(lastAtKey) || '0', 10);
+    const now = Date.now();
+    if (now - lastAt < settings.intervalMin * 60 * 1000) return;
+    const fileName = buildHourlySnapshotFileName();
+    const fileContent = JSON.stringify(buildBackupObject(), null, 2);
+    const ok = await writeDocSnapshotToTarget(targetKey, fileName, fileContent, HOURLY_SNAPSHOT_SUBFOLDER);
+    if (ok) {
+      localStorage.setItem(lastAtKey, String(now));
+      pruneOldHourlySnapshots(st.dirHandle, settings);
+    }
+  } catch (err) {
+    console.error('자동 복구(시간별 보조 백업) 실패:', err);
+  }
+}
 
 function sanitizeForFileName(s) {
   return String(s || '')
@@ -27500,7 +28745,8 @@ function buildSingleDocJSON(type) {
   }, null, 2);
 }
 
-async function writeDocSnapshotToTarget(targetKey, fileName, fileContent) {
+async function writeDocSnapshotToTarget(targetKey, fileName, fileContent, subfolder) {
+  subfolder = subfolder || DOC_SNAPSHOT_SUBFOLDER;
   const cfg = AUTOSAVE_TARGETS[targetKey];
   const st  = _autoSaveState[targetKey];
   if (!st.dirHandle) return false;
@@ -27512,7 +28758,7 @@ async function writeDocSnapshotToTarget(targetKey, fileName, fileContent) {
     let lastErr = null;
     for (let attempt = 1; attempt <= MAX_TRIES; attempt++) {
       try {
-        const subDir      = await st.dirHandle.getDirectoryHandle(DOC_SNAPSHOT_SUBFOLDER, { create: true });
+        const subDir      = await st.dirHandle.getDirectoryHandle(subfolder, { create: true });
         const fileHandle   = await subDir.getFileHandle(fileName, { create: true });
         const writable     = await fileHandle.createWritable();
         await writable.write(fileContent);
@@ -27554,12 +28800,14 @@ async function autoSaveDocSnapshotOnHistoryRegister(type, partyName) {
   }
 }
 
-// 4초마다 각 저장 장치(폴더/USB)의 파일 1개에 덮어씀
+// 4초마다 각 저장 장치(폴더/USB)의 파일 1개에 덮어씀 (+ 1시간에 한 번, 별도 이름의 보조 백업도 함께 확인)
 function startAutoOverwriteLoop() {
   if (_autoSaveTimer) clearInterval(_autoSaveTimer);
   _autoSaveTimer = setInterval(() => {
     writeAutoSaveToTarget('primary');
     writeAutoSaveToTarget('usb');
+    maybeWriteHourlySnapshot('primary');
+    maybeWriteHourlySnapshot('usb');
   }, AUTOSAVE_INTERVAL_MS);
 }
 
@@ -27673,9 +28921,10 @@ async function restoreFromAutoSaveFolder() {
   const auto = await tryAutoRestoreFromConfiguredFolders();
   if (auto) {
     const when = auto.newest._savedAt ? new Date(auto.newest._savedAt).toLocaleString('ko-KR') : '(시각 정보 없음)';
-    if (!confirm(`지정해 두신 "${auto.label}"(${auto.dirHandle.name})에서 자동 저장 데이터를 찾았습니다.\n(마지막 저장: ${when})\n\n현재 브라우저에 저장된 모든 데이터를 이 내용으로 덮어씁니다. 계속할까요?`)) return;
+    if (!confirm(`지정해 두신 "${auto.label}"(${auto.dirHandle.name})에서 자동 저장 데이터를 찾았습니다.\n(마지막 저장: ${when})\n\n현재 브라우저에 저장된 모든 데이터를 이 내용으로 덮어씁니다.\n(계속하면 지금 있는 데이터는 먼저 안전 백업으로 저장한 뒤 복원을 진행합니다 — 잘못 복원했다면 "⏪ 복원 직전 상태로 되돌리기"로 되돌릴 수 있습니다) 계속할까요?`)) return;
+    saveSafetyBackupBeforeRestore();
     applyBackupObjectToStorage(auto.newest);
-    alert('자동 저장 폴더의 데이터를 불러왔습니다. 페이지를 새로고침합니다.');
+    alert('자동 저장 폴더의 데이터를 불러왔습니다. 페이지를 새로고침합니다.\n(복원 직전 데이터는 안전 백업으로 저장해 두었습니다 — 되돌리려면 "💾 데이터" 메뉴의 "⏪ 복원 직전 상태로 되돌리기"를 이용하세요)');
     location.reload();
     return;
   }
@@ -27693,9 +28942,10 @@ async function restoreFromAutoSaveFolder() {
       return;
     }
     const when = newest._savedAt ? new Date(newest._savedAt).toLocaleString('ko-KR') : '(시각 정보 없음)';
-    if (!confirm(`"${dirHandle.name}" 폴더에서 자동 저장 데이터를 찾았습니다.\n(마지막 저장: ${when})\n\n현재 브라우저에 저장된 모든 데이터를 이 내용으로 덮어씁니다. 계속할까요?`)) return;
+    if (!confirm(`"${dirHandle.name}" 폴더에서 자동 저장 데이터를 찾았습니다.\n(마지막 저장: ${when})\n\n현재 브라우저에 저장된 모든 데이터를 이 내용으로 덮어씁니다.\n(계속하면 지금 있는 데이터는 먼저 안전 백업으로 저장한 뒤 복원을 진행합니다 — 잘못 복원했다면 "⏪ 복원 직전 상태로 되돌리기"로 되돌릴 수 있습니다) 계속할까요?`)) return;
+    saveSafetyBackupBeforeRestore();
     applyBackupObjectToStorage(newest);
-    alert('선택하신 폴더의 데이터를 불러왔습니다. 페이지를 새로고침합니다.');
+    alert('선택하신 폴더의 데이터를 불러왔습니다. 페이지를 새로고침합니다.\n(복원 직전 데이터는 안전 백업으로 저장해 두었습니다 — 되돌리려면 "💾 데이터" 메뉴의 "⏪ 복원 직전 상태로 되돌리기"를 이용하세요)');
     location.reload();
   } catch (err) {
     if (err && err.name === 'AbortError') return;
@@ -27712,9 +28962,10 @@ function handleBackupFileSelected(input) {
     try {
       const backup = JSON.parse(e.target.result);
       if (backup._type !== 'quote-app-backup') { alert('올바른 백업 파일이 아닙니다.'); return; }
-      if (!confirm('현재 브라우저에 저장된 모든 데이터를 이 백업 파일 내용으로 덮어씁니다. 계속할까요?')) return;
+      if (!confirm('현재 브라우저에 저장된 모든 데이터를 이 백업 파일 내용으로 덮어씁니다.\n(계속하면 지금 있는 데이터는 먼저 안전 백업으로 저장한 뒤 복원을 진행합니다 — 잘못 복원했다면 "⏪ 복원 직전 상태로 되돌리기"로 되돌릴 수 있습니다) 계속할까요?')) return;
+      saveSafetyBackupBeforeRestore();
       applyBackupObjectToStorage(backup);
-      alert('백업 파일을 불러왔습니다. 페이지를 새로고침합니다.');
+      alert('백업 파일을 불러왔습니다. 페이지를 새로고침합니다.\n(복원 직전 데이터는 안전 백업으로 저장해 두었습니다 — 되돌리려면 "💾 데이터" 메뉴의 "⏪ 복원 직전 상태로 되돌리기"를 이용하세요)');
       location.reload();
     } catch (err) {
       alert('백업 파일을 읽는 중 오류가 발생했습니다: ' + err.message);
@@ -29021,6 +30272,8 @@ function issueNewDocNumber(prefix) {
 }
 
 window.onload = function() {
+  purgeExpiredLedgerTrash();   // 30일 지난 휴지통 자동 정리
+  checkLedgerCrashRecovery();  // 실행 시 자동복구 체크
   resetAllPriceChecks(); // 새로고침/재시작 시 단가표 체크는 항상 해제된 상태로 시작
   renderPriceTable();
   renderClientSelect();
