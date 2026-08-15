@@ -168,9 +168,41 @@
   .ann-item .del:hover{ color:var(--danger); }
   #annlist-empty{ font-size:12px; color:var(--text-dim); line-height:1.6; }
 
+  .orig-text-editable{ cursor:pointer; pointer-events:all; }
+  .orig-text-editable:hover{ fill:var(--accent) !important; }
+  .geom-sel-ring{ fill:none; stroke:var(--accent-2); stroke-width:2px; stroke-dasharray:4 3; pointer-events:none; }
+  .geom-dim-label{ fill:var(--accent-2); font-size:12px; font-weight:700; font-family:var(--sans); pointer-events:none; paint-order:stroke; stroke:#0c1015; stroke-width:3px; }
   .ann-svg-text{ font-family:var(--sans); font-weight:700; fill:var(--accent); paint-order:stroke; stroke:#0c1015; stroke-width:3px; cursor:move; }
   .ann-svg-symbol{ fill:var(--accent); stroke:#0c1015; stroke-width:2px; paint-order:stroke; cursor:move; }
   .ann-selected-ring{ fill:none; stroke:var(--accent-2); stroke-width:1.5px; stroke-dasharray:3 3; }
+
+  /* ---------- nesting modal ---------- */
+  .nest-modal{ position:fixed; inset:0; background:rgba(0,0,0,.62); z-index:200; display:flex; align-items:center; justify-content:center; }
+  .nest-modal-inner{ width:95vw; height:92vh; background:var(--panel); border:1px solid var(--line); border-radius:10px; display:flex; flex-direction:column; overflow:hidden; box-shadow:0 10px 40px rgba(0,0,0,.5); }
+  .nest-header{ display:flex; align-items:center; justify-content:space-between; padding:12px 16px; border-bottom:1px solid var(--line); flex-shrink:0; }
+  .nest-header h2{ margin:0; font-size:15px; color:var(--text); }
+  .nest-body{ flex:1; display:flex; min-height:0; }
+  .nest-sidebar{ width:300px; flex-shrink:0; border-right:1px solid var(--line); padding:14px; overflow-y:auto; }
+  .nest-sidebar h3{ font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-dim); margin:18px 0 8px; font-weight:700; }
+  .nest-sidebar h3:first-child{ margin-top:0; }
+  .nest-row{ display:flex; gap:16px; margin-bottom:10px; font-size:12.5px; color:var(--text); }
+  .nest-row label{ display:flex; align-items:center; gap:5px; cursor:pointer; }
+  .nest-field{ display:block; font-size:11.5px; color:var(--text-dim); margin-bottom:9px; }
+  .nest-field input[type=number]{ width:100%; margin-top:4px; background:#0c1015; border:1px solid var(--line); color:var(--text); border-radius:5px; padding:6px 8px; font-size:13px; box-sizing:border-box; }
+  .nest-canvas-wrap{ flex:1; position:relative; background:#0c1015; overflow:hidden; }
+  svg#nestSvg{ width:100%; height:100%; display:block; }
+  .part-item{ background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:8px; margin-bottom:8px; font-size:12px; }
+  .part-item .part-name{ color:var(--text); font-weight:700; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+  .part-item .part-dims{ color:var(--text-dim); font-size:11px; margin-top:2px; }
+  .part-item .part-row{ display:flex; align-items:center; gap:6px; margin-top:6px; }
+  .part-item .part-row input[type=number]{ width:52px; padding:3px 5px; font-size:11.5px; background:#0c1015; border:1px solid var(--line); color:var(--text); border-radius:4px; }
+  .part-item .part-row label{ display:flex; align-items:center; gap:4px; font-size:11px; color:var(--text-dim); }
+  .part-item .part-del{ margin-left:auto; color:var(--text-dim); cursor:pointer; font-size:14px; }
+  .part-item .part-del:hover{ color:var(--danger); }
+  #partlist-empty{ font-size:11.5px; color:var(--text-dim); line-height:1.6; }
+  .nest-hint{ font-size:11px; color:var(--text-dim); line-height:1.5; margin-top:6px; background:var(--panel-2); border:1px solid var(--line); border-radius:6px; padding:7px 8px; }
+  #nestStatus{ font-size:12px; color:var(--text-dim); margin-top:8px; line-height:1.6; }
+  #nestPickBanner{ position:absolute; top:14px; left:50%; transform:translateX(-50%); background:var(--accent); color:#1a1006; font-weight:700; font-size:13px; padding:8px 16px; border-radius:20px; z-index:30; display:none; box-shadow:0 4px 14px rgba(0,0,0,.4); }
 </style>
 </head>
 <body>
@@ -183,6 +215,7 @@
     <span id="filename">불러온 파일 없음</span>
     <button class="hbtn" id="btnUndo" disabled title="Ctrl+Z">↶ 실행취소</button>
     <button class="hbtn" id="btnRedo" disabled title="Ctrl+Y">↷ 다시실행</button>
+    <button class="hbtn" id="btnOpenNesting">🧩 네스팅</button>
     <span id="status"></span>
   </header>
 
@@ -199,19 +232,22 @@
 
       <h2>내보내기</h2>
       <button class="action-btn primary" id="btnExportPng">PNG로 저장</button>
-      <button class="action-btn primary" id="btnExportDxf">DXF로 저장 (주석 포함)</button>
+      <button class="action-btn primary" id="btnExportDxf">DXF로 저장 (수정/주석 반영)</button>
       <button class="action-btn danger" id="btnClearAnn">모든 주석 지우기</button>
 
       <h2>레이어</h2>
       <div id="layerlist"><div id="layerlist-empty">파일을 불러오면 표시됩니다</div></div>
 
       <div id="hint">
+        <b>원본 글씨 수정</b>: 도면에 있는 원래 텍스트(주황/회색 글씨)를 더블클릭하면 바로 내용을 고칠 수 있습니다.<br><br>
+        <b>원/선/호 치수 확인·수정</b>: 원, 선, 모서리 연결부의 호(Arc)를 한 번 클릭하면 반지름·길이가 표시되고, 더블클릭하면 값을 바로 바꿀 수 있습니다.<br><br>
         <b>선택/이동</b>: 주석을 클릭해 선택, 드래그로 이동, 더블클릭으로 내용 수정, 선택 후 Delete 키로 삭제.<br><br>
         휠: 확대/축소 · 빈 곳 드래그: 화면 이동 · Ctrl+Z / Ctrl+Y: 실행취소 / 다시실행
       </div>
     </div>
 
     <div id="canvas-wrap">
+      <div id="nestPickBanner">네스팅에 추가할 도형(원/선/폴리라인/호)을 클릭하세요 · <span id="nestPickCancel" style="text-decoration:underline; cursor:pointer;">취소</span></div>
       <svg id="stage" class="select-mode">
         <g id="world"></g>
       </svg>
@@ -241,6 +277,54 @@
   </main>
 </div>
 
+<div id="nest-modal" class="nest-modal" style="display:none;">
+  <div class="nest-modal-inner">
+    <div class="nest-header">
+      <h2>🧩 네스팅 — 원자재에 부품 자동 배치</h2>
+      <button class="hbtn" id="btnCloseNesting">✕ 닫기</button>
+    </div>
+    <div class="nest-body">
+      <div class="nest-sidebar">
+        <h3>1. 원자재</h3>
+        <div class="nest-row">
+          <label><input type="radio" name="stockShape" value="rect" id="stockShapeRect" checked> 사각형</label>
+          <label><input type="radio" name="stockShape" value="circle" id="stockShapeCircle"> 원형</label>
+        </div>
+        <div id="stockRectInputs">
+          <label class="nest-field">가로 W (mm)<input type="number" id="stockW" value="1000" min="1"></label>
+          <label class="nest-field">세로 H (mm)<input type="number" id="stockH" value="500" min="1"></label>
+        </div>
+        <div id="stockCircleInputs" style="display:none;">
+          <label class="nest-field">지름 D (mm)<input type="number" id="stockD" value="500" min="1"></label>
+        </div>
+        <label class="nest-field">부품 간 여백/간격 (mm) — 레이저 가공 간격<input type="number" id="nestMargin" value="5" min="0"></label>
+        <button class="action-btn" id="btnDrawStock">✎ 화면에 드래그해서 크기 지정</button>
+        <div class="nest-hint" id="stockDrawHint">버튼을 누른 뒤 오른쪽 화면에서 드래그하면 그 크기로 가로·세로(또는 지름) 값이 자동 입력됩니다.</div>
+
+        <h3>2. 부품</h3>
+        <label class="filebtn" style="display:inline-block; width:100%; text-align:center; box-sizing:border-box;">부품 DXF 추가 (여러 개 가능)
+          <input type="file" id="partFileInput" accept=".dxf,.DXF" multiple>
+        </label>
+        <button class="action-btn" id="btnAddFromMain" style="margin-top:8px;">현재 도면에서 도형 클릭해 추가</button>
+        <div class="nest-field" style="margin-top:10px;">끝점 연결 허용오차 (mm) — 이 거리 이내면 실제로 맞닿은 것으로 인식<input type="number" id="autoDetectGap" value="0.5" min="0" step="0.1"></div>
+        <button class="action-btn primary" id="btnAutoDetectParts">⚡ 도면 전체 도형 한번에 부품 추가 (끝점 연결 기준)</button>
+        <div id="partlist" style="margin-top:10px;"><div id="partlist-empty">추가된 부품이 없습니다</div></div>
+
+        <h3>3. 자동 배치</h3>
+        <label class="nest-row"><input type="checkbox" id="allowRotate" checked> 90° 회전 허용</label>
+        <button class="action-btn primary" id="btnAutoNest">⚡ 자동 배치 실행</button>
+        <div id="nestStatus"></div>
+        <button class="action-btn" id="btnExportNestPng" style="margin-top:10px;">PNG로 저장</button>
+        <button class="action-btn" id="btnExportNestDxf">DXF로 저장</button>
+        <button class="action-btn danger" id="btnClearNest">배치 결과 지우기</button>
+      </div>
+      <div class="nest-canvas-wrap">
+        <svg id="nestSvg"></svg>
+      </div>
+    </div>
+  </div>
+</div>
+
 <script>
 (function(){
   "use strict";
@@ -265,6 +349,9 @@
   let dragStart = null, viewStart = null, moveAnnStart = null;
   let pendingPlacement = null; // world coords waiting on inline editor (new annotation)
   let editingAnnId = null;     // annotation being edited via inline editor (existing)
+  let editingEntityIdx = null; // index into entities[] of an original drawing text being edited
+  let selectedGeom = null;     // {type:'circle'|'line', idx} currently selected original circle/line, for dimension display
+  let editingGeom = null;      // {type:'circle'|'line', idx} currently being edited via inline editor
 
   const svg = document.getElementById('stage');
   const world = document.getElementById('world');
@@ -291,28 +378,40 @@
   };
 
   // ---------- undo / redo ----------
-  function snapshotAnnotations(){
-    return annotations.map(a=>({id:a.id, kind:a.kind, x:a.x, y:a.y, content:a.content}));
+  // 주석뿐 아니라, 더블클릭으로 고친 원본 도면 텍스트도 함께 스냅샷합니다.
+  function snapshotState(){
+    return {
+      anns: annotations.map(a=>({id:a.id, kind:a.kind, x:a.x, y:a.y, content:a.content})),
+      texts: entities.map(e=> e.type==='text' ? e.text : undefined),
+      circleR: entities.map(e=> (e.type==='circle'||e.type==='arc') ? e.r : undefined),
+      lineEnd: entities.map(e=> e.type==='line' ? [e.x2, e.y2] : undefined)
+    };
+  }
+  function applyState(state){
+    annotations = state.anns;
+    state.texts.forEach((t, i)=>{ if(t!==undefined && entities[i]) entities[i].text = t; });
+    if(state.circleR) state.circleR.forEach((r, i)=>{ if(r!==undefined && entities[i]){ entities[i].r = r; if(entities[i].type==='arc') regenArcPoints(entities[i]); } });
+    if(state.lineEnd) state.lineEnd.forEach((pt, i)=>{ if(pt!==undefined && entities[i]){ entities[i].x2 = pt[0]; entities[i].y2 = pt[1]; } });
   }
   function pushUndo(){
-    undoStack.push(snapshotAnnotations());
+    undoStack.push(snapshotState());
     if(undoStack.length>50) undoStack.shift();
     redoStack = [];
     updateUndoRedoButtons();
   }
   function undo(){
     if(undoStack.length===0) return;
-    redoStack.push(snapshotAnnotations());
-    annotations = undoStack.pop();
+    redoStack.push(snapshotState());
+    applyState(undoStack.pop());
     selectedAnnId = null;
-    refreshAnnList(); renderAnnotations(); updateUndoRedoButtons();
+    refreshAnnList(); renderGeometry(); renderAnnotations(); renderGeomSelection(); updateUndoRedoButtons();
   }
   function redo(){
     if(redoStack.length===0) return;
-    undoStack.push(snapshotAnnotations());
-    annotations = redoStack.pop();
+    undoStack.push(snapshotState());
+    applyState(redoStack.pop());
     selectedAnnId = null;
-    refreshAnnList(); renderAnnotations(); updateUndoRedoButtons();
+    refreshAnnList(); renderGeometry(); renderAnnotations(); renderGeomSelection(); updateUndoRedoButtons();
   }
   function resetUndoRedo(){
     undoStack = []; redoStack = []; updateUndoRedoButtons();
@@ -325,6 +424,18 @@
   btnRedo.addEventListener('click', redo);
 
   // ---------- DXF parsing ----------
+  // MTEXT/MULTILEADER 서식 코드(\pxsm..;, \T..;, \W..;, \F폰트명; 등)를 제거하고
+  // %%d(도, °) 같은 특수기호를 실제 문자로 바꿔줍니다.
+  function decodeMText(raw){
+    return String(raw||'')
+      .replace(/\\P/g,'\n')
+      .replace(/\{|\}/g,'')
+      .replace(/\\[A-Za-z][^;]*;/g,'')
+      .replace(/%%d/gi,'°')
+      .replace(/%%c/gi,'⌀')
+      .replace(/%%p/gi,'±');
+  }
+
   function parseDXF(text){
     const lines = text.split('\n');
     const tags = [];
@@ -371,6 +482,42 @@
         i=j; continue;
       }
 
+      // 절곡 각도 주석(예: "아래 R1 90°")은 MULTILEADER(멀티리더/지시선) 엔티티에 들어있습니다.
+      // 각도 텍스트(코드 304, CONTEXT_DATA 안)와 지시선 좌표(302 LEADER{ / 304 LEADER_LINE{ 안의 좌표)를 읽어
+      // 텍스트 + 화살표선으로 복원합니다.
+      if(type==='MULTILEADER'){
+        let j=i+1;
+        let layer='0', textRaw=null, textHeight=null, textRawLineIdx=null;
+        let textX=null, textY=null;
+        let leaderAnchor=null, leaderTip=null;
+        let state='PRE'; // PRE(본문) -> LEADER(302 블록) -> LEADERLINE(304 LEADER_LINE 블록)
+        while(j<seg.length && seg[j][0]!==0){
+          const c = seg[j][0], v = (seg[j][1]||'').trim();
+          if(c===8) layer = v || '0';
+          else if(c===302 && v==='LEADER{') state='LEADER';
+          else if(c===304 && v==='LEADER_LINE{') state='LEADERLINE';
+          else if(c===305 && v==='}'){ if(state==='LEADERLINE') state='LEADER'; }
+          else if(c===303 && v==='}') state='POST';
+          else if(c===41 && state==='PRE' && textHeight===null) textHeight=parseFloat(v);
+          else if(c===304 && textRaw===null && v!=='LEADER_LINE{'){ textRaw=v; textRawLineIdx = 2*(start+j)+1; }
+          else if(c===12 && state==='PRE') textX=parseFloat(v);
+          else if(c===22 && state==='PRE') textY=parseFloat(v);
+          else if(c===10 && state==='LEADER'){ leaderAnchor=leaderAnchor||{}; leaderAnchor.x=parseFloat(v); }
+          else if(c===20 && state==='LEADER'){ leaderAnchor=leaderAnchor||{}; leaderAnchor.y=parseFloat(v); }
+          else if(c===10 && state==='LEADERLINE'){ leaderTip=leaderTip||{}; leaderTip.x=parseFloat(v); }
+          else if(c===20 && state==='LEADERLINE'){ leaderTip=leaderTip||{}; leaderTip.y=parseFloat(v); }
+          j++;
+        }
+        if(textRaw!==null && isFinite(textX) && isFinite(textY)){
+          const txt = decodeMText(textRaw);
+          if(txt.trim()) out.push({type:'text', x:textX, y:textY, text:txt, height:textHeight||3.5, rot:0, layer:layer, bend:true, rawLineIdx:textRawLineIdx, rawOriginal:textRaw, editable:true});
+        }
+        if(leaderAnchor && leaderTip && isFinite(leaderAnchor.x) && isFinite(leaderAnchor.y) && isFinite(leaderTip.x) && isFinite(leaderTip.y)){
+          out.push({type:'line', x1:leaderAnchor.x, y1:leaderAnchor.y, x2:leaderTip.x, y2:leaderTip.y, layer:layer, bendLeader:true});
+        }
+        i=j; continue;
+      }
+
       if(['LINE','CIRCLE','ARC','LWPOLYLINE','TEXT','MTEXT','POINT'].includes(type)){
         let j=i+1;
         const d = {layer:'0'}; const verts=[]; let curX=null;
@@ -378,44 +525,49 @@
           const c = seg[j][0], v = (seg[j][1]||'').trim();
           switch(c){
             case 8: d.layer = v || '0'; break;
+            case 6: d.linetype = v || 'CONTINUOUS'; break;
+            case 62: d.color = parseInt(v); break;
             case 10:
-              if(type==='LWPOLYLINE') curX=parseFloat(v); else d.x1=parseFloat(v);
+              if(type==='LWPOLYLINE') curX=parseFloat(v); else { d.x1=parseFloat(v); d.x1LineIdx = 2*(start+j)+1; }
               break;
             case 20:
               if(type==='LWPOLYLINE'){ verts.push([curX, parseFloat(v)]); curX=null; }
-              else d.y1=parseFloat(v);
+              else { d.y1=parseFloat(v); d.y1LineIdx = 2*(start+j)+1; }
               break;
-            case 11: d.x2=parseFloat(v); break;
-            case 21: d.y2=parseFloat(v); break;
-            case 40: d.r=parseFloat(v); d.height=parseFloat(v); break;
+            case 11: d.x2=parseFloat(v); d.x2LineIdx = 2*(start+j)+1; break;
+            case 21: d.y2=parseFloat(v); d.y2LineIdx = 2*(start+j)+1; break;
+            case 40: d.r=parseFloat(v); d.height=parseFloat(v); d.rLineIdx = 2*(start+j)+1; break;
             case 50: d.a1=parseFloat(v); d.rot=parseFloat(v); break;
             case 51: d.a2=parseFloat(v); break;
             case 70: d.flag=parseInt(v); break;
-            case 1: d.text=(d.text?d.text:'')+v; break;
+            case 1:
+              d.text=(d.text?d.text:'')+v;
+              if(d.rawLineIdx===undefined){ d.rawLineIdx = 2*(start+j)+1; d.rawOriginal = v; }
+              break;
           }
           j++;
         }
         if(type==='LINE' && isFinite(d.x1) && isFinite(d.y1) && isFinite(d.x2) && isFinite(d.y2)){
-          out.push({type:'line', x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2, layer:d.layer});
+          // 절곡선은 보통 DASHED/DASHEDDOT 같은 점선 계열 선종류로 구분되어 있어 함께 저장해 둡니다.
+          out.push({type:'line', x1:d.x1,y1:d.y1,x2:d.x2,y2:d.y2, layer:d.layer, linetype:d.linetype||'CONTINUOUS', bendLine:!!(d.linetype && /DASH/i.test(d.linetype)),
+            x1LineIdx:d.x1LineIdx, y1LineIdx:d.y1LineIdx, x2LineIdx:d.x2LineIdx, y2LineIdx:d.y2LineIdx,
+            editable:(d.x2LineIdx!==undefined && d.y2LineIdx!==undefined)});
         } else if(type==='CIRCLE' && isFinite(d.x1) && isFinite(d.r)){
-          out.push({type:'circle', cx:d.x1, cy:d.y1, r:d.r, layer:d.layer});
+          out.push({type:'circle', cx:d.x1, cy:d.y1, r:d.r, layer:d.layer, rLineIdx:d.rLineIdx, editable:(d.rLineIdx!==undefined)});
         } else if(type==='ARC' && isFinite(d.x1) && isFinite(d.r)){
           const a1 = d.a1||0, a2raw = d.a2!==undefined?d.a2:360;
           const a2 = a2raw < a1 ? a2raw+360 : a2raw;
-          const pts=[]; const steps=24;
-          for(let s=0;s<=steps;s++){
-            const t = a1 + (a2-a1)*s/steps;
-            const rad = t*Math.PI/180;
-            pts.push([d.x1 + d.r*Math.cos(rad), d.y1 + d.r*Math.sin(rad)]);
-          }
-          out.push({type:'polyline', points:pts, closed:false, layer:d.layer});
+          const pts = arcPoints(d.x1, d.y1, d.r, a1, a2);
+          // 반지름(치수) 확인/수정이 가능하도록 중심·반지름·각도 정보를 함께 저장합니다.
+          out.push({type:'arc', cx:d.x1, cy:d.y1, r:d.r, a1:a1, a2:a2, points:pts, closed:false, layer:d.layer,
+            rLineIdx:d.rLineIdx, editable:(d.rLineIdx!==undefined)});
         } else if(type==='LWPOLYLINE' && verts.length>1){
           out.push({type:'polyline', points:verts, closed: !!(d.flag & 1), layer:d.layer});
         } else if(type==='POINT' && isFinite(d.x1)){
           out.push({type:'point', x:d.x1, y:d.y1, layer:d.layer});
         } else if((type==='TEXT'||type==='MTEXT') && d.text!==undefined && isFinite(d.x1)){
-          let txt = d.text.replace(/\\P/g,'\n').replace(/\{|\}/g,'').replace(/\\[A-Za-z][^;]*;/g,'');
-          out.push({type:'text', x:d.x1, y:d.y1, text:txt, height:d.height||2.5, rot: -(d.rot||0), layer:d.layer});
+          let txt = decodeMText(d.text);
+          out.push({type:'text', x:d.x1, y:d.y1, text:txt, height:d.height||2.5, rot: -(d.rot||0), layer:d.layer, rawLineIdx:d.rawLineIdx, rawOriginal:d.rawOriginal, editable:(d.rawLineIdx!==undefined)});
         }
         i=j; continue;
       }
@@ -424,14 +576,39 @@
     return out;
   }
 
+  // 중심(cx,cy)·반지름 r·시작각 a1·끝각 a2(도, 원본 DXF 좌표계 기준)로 호의 좌표점들을 계산합니다.
+  function arcPoints(cx, cy, r, a1, a2){
+    const pts=[]; const steps=24;
+    for(let s=0;s<=steps;s++){
+      const t = a1 + (a2-a1)*s/steps;
+      const rad = t*Math.PI/180;
+      pts.push([cx + r*Math.cos(rad), cy + r*Math.sin(rad)]);
+    }
+    return pts;
+  }
+  // 화면(렌더) 공간의 arc 엔티티는 y가 이미 뒤집혀 있으므로, 반지름을 고친 뒤에는
+  // 뒤집힌 공간 기준으로 다시 좌표점을 계산해야 합니다(y부호만 반대).
+  function regenArcPoints(e){
+    const pts=[]; const steps=24;
+    for(let s=0;s<=steps;s++){
+      const t = e.a1 + (e.a2-e.a1)*s/steps;
+      const rad = t*Math.PI/180;
+      pts.push([e.cx + e.r*Math.cos(rad), e.cy - e.r*Math.sin(rad)]);
+    }
+    e.points = pts;
+  }
+
   // flip y (DXF is y-up, screen is y-down) — self-inverse
   function flipY(ent){
     switch(ent.type){
-      case 'line': return {type:'line', x1:ent.x1, y1:-ent.y1, x2:ent.x2, y2:-ent.y2, layer:ent.layer};
-      case 'circle': return {type:'circle', cx:ent.cx, cy:-ent.cy, r:ent.r, layer:ent.layer};
+      case 'line': return {type:'line', x1:ent.x1, y1:-ent.y1, x2:ent.x2, y2:-ent.y2, layer:ent.layer, linetype:ent.linetype, bendLine:ent.bendLine, bendLeader:ent.bendLeader,
+        x1LineIdx:ent.x1LineIdx, y1LineIdx:ent.y1LineIdx, x2LineIdx:ent.x2LineIdx, y2LineIdx:ent.y2LineIdx, editable:ent.editable};
+      case 'circle': return {type:'circle', cx:ent.cx, cy:-ent.cy, r:ent.r, layer:ent.layer, rLineIdx:ent.rLineIdx, editable:ent.editable};
       case 'point': return {type:'point', x:ent.x, y:-ent.y, layer:ent.layer};
       case 'polyline': return {type:'polyline', closed:ent.closed, points:ent.points.map(p=>[p[0],-p[1]]), layer:ent.layer};
-      case 'text': return {type:'text', x:ent.x, y:-ent.y, text:ent.text, height:ent.height, rot:ent.rot, layer:ent.layer};
+      case 'arc': return {type:'arc', cx:ent.cx, cy:-ent.cy, r:ent.r, a1:ent.a1, a2:ent.a2, closed:ent.closed,
+        points:ent.points.map(p=>[p[0],-p[1]]), layer:ent.layer, rLineIdx:ent.rLineIdx, editable:ent.editable};
+      case 'text': return {type:'text', x:ent.x, y:-ent.y, text:ent.text, height:ent.height, rot:ent.rot, layer:ent.layer, bend:ent.bend, rawLineIdx:ent.rawLineIdx, rawOriginal:ent.rawOriginal, editable:ent.editable};
     }
     return ent;
   }
@@ -444,6 +621,7 @@
       else if(e.type==='circle'){ acc(e.cx-e.r,e.cy-e.r); acc(e.cx+e.r,e.cy+e.r); }
       else if(e.type==='point'){ acc(e.x,e.y); }
       else if(e.type==='polyline'){ e.points.forEach(p=>acc(p[0],p[1])); }
+      else if(e.type==='arc'){ e.points.forEach(p=>acc(p[0],p[1])); }
       else if(e.type==='text'){ acc(e.x,e.y); acc(e.x+e.height*(e.text.length||1)*0.6, e.y+e.height); }
     });
     if(!isFinite(minX)) return {minX:0,minY:0,maxX:100,maxY:100};
@@ -471,6 +649,7 @@
       row.querySelector('input').addEventListener('change', (e)=>{
         layers[name] = e.target.checked;
         renderGeometry();
+        renderGeomSelection();
       });
       layerlistEl.appendChild(row);
     });
@@ -487,10 +666,26 @@
     const old = document.getElementById('geo-layer');
     if(old) old.remove();
     const g = svgEl('g', {id:'geo-layer', stroke:'#c7d4e0', 'stroke-width': Math.max(0.15, 1/view.scale), fill:'none'});
-    entities.forEach(e=>{
+    // 절곡선 점선 간격은 도면 크기에 비례하도록 계산(도면이 커도/작아도 점선이 자연스럽게 보이게 함)
+    const diag0 = bbox ? Math.hypot(bbox.maxX-bbox.minX, bbox.maxY-bbox.minY) : 100;
+    const dashUnit = Math.max(diag0*0.006, 0.5);
+    entities.forEach((e, idx)=>{
       if(layers[e.layer||'0']===false) return;
       if(e.type==='line'){
-        g.appendChild(svgEl('line', {x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2}));
+        const attrs = {x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2};
+        if(e.bendLeader){
+          // 절곡 각도 지시선(화살표선)
+          attrs.stroke = 'var(--accent)';
+          attrs['stroke-width'] = Math.max(0.12, 0.9/view.scale);
+        } else if(e.bendLine){
+          // 절곡선(점선/1점쇄선) — 절단선과 구분되도록 강조색 + 점선으로 표시
+          attrs.stroke = 'var(--accent-2)';
+          attrs['stroke-width'] = Math.max(0.15, 1.1/view.scale);
+          attrs['stroke-dasharray'] = /DASHEDDOT/i.test(e.linetype||'')
+            ? `${dashUnit*1.4},${dashUnit*0.6},${dashUnit*0.15},${dashUnit*0.6}`
+            : `${dashUnit*1.4},${dashUnit*0.9}`;
+        }
+        g.appendChild(svgEl('line', attrs));
       } else if(e.type==='circle'){
         g.appendChild(svgEl('circle', {cx:e.cx, cy:e.cy, r:e.r}));
       } else if(e.type==='point'){
@@ -498,12 +693,24 @@
       } else if(e.type==='polyline'){
         const pts = e.points.map(p=>p[0]+','+p[1]).join(' ');
         g.appendChild(svgEl(e.closed?'polygon':'polyline', {points:pts}));
+      } else if(e.type==='arc'){
+        const pts = e.points.map(p=>p[0]+','+p[1]).join(' ');
+        g.appendChild(svgEl('polyline', {points:pts}));
       } else if(e.type==='text'){
+        const isEdited = e.editable && e.rawOriginal!==undefined && e.text !== decodeMText(e.rawOriginal);
         const t = svgEl('text', {
-          x:e.x, y:e.y, fill:'#c7d4e0', stroke:'none',
-          'font-size': e.height, transform: e.rot ? `rotate(${e.rot} ${e.x} ${e.y})` : null
+          x:e.x, y:e.y, fill: isEdited ? 'var(--accent-2)' : (e.bend ? 'var(--accent)' : '#c7d4e0'), stroke:'none',
+          'font-weight': (e.bend||isEdited) ? '700' : null,
+          'font-size': e.height, transform: e.rot ? `rotate(${e.rot} ${e.x} ${e.y})` : null,
+          'data-eidx': e.editable ? idx : null,
+          class: e.editable ? 'orig-text-editable' : null
         });
         t.textContent = e.text;
+        if(e.editable){
+          const titleEl = svgEl('title', {});
+          titleEl.textContent = '더블클릭하여 텍스트 수정';
+          t.appendChild(titleEl);
+        }
         g.appendChild(t);
       }
     });
@@ -551,7 +758,109 @@
     world.setAttribute('transform', `translate(${view.tx} ${view.ty}) scale(${view.scale})`);
     renderGeometry();
     renderAnnotations();
+    renderGeomSelection();
     zoomPctEl.textContent = Math.round(view.scale/baseScale*100) + '%';
+  }
+
+  // ---------- 원/선 클릭 → 치수 표시, 더블클릭 → 치수 수정 ----------
+  function fmtNum(n){
+    const r = Math.round(n*100)/100;
+    return (Math.abs(r - Math.round(r)) < 1e-9) ? String(Math.round(r)) : String(r);
+  }
+  function pointSegDist(px,py,x1,y1,x2,y2){
+    const dx=x2-x1, dy=y2-y1;
+    const lenSq = dx*dx+dy*dy;
+    if(lenSq===0) return Math.hypot(px-x1, py-y1);
+    let t = ((px-x1)*dx + (py-y1)*dy)/lenSq;
+    t = Math.max(0, Math.min(1, t));
+    return Math.hypot(px-(x1+t*dx), py-(y1+t*dy));
+  }
+  function pointPolylineDist(px, py, points){
+    let best = Infinity;
+    for(let i=0;i<points.length-1;i++){
+      const d = pointSegDist(px, py, points[i][0], points[i][1], points[i+1][0], points[i+1][1]);
+      if(d<best) best = d;
+    }
+    return best;
+  }
+  function hitTestGeometry(sx, sy){
+    if(!bbox) return null;
+    const w = screenToWorld(sx, sy);
+    const threshold = 10/view.scale;
+    let best=null, bestScore=threshold;
+    entities.forEach((e, idx)=>{
+      if(layers[e.layer||'0']===false) return;
+      if(e.type==='circle' && e.editable){
+        const d = Math.hypot(w.x-e.cx, w.y-e.cy);
+        const score = Math.max(0, d-e.r);
+        if(score<bestScore){ bestScore=score; best={type:'circle', idx}; }
+      } else if(e.type==='line' && e.editable){
+        const d = pointSegDist(w.x, w.y, e.x1, e.y1, e.x2, e.y2);
+        if(d<bestScore){ bestScore=d; best={type:'line', idx}; }
+      } else if(e.type==='arc' && e.editable){
+        const d = pointPolylineDist(w.x, w.y, e.points);
+        if(d<bestScore){ bestScore=d; best={type:'arc', idx}; }
+      }
+    });
+    return best;
+  }
+  function renderGeomSelection(){
+    let gs = document.getElementById('geom-sel-layer');
+    if(gs) gs.remove();
+    gs = svgEl('g', {id:'geom-sel-layer'});
+    if(selectedGeom){
+      const e = entities[selectedGeom.idx];
+      if(e){
+        if(selectedGeom.type==='circle'){
+          const p = worldToScreen(e.cx, e.cy);
+          const rPix = e.r*view.scale;
+          gs.appendChild(svgEl('circle', {cx:p.x, cy:p.y, r:rPix, class:'geom-sel-ring'}));
+          const label = svgEl('text', {x:p.x, y:p.y-rPix-10, class:'geom-dim-label', 'text-anchor':'middle'});
+          label.textContent = `R${fmtNum(e.r)} · ⌀${fmtNum(e.r*2)}  (더블클릭 수정)`;
+          gs.appendChild(label);
+        } else if(selectedGeom.type==='line'){
+          const p1 = worldToScreen(e.x1, e.y1), p2 = worldToScreen(e.x2, e.y2);
+          gs.appendChild(svgEl('line', {x1:p1.x,y1:p1.y,x2:p2.x,y2:p2.y, class:'geom-sel-ring'}));
+          const len = Math.hypot(e.x2-e.x1, e.y2-e.y1);
+          const midx=(p1.x+p2.x)/2, midy=(p1.y+p2.y)/2;
+          const label = svgEl('text', {x:midx, y:midy-10, class:'geom-dim-label', 'text-anchor':'middle'});
+          label.textContent = `길이 ${fmtNum(len)}  (더블클릭 수정)`;
+          gs.appendChild(label);
+        } else if(selectedGeom.type==='arc'){
+          const pts = e.points.map(p=>worldToScreen(p[0], p[1]));
+          const pathStr = pts.map((p,i)=> (i===0?'M':'L')+p.x+' '+p.y).join(' ');
+          gs.appendChild(svgEl('path', {d:pathStr, class:'geom-sel-ring'}));
+          const mid = pts[Math.floor(pts.length/2)];
+          const label = svgEl('text', {x:mid.x, y:mid.y-10, class:'geom-dim-label', 'text-anchor':'middle'});
+          label.textContent = `R${fmtNum(e.r)}  (더블클릭 수정)`;
+          gs.appendChild(label);
+        }
+      }
+    }
+    svg.appendChild(gs);
+  }
+  function showInlineEditorForGeometry(gHit){
+    const e = entities[gHit.idx];
+    if(!e) return;
+    editingAnnId = null;
+    editingEntityIdx = null;
+    editingGeom = gHit;
+    pendingPlacement = null;
+    let p;
+    if(gHit.type==='circle' || gHit.type==='arc'){
+      p = worldToScreen(e.cx, e.cy);
+      inlineInput.value = fmtNum(e.r);
+      inlineInput.placeholder = '반지름(R) 값 입력';
+    } else {
+      p = worldToScreen((e.x1+e.x2)/2, (e.y1+e.y2)/2);
+      inlineInput.value = fmtNum(Math.hypot(e.x2-e.x1, e.y2-e.y1));
+      inlineInput.placeholder = '길이 값 입력';
+    }
+    inlineEditor.style.left = p.x+'px';
+    inlineEditor.style.top = p.y+'px';
+    inlineEditor.style.display = 'block';
+    inlineInput.focus();
+    inlineInput.select();
   }
 
   let baseScale = 1;
@@ -620,6 +929,7 @@
   }
   function showInlineEditorForEdit(ann){
     editingAnnId = ann.id;
+    editingEntityIdx = null;
     pendingPlacement = null;
     const p = worldToScreen(ann.x, ann.y);
     inlineEditor.style.left = p.x+'px';
@@ -630,10 +940,28 @@
     inlineInput.focus();
     inlineInput.select();
   }
+  // 원본 도면(불러온 DXF)에 있던 텍스트를 더블클릭해서 고칠 때 사용
+  function showInlineEditorForOriginalText(idx){
+    const e = entities[idx];
+    if(!e) return;
+    editingAnnId = null;
+    editingEntityIdx = idx;
+    pendingPlacement = null;
+    const p = worldToScreen(e.x, e.y);
+    inlineEditor.style.left = p.x+'px';
+    inlineEditor.style.top = p.y+'px';
+    inlineEditor.style.display = 'block';
+    inlineInput.value = e.text;
+    inlineInput.placeholder = '원본 텍스트 수정';
+    inlineInput.focus();
+    inlineInput.select();
+  }
   function hideInlineEditor(){
     inlineEditor.style.display = 'none';
     pendingPlacement = null;
     editingAnnId = null;
+    editingEntityIdx = null;
+    editingGeom = null;
   }
   document.getElementById('inlineOk').addEventListener('click', commitInline);
   document.getElementById('inlineCancel').addEventListener('click', hideInlineEditor);
@@ -649,6 +977,34 @@
       const a = annotations.find(x=>x.id===editingAnnId);
       if(a) a.content = val;
       refreshAnnList(); renderAnnotations();
+    } else if(val && editingEntityIdx!==null){
+      pushUndo();
+      const e = entities[editingEntityIdx];
+      if(e) e.text = val;
+      renderGeometry(); renderAnnotations(); refreshAnnList();
+    } else if(val && editingGeom){
+      const num = parseFloat(val.replace(/,/g,''));
+      if(isFinite(num) && num>0){
+        pushUndo();
+        const e = entities[editingGeom.idx];
+        if(e){
+          if(editingGeom.type==='circle'){
+            e.r = num;
+          } else if(editingGeom.type==='arc'){
+            e.r = num;
+            regenArcPoints(e);
+          } else if(editingGeom.type==='line'){
+            const dx = e.x2-e.x1, dy = e.y2-e.y1;
+            const curLen = Math.hypot(dx,dy) || 1;
+            const ux = dx/curLen, uy = dy/curLen;
+            e.x2 = e.x1 + ux*num;
+            e.y2 = e.y1 + uy*num;
+          }
+        }
+        renderGeometry(); renderGeomSelection();
+      } else {
+        alert('0보다 큰 숫자를 입력해주세요.');
+      }
     } else if(val && pendingPlacement){
       pushUndo();
       annotations.push({
@@ -685,14 +1041,17 @@
       const hit = hitTestAnnotation(sx, sy);
       if(hit){
         selectedAnnId = hit.id;
-        refreshAnnList(); renderAnnotations();
+        selectedGeom = null;
+        refreshAnnList(); renderAnnotations(); renderGeomSelection();
         dragMode = 'moveAnn';
         dragStart = {x:e.clientX, y:e.clientY};
         moveAnnStart = {x:hit.x, y:hit.y};
         return;
       } else {
         selectedAnnId = null;
-        refreshAnnList(); renderAnnotations();
+        const gHit = hitTestGeometry(sx, sy);
+        selectedGeom = gHit;
+        refreshAnnList(); renderAnnotations(); renderGeomSelection();
       }
     }
     // pan (select tool on empty space, or any non-placement drag)
@@ -722,6 +1081,12 @@
 
   svg.addEventListener('dblclick', (e)=>{
     if(!bbox) return;
+    // 원본 도면 텍스트를 직접 더블클릭한 경우 (data-eidx 속성을 가진 <text>)
+    const eidxAttr = e.target && e.target.getAttribute && e.target.getAttribute('data-eidx');
+    if(eidxAttr!==null && eidxAttr!==undefined && eidxAttr!==''){
+      showInlineEditorForOriginalText(parseInt(eidxAttr,10));
+      return;
+    }
     const rect = svg.getBoundingClientRect();
     const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
     const hit = hitTestAnnotation(sx, sy);
@@ -729,6 +1094,13 @@
       selectedAnnId = hit.id;
       refreshAnnList(); renderAnnotations();
       showInlineEditorForEdit(hit);
+      return;
+    }
+    const gHit = hitTestGeometry(sx, sy);
+    if(gHit){
+      selectedGeom = gHit;
+      renderGeomSelection();
+      showInlineEditorForGeometry(gHit);
     }
   });
 
@@ -781,7 +1153,10 @@
       refreshAnnList(); renderAnnotations();
       return;
     }
-    if(e.key==='Escape'){ selectedAnnId=null; refreshAnnList(); renderAnnotations(); }
+    if(e.key==='Escape'){
+      selectedAnnId=null; selectedGeom=null; refreshAnnList(); renderAnnotations(); renderGeomSelection();
+      if(typeof pickingFromMain!=='undefined' && pickingFromMain){ cancelPicking(); }
+    }
   });
 
   document.getElementById('zoomIn').addEventListener('click', ()=>{ view.scale*=1.25; applyViewTransform(); });
@@ -817,12 +1192,23 @@
           statusEl.textContent = `요소 ${parsed.length}개 로드됨`;
         }
         entities = parsed.map(flipY);
+        // 편집 여부 판단을 위해 최초(원본) 반지름/끝점 값을 스냅샷으로 저장해 둡니다.
+        entities.forEach(e=>{
+          if(e.type==='circle' || e.type==='arc') e.origR = e.r;
+          else if(e.type==='line'){ e.origX2 = e.x2; e.origY2 = e.y2; }
+        });
         bbox = computeBbox(entities);
         buildLayers();
         refreshLayerList();
         annotations = [];
         selectedAnnId = null;
+        selectedGeom = null;
         resetUndoRedo();
+        const editableTextCount = entities.filter(e=>e.type==='text' && e.editable).length;
+        const editableGeomCount = entities.filter(e=>(e.type==='circle'||e.type==='line'||e.type==='arc') && e.editable).length;
+        if(editableTextCount>0 || editableGeomCount>0){
+          statusEl.textContent = `요소 ${parsed.length}개 로드됨 · 글씨 ${editableTextCount}개 · 원/선/호 ${editableGeomCount}개 클릭 가능`;
+        }
         filenameEl.textContent = file.name;
         emptyMsg.style.display = 'none';
         setTool('select');
@@ -847,17 +1233,34 @@
     let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${vx} ${vy} ${vw} ${vh}" width="1600" height="${Math.round(1600*vh/vw)}">`;
     s += `<rect x="${vx}" y="${vy}" width="${vw}" height="${vh}" fill="#0c1015"/>`;
     s += `<g stroke="#c7d4e0" stroke-width="${Math.max(diag*0.0012,0.05)}" fill="none">`;
+    const dashUnitExp = Math.max(diag*0.006, 0.5);
     entities.forEach(e=>{
       if(layers[e.layer||'0']===false) return;
-      if(e.type==='line') s += `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"/>`;
+      if(e.type==='line'){
+        if(e.bendLeader){
+          s += `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="#ff8a3d" stroke-width="${Math.max(diag*0.0018,0.08)}"/>`;
+        } else if(e.bendLine){
+          const dash = /DASHEDDOT/i.test(e.linetype||'')
+            ? `${dashUnitExp*1.4},${dashUnitExp*0.6},${dashUnitExp*0.15},${dashUnitExp*0.6}`
+            : `${dashUnitExp*1.4},${dashUnitExp*0.9}`;
+          s += `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}" stroke="#4dd0e1" stroke-width="${Math.max(diag*0.0016,0.08)}" stroke-dasharray="${dash}"/>`;
+        } else {
+          s += `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"/>`;
+        }
+      }
       else if(e.type==='circle') s += `<circle cx="${e.cx}" cy="${e.cy}" r="${e.r}"/>`;
       else if(e.type==='point') s += `<circle cx="${e.x}" cy="${e.y}" r="${diag*0.002}" fill="#c7d4e0"/>`;
       else if(e.type==='polyline'){
         const pts = e.points.map(p=>p[0]+','+p[1]).join(' ');
         s += `<${e.closed?'polygon':'polyline'} points="${pts}"/>`;
+      } else if(e.type==='arc'){
+        const pts = e.points.map(p=>p[0]+','+p[1]).join(' ');
+        s += `<polyline points="${pts}"/>`;
       } else if(e.type==='text'){
         const rotAttr = e.rot ? ` transform="rotate(${e.rot} ${e.x} ${e.y})"` : '';
-        s += `<text x="${e.x}" y="${e.y}" font-size="${e.height}" fill="#c7d4e0" stroke="none"${rotAttr}>${escapeXml(e.text)}</text>`;
+        const fillColor = e.bend ? '#ff8a3d' : '#c7d4e0';
+        const weightAttr = e.bend ? ' font-weight="700"' : '';
+        s += `<text x="${e.x}" y="${e.y}" font-size="${e.height}" fill="${fillColor}" stroke="none"${weightAttr}${rotAttr}>${escapeXml(e.text)}</text>`;
       }
     });
     s += `</g>`;
@@ -898,10 +1301,61 @@
     img.src = url;
   });
 
-  // ---------- export: annotated DXF ----------
+  // 원본 MTEXT/TEXT의 서식 코드(\T1.25;\W1;\F굴림|b0|i0; 같은 접두부)는 그대로 두고
+  // 마지막 ';' 뒤의 실제 텍스트 부분만 새 내용으로 바꿔줍니다.
+  function buildRawTextValue(rawOriginal, newText){
+    const m = /^([\s\S]*;)[^;]*$/.exec(rawOriginal || '');
+    if(m) return m[1] + newText;
+    return newText;
+  }
+  // 더블클릭으로 고친 원본 텍스트들을 rawText(원본 DXF 문자열)에 반영합니다.
+  function applyTextEditsToRawText(text){
+    const lines = text.split('\n');
+    let changedCount = 0;
+    entities.forEach(e=>{
+      if(e.type==='text' && e.editable && e.rawLineIdx!==undefined && e.rawOriginal!==undefined){
+        const originalDecoded = decodeMText(e.rawOriginal);
+        if(e.text !== originalDecoded){
+          lines[e.rawLineIdx] = buildRawTextValue(e.rawOriginal, e.text);
+          changedCount++;
+        }
+      }
+    });
+    return { text: lines.join('\n'), changedCount };
+  }
+  // 더블클릭으로 고친 원(반지름)·선(길이) 값을 rawText에 반영합니다.
+  // 줄 개수는 그대로 유지되므로(내용만 교체) 위 텍스트 반영과 순서에 상관없이 이어 적용할 수 있습니다.
+  function applyGeomEditsToRawText(text){
+    const lines = text.split('\n');
+    let changedCount = 0;
+    entities.forEach(e=>{
+      if((e.type==='circle'||e.type==='arc') && e.editable && e.rLineIdx!==undefined){
+        if(e.r !== e.origR){
+          lines[e.rLineIdx] = String(e.r);
+          changedCount++;
+        }
+      } else if(e.type==='line' && e.editable && e.x2LineIdx!==undefined && e.y2LineIdx!==undefined){
+        if(e.x2 !== e.origX2 || e.y2 !== e.origY2){
+          // 화면(렌더) 공간은 y를 뒤집어 사용하므로, 저장 시 DXF 좌표계로 다시 되돌립니다.
+          lines[e.x2LineIdx] = String(e.x2);
+          lines[e.y2LineIdx] = String(-e.y2);
+          changedCount++;
+        }
+      }
+    });
+    return { text: lines.join('\n'), changedCount };
+  }
+
+  // ---------- export: annotated / edited DXF ----------
   document.getElementById('btnExportDxf').addEventListener('click', ()=>{
     if(!rawText){ alert('먼저 도면을 불러오세요.'); return; }
-    if(annotations.length===0){ alert('추가된 주석이 없습니다.'); }
+    const step1 = applyTextEditsToRawText(rawText);
+    const step2 = applyGeomEditsToRawText(step1.text);
+    const editedRawText = step2.text;
+    const changedCount = step1.changedCount + step2.changedCount;
+    if(annotations.length===0 && changedCount===0){
+      alert('추가된 주석이나 수정한 내용이 없습니다. 원본 그대로 저장합니다.');
+    }
     const bw = Math.max(bbox.maxX-bbox.minX, 1);
     const bh = Math.max(bbox.maxY-bbox.minY, 1);
     const diag = Math.hypot(bw,bh);
@@ -914,28 +1368,697 @@
       block += `0\nTEXT\n8\nANNOTATIONS\n10\n${dxfX}\n20\n${dxfY}\n40\n${height}\n1\n${content}\n`;
     });
 
-    const idxEntities = rawText.indexOf('ENTITIES');
+    const idxEntities = editedRawText.indexOf('ENTITIES');
     let out;
     if(idxEntities===-1){
       alert('원본 파일에서 ENTITIES 구역을 찾지 못해 주석만 별도로 내보냅니다.');
-      out = rawText + '\n' + block;
+      out = editedRawText + '\n' + block;
     } else {
-      const idxEndsecNL = rawText.indexOf('\nENDSEC', idxEntities);
+      const idxEndsecNL = editedRawText.indexOf('\nENDSEC', idxEntities);
       if(idxEndsecNL===-1){
-        out = rawText + '\n' + block;
+        out = editedRawText + '\n' + block;
       } else {
         const valueLineStart = idxEndsecNL+1;
         const codeLineEnd = valueLineStart-1;
-        const codeLineStart = rawText.lastIndexOf('\n', codeLineEnd-1)+1;
-        out = rawText.slice(0, codeLineStart) + block + rawText.slice(codeLineStart);
+        const codeLineStart = editedRawText.lastIndexOf('\n', codeLineEnd-1)+1;
+        out = editedRawText.slice(0, codeLineStart) + block + editedRawText.slice(codeLineStart);
       }
     }
     const blob = new Blob([out], {type:'application/dxf'});
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = (filenameEl.textContent.replace(/\.dxf$/i,'') || 'drawing') + '_annotated.dxf';
+    a.download = (filenameEl.textContent.replace(/\.dxf$/i,'') || 'drawing') + (changedCount>0 ? '_수정됨' : '_annotated') + '.dxf';
     a.click();
   });
+
+  // ================= 네스팅(Nesting): 원자재에 부품 자동 배치 =================
+  const nestModal = document.getElementById('nest-modal');
+  const nestSvg = document.getElementById('nestSvg');
+  const partlistEl = document.getElementById('partlist');
+  const nestStatusEl = document.getElementById('nestStatus');
+  const pickBanner = document.getElementById('nestPickBanner');
+
+  let parts = [];             // {id, name, w, h, entities:[...(정규화된 로컬 좌표)], qty, rotateAllowed, color}
+  let partIdSeq = 1;
+  let pickingFromMain = false;
+  let lastNestResult = null;  // {stock:{shape,w,h,d}, placements:[...]}
+  let stockDrawing = false, stockDrawStart = null;
+  let nestViewScale = 1;      // 빈 캔버스에 드래그로 크기를 지정할 때 사용하는 px→mm 환산값
+
+  const PART_COLORS = ['#4dd0e1','#ff8a3d','#a3e635','#f472b6','#60a5fa','#fbbf24','#c084fc','#34d399'];
+  function nextColor(){ return PART_COLORS[parts.length % PART_COLORS.length]; }
+
+  // ---------- 모달 열기/닫기 ----------
+  document.getElementById('btnOpenNesting').addEventListener('click', ()=>{
+    nestModal.style.display = 'flex';
+    renderNestCanvas();
+  });
+  document.getElementById('btnCloseNesting').addEventListener('click', ()=>{
+    nestModal.style.display = 'none';
+  });
+
+  // ---------- 원자재 형태 ----------
+  const stockRectInputs = document.getElementById('stockRectInputs');
+  const stockCircleInputs = document.getElementById('stockCircleInputs');
+  document.getElementById('stockShapeRect').addEventListener('change', updateStockInputsVisibility);
+  document.getElementById('stockShapeCircle').addEventListener('change', updateStockInputsVisibility);
+  function updateStockInputsVisibility(){
+    const isRect = document.getElementById('stockShapeRect').checked;
+    stockRectInputs.style.display = isRect ? '' : 'none';
+    stockCircleInputs.style.display = isRect ? 'none' : '';
+    renderNestCanvas();
+  }
+  function getStockConfig(){
+    const isRect = document.getElementById('stockShapeRect').checked;
+    if(isRect) return {shape:'rect', w: parseFloat(document.getElementById('stockW').value)||0, h: parseFloat(document.getElementById('stockH').value)||0};
+    return {shape:'circle', d: parseFloat(document.getElementById('stockD').value)||0};
+  }
+  ['stockW','stockH','stockD'].forEach(id=>{
+    document.getElementById(id).addEventListener('input', renderNestCanvas);
+  });
+
+  // ---------- 화면에 드래그해서 원자재 크기 지정 ----------
+  document.getElementById('btnDrawStock').addEventListener('click', ()=>{
+    stockDrawing = true;
+    document.getElementById('stockDrawHint').textContent = '오른쪽 화면을 클릭한 채 드래그한 뒤 놓으세요.';
+  });
+  nestSvg.addEventListener('mousedown', (e)=>{
+    if(!stockDrawing) return;
+    const r = nestSvg.getBoundingClientRect();
+    stockDrawStart = {x:e.clientX-r.left, y:e.clientY-r.top};
+  });
+  nestSvg.addEventListener('mousemove', (e)=>{
+    if(!stockDrawing || !stockDrawStart) return;
+    const r = nestSvg.getBoundingClientRect();
+    drawStockPreviewRect(stockDrawStart.x, stockDrawStart.y, e.clientX-r.left, e.clientY-r.top);
+  });
+  window.addEventListener('mouseup', (e)=>{
+    if(!stockDrawing || !stockDrawStart) return;
+    const r = nestSvg.getBoundingClientRect();
+    const cx = Math.max(0, Math.min(r.width, e.clientX-r.left));
+    const cy = Math.max(0, Math.min(r.height, e.clientY-r.top));
+    const pxW = Math.abs(cx-stockDrawStart.x), pxH = Math.abs(cy-stockDrawStart.y);
+    const scale = nestViewScale || 1;
+    const mmW = Math.max(1, Math.round(pxW/scale));
+    const mmH = Math.max(1, Math.round(pxH/scale));
+    if(document.getElementById('stockShapeRect').checked){
+      document.getElementById('stockW').value = mmW;
+      document.getElementById('stockH').value = mmH;
+    } else {
+      document.getElementById('stockD').value = Math.max(mmW, mmH);
+    }
+    stockDrawing = false; stockDrawStart = null;
+    document.getElementById('stockDrawHint').textContent = '버튼을 누른 뒤 오른쪽 화면에서 드래그하면 그 크기로 가로·세로(또는 지름) 값이 자동 입력됩니다.';
+    renderNestCanvas();
+  });
+  function drawStockPreviewRect(x1,y1,x2,y2){
+    let g = document.getElementById('nest-draw-preview');
+    if(g) g.remove();
+    g = svgEl('rect', {id:'nest-draw-preview', x:Math.min(x1,x2), y:Math.min(y1,y2), width:Math.abs(x2-x1), height:Math.abs(y2-y1), fill:'rgba(77,208,225,0.15)', stroke:'#4dd0e1', 'stroke-dasharray':'4 3'});
+    // 이 미리보기 사각형은 화면 px 좌표를 그대로 쓰므로, nestSvg의 viewBox를 잠시 px 기준으로 두지 않고
+    // 별도의 화면 좌표계 오버레이 svg가 필요합니다 — 간단히 부모 wrap에 얹습니다.
+    let overlay = document.getElementById('nest-draw-overlay');
+    if(!overlay){
+      overlay = document.createElementNS('http://www.w3.org/2000/svg','svg');
+      overlay.id = 'nest-draw-overlay';
+      overlay.style.position='absolute'; overlay.style.inset='0'; overlay.style.pointerEvents='none';
+      nestSvg.parentElement.appendChild(overlay);
+    }
+    overlay.innerHTML = '';
+    overlay.appendChild(g);
+  }
+  window.addEventListener('mouseup', ()=>{
+    const overlay = document.getElementById('nest-draw-overlay');
+    if(overlay) overlay.innerHTML = '';
+  });
+
+  // ---------- 부품: DXF 파일로 추가 ----------
+  document.getElementById('partFileInput').addEventListener('change', (e)=>{
+    const files = Array.from(e.target.files||[]);
+    files.forEach(file=>{
+      const reader = new FileReader();
+      reader.onload = function(ev){
+        try{
+          const text = ev.target.result.replace(/\r\n/g,'\n');
+          const parsed = parseDXF(text).map(flipY);
+          if(parsed.length===0){ alert(file.name + ': 도면 요소를 찾지 못했습니다.'); return; }
+          addPartFromEntities(file.name.replace(/\.dxf$/i,''), parsed);
+        } catch(err){
+          console.error(err);
+          alert(file.name + ' 파일을 읽는 중 오류: ' + err.message);
+        }
+      };
+      reader.readAsText(file);
+    });
+    e.target.value = '';
+  });
+
+  // ---------- 부품: 현재 메인 도면에서 도형 클릭해 추가 ----------
+  document.getElementById('btnAddFromMain').addEventListener('click', ()=>{
+    if(!bbox){ alert('먼저 메인 화면에서 도면을 불러오세요.'); return; }
+    nestModal.style.display = 'none';
+    pickingFromMain = true;
+    pickBanner.style.display = 'block';
+  });
+  document.getElementById('nestPickCancel').addEventListener('click', cancelPicking);
+  function cancelPicking(){
+    pickingFromMain = false;
+    pickBanner.style.display = 'none';
+    nestModal.style.display = 'flex';
+  }
+  // 캡처 단계에서 가로채서, 도형 선택 모드일 땐 기존 select/pan 동작이 실행되지 않게 합니다.
+  svg.addEventListener('mousedown', function(e){
+    if(!pickingFromMain) return;
+    e.stopPropagation();
+    e.preventDefault();
+    const rect = svg.getBoundingClientRect();
+    const sx = e.clientX-rect.left, sy = e.clientY-rect.top;
+    const hit = hitTestAnyEntity(sx, sy);
+    if(hit){
+      addPartFromEntities('도형 ' + (parts.length+1), [entities[hit.idx]]);
+      pickingFromMain = false;
+      pickBanner.style.display = 'none';
+      nestModal.style.display = 'flex';
+    } else {
+      alert('클릭한 위치에서 도형을 찾지 못했습니다. 원·선·폴리라인·호 위를 클릭해주세요.');
+    }
+  }, true);
+
+  // ---------- 부품: 도면 전체 도형을 한 번에 자동 인식해서 부품으로 추가 ----------
+  // (1단계) 실제로 끝점이 맞닿아 있는 도형끼리만 하나의 부품으로 인식합니다.
+  // 끝점이 없는 독립 폐곡선(원, 닫힌 폴리라인 = 구멍일 가능성이 큰 도형)은
+  // 그것을 완전히 포함하는 더 큰 그룹이 있으면 그 부품의 '구멍'으로 자동 병합합니다.
+  // 텍스트(치수·라벨)는 제외합니다.
+  function makeUnionFind(n){
+    const parent = Array.from({length:n}, (_,i)=>i);
+    function find(x){ while(parent[x]!==x){ parent[x]=parent[parent[x]]; x=parent[x]; } return x; }
+    function union(a,b){ const ra=find(a), rb=find(b); if(ra!==rb) parent[ra]=rb; }
+    return {find, union};
+  }
+  function entityEndpoints(e){
+    if(e.type==='line') return [ [e.x1,e.y1], [e.x2,e.y2] ];
+    if((e.type==='polyline' || e.type==='arc') && !e.closed){
+      if(!e.points || e.points.length<2) return null;
+      return [ e.points[0], e.points[e.points.length-1] ];
+    }
+    return null; // circle, 닫힌 폴리라인, point, text 등은 끝점으로 다른 도형과 연결되지 않는 독립 폐곡선
+  }
+  function snapKey(x,y,tol){
+    const g = Math.max(tol, 1e-6);
+    return Math.round(x/g)+'_'+Math.round(y/g);
+  }
+  function isStandaloneClosedEntity(e){
+    return e.type==='circle' || ((e.type==='polyline'||e.type==='arc') && e.closed);
+  }
+  function polygonArea(points){
+    let s=0;
+    for(let i=0;i<points.length;i++){
+      const [x1,y1]=points[i], [x2,y2]=points[(i+1)%points.length];
+      s += x1*y2 - x2*y1;
+    }
+    return Math.abs(s)/2;
+  }
+  function bboxContainsWithMargin(outer, inner, margin){
+    return inner.minX >= outer.minX+margin && inner.maxX <= outer.maxX-margin &&
+           inner.minY >= outer.minY+margin && inner.maxY <= outer.maxY-margin;
+  }
+  document.getElementById('btnAutoDetectParts').addEventListener('click', ()=>{
+    if(!bbox){ alert('먼저 메인 화면에서 도면을 불러오세요.'); return; }
+    const tol = Math.max(0.01, parseFloat(document.getElementById('autoDetectGap').value)||0.5);
+    const idxList = [];
+    entities.forEach((e, idx)=>{
+      if(e.type==='text') return;
+      if(layers[e.layer||'0']===false) return;
+      idxList.push(idx);
+    });
+    if(idxList.length===0){ alert('부품으로 추가할 도형(원·선·폴리라인·호)을 찾지 못했습니다.'); return; }
+    const boxes = idxList.map(idx=>computeBbox([entities[idx]]));
+    const uf = makeUnionFind(idxList.length);
+
+    // 1) 끝점이 실제로 맞닿아 있는(허용오차 이내) 도형끼리 먼저 묶습니다.
+    const nodeMap = {};
+    idxList.forEach((entIdx, li)=>{
+      const eps = entityEndpoints(entities[entIdx]);
+      if(!eps) return;
+      eps.forEach(([x,y])=>{
+        const key = snapKey(x,y,tol);
+        (nodeMap[key] = nodeMap[key]||[]).push(li);
+      });
+    });
+    Object.values(nodeMap).forEach(list=>{
+      for(let i=1;i<list.length;i++) uf.union(list[0], list[i]);
+    });
+
+    // 2) 끝점 연결이 없는 독립 폐곡선(원·닫힌 폴리라인)은, 그걸 포함하는 더 작은(=가장 가까운) 그룹에 구멍으로 병합합니다.
+    function currentGroupBBoxes(){
+      const map = {};
+      for(let i=0;i<idxList.length;i++){
+        const r = uf.find(i);
+        if(!map[r]) map[r] = {minX:Infinity,minY:Infinity,maxX:-Infinity,maxY:-Infinity};
+        const b = boxes[i];
+        map[r].minX = Math.min(map[r].minX, b.minX);
+        map[r].minY = Math.min(map[r].minY, b.minY);
+        map[r].maxX = Math.max(map[r].maxX, b.maxX);
+        map[r].maxY = Math.max(map[r].maxY, b.maxY);
+      }
+      return map;
+    }
+    for(let i=0;i<idxList.length;i++){
+      const e = entities[idxList[i]];
+      if(!isStandaloneClosedEntity(e)) continue;
+      const myRoot = uf.find(i);
+      const groupBBoxes = currentGroupBBoxes();
+      let bestHost=-1, bestArea=Infinity;
+      for(const key in groupBBoxes){
+        const r = parseInt(key,10);
+        if(r===myRoot) continue;
+        const gb = groupBBoxes[key];
+        if(bboxContainsWithMargin(gb, boxes[i], tol)){
+          const area = (gb.maxX-gb.minX)*(gb.maxY-gb.minY);
+          if(area<bestArea){ bestArea=area; bestHost=r; }
+        }
+      }
+      if(bestHost!==-1) uf.union(i, bestHost);
+    }
+
+    // 3) 그룹별로 outer/hole 태그를 매긴 뒤 부품으로 추가
+    const groups = {};
+    for(let i=0;i<idxList.length;i++){
+      const r = uf.find(i);
+      (groups[r] = groups[r]||[]).push(i);
+    }
+    let addedCount = 0;
+    Object.values(groups).forEach(localIdxs=>{
+      const entIdxs = localIdxs.map(li=>idxList[li]);
+      tagOuterAndHoles(entIdxs);
+      const entList = entIdxs.map(idx=>entities[idx]);
+      addedCount++;
+      addPartFromEntities('부품 '+(parts.length+1), entList);
+    });
+    nestModal.style.display = 'flex';
+    nestStatusEl.textContent = addedCount+'개의 부품을 자동 인식해 추가했습니다 (끝점 연결 기준, 구멍 자동 분리).';
+  });
+  function tagOuterAndHoles(entIdxs){
+    const groupBB = computeBbox(entIdxs.map(idx=>entities[idx]));
+    const groupArea = Math.max(1e-6, (groupBB.maxX-groupBB.minX)*(groupBB.maxY-groupBB.minY));
+    entIdxs.forEach(idx=>{
+      const e = entities[idx];
+      let area = 0;
+      if(e.type==='circle') area = Math.PI*e.r*e.r;
+      else if((e.type==='polyline'||e.type==='arc') && e.closed) area = polygonArea(e.points);
+      else { e._nestRole='outer'; return; }
+      e._nestRole = (area < groupArea*0.6) ? 'hole' : 'outer';
+    });
+  }
+  function hitTestAnyEntity(sx, sy){
+    const w = screenToWorld(sx, sy);
+    const threshold = 12/view.scale;
+    let best=null, bestScore=threshold;
+    entities.forEach((e, idx)=>{
+      if(layers[e.layer||'0']===false) return;
+      let d = Infinity;
+      if(e.type==='circle'){ d = Math.max(0, Math.hypot(w.x-e.cx, w.y-e.cy)-e.r); }
+      else if(e.type==='line'){ d = pointSegDist(w.x,w.y,e.x1,e.y1,e.x2,e.y2); }
+      else if(e.type==='arc' || e.type==='polyline'){ d = pointPolylineDist(w.x,w.y,e.points); }
+      if(d<bestScore){ bestScore=d; best={idx}; }
+    });
+    return best;
+  }
+
+  // ---------- 엔티티 목록으로부터 부품(정규화된 로컬 좌표) 생성 ----------
+  function addPartFromEntities(name, entList){
+    const bb = computeBbox(entList);
+    const w = Math.max(bb.maxX-bb.minX, 0.01);
+    const h = Math.max(bb.maxY-bb.minY, 0.01);
+    const norm = entList.map(e=>{
+      const role = e._nestRole || 'outer';
+      if(e.type==='line') return {type:'line', x1:e.x1-bb.minX, y1:e.y1-bb.minY, x2:e.x2-bb.minX, y2:e.y2-bb.minY, role};
+      if(e.type==='circle') return {type:'circle', cx:e.cx-bb.minX, cy:e.cy-bb.minY, r:e.r, role};
+      if(e.type==='point') return {type:'point', x:e.x-bb.minX, y:e.y-bb.minY, role:'outer'};
+      if(e.type==='polyline' || e.type==='arc') return {type:'polyline', closed:!!e.closed, points:e.points.map(p=>[p[0]-bb.minX, p[1]-bb.minY]), role};
+      return null;
+    }).filter(Boolean);
+    if(norm.length===0){ alert('지원되지 않는 도형입니다.'); return; }
+    parts.push({ id: partIdSeq++, name, w, h, entities: norm, qty: 1, rotateAllowed: true, color: nextColor() });
+    renderPartList();
+    renderNestCanvas();
+  }
+
+  // ---------- 부품 목록 UI ----------
+  function renderPartList(){
+    partlistEl.innerHTML = '';
+    if(parts.length===0){
+      partlistEl.innerHTML = '<div id="partlist-empty">추가된 부품이 없습니다</div>';
+      return;
+    }
+    parts.forEach(p=>{
+      const div = document.createElement('div');
+      div.className = 'part-item';
+      div.innerHTML =
+        '<div class="part-name">'+escapeXml(p.name)+'</div>'+
+        '<div class="part-dims">'+fmtNum(p.w)+' × '+fmtNum(p.h)+' mm</div>'+
+        '<div class="part-row">'+
+          '<label>수량 <input type="number" min="1" value="'+p.qty+'" data-pid="'+p.id+'" class="part-qty"></label>'+
+          '<label><input type="checkbox" '+(p.rotateAllowed?'checked':'')+' class="part-rot" data-pid="'+p.id+'"> 회전</label>'+
+          '<span class="part-del" data-pid="'+p.id+'" title="삭제">✕</span>'+
+        '</div>'+
+        '<svg class="part-thumb" viewBox="'+(-p.w*0.08)+' '+(-p.h*0.08)+' '+(p.w*1.16)+' '+(p.h*1.16)+'"></svg>';
+      partlistEl.appendChild(div);
+      const thumbSvg = div.querySelector('.part-thumb');
+      appendPartGroup(thumbSvg, p, 0, 0, false, p.color, Math.max(p.w,p.h)*0.015);
+    });
+    partlistEl.querySelectorAll('.part-qty').forEach(inp=>{
+      inp.addEventListener('input', ()=>{
+        const p = parts.find(x=>x.id===parseInt(inp.dataset.pid,10));
+        if(p) p.qty = Math.max(1, parseInt(inp.value,10)||1);
+      });
+    });
+    partlistEl.querySelectorAll('.part-rot').forEach(cb=>{
+      cb.addEventListener('change', ()=>{
+        const p = parts.find(x=>x.id===parseInt(cb.dataset.pid,10));
+        if(p) p.rotateAllowed = cb.checked;
+      });
+    });
+    partlistEl.querySelectorAll('.part-del').forEach(el=>{
+      el.addEventListener('click', ()=>{
+        parts = parts.filter(x=>x.id!==parseInt(el.dataset.pid,10));
+        renderPartList();
+        renderNestCanvas();
+      });
+    });
+  }
+
+  // ---------- 부품 도형을 지정한 위치/회전으로 SVG에 그리기 ----------
+  function appendPartGroup(svgParent, part, x, y, rotated, strokeColor, strokeWidth){
+    const g = svgEl('g', {
+      transform: rotated ? `translate(${x+part.h},${y}) rotate(90)` : `translate(${x},${y})`,
+      stroke: strokeColor||'#4dd0e1', 'stroke-width': strokeWidth||1, fill:'none'
+    });
+    part.entities.forEach(e=>{
+      const holeAttr = e.role==='hole' ? {'stroke-dasharray': (strokeWidth||1)*2.2+' '+(strokeWidth||1)*1.6} : {};
+      if(e.type==='line'){ g.appendChild(svgEl('line',Object.assign({x1:e.x1,y1:e.y1,x2:e.x2,y2:e.y2},holeAttr))); }
+      else if(e.type==='circle'){ g.appendChild(svgEl('circle',Object.assign({cx:e.cx,cy:e.cy,r:e.r},holeAttr))); }
+      else if(e.type==='polyline'){
+        const pts = e.points.map(pp=>pp[0]+','+pp[1]).join(' ');
+        g.appendChild(svgEl(e.closed?'polygon':'polyline', Object.assign({points:pts},holeAttr)));
+      } else if(e.type==='point'){
+        g.appendChild(svgEl('circle',{cx:e.x,cy:e.y,r:Math.max(0.5,part.w*0.004)}));
+      }
+    });
+    svgParent.appendChild(g);
+    return g;
+  }
+
+  // ---------- 네스팅 캔버스(원자재 + 배치 결과) 렌더 ----------
+  function renderNestCanvas(){
+    nestSvg.innerHTML = '';
+    const cfg = getStockConfig();
+    const stockW = cfg.shape==='rect' ? cfg.w : cfg.d;
+    const stockH = cfg.shape==='rect' ? cfg.h : cfg.d;
+    const w = Math.max(stockW, 10), h = Math.max(stockH, 10);
+    const pad = Math.max(w,h)*0.08;
+    const vw = w+pad*2, vh = h+pad*2;
+    nestSvg.setAttribute('viewBox', `${-pad} ${-pad} ${vw} ${vh}`);
+    const rectEl = nestSvg.getBoundingClientRect();
+    nestViewScale = (rectEl.width||1) / vw;
+
+    const strokeW = Math.max(vw,vh)*0.0018;
+    if(cfg.shape==='rect'){
+      nestSvg.appendChild(svgEl('rect', {x:0,y:0,width:cfg.w,height:cfg.h, fill:'none', stroke:'#5b6b7d', 'stroke-width':strokeW*1.4, 'stroke-dasharray':(strokeW*3)+' '+(strokeW*2)}));
+    } else {
+      nestSvg.appendChild(svgEl('circle', {cx:cfg.d/2, cy:cfg.d/2, r:cfg.d/2, fill:'none', stroke:'#5b6b7d', 'stroke-width':strokeW*1.4, 'stroke-dasharray':(strokeW*3)+' '+(strokeW*2)}));
+    }
+    if(lastNestResult){
+      lastNestResult.placements.forEach(pl=>{
+        if(!pl.placed) return;
+        const part = parts.find(p=>p.id===pl.partId);
+        if(!part) return;
+        appendPartGroup(nestSvg, part, pl.x, pl.y, pl.rotated, part.color, strokeW);
+      });
+    }
+  }
+
+  // ---------- 사각형 원자재: MaxRects 계열 2D 빈 패킹 ----------
+  function rectsIntersect(a,b){
+    return !(b.x>=a.x+a.w-1e-9 || b.x+b.w<=a.x+1e-9 || b.y>=a.y+a.h-1e-9 || b.y+b.h<=a.y+1e-9);
+  }
+  function isRectContained(a,b){
+    return a.x>=b.x-1e-9 && a.y>=b.y-1e-9 && a.x+a.w<=b.x+b.w+1e-9 && a.y+a.h<=b.y+b.h+1e-9;
+  }
+  function pruneFreeRects(rects){
+    const out=[];
+    for(let i=0;i<rects.length;i++){
+      if(rects[i].w<=1e-6 || rects[i].h<=1e-6) continue;
+      let contained=false;
+      for(let j=0;j<rects.length;j++){
+        if(i===j) continue;
+        if(rects[j].w<=1e-6 || rects[j].h<=1e-6) continue;
+        if(isRectContained(rects[i], rects[j])){ contained=true; break; }
+      }
+      if(!contained) out.push(rects[i]);
+    }
+    return out;
+  }
+  function maxRectsPack(binW, binH, items){
+    let freeRects = [{x:0,y:0,w:binW,h:binH}];
+    const placements = [];
+    const sorted = items.slice().sort((a,b)=> Math.max(b.w,b.h)-Math.max(a.w,a.h));
+    for(const item of sorted){
+      let bestScore1=Infinity, bestScore2=Infinity, bestRect=null, bestRotated=false;
+      for(const fr of freeRects){
+        if(fr.w>=item.w-1e-9 && fr.h>=item.h-1e-9){
+          const lh=Math.abs(fr.w-item.w), lv=Math.abs(fr.h-item.h);
+          const s1=Math.min(lh,lv), s2=Math.max(lh,lv);
+          if(s1<bestScore1-1e-9 || (Math.abs(s1-bestScore1)<1e-9 && s2<bestScore2)){
+            bestScore1=s1; bestScore2=s2; bestRect={x:fr.x,y:fr.y,w:item.w,h:item.h}; bestRotated=false;
+          }
+        }
+        if(item.rotateAllowed!==false && fr.w>=item.h-1e-9 && fr.h>=item.w-1e-9){
+          const lh=Math.abs(fr.w-item.h), lv=Math.abs(fr.h-item.w);
+          const s1=Math.min(lh,lv), s2=Math.max(lh,lv);
+          if(s1<bestScore1-1e-9 || (Math.abs(s1-bestScore1)<1e-9 && s2<bestScore2)){
+            bestScore1=s1; bestScore2=s2; bestRect={x:fr.x,y:fr.y,w:item.h,h:item.w}; bestRotated=true;
+          }
+        }
+      }
+      if(!bestRect){ placements.push(Object.assign({}, item, {placed:false})); continue; }
+      placements.push(Object.assign({}, item, {placed:true, x:bestRect.x, y:bestRect.y, w:bestRect.w, h:bestRect.h, rotated:bestRotated}));
+      const newFree = [];
+      for(const fr of freeRects){
+        if(!rectsIntersect(fr, bestRect)){ newFree.push(fr); continue; }
+        if(bestRect.x > fr.x) newFree.push({x:fr.x, y:fr.y, w:bestRect.x-fr.x, h:fr.h});
+        if(bestRect.x+bestRect.w < fr.x+fr.w) newFree.push({x:bestRect.x+bestRect.w, y:fr.y, w:(fr.x+fr.w)-(bestRect.x+bestRect.w), h:fr.h});
+        if(bestRect.y > fr.y) newFree.push({x:fr.x, y:fr.y, w:fr.w, h:bestRect.y-fr.y});
+        if(bestRect.y+bestRect.h < fr.y+fr.h) newFree.push({x:fr.x, y:bestRect.y+bestRect.h, w:fr.w, h:(fr.y+fr.h)-(bestRect.y+bestRect.h)});
+      }
+      freeRects = pruneFreeRects(newFree);
+    }
+    return placements;
+  }
+
+  // ---------- 원형 원자재: 행(row) 단위로 채워나가는 근사 패킹 ----------
+  function rectCornersInCircle(p, R){
+    const corners = [[p.x,p.y],[p.x+p.w,p.y],[p.x,p.y+p.h],[p.x+p.w,p.y+p.h]];
+    return corners.every(([x,y])=> Math.hypot(x-R,y-R) <= R+1e-6);
+  }
+  function packIntoCircle(diameter, items){
+    const R = diameter/2;
+    const sorted = items.slice().sort((a,b)=> Math.max(b.w,b.h)-Math.max(a.w,a.h));
+    const placements = [];
+    let y = 0, rowH = 0, rowItems = [];
+    function halfWidthAt(yy){
+      const dy = yy-R;
+      if(Math.abs(dy)>=R) return 0;
+      return Math.sqrt(Math.max(0, R*R - dy*dy));
+    }
+    function commitRow(){
+      if(rowItems.length===0) return;
+      const hw = halfWidthAt(y + rowH/2);
+      const rowWidth = rowItems.reduce((s,it)=>s+it.w,0);
+      const startX = R - hw;
+      let curX = startX + Math.max(0, (2*hw-rowWidth))/2;
+      for(const it of rowItems){
+        placements.push(Object.assign({}, it.orig, {placed:true, x:curX, y:y, w:it.w, h:it.h, rotated:it.rotated}));
+        curX += it.w;
+      }
+      y += rowH; rowH=0; rowItems=[];
+    }
+    for(const item of sorted){
+      let placedOk=false;
+      const rotOptions = item.rotateAllowed!==false ? [false,true] : [false];
+      for(const rotated of rotOptions){
+        const w = rotated?item.h:item.w, h = rotated?item.w:item.h;
+        const newRowH = Math.max(rowH, h);
+        const hw = halfWidthAt(y + newRowH/2);
+        const usedW = rowItems.reduce((s,it)=>s+it.w,0);
+        if(usedW+w <= 2*hw + 1e-6){
+          rowItems.push({orig:item, w, h, rotated}); rowH = newRowH; placedOk = true; break;
+        }
+      }
+      if(!placedOk){
+        commitRow();
+        let placedOk2=false;
+        for(const rotated of rotOptions){
+          const w = rotated?item.h:item.w, h = rotated?item.w:item.h;
+          const hw = halfWidthAt(y + h/2);
+          if(w<=2*hw+1e-6 && y+h<=diameter+1e-6){
+            rowItems.push({orig:item, w, h, rotated}); rowH = h; placedOk2=true; break;
+          }
+        }
+        if(!placedOk2){ placements.push(Object.assign({}, item, {placed:false})); }
+      }
+    }
+    commitRow();
+    for(const p of placements){
+      if(p.placed && !rectCornersInCircle(p, R)) p.placed = false;
+    }
+    return placements;
+  }
+
+  // ---------- 자동 배치 실행 ----------
+  document.getElementById('btnAutoNest').addEventListener('click', runAutoNest);
+  function runAutoNest(){
+    if(parts.length===0){ alert('먼저 부품을 추가해주세요.'); return; }
+    const cfg = getStockConfig();
+    const margin = Math.max(0, parseFloat(document.getElementById('nestMargin').value)||0);
+    const allowRotateGlobal = document.getElementById('allowRotate').checked;
+    const items = [];
+    parts.forEach(p=>{
+      for(let i=0;i<p.qty;i++){
+        items.push({ partId: p.id, w: p.w+margin, h: p.h+margin, rotateAllowed: p.rotateAllowed && allowRotateGlobal });
+      }
+    });
+    let placements;
+    if(cfg.shape==='rect'){
+      if(!(cfg.w>0) || !(cfg.h>0)){ alert('원자재 가로/세로 값을 입력해주세요.'); return; }
+      placements = maxRectsPack(cfg.w, cfg.h, items);
+    } else {
+      if(!(cfg.d>0)){ alert('원자재 지름 값을 입력해주세요.'); return; }
+      placements = packIntoCircle(cfg.d, items);
+    }
+    const placedList = placements.filter(p=>p.placed);
+    const totalArea = cfg.shape==='rect' ? cfg.w*cfg.h : Math.PI*(cfg.d/2)*(cfg.d/2);
+    let usedArea = 0;
+    placedList.forEach(pl=>{ const part = parts.find(p=>p.id===pl.partId); if(part) usedArea += part.w*part.h; });
+    const util = totalArea>0 ? (usedArea/totalArea*100) : 0;
+    lastNestResult = { stock: cfg, placements };
+    renderNestCanvas();
+    const unplacedCount = placements.length - placedList.length;
+    nestStatusEl.innerHTML = `배치됨: ${placedList.length} / ${placements.length}개` +
+      (unplacedCount>0 ? `<br><span style="color:var(--danger)">⚠ 미배치 ${unplacedCount}개 (공간 부족 — 원자재를 늘리거나 수량을 줄여보세요)</span>` : '') +
+      `<br>자재 사용률: 약 ${util.toFixed(1)}%`;
+  }
+
+  document.getElementById('btnClearNest').addEventListener('click', ()=>{
+    lastNestResult = null;
+    nestStatusEl.textContent = '';
+    renderNestCanvas();
+  });
+
+  // ---------- 배치 결과 내보내기: PNG ----------
+  document.getElementById('btnExportNestPng').addEventListener('click', ()=>{
+    const cfg = getStockConfig();
+    const stockW = cfg.shape==='rect'? cfg.w : cfg.d;
+    const stockH = cfg.shape==='rect'? cfg.h : cfg.d;
+    if(!(stockW>0) || !(stockH>0)){ alert('원자재 크기를 입력해주세요.'); return; }
+    const pad = Math.max(stockW,stockH)*0.06;
+    const vw = stockW+pad*2, vh = stockH+pad*2;
+    const strokeW = Math.max(vw,vh)*0.0018;
+    let s = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-pad} ${-pad} ${vw} ${vh}" width="1600" height="${Math.round(1600*vh/vw)}">`;
+    s += `<rect x="${-pad}" y="${-pad}" width="${vw}" height="${vh}" fill="#0c1015"/>`;
+    if(cfg.shape==='rect'){
+      s += `<rect x="0" y="0" width="${stockW}" height="${stockH}" fill="none" stroke="#5b6b7d" stroke-width="${strokeW*1.4}"/>`;
+    } else {
+      s += `<circle cx="${stockW/2}" cy="${stockW/2}" r="${stockW/2}" fill="none" stroke="#5b6b7d" stroke-width="${strokeW*1.4}"/>`;
+    }
+    if(lastNestResult){
+      lastNestResult.placements.forEach(pl=>{
+        if(!pl.placed) return;
+        const part = parts.find(p=>p.id===pl.partId);
+        if(!part) return;
+        const tf = pl.rotated ? `translate(${pl.x+part.h} ${pl.y}) rotate(90)` : `translate(${pl.x} ${pl.y})`;
+        s += `<g transform="${tf}" stroke="${part.color}" stroke-width="${strokeW}" fill="none">`;
+        part.entities.forEach(e=>{
+          if(e.type==='line') s += `<line x1="${e.x1}" y1="${e.y1}" x2="${e.x2}" y2="${e.y2}"/>`;
+          else if(e.type==='circle') s += `<circle cx="${e.cx}" cy="${e.cy}" r="${e.r}"/>`;
+          else if(e.type==='polyline'){
+            const pts = e.points.map(p=>p[0]+','+p[1]).join(' ');
+            s += `<${e.closed?'polygon':'polyline'} points="${pts}"/>`;
+          }
+        });
+        s += `</g>`;
+      });
+    }
+    s += `</svg>`;
+    const blob = new Blob([s], {type:'image/svg+xml'});
+    const url = URL.createObjectURL(blob);
+    const img = new Image();
+    img.onload = function(){
+      const canvas = document.createElement('canvas');
+      canvas.width = 1600;
+      canvas.height = img.height*(1600/img.width) || 1000;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img,0,0,canvas.width,canvas.height);
+      URL.revokeObjectURL(url);
+      canvas.toBlob(function(pngBlob){
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(pngBlob);
+        a.download = 'nesting_layout.png';
+        a.click();
+      });
+    };
+    img.src = url;
+  });
+
+  // ---------- 배치 결과 내보내기: DXF ----------
+  function transformPartPoint(px, py, part, x, y, rotated){
+    if(rotated){
+      const rx = -py, ry = px; // rotate(90): (px,py) -> (-py, px)
+      return [rx + x + part.h, ry + y];
+    }
+    return [px+x, py+y];
+  }
+  document.getElementById('btnExportNestDxf').addEventListener('click', ()=>{
+    if(!lastNestResult){ alert('먼저 자동 배치를 실행해주세요.'); return; }
+    const cfg = lastNestResult.stock;
+    let ents = '';
+    function line(x1,y1,x2,y2,layer){
+      ents += `0\nLINE\n8\n${layer}\n10\n${x1}\n20\n${-y1}\n30\n0\n11\n${x2}\n21\n${-y2}\n31\n0\n`;
+    }
+    if(cfg.shape==='rect'){
+      line(0,0,cfg.w,0,'STOCK'); line(cfg.w,0,cfg.w,cfg.h,'STOCK'); line(cfg.w,cfg.h,0,cfg.h,'STOCK'); line(0,cfg.h,0,0,'STOCK');
+    } else {
+      ents += `0\nCIRCLE\n8\nSTOCK\n10\n${cfg.d/2}\n20\n${-(cfg.d/2)}\n30\n0\n40\n${cfg.d/2}\n`;
+    }
+    lastNestResult.placements.forEach(pl=>{
+      if(!pl.placed) return;
+      const part = parts.find(p=>p.id===pl.partId);
+      if(!part) return;
+      const layerName = 'PART_'+part.id;
+      part.entities.forEach(e=>{
+        if(e.type==='line'){
+          const [ax,ay] = transformPartPoint(e.x1,e.y1,part,pl.x,pl.y,pl.rotated);
+          const [bx,by] = transformPartPoint(e.x2,e.y2,part,pl.x,pl.y,pl.rotated);
+          line(ax,ay,bx,by,layerName);
+        } else if(e.type==='circle'){
+          const [cx,cy] = transformPartPoint(e.cx,e.cy,part,pl.x,pl.y,pl.rotated);
+          ents += `0\nCIRCLE\n8\n${layerName}\n10\n${cx}\n20\n${-cy}\n30\n0\n40\n${e.r}\n`;
+        } else if(e.type==='polyline'){
+          const pts = e.points.map(p=>transformPartPoint(p[0],p[1],part,pl.x,pl.y,pl.rotated));
+          ents += `0\nLWPOLYLINE\n8\n${layerName}\n90\n${pts.length}\n70\n${e.closed?1:0}\n`;
+          pts.forEach(([px,py])=>{ ents += `10\n${px}\n20\n${-py}\n`; });
+        }
+      });
+    });
+    const dxf = `0\nSECTION\n2\nENTITIES\n${ents}0\nENDSEC\n0\nEOF\n`;
+    const blob = new Blob([dxf], {type:'application/dxf'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'nesting_layout.dxf';
+    a.click();
+  });
+
+  updateStockInputsVisibility();
 
 })();
 </script>

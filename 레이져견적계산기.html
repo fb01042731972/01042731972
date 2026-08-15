@@ -596,6 +596,11 @@ button:active{ transform: translateY(0); }
         &nbsp;|&nbsp; 필요: <span id="sheetCount" class="font-bold text-red-600">0</span>장
         &nbsp;|&nbsp; 판재구매비(참고): <span id="sheetCost" class="font-bold text-red-600">0</span>원
       </div>
+      <div class="mt-2 bg-white border border-orange-200 rounded p-2 text-xs">
+        <span class="font-bold text-orange-700 mr-2">자재비 산정 기준:</span>
+        <label class="mr-3 cursor-pointer"><input type="radio" name="matBasis" value="weight" id="matBasisWeight" onchange="onMatBasisChange()"> 무게 기준 (무게×KG단가)</label>
+        <label class="cursor-pointer"><input type="radio" name="matBasis" value="sheet" id="matBasisSheet" onchange="onMatBasisChange()"> 판재 소요량 기준 (③ 장당단가×필요장수)</label>
+      </div>
       <div id="sheet1Warning" class="mt-2 hidden text-xs text-red-600 bg-red-50 border border-red-200 rounded p-2 font-bold">
         ⚠️ 재질과 두께를 먼저 입력하세요. 나머지 항목이 잠겨있습니다.
       </div>
@@ -632,9 +637,9 @@ button:active{ transform: translateY(0); }
         <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div>
             <div class="grid grid-cols-4 gap-2">
-              <div><label class="block text-[11px] text-gray-500 mb-0.5">가로 (mm)</label><input type="number" id="w"   placeholder="1000" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
-              <div><label class="block text-[11px] text-gray-500 mb-0.5">세로 (mm)</label><input type="number" id="h"   placeholder="500"  class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
-              <div><label class="block text-[11px] text-yellow-700 mb-0.5">높이(mm)</label><input type="number" id="ht"  placeholder="0"    class="block w-full border border-yellow-300 rounded p-2 text-sm bg-yellow-50" oninput="updateRectCapVisibility();calculate()"></div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">가로 (mm)</label><input type="number" id="w"   placeholder="1000" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="clearDxfOverrideOnManualEdit();calculate()"></div>
+              <div><label class="block text-[11px] text-gray-500 mb-0.5">세로 (mm)</label><input type="number" id="h"   placeholder="500"  class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="clearDxfOverrideOnManualEdit();calculate()"></div>
+              <div><label class="block text-[11px] text-yellow-700 mb-0.5">높이(mm)</label><input type="number" id="ht"  placeholder="0"    class="block w-full border border-yellow-300 rounded p-2 text-sm bg-yellow-50" oninput="clearDxfOverrideOnManualEdit();updateRectCapVisibility();calculate()"></div>
               <div><label class="block text-[11px] text-gray-500 mb-0.5">수량 (EA)</label><input type="number" id="qty" value="1" min="1" step="1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
             </div>
             <div id="rectCapRow" class="mt-2 hidden">
@@ -886,8 +891,8 @@ button:active{ transform: translateY(0); }
 
         <!-- 단순 모드(기본): 지름·갯수 입력 시 실시간으로 현재 형상의 모든 면(플랩/전개면 등)에 자동 적용됨 -->
         <div id="holeSimpleContainer" class="grid grid-cols-3 gap-2 items-end">
-          <div><label class="block text-[11px] text-gray-500 mb-0.5">홀 지름(mm)</label><input type="number" id="holeDia" placeholder="예:10" min="0" step="0.1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
-          <div><label class="block text-[11px] text-gray-500 mb-0.5">갯수(개, 면당)</label><input type="number" id="holeCount" placeholder="0" min="0" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="calculate()"></div>
+          <div><label class="block text-[11px] text-gray-500 mb-0.5">홀 지름(mm)</label><input type="number" id="holeDia" placeholder="예:10" min="0" step="0.1" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="clearDxfOverrideOnManualEdit();calculate()"></div>
+          <div><label class="block text-[11px] text-gray-500 mb-0.5">갯수(개, 면당)</label><input type="number" id="holeCount" placeholder="0" min="0" class="block w-full border border-gray-300 rounded p-2 text-sm" oninput="clearDxfOverrideOnManualEdit();calculate()"></div>
           <div class="bg-blue-50 border border-blue-200 rounded p-2 text-center">
             <div class="text-[10px] text-gray-500">홀 레이저 경로</div>
             <div class="text-sm font-bold text-blue-700"><span id="resHolePerimeter">0</span> mm</div>
@@ -1596,8 +1601,32 @@ const K = {
   SSFEED:'LE_SSF_V16', SUSFEED:'LE_SUSF_V16',
   KG:'LE_KG_V16', EXTRA:'LE_EX_V16', CALC:'LE_CALC_STATE_V22',
   PLASTIC:'LE_PL_V22', CNCPROC:'LE_CNCP_V22', CNCEXTRA:'LE_CNCE_V22',
-  DXFBEND:'LE_DXFBEND_V1'
+  DXFBEND:'LE_DXFBEND_V1', MATBASIS:'LE_MATBASIS_V1'
 };
+
+// ════ 자재비 산정 기준 (무게 기준 / 판재 소요량 기준) ════
+function getMatBasis() {
+  return localStorage.getItem(K.MATBASIS) === 'sheet' ? 'sheet' : 'weight';
+}
+function onMatBasisChange() {
+  const v = document.querySelector('input[name="matBasis"]:checked');
+  localStorage.setItem(K.MATBASIS, v ? v.value : 'weight');
+  calculate();
+}
+function initMatBasisUI() {
+  const basis = getMatBasis();
+  const el = document.getElementById(basis==='sheet' ? 'matBasisSheet' : 'matBasisWeight');
+  if (el) el.checked = true;
+}
+
+// ════ DXF 경로/홀 오버라이드 — 사용자가 치수(가로/세로/높이/홀)를 직접 수정하면
+// 더 이상 유효하지 않은 DXF 전체 경로 값을 강제 적용하지 않도록 자동 해제 ════
+function clearDxfOverrideOnManualEdit() {
+  if (window._dxfPathOverride || window._dxfHoleOverride) {
+    window._dxfPathOverride = null;
+    window._dxfHoleOverride = false;
+  }
+}
 
 // ════════════════════════════════════════════════════════════
 // ════ 데이터 저장 폴더 연동 (File System Access API) ════
@@ -2148,6 +2177,7 @@ window.onload = function() {
   renderKgTable(); renderSheetTable(); renderBendTable();
   renderSsFeedTable(); renderSusFeedTable();
   renderPlasticTable(); renderCncProcTable(); renderCncExtra(); calcPlasticMaterial();
+  initMatBasisUI();
   // 새로고침/브라우저 재시작 시 계산기 입력값은 항상 새로 작성 상태로 시작
   // (단가표/설정 값은 그대로 유지되며, 현재 작성 중이던 견적 입력값만 초기화됨)
   localStorage.removeItem(K.CALC);
@@ -3039,16 +3069,16 @@ function renderKgTable() {
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td class="text-center"><input type="number" value="${r.t}" step="0.1" min="0.1" class="inp inp-sm" oninput="onKgChange(${i},'t',this.value)"></td>
-      <td><input type="number" value="${r.ss}"    class="inp text-right" oninput="onKgChange(${i},'ss',this.value)"></td>
-      <td><input type="number" value="${r.sus1d}" class="inp text-right" oninput="onKgChange(${i},'sus1d',this.value)"></td>
-      <td><input type="number" value="${r.sus2b}" class="inp text-right" oninput="onKgChange(${i},'sus2b',this.value)"></td>
-      <td><input type="number" value="${r.susMr}" class="inp text-right" oninput="onKgChange(${i},'susMr',this.value)"></td>
-      <td><input type="number" value="${r.susHl}" class="inp text-right" oninput="onKgChange(${i},'susHl',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.ss}"    class="inp text-right" oninput="onKgChange(${i},'ss',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.sus1d}" class="inp text-right" oninput="onKgChange(${i},'sus1d',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.sus2b}" class="inp text-right" oninput="onKgChange(${i},'sus2b',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.susMr}" class="inp text-right" oninput="onKgChange(${i},'susMr',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.susHl}" class="inp text-right" oninput="onKgChange(${i},'susHl',this.value)"></td>
       <td class="text-center"><button class="del-btn" onclick="delKgRow(${i})">✕</button></td>`;
     tbody.appendChild(tr);
   });
 }
-function onKgChange(i,f,v) { const r=loadKg(); r[i][f]=parseFloat(v)||0; localStorage.setItem(K.KG,JSON.stringify(r));scheduleFolderSync(); calculate(); }
+function onKgChange(i,f,v) { const r=loadKg(); r[i][f]=toNum(v); localStorage.setItem(K.KG,JSON.stringify(r));scheduleFolderSync(); calculate(); }
 function addKgRow() { const r=loadKg(); r.push({t:0,ss:0,sus1d:0,sus2b:0,susMr:0,susHl:0}); localStorage.setItem(K.KG,JSON.stringify(r));scheduleFolderSync(); renderKgTable(); }
 function delKgRow(i) { if(!confirm('이 행을 삭제할까요?')) return; const r=loadKg(); r.splice(i,1); localStorage.setItem(K.KG,JSON.stringify(r));scheduleFolderSync(); renderKgTable(); calculate(); }
 
@@ -3060,12 +3090,12 @@ function renderSheetTable() {
     tr.innerHTML=`
       <td class="text-center"><input type="number" value="${r.t}" step="0.1" class="inp inp-sm" oninput="onSheetChange(${i},'t',this.value)"></td>
       <td><input type="text" value="${r.size}" class="inp text-center" oninput="onSheetChange(${i},'size',this.value)"></td>
-      <td><input type="number" value="${r.price}" class="inp text-right" oninput="onSheetChange(${i},'price',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.price}" class="inp text-right" oninput="onSheetChange(${i},'price',this.value)"></td>
       <td class="text-center"><button class="del-btn" onclick="delSheetRow(${i})">✕</button></td>`;
     tbody.appendChild(tr);
   });
 }
-function onSheetChange(i,f,v){const r=loadSheet();r[i][f]=(f==='size')?v:(parseFloat(v)||0);localStorage.setItem(K.SHEET,JSON.stringify(r));scheduleFolderSync();autoSheet();_refreshDxfNestPriceIfLoaded();}
+function onSheetChange(i,f,v){const r=loadSheet();r[i][f]=(f==='size')?v:toNum(v);localStorage.setItem(K.SHEET,JSON.stringify(r));scheduleFolderSync();autoSheet();_refreshDxfNestPriceIfLoaded();}
 function addSheetRow(){const r=loadSheet();r.push({t:0,size:'1219x2438',price:0});localStorage.setItem(K.SHEET,JSON.stringify(r));scheduleFolderSync();renderSheetTable();}
 function delSheetRow(i){if(!confirm('이 행을 삭제할까요?')) return; const r=loadSheet();r.splice(i,1);localStorage.setItem(K.SHEET,JSON.stringify(r));scheduleFolderSync();renderSheetTable();autoSheet();}
 
@@ -3333,10 +3363,10 @@ function renderBendTable() {
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td class="text-center"><input type="number" value="${r.t}" step="0.5" class="inp inp-sm" oninput="onBendChange(${i},'t',this.value)"></td>
-      <td><input type="number" value="${r.b500}"  class="inp text-right" oninput="onBendChange(${i},'b500',this.value)"></td>
-      <td><input type="number" value="${r.b1000}" class="inp text-right" oninput="onBendChange(${i},'b1000',this.value)"></td>
-      <td><input type="number" value="${r.b1500}" class="inp text-right" oninput="onBendChange(${i},'b1500',this.value)"></td>
-      <td><input type="number" value="${r.bMax}"  class="inp text-right" oninput="onBendChange(${i},'bMax',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.b500}"  class="inp text-right" oninput="onBendChange(${i},'b500',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.b1000}" class="inp text-right" oninput="onBendChange(${i},'b1000',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.b1500}" class="inp text-right" oninput="onBendChange(${i},'b1500',this.value)"></td>
+      <td><input type="text" inputmode="decimal" value="${r.bMax}"  class="inp text-right" oninput="onBendChange(${i},'bMax',this.value)"></td>
       <td class="text-center"><button class="del-btn" onclick="delBendRow(${i})">✕</button></td>`;
     tbody.appendChild(tr);
   });
@@ -3347,7 +3377,7 @@ function _refreshDxfBendIfLoaded(){
     if(_dxfData._metrics) _dxfRenderHoleBreakdown(_dxfData._metrics.circles);
   }
 }
-function onBendChange(i,f,v){const r=loadBend();r[i][f]=parseFloat(v)||0;localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();calculate();_refreshDxfBendIfLoaded();}
+function onBendChange(i,f,v){const r=loadBend();r[i][f]=toNum(v);localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();calculate();_refreshDxfBendIfLoaded();}
 function addBendRow(){const r=loadBend();r.push({t:0,b500:0,b1000:0,b1500:0,bMax:0});localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();renderBendTable();calculate();_refreshDxfBendIfLoaded();}
 function delBendRow(i){if(!confirm('이 행을 삭제할까요?')) return; const r=loadBend();r.splice(i,1);localStorage.setItem(K.BEND,JSON.stringify(r));scheduleFolderSync();renderBendTable();calculate();_refreshDxfBendIfLoaded();}
 
@@ -3358,12 +3388,12 @@ function renderSsFeedTable() {
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td class="text-center"><input type="number" value="${r.t}" step="0.1" class="inp inp-sm" oninput="onSsFeedCh(${i},'t',this.value)"></td>
-      <td><input type="number" value="${r.f}" class="inp text-right" oninput="onSsFeedCh(${i},'f',this.value)"><span class="text-[10px] text-gray-400 ml-1">mm/분</span></td>
+      <td><input type="text" inputmode="decimal" value="${r.f}" class="inp text-right" oninput="onSsFeedCh(${i},'f',this.value)"><span class="text-[10px] text-gray-400 ml-1">mm/분</span></td>
       <td class="text-center"><button class="del-btn" onclick="delSsFeedRow(${i})">✕</button></td>`;
     tbody.appendChild(tr);
   });
 }
-function onSsFeedCh(i,f,v){const r=loadSsFeed();r[i][f]=parseFloat(v)||0;localStorage.setItem(K.SSFEED,JSON.stringify(r));scheduleFolderSync();calculate();}
+function onSsFeedCh(i,f,v){const r=loadSsFeed();r[i][f]=toNum(v);localStorage.setItem(K.SSFEED,JSON.stringify(r));scheduleFolderSync();calculate();}
 function addSsFeedRow(){const r=loadSsFeed();r.push({t:0,f:0});localStorage.setItem(K.SSFEED,JSON.stringify(r));scheduleFolderSync();renderSsFeedTable();}
 function delSsFeedRow(i){if(!confirm('이 행을 삭제할까요?')) return; const r=loadSsFeed();r.splice(i,1);localStorage.setItem(K.SSFEED,JSON.stringify(r));scheduleFolderSync();renderSsFeedTable();calculate();}
 
@@ -3374,12 +3404,12 @@ function renderSusFeedTable() {
     const tr=document.createElement('tr');
     tr.innerHTML=`
       <td class="text-center"><input type="number" value="${r.t}" step="0.1" class="inp inp-sm" oninput="onSusFeedCh(${i},'t',this.value)"></td>
-      <td><input type="number" value="${r.f}" class="inp text-right" oninput="onSusFeedCh(${i},'f',this.value)"><span class="text-[10px] text-gray-400 ml-1">mm/분</span></td>
+      <td><input type="text" inputmode="decimal" value="${r.f}" class="inp text-right" oninput="onSusFeedCh(${i},'f',this.value)"><span class="text-[10px] text-gray-400 ml-1">mm/분</span></td>
       <td class="text-center"><button class="del-btn" onclick="delSusFeedRow(${i})">✕</button></td>`;
     tbody.appendChild(tr);
   });
 }
-function onSusFeedCh(i,f,v){const r=loadSusFeed();r[i][f]=parseFloat(v)||0;localStorage.setItem(K.SUSFEED,JSON.stringify(r));scheduleFolderSync();calculate();}
+function onSusFeedCh(i,f,v){const r=loadSusFeed();r[i][f]=toNum(v);localStorage.setItem(K.SUSFEED,JSON.stringify(r));scheduleFolderSync();calculate();}
 function addSusFeedRow(){const r=loadSusFeed();r.push({t:0,f:0});localStorage.setItem(K.SUSFEED,JSON.stringify(r));scheduleFolderSync();renderSusFeedTable();}
 function delSusFeedRow(i){if(!confirm('이 행을 삭제할까요?')) return; const r=loadSusFeed();r.splice(i,1);localStorage.setItem(K.SUSFEED,JSON.stringify(r));scheduleFolderSync();renderSusFeedTable();calculate();}
 
@@ -3448,13 +3478,17 @@ function calculate() {
     const ht=parseFloat(document.getElementById('ht').value)||0;
     qty=getIntQty('qty');
     if(w>0&&h>0) {
-      extW = w+(ht>0?ht*2:0)+20;
-      extH = h+(ht>0?ht*2:0)+20;
-      weight = (extW*extH*t*density)/1e6;
+      // 실제 판재 소요(전개) 크기 — 마진 없는 실치수. 무게·레이저 절단 길이는 반드시 이 값으로 계산한다.
+      const actualW = w+(ht>0?ht*2:0);
+      const actualH = h+(ht>0?ht*2:0);
+      // 네스팅/판재 구매수량 산정용 여유치수(+20mm) — 무게·가공비 계산에는 사용하지 않는다.
+      extW = actualW+20;
+      extH = actualH+20;
+      weight = (actualW*actualH*t*density)/1e6;
       if(ht>0){
-        laserPath=(extW+extH)*2 + 8*ht;
+        laserPath=(actualW+actualH)*2 + 8*ht;
         document.getElementById('modeLabel').innerText='사각통';
-        details=[`외곽: ${Math.round((extW+extH)*2).toLocaleString()}mm`,`높이절단×8: ${Math.round(8*ht).toLocaleString()}mm`];
+        details=[`외곽: ${Math.round((actualW+actualH)*2).toLocaleString()}mm`,`높이절단×8: ${Math.round(8*ht).toLocaleString()}mm`];
         inputSize = `${w}×${h}×H${ht}`;
 
         const rectCapChk = document.getElementById('rectCapChk');
@@ -3983,10 +4017,7 @@ function calculate() {
   const pierceCost = pierceCount*piercePrice;
   const machineCost = laserTime*minutePrice + pierceCost;
 
-  // 자재비 = 무게 × kg단가 (엑셀 방식과 동일)
-  const matCost = weight * kgPrice;
-
-  // 판재: 표시용 — 부재별(원통부/콘부/마개 등)로 나누어 판재 소요량을 합산
+  // 판재 소요량 계산 — 부재별(원통부/콘부/마개 등)로 나누어 판재 소요량을 합산
   let sheetParts = [];
   if(window._hopperParts && window._hopperParts.length>0){
     sheetParts = window._hopperParts.slice();
@@ -4010,6 +4041,19 @@ function calculate() {
   }
   const sheetOversizeEl = document.getElementById('sheetOversizeWarning');
   if(sheetOversizeEl) sheetOversizeEl.classList.toggle('hidden', !sheetOversized);
+
+  // 자재비 = 무게 기준(무게×kg단가) 또는 판재 소요량 기준(장당단가×필요장수÷수량) — 사용자 선택
+  const matBasis = getMatBasis();
+  let matCost;
+  const matCostSpanEl = document.getElementById('resMaterialCost');
+  const matCostLabelEl = matCostSpanEl ? matCostSpanEl.previousElementSibling : null;
+  if (matBasis === 'sheet' && sheetNeed > 0 && qty > 0) {
+    matCost = sheetBuyCost / qty; // 1개 단위 환산 (표시부에서 qty 재곱셈)
+    if (matCostLabelEl) matCostLabelEl.textContent = '자재비 (판재소요량×장당단가)';
+  } else {
+    matCost = weight * kgPrice;
+    if (matCostLabelEl) matCostLabelEl.textContent = '자재비 (무게×KG단가)';
+  }
 
   // 절곡비
   const bp = nearestByT(loadBend(), t);
@@ -4280,7 +4324,7 @@ function dxfAddDxfFile(input){
       }
 
       const translated = parsed.entities.map(ent=>{
-        const ne = { type: ent.type, layer: ent.layer, props: Object.assign({}, ent.props) };
+        const ne = { type: ent.type, layer: ent.layer, linetype: ent.linetype, props: Object.assign({}, ent.props) };
         const p = ne.props;
         if(p.x1!==undefined) p.x1 += offsetX;
         if(p.x2!==undefined) p.x2 += offsetX;
@@ -4369,12 +4413,21 @@ function parseDXF(text) {
     if(code===20) cur.props.y1 = parseFloat(value);
     if(code===11) cur.props.x2 = parseFloat(value);
     if(code===21) cur.props.y2 = parseFloat(value);
-    if(code===40) cur.props.r  = parseFloat(value); // radius / start param
+    // 반지름/축비 — DXF에서 그룹코드 40은 엔티티 종류에 따라 의미가 다르다
+    //   CIRCLE/ARC: 반지름(radius)
+    //   ELLIPSE   : 단축/장축 비율(ratio, minor/major) — 반지름이 아님!
+    if(code===40) {
+      if(cur.type==='ELLIPSE') cur.props.ratio = parseFloat(value);
+      else cur.props.r = parseFloat(value);
+    }
     if(code===50) cur.props.startAngle = parseFloat(value);
     if(code===51) cur.props.endAngle   = parseFloat(value);
     if(code===70) cur.props.flags = parseInt(value);
-    // LWPOLYLINE / POLYLINE 버텍스
-    if(code===42) cur.props.bulge = (cur.props.bulge||[]).concat(parseFloat(value));
+    // LWPOLYLINE / POLYLINE 버텍스의 bulge(코드 42)는 ELLIPSE의 endParam(역시 코드 42)과
+    // 그룹코드가 겹치므로 반드시 엔티티 종류로 구분해야 한다.
+    if(code===42 && (cur.type==='LWPOLYLINE' || cur.type==='POLYLINE')) {
+      cur.props.bulge = (cur.props.bulge||[]).concat(parseFloat(value));
+    }
     // 누적 vertex
     if(code===10) {
       cur.props.vx = (cur.props.vx||[]).concat(parseFloat(value));
@@ -4382,10 +4435,12 @@ function parseDXF(text) {
     if(code===20) {
       cur.props.vy = (cur.props.vy||[]).concat(parseFloat(value));
     }
-    // ELLIPSE
-    if(code===41) cur.props.ratio = parseFloat(value);
-    if(code===42 && cur.type==='ELLIPSE') cur.props.startParam = parseFloat(value);
-    if(code===43 && cur.type==='ELLIPSE') cur.props.endParam   = parseFloat(value);
+    // ELLIPSE — DXF 표준: 40=축비(ratio), 41=시작 파라미터, 42=끝 파라미터
+    // (그룹코드 43은 ELLIPSE에 존재하지 않는 코드이므로 더 이상 사용하지 않는다)
+    if(cur.type==='ELLIPSE') {
+      if(code===41) cur.props.startParam = parseFloat(value);
+      if(code===42) cur.props.endParam   = parseFloat(value);
+    }
     // SPLINE 제어점 수
     if(code===73) cur.props.ctrlPts = parseInt(value);
     // TEXT/MTEXT 제외 처리용 flag
@@ -4400,6 +4455,15 @@ function parseDXF(text) {
   // 참고용 표시일 뿐이므로, 도면에서 완전히 제외한다.
   _dxfStripBendZoneLines(entities);
   layers = [...new Set(entities.map(e=>e.layer))].sort();
+
+  // ELLIPSE 장축 반지름 계산 — DXF 표준상 그룹코드 11/21(x2,y2)은 중심 기준 "장축 끝점" 벡터이므로
+  // 그 벡터의 길이가 실제 장축 반지름(a)이다. 그룹코드 40은 반지름이 아니라 단축/장축 비율(ratio)이다.
+  entities.forEach(e=>{
+    if(e.type==='ELLIPSE'){
+      const dx = e.props.x2||0, dy = e.props.y2||0;
+      e.props.majorR = Math.sqrt(dx*dx + dy*dy);
+    }
+  });
 
   return { entities, layers, fileName:'' };
 }
@@ -4633,7 +4697,7 @@ function calcDxfMetrics(entities, selectedLayers) {
 
     } else if(t==='ELLIPSE'){
       // 근사: π*(3(a+b)-√((3a+b)(a+3b)))
-      const a = p.r||0;
+      const a = p.majorR||0;
       const b = a*(p.ratio||1);
       const peri = Math.PI*(3*(a+b)-Math.sqrt((3*a+b)*(a+3*b)));
       totalPath += peri;
@@ -4685,9 +4749,11 @@ function calcDxfMetrics(entities, selectedLayers) {
     for(const v of xs2){ if(v<bx1)bx1=v; if(v>bx2)bx2=v; }
     for(const v of ys2){ if(v<by1)by1=v; if(v>by2)by2=v; }
     if(e.type==='CIRCLE'||e.type==='ARC'||e.type==='ELLIPSE'){
-      const r=p.r||0, a=p.r||0, b=a*(p.ratio||1);
+      const isEllipse = e.type==='ELLIPSE';
+      const a = isEllipse ? (p.majorR||0) : (p.r||0);
+      const b = isEllipse ? a*(p.ratio||1) : a;
       const cx=p.x1||0, cy=p.y1||0;
-      if(cx-r<bx1)bx1=cx-r; if(cx+r>bx2)bx2=cx+r;
+      if(cx-a<bx1)bx1=cx-a; if(cx+a>bx2)bx2=cx+a;
       if(cy-b<by1)by1=cy-b; if(cy+b>by2)by2=cy+b;
     }
   }
@@ -4731,7 +4797,7 @@ function dxfEntityEndpoints(e){
       pts.push([xs[xs.length-1], ys[ys.length-1]]);
     }
   } else if(e.type==='ELLIPSE'){
-    const cx=p.x1||0, cy=p.y1||0, a=p.r||0, b=a*(p.ratio||1);
+    const cx=p.x1||0, cy=p.y1||0, a=p.majorR||0, b=a*(p.ratio||1);
     if(p.startParam!==undefined && p.endParam!==undefined &&
        Math.abs((p.endParam-p.startParam) - 2*Math.PI) > 0.01){
       pts.push([cx+a*Math.cos(p.startParam), cy+b*Math.sin(p.startParam)]);
@@ -4796,8 +4862,11 @@ function dxfGroupParts(entities, tol){
       xs.forEach(v=>{ if(v<bx1)bx1=v; if(v>bx2)bx2=v; });
       ys.forEach(v=>{ if(v<by1)by1=v; if(v>by2)by2=v; });
       if(e.type==='CIRCLE' || e.type==='ARC' || e.type==='ELLIPSE'){
-        const r=p.r||0, a=p.r||0, b=a*(p.ratio||1), cx=p.x1||0, cy=p.y1||0;
-        if(cx-r<bx1)bx1=cx-r; if(cx+r>bx2)bx2=cx+r;
+        const isEllipse = e.type==='ELLIPSE';
+        const a = isEllipse ? (p.majorR||0) : (p.r||0);
+        const b = isEllipse ? a*(p.ratio||1) : a;
+        const cx=p.x1||0, cy=p.y1||0;
+        if(cx-a<bx1)bx1=cx-a; if(cx+a>bx2)bx2=cx+a;
         if(cy-b<by1)by1=cy-b; if(cy+b>by2)by2=cy+b;
       }
     });
@@ -5464,7 +5533,7 @@ function buildDxfFileContent(entities){
     if(e.type==='CIRCLE' || e.type==='ARC'){
       const r=p.r||0; upd((p.x1||0)-r,(p.y1||0)-r); upd((p.x1||0)+r,(p.y1||0)+r);
     } else if(e.type==='ELLIPSE'){
-      const a=p.r||0, b=a*(p.ratio||1); upd((p.x1||0)-a,(p.y1||0)-b); upd((p.x1||0)+a,(p.y1||0)+b);
+      const a=p.majorR||0, b=a*(p.ratio||1); upd((p.x1||0)-a,(p.y1||0)-b); upd((p.x1||0)+a,(p.y1||0)+b);
     } else if(p.vx && p.vy){
       for(let i=0;i<p.vx.length;i++) upd(p.vx[i],p.vy[i]);
     } else {
@@ -5515,7 +5584,7 @@ function buildDxfFileContent(entities){
       }
       add(0,'SEQEND'); add(8,layer);
     } else if(e.type==='ELLIPSE'){
-      const cx=p.x1||0, cy=p.y1||0, a=p.r||0, b=a*(p.ratio||1);
+      const cx=p.x1||0, cy=p.y1||0, a=p.majorR||0, b=a*(p.ratio||1);
       if(a<=0) return;
       const N=48;
       add(0,'POLYLINE'); add(8,layer);
@@ -5671,7 +5740,7 @@ function buildDxfPreviewSvg(entities, selectedLayers, labels){
       upd(cx-r,-(cy0-r)); upd(cx+r,-(cy0+r));
     } else if(e.type==='ELLIPSE'){
       const cx=p.x1||0, cy=-(p.y1||0);
-      const a=p.r||0, b=a*(p.ratio||1);
+      const a=p.majorR||0, b=a*(p.ratio||1);
       shapes += `<ellipse cx="${cx}" cy="${cy}" rx="${a}" ry="${b}" class="dxf-shape${foldCls}" fill="none"/>`;
       upd(cx-a,cy-b); upd(cx+a,cy+b);
     } else if(e.type==='LWPOLYLINE' || e.type==='POLYLINE' || e.type==='SPLINE'){
@@ -6476,7 +6545,7 @@ function addDevToNesting(type){
   const addedSizes = [];
   shape.parts.forEach(part=>{
     const translated = part.entities.map(e=>{
-      const ne = { type:e.type, layer:e.layer, props: Object.assign({}, e.props) };
+      const ne = { type:e.type, layer:e.layer, linetype: e.linetype, props: Object.assign({}, e.props) };
       const p = ne.props;
       if(p.x1!==undefined) p.x1 += offsetX;
       if(p.x2!==undefined) p.x2 += offsetX;
@@ -7156,6 +7225,24 @@ function dxfApplyToCalc(){
     return;
   }
   const m = _dxfData._metrics;
+
+  // ⚠ 이 DXF 안에 서로 떨어진 독립 부품(외곽 도형)이 2개 이상 있으면,
+  // 전체 바운딩박스를 하나의 사각형 제품으로 적용할 경우 재료비가 실제보다
+  // 크게 부풀 수 있다(부품 사이 빈 공간까지 재료로 계산됨). 이 경우 사용자에게
+  // 먼저 알리고, 계속 진행할지 확인한다.
+  try {
+    const grouped = dxfGroupParts(_dxfData.entities, 2);
+    if (grouped && grouped.outerParts && grouped.outerParts.length > 1) {
+      const proceed = confirm(
+        '⚠ 이 도면에 서로 떨어진 부품이 ' + grouped.outerParts.length + '개 있는 것으로 보입니다.\n\n' +
+        '지금처럼 "계산기에 적용"하면 전체 도면의 바운딩박스(가로×세로)를 하나의 사각형 제품으로 계산하여 ' +
+        '부품 사이 빈 공간까지 재료비에 포함될 수 있습니다.\n\n' +
+        '여러 부품을 정확히 계산하려면 "DXF 네스팅" 기능(부품별 수량 지정 → 필요 판재수 계산)을 사용하는 것을 권장합니다.\n\n' +
+        '그래도 바운딩박스 기준 단일 사각형으로 계속 적용하시겠습니까?'
+      );
+      if (!proceed) return;
+    }
+  } catch(err) { /* 그룹 판정 실패 시에도 기존 동작은 계속 진행 */ }
 
   // 가로/세로 자동 입력 (사각 모드)
   if(m.width>0 && m.height>0){
