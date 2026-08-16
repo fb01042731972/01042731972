@@ -167,9 +167,82 @@
   @keyframes scheduleAlarmBg{0%,100%{background:#fff}50%{background:#fee2e2}}
   #scheduleAlarmCard{animation:scheduleAlarmBg 1s infinite}
   #scheduleAlarmCard .schedule-alarm-bell,#scheduleAlarmCard .schedule-alarm-title{animation:scheduleAlarmPulse .8s infinite}
+
+/* ═══════════════ 이진견적서 실시간 채팅 ═══════════════ */
+#jinjooChatPanel{
+  position:fixed;top:0;right:0;width:340px;height:100vh;z-index:99990;
+  background:#fff;border-left:1px solid #dbe4e8;
+  box-shadow:-10px 0 30px rgba(15,58,77,.14);
+  display:flex;flex-direction:column;
+  font-family:'Pretendard',-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif;
+}
+#jinjooChatHeader{
+  flex:0 0 auto;background:linear-gradient(135deg,#0F3A4D,#146C8E);
+  color:#fff;padding:13px 14px;display:flex;align-items:center;justify-content:space-between;
+}
+#jinjooChatTitle{font-size:14px;font-weight:900;display:flex;align-items:center;gap:7px}
+#jinjooChatStatus{font-size:10px;font-weight:700;opacity:.9;margin-top:2px}
+#jinjooChatClose{border:0;background:rgba(255,255,255,.14);color:#fff;width:28px;height:28px;border-radius:7px;cursor:pointer;font-size:15px}
+#jinjooChatMessages{flex:1;overflow-y:auto;padding:12px;background:#f6f9fa}
+.jc-system{font-size:10px;color:#64748b;text-align:center;margin:7px 0}
+.jc-msg{display:flex;flex-direction:column;margin:7px 0;max-width:88%}
+.jc-msg.me{margin-left:auto;align-items:flex-end}
+.jc-msg.other{margin-right:auto;align-items:flex-start}
+.jc-name{font-size:10px;color:#64748b;margin:0 4px 3px}
+.jc-bubble{padding:8px 10px;border-radius:11px;font-size:12px;line-height:1.5;word-break:break-word;white-space:pre-wrap}
+.jc-msg.me .jc-bubble{background:#146C8E;color:#fff;border-bottom-right-radius:3px}
+.jc-msg.other .jc-bubble{background:#fff;color:#1f2937;border:1px solid #e2e8f0;border-bottom-left-radius:3px}
+.jc-time{font-size:9px;color:#94a3b8;margin:3px 4px 0}
+#jinjooChatInputArea{flex:0 0 auto;border-top:1px solid #e5e7eb;background:#fff;padding:9px}
+#jinjooChatNameRow{display:flex;gap:6px;margin-bottom:6px}
+#jinjooChatName,#jinjooChatInput{border:1px solid #d1d5db;border-radius:7px;outline:none;font-size:12px;box-sizing:border-box}
+#jinjooChatName{width:105px;padding:6px 8px}
+#jinjooChatInput{flex:1;width:100%;min-height:38px;max-height:100px;padding:8px;resize:none}
+#jinjooChatName:focus,#jinjooChatInput:focus{border-color:#146C8E;box-shadow:0 0 0 2px rgba(20,108,142,.12)}
+#jinjooChatSend{width:62px;border:0;border-radius:7px;background:#146C8E;color:#fff;font-size:12px;font-weight:800;cursor:pointer}
+#jinjooChatSend:hover{filter:brightness(1.08)}
+#jinjooChatHint{font-size:9px;color:#94a3b8;margin-top:5px;line-height:1.4}
+#jinjooChatToggle{
+  position:fixed;right:18px;top:82px;z-index:99991;
+  border:0;border-radius:999px;background:#146C8E;color:#fff;
+  padding:10px 14px;font-size:12px;font-weight:800;cursor:pointer;
+  box-shadow:0 6px 18px rgba(15,58,77,.25)
+}
+.jc-unread{animation:jcPulse 1s infinite}
+@keyframes jcPulse{50%{transform:scale(1.05)}}
+@media(max-width:900px){
+  #jinjooChatPanel{width:min(92vw,340px)}
+  body{padding-right:0}
+}
+@media print{
+  #jinjooChatPanel,#jinjooChatToggle{display:none!important}
+}
+
 </style>
 </head>
 <body class="p-3 md:p-5">
+
+<!-- ════════════════ 💬 이진견적서 실시간 채팅 ════════════════ -->
+<div id="jinjooChatPanel" class="no-print">
+  <div id="jinjooChatHeader">
+    <div>
+      <div id="jinjooChatTitle">💬 실시간 대화</div>
+      <div id="jinjooChatStatus">● 연결 준비 중</div>
+    </div>
+    <button id="jinjooChatClose" type="button" title="채팅 닫기">✕</button>
+  </div>
+  <div id="jinjooChatMessages"></div>
+  <div id="jinjooChatInputArea">
+    <div id="jinjooChatNameRow">
+      <input id="jinjooChatName" maxlength="30" placeholder="이름" autocomplete="off">
+      <button id="jinjooChatSend" type="button">전송</button>
+    </div>
+    <textarea id="jinjooChatInput" maxlength="1000" placeholder="메시지를 입력하세요. (Enter 전송 / Shift+Enter 줄바꿈)"></textarea>
+    <div id="jinjooChatHint">이진견적서에 접속하면 자동으로 채팅 연결을 시도합니다.</div>
+  </div>
+</div>
+<button id="jinjooChatToggle" class="no-print" type="button" style="display:none">💬 채팅</button>
+
 
 <!-- ════════════════════════ ⚙️ 테마 설정 모달 ════════════════════════ -->
 <div id="themeSettingsModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeThemeSettingsModal()">
@@ -416,8 +489,12 @@
 
 <!-- ════════════════════════ 상단 헤더 바 ════════════════════════ -->
 <div class="max-w-5xl mx-auto bg-white rounded-lg shadow-md mb-4 p-4 no-print" style="position:sticky;top:0;z-index:200">
-  <div class="flex justify-between items-center mb-3">
-    <h1 class="text-lg font-bold text-gray-800">📄 이진주방산업</h1>
+  <div class="mb-3">
+    <!-- 회사명 영역: 버튼 배치와 완전히 독립. 회사명 자체는 원본 그대로 유지 -->
+    <div style="height:31px;display:flex;align-items:center;">
+      <h1 class="text-lg font-bold text-gray-800" style="margin:0;flex:none;">📄 이진주방산업</h1>
+    </div>
+    <!-- 버튼 영역: 회사명과 별도 영역이라 버튼을 옮겨도 회사명에 영향 없음 -->
     <div class="flex gap-1 flex-wrap justify-end">
       <div style="position:relative;display:inline-block">
         <button id="customerMenuBtn" onclick="toggleCustomerMenu()" class="hdr-btn" style="background:#16a34a" onmouseover="this.style.background='#22c55e'" onmouseout="this.style.background='#16a34a'">고객용 ▾</button>
@@ -30843,6 +30920,263 @@ document.addEventListener('keydown',function(e){
     if(m && m.style.display==='flex') closeEmbeddedTool();
   }
 });
+</script>
+
+
+<script>
+/* ════════════════ 이진견적서 실시간 채팅 모듈 ════════════════
+   - 페이지 접속 즉시 WebSocket 연결 시도
+   - 서버 주소는 아래 JINJOO_CHAT_WS_URL만 바꾸면 됨
+   - 서버가 없으면 화면에서 '서버 연결 대기' 상태로 안내
+*/
+(function(){
+  'use strict';
+
+  /* 같은 PC 테스트: ws://localhost:8787
+     실제 인터넷 서버 배포 후: wss://chat.example.com
+  */
+  const JINJOO_CHAT_WS_URL =
+    (location.protocol === 'https:' ? 'wss://' : 'ws://') +
+    (location.hostname || 'localhost') + ':8787';
+
+  const STORAGE_NAME = 'JINJOO_CHAT_NAME';
+  const STORAGE_HISTORY = 'JINJOO_CHAT_LOCAL_HISTORY_V1';
+  const MAX_LOCAL_HISTORY = 200;
+
+  let ws = null;
+  let reconnectTimer = null;
+  let reconnectDelay = 1000;
+  let manuallyClosed = false;
+  let unread = 0;
+
+  const $ = id => document.getElementById(id);
+
+  function escapeHtml(v){
+    return String(v ?? '').replace(/[&<>"']/g, c => ({
+      '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'
+    }[c]));
+  }
+
+  function setStatus(text, connected){
+    const el = $('jinjooChatStatus');
+    if (!el) return;
+    el.textContent = (connected ? '● ' : '● ') + text;
+    el.style.color = connected ? '#bbf7d0' : '#fde68a';
+  }
+
+  function addSystem(text){
+    const box = $('jinjooChatMessages');
+    if (!box) return;
+    const div = document.createElement('div');
+    div.className = 'jc-system';
+    div.textContent = text;
+    box.appendChild(div);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function addMessage(msg, save){
+    const box = $('jinjooChatMessages');
+    if (!box || !msg) return;
+    const mine = msg.clientId && msg.clientId === getClientId();
+    const wrap = document.createElement('div');
+    wrap.className = 'jc-msg ' + (mine ? 'me' : 'other');
+
+    const name = document.createElement('div');
+    name.className = 'jc-name';
+    name.textContent = mine ? '나 · ' + (msg.name || '사용자') : (msg.name || '사용자');
+
+    const bubble = document.createElement('div');
+    bubble.className = 'jc-bubble';
+    bubble.textContent = msg.text || '';
+
+    const time = document.createElement('div');
+    time.className = 'jc-time';
+    time.textContent = formatTime(msg.time);
+
+    wrap.appendChild(name);
+    wrap.appendChild(bubble);
+    wrap.appendChild(time);
+    box.appendChild(wrap);
+    box.scrollTop = box.scrollHeight;
+
+    if(save) saveLocalMessage(msg);
+    if(!isChatPanelVisible()){
+      unread++;
+      const toggle = $('jinjooChatToggle');
+      if(toggle){
+        toggle.textContent = unread > 99 ? '💬 99+' : '💬 ' + unread;
+        toggle.classList.add('jc-unread');
+      }
+    }
+  }
+
+  function formatTime(t){
+    const d = new Date(t || Date.now());
+    if(Number.isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'});
+  }
+
+  function getClientId(){
+    let id = sessionStorage.getItem('JINJOO_CHAT_CLIENT_ID');
+    if(!id){
+      id = 'c_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2,9);
+      sessionStorage.setItem('JINJOO_CHAT_CLIENT_ID', id);
+    }
+    return id;
+  }
+
+  function getName(){
+    return (localStorage.getItem(STORAGE_NAME) || '').trim();
+  }
+
+  function saveLocalMessage(msg){
+    try{
+      const arr = JSON.parse(localStorage.getItem(STORAGE_HISTORY) || '[]');
+      arr.push(msg);
+      while(arr.length > MAX_LOCAL_HISTORY) arr.shift();
+      localStorage.setItem(STORAGE_HISTORY, JSON.stringify(arr));
+    }catch(e){}
+  }
+
+  function loadLocalHistory(){
+    try{
+      const arr = JSON.parse(localStorage.getItem(STORAGE_HISTORY) || '[]');
+      arr.forEach(m => addMessage(m, false));
+    }catch(e){}
+  }
+
+  function isChatPanelVisible(){
+    const p = $('jinjooChatPanel');
+    return p && p.style.display !== 'none';
+  }
+
+  function openChat(){
+    $('jinjooChatPanel').style.display = 'flex';
+    $('jinjooChatToggle').style.display = 'none';
+    unread = 0;
+    $('jinjooChatToggle').classList.remove('jc-unread');
+  }
+
+  function closeChat(){
+    $('jinjooChatPanel').style.display = 'none';
+    $('jinjooChatToggle').style.display = 'block';
+    $('jinjooChatToggle').textContent = unread ? ('💬 ' + unread) : '💬 채팅';
+  }
+
+  function connect(){
+    if(manuallyClosed) return;
+    if(!('WebSocket' in window)){
+      setStatus('이 브라우저는 WebSocket을 지원하지 않음', false);
+      return;
+    }
+
+    try{
+      setStatus('서버 연결 중…', false);
+      ws = new WebSocket(JINJOO_CHAT_WS_URL);
+
+      ws.addEventListener('open', function(){
+        reconnectDelay = 1000;
+        setStatus('실시간 연결됨', true);
+        const name = getName() || '사용자';
+        ws.send(JSON.stringify({
+          type:'join', name, clientId:getClientId()
+        }));
+      });
+
+      ws.addEventListener('message', function(ev){
+        try{
+          const data = JSON.parse(ev.data);
+          if(data.type === 'history'){
+            (data.messages || []).forEach(m => addMessage(m, false));
+          }else if(data.type === 'message'){
+            addMessage(data.message, true);
+          }else if(data.type === 'system'){
+            addSystem(data.text || '');
+          }
+        }catch(e){
+          console.error('채팅 메시지 처리 오류', e);
+        }
+      });
+
+      ws.addEventListener('close', function(){
+        setStatus('서버 연결 대기 중…', false);
+        scheduleReconnect();
+      });
+
+      ws.addEventListener('error', function(){
+        setStatus('서버 연결 실패 · 재시도 중', false);
+      });
+    }catch(e){
+      setStatus('서버 연결 실패 · 재시도 중', false);
+      scheduleReconnect();
+    }
+  }
+
+  function scheduleReconnect(){
+    if(manuallyClosed || reconnectTimer) return;
+    reconnectTimer = setTimeout(function(){
+      reconnectTimer = null;
+      reconnectDelay = Math.min(reconnectDelay * 1.7, 15000);
+      connect();
+    }, reconnectDelay);
+  }
+
+  function sendMessage(){
+    const input = $('jinjooChatInput');
+    const nameInput = $('jinjooChatName');
+    const text = (input.value || '').trim();
+    let name = (nameInput.value || '').trim();
+
+    if(!name) name = '사용자';
+    if(!text) return;
+
+    localStorage.setItem(STORAGE_NAME, name);
+
+    const msg = {
+      type:'message',
+      message:{
+        clientId:getClientId(),
+        name:name.slice(0,30),
+        text:text.slice(0,1000),
+        time:new Date().toISOString()
+      }
+    };
+
+    if(ws && ws.readyState === WebSocket.OPEN){
+      ws.send(JSON.stringify(msg));
+      input.value = '';
+      input.focus();
+    }else{
+      addSystem('⚠️ 실시간 서버에 연결되지 않아 메시지를 보낼 수 없습니다.');
+    }
+  }
+
+  function init(){
+    const name = getName();
+    if(name) $('jinjooChatName').value = name;
+
+    $('jinjooChatClose').addEventListener('click', closeChat);
+    $('jinjooChatToggle').addEventListener('click', openChat);
+    $('jinjooChatSend').addEventListener('click', sendMessage);
+
+    $('jinjooChatInput').addEventListener('keydown', function(e){
+      if(e.key === 'Enter' && !e.shiftKey){
+        e.preventDefault();
+        sendMessage();
+      }
+    });
+
+    loadLocalHistory();
+    addSystem('이진견적서 채팅이 시작되었습니다.');
+    connect();
+  }
+
+  if(document.readyState === 'loading'){
+    document.addEventListener('DOMContentLoaded', init);
+  }else{
+    init();
+  }
+})();
 </script>
 
 </body>
