@@ -273,6 +273,47 @@
       </div>
     </div>
 
+    <div class="text-xs font-bold text-gray-700 mb-2">🐙 GitHub 원격 백업</div>
+    <div style="border:1px solid #e2e8f0;border-radius:8px;padding:13px;display:flex;flex-direction:column;gap:9px;margin-bottom:16px">
+      <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#334155;cursor:pointer;font-weight:700">
+        <input type="checkbox" id="gh_enabled">
+        <span>GitHub 자동 백업 사용</span>
+      </label>
+      <p style="font-size:10px;color:#94a3b8;line-height:1.5;margin:0">PC/USB 자동저장(4초)과는 별도로, 설정한 간격(기본 60분)마다 데이터가 실제로 바뀐 경우에만 지정한 GitHub 저장소에 백업 파일을 올립니다. <b>Pages 사이트로 쓰는 저장소가 아닌, 별도의 백업 전용(가급적 Private) 저장소</b>를 지정하는 것을 권장합니다.</p>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+        <div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:2px">소유자(owner)</div>
+          <input type="text" id="gh_owner" placeholder="예: fb01042731972" class="inp" style="font-size:11px">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:2px">저장소(repo)</div>
+          <input type="text" id="gh_repo" placeholder="예: 01042731972-backup" class="inp" style="font-size:11px">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:2px">브랜치</div>
+          <input type="text" id="gh_branch" placeholder="main" value="main" class="inp" style="font-size:11px">
+        </div>
+        <div>
+          <div style="font-size:11px;color:#64748b;margin-bottom:2px">백업 간격(분)</div>
+          <input type="number" id="gh_intervalMin" min="5" max="1440" value="60" class="inp" style="font-size:11px">
+        </div>
+      </div>
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px">백업 파일 경로</div>
+        <input type="text" id="gh_path" placeholder="backup/이진주방산업_자동백업.json" class="inp" style="font-size:11px">
+      </div>
+      <div>
+        <div style="font-size:11px;color:#64748b;margin-bottom:2px">Fine-grained 토큰 (Contents: Read and write 권한)</div>
+        <input type="password" id="gh_token" placeholder="github_pat_..." class="inp" style="font-size:11px" autocomplete="off">
+        <p style="font-size:9px;color:#b45309;line-height:1.5;margin:4px 0 0">⚠️ 토큰은 이 브라우저의 localStorage에만 저장됩니다(암호화 없음). 공용 PC라면 입력을 권장하지 않습니다.</p>
+      </div>
+      <div id="gh_status" style="font-size:11px;color:#64748b"></div>
+      <div style="display:flex;gap:6px">
+        <button type="button" onclick="testGithubConnection()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#334155;border:1px solid #e2e8f0;cursor:pointer;flex:1">🔎 연결 테스트</button>
+        <button type="button" onclick="backupToGithubNow(true)" class="text-xs font-bold px-3 py-2 rounded" style="background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;cursor:pointer;flex:1">☁️ 지금 백업</button>
+      </div>
+    </div>
+
     <div class="flex gap-2 mt-2">
       <button onclick="resetBackupSettings()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">기본값으로</button>
       <button onclick="saveBackupSettingsModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#146C8E;color:#fff;border:none;cursor:pointer;flex:1">저장</button>
@@ -405,6 +446,7 @@
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();setupAutoOverwriteFileUSB()">🔌 백업 USB 드라이브 설정 (별도 자동 저장)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();restoreFromAutoSaveFolder()">♻️ 자동 저장 폴더에서 복원</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();openBackupSettingsModal()">⚙️ 자동 복구 / 백업 설정</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();backupToGithubNow(true)" title="설정해 둔 GitHub 저장소에 지금 바로 백업 파일을 올립니다">🐙 GitHub에 지금 백업</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();document.getElementById('backupFileInput').click()">⬆️ 백업파일 불러오기</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9;color:#dc2626" onclick="closeDataMenu();restorePreRestoreSafetyBackup()" title="방금 실행한 복원이 실수였을 때, 복원을 실행하기 바로 직전 상태로 되돌립니다.">⏪ 복원 직전 상태로 되돌리기</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();exportSingleDoc()">📄 현재 문서만 파일로 저장</div>
@@ -28609,6 +28651,228 @@ function saveBackupSettings(settings) {
   try { localStorage.setItem(BACKUP_SETTINGS_KEY, JSON.stringify(settings)); } catch (e) {}
 }
 
+// ════════════════════════════════════════
+// 🐙 GitHub 원격 백업 엔진
+//    - PC/USB 자동저장(4초 간격)과는 완전히 분리된 별도 경로입니다.
+//    - GitHub Contents API로 파일을 수정할 때마다 repository에 commit이 하나씩 쌓이므로,
+//      절대 4초마다 올리지 않고 사용자가 설정한 간격(기본 60분)에 한 번씩만 시도합니다.
+//    - 그마저도 마지막으로 올린 내용과 지금 데이터가 실제로 달라진 경우에만 업로드합니다
+//      (간이 해시값으로 비교 — 매번 전체 백업 문자열을 저장해 두지 않기 위함).
+//    - 토큰은 HTML 소스에 하드코딩하지 않고, 사용자가 설정창에 입력하면 이 브라우저의
+//      localStorage에만 저장됩니다(완전한 보안 방법은 아니므로, 여러 사람이 쓰는 사이트로
+//      공개할 계획이라면 Cloudflare Worker 같은 서버 측 중계로 바꾸는 것을 권장합니다).
+// ════════════════════════════════════════
+const GITHUB_BACKUP_KEY   = 'githubBackupSettings_v1';
+const GITHUB_TOKEN_KEY    = 'githubBackupToken_v1';       // 토큰은 별도 키로 분리 보관(내보내기/백업 객체에 포함되지 않음)
+const GITHUB_LASTHASH_KEY = 'githubBackupLastHash_v1';
+const GITHUB_LASTAT_KEY   = 'githubBackupLastAt_v1';
+const GITHUB_BACKUP_DEFAULT = {
+  enabled: false,
+  owner: '',
+  repo: '',
+  branch: 'main',
+  path: 'backup/이진주방산업_자동백업.json',
+  intervalMin: 60
+};
+
+function loadGithubBackupSettings() {
+  try {
+    const raw = JSON.parse(localStorage.getItem(GITHUB_BACKUP_KEY) || 'null');
+    if (!raw) return Object.assign({}, GITHUB_BACKUP_DEFAULT);
+    return Object.assign({}, GITHUB_BACKUP_DEFAULT, raw);
+  } catch (e) { return Object.assign({}, GITHUB_BACKUP_DEFAULT); }
+}
+function saveGithubBackupSettings(settings) {
+  try { localStorage.setItem(GITHUB_BACKUP_KEY, JSON.stringify(settings)); } catch (e) {}
+}
+function loadGithubToken() {
+  try { return localStorage.getItem(GITHUB_TOKEN_KEY) || ''; } catch (e) { return ''; }
+}
+function saveGithubToken(token) {
+  try {
+    if (token) localStorage.setItem(GITHUB_TOKEN_KEY, token);
+    else localStorage.removeItem(GITHUB_TOKEN_KEY);
+  } catch (e) {}
+}
+
+function setGithubStatus(msg, isError) {
+  const el = document.getElementById('gh_status');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = isError ? '#dc2626' : '#0d9488';
+}
+function updateGithubStatusUI() {
+  const at = localStorage.getItem(GITHUB_LASTAT_KEY);
+  if (!at) { setGithubStatus('아직 GitHub에 백업한 적이 없습니다.', false); return; }
+  const d = new Date(at);
+  setGithubStatus('마지막 GitHub 백업: ' + d.toLocaleString('ko-KR'), false);
+}
+
+// UTF-8(한글 포함) 문자열을 GitHub Contents API가 요구하는 base64로 안전하게 변환
+function utf8ToBase64(str) {
+  return btoa(unescape(encodeURIComponent(str)));
+}
+// 간이 해시(변경 여부만 판단하는 용도 — 암호학적 용도 아님)
+function simpleContentHash(str) {
+  let h = 0;
+  for (let i = 0; i < str.length; i++) {
+    h = (Math.imul(31, h) + str.charCodeAt(i)) | 0;
+  }
+  return h.toString(36) + '_' + str.length;
+}
+
+function githubApiHeaders(token) {
+  return {
+    'Authorization': 'Bearer ' + token,
+    'Accept': 'application/vnd.github+json',
+    'Content-Type': 'application/json',
+    'X-GitHub-Api-Version': '2022-11-28'
+  };
+}
+
+// 🔎 연결 테스트 — 저장소 정보를 읽어와 접근 가능한지(및 쓰기 권한을 짐작할 수 있는지) 확인
+async function testGithubConnection() {
+  const owner  = document.getElementById('gh_owner').value.trim();
+  const repo   = document.getElementById('gh_repo').value.trim();
+  const token  = document.getElementById('gh_token').value.trim();
+  if (!owner || !repo) { setGithubStatus('⚠️ 소유자와 저장소를 먼저 입력해 주세요.', true); return; }
+  if (!token) { setGithubStatus('⚠️ Fine-grained 토큰을 먼저 입력해 주세요.', true); return; }
+  setGithubStatus('연결 확인 중…', false);
+  try {
+    const res = await fetch(`https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`, {
+      headers: githubApiHeaders(token)
+    });
+    if (res.status === 200) {
+      const data = await res.json();
+      const priv = data.private ? '(Private)' : '(Public ⚠️ — 백업 파일이 공개될 수 있습니다)';
+      setGithubStatus(`✅ 연결 성공 — "${owner}/${repo}" ${priv}`, false);
+    } else if (res.status === 404) {
+      setGithubStatus('⚠️ 저장소를 찾을 수 없습니다. 이름/권한(토큰의 Repository access)을 확인해 주세요.', true);
+    } else if (res.status === 401) {
+      setGithubStatus('⚠️ 토큰이 유효하지 않습니다.', true);
+    } else {
+      setGithubStatus(`⚠️ 연결 실패 (HTTP ${res.status})`, true);
+    }
+  } catch (err) {
+    console.error('GitHub 연결 테스트 실패:', err);
+    setGithubStatus('⚠️ 연결 중 오류가 발생했습니다: ' + err.message, true);
+  }
+}
+
+// 지금 설정된 저장소에서 백업 파일의 기존 sha를 조회(있으면 반환, 없으면 null) — 덮어쓰기(수정)용
+async function getGithubFileSha(owner, repo, path, branch, token) {
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(branch)}`;
+  const res = await fetch(url, { headers: githubApiHeaders(token) });
+  if (res.status === 200) {
+    const data = await res.json();
+    return data.sha || null;
+  }
+  if (res.status === 404) return null; // 파일이 아직 없음 — 새로 생성
+  const errText = await res.text().catch(()=> '');
+  throw new Error(`HTTP ${res.status} ${errText}`);
+}
+
+// ☁️ 지금 백업 — 현재 전체 데이터를 GitHub 저장소의 지정 경로에 즉시 업로드(사용자가 직접 누른 경우)
+// showAlert=true면 결과를 alert/toast로 사용자에게 알려줌 (버튼 클릭 시), 자동 백업 시에는 false로 조용히 처리
+async function backupToGithubNow(showAlert) {
+  const settings = (showAlert && document.getElementById('gh_owner'))
+    // 설정창이 열려 있는 상태에서 "지금 백업"을 눌렀다면, 저장 전이라도 화면에 입력된 값을 그대로 사용
+    ? {
+        owner: document.getElementById('gh_owner').value.trim(),
+        repo: document.getElementById('gh_repo').value.trim(),
+        branch: document.getElementById('gh_branch').value.trim() || 'main',
+        path: document.getElementById('gh_path').value.trim() || GITHUB_BACKUP_DEFAULT.path,
+        intervalMin: parseInt(document.getElementById('gh_intervalMin').value, 10) || 60
+      }
+    : loadGithubBackupSettings();
+  const token = (showAlert && document.getElementById('gh_token') && document.getElementById('gh_token').value.trim())
+    ? document.getElementById('gh_token').value.trim()
+    : loadGithubToken();
+
+  if (!settings.owner || !settings.repo) {
+    if (showAlert) alert('GitHub 백업을 실행하려면 먼저 "⚙️ 자동 복구 / 백업 설정"에서 소유자·저장소를 지정해 주세요.');
+    return false;
+  }
+  if (!token) {
+    if (showAlert) alert('GitHub 백업을 실행하려면 먼저 Fine-grained 토큰을 입력해 주세요.');
+    return false;
+  }
+
+  try {
+    if (showAlert) setGithubStatus('GitHub에 백업하는 중…', false);
+    const backup = buildBackupObject();
+    const jsonStr = JSON.stringify(backup, null, 2);
+
+    const sha = await getGithubFileSha(settings.owner, settings.repo, settings.path, settings.branch, token);
+    const url = `https://api.github.com/repos/${encodeURIComponent(settings.owner)}/${encodeURIComponent(settings.repo)}/contents/${settings.path.split('/').map(encodeURIComponent).join('/')}`;
+    const body = {
+      message: '이진주방산업 자동 백업 · ' + new Date().toISOString(),
+      content: utf8ToBase64(jsonStr),
+      branch: settings.branch
+    };
+    if (sha) body.sha = sha;
+
+    const res = await fetch(url, {
+      method: 'PUT',
+      headers: githubApiHeaders(token),
+      body: JSON.stringify(body)
+    });
+
+    if (res.status === 200 || res.status === 201) {
+      localStorage.setItem(GITHUB_LASTHASH_KEY, simpleContentHash(jsonStr));
+      localStorage.setItem(GITHUB_LASTAT_KEY, new Date().toISOString());
+      updateGithubStatusUI();
+      if (showAlert) { showToast('🐙 GitHub 백업 완료!'); }
+      return true;
+    } else {
+      const errText = await res.text().catch(()=> '');
+      throw new Error(`HTTP ${res.status} ${errText}`);
+    }
+  } catch (err) {
+    console.error('GitHub 백업 실패:', err);
+    setGithubStatus('⚠️ GitHub 백업 실패: ' + err.message, true);
+    if (showAlert) alert('GitHub 백업에 실패했습니다: ' + err.message);
+    return false;
+  }
+}
+
+// 자동 백업 판단 — 설정된 간격이 지났고, 그 사이 데이터가 실제로 바뀐 경우에만 조용히 업로드.
+// PC/USB 자동저장 루프(4초)와는 별도로 아래의 30초 타이머에서만 호출되며, 실제 업로드는
+// intervalMin(기본 60분)에 한 번, 그것도 변경이 있을 때만 일어납니다.
+let _githubBackupBusy = false;
+async function maybeGithubAutoBackup() {
+  if (_githubBackupBusy) return;
+  const settings = loadGithubBackupSettings();
+  if (!settings.enabled || !settings.owner || !settings.repo) return;
+  const token = loadGithubToken();
+  if (!token) return;
+
+  const lastAt = localStorage.getItem(GITHUB_LASTAT_KEY);
+  const intervalMs = Math.max(5, settings.intervalMin || 60) * 60 * 1000;
+  if (lastAt && (Date.now() - new Date(lastAt).getTime()) < intervalMs) return;
+
+  // 간격은 지났으나, 실제로 데이터가 바뀌지 않았다면 불필요한 commit을 만들지 않음
+  try {
+    const backup = buildBackupObject();
+    const jsonStr = JSON.stringify(backup, null, 2);
+    const hash = simpleContentHash(jsonStr);
+    const lastHash = localStorage.getItem(GITHUB_LASTHASH_KEY);
+    if (hash === lastHash) {
+      // 변경 없음 — "확인만 했다"는 의미로 마지막 확인 시각만 살짝 갱신하지는 않음(다음 틱에 재확인)
+      return;
+    }
+  } catch (e) { return; }
+
+  _githubBackupBusy = true;
+  try {
+    await backupToGithubNow(false);
+  } finally {
+    _githubBackupBusy = false;
+  }
+}
+// 30초마다 "지금이 백업할 때인지"만 가볍게 확인 (실제 업로드는 위 조건을 만족할 때만 드물게 발생)
+setInterval(maybeGithubAutoBackup, 30000);
+
 function openBackupSettingsModal() {
   const s = loadBackupSettings();
   document.getElementById('bs_hourlyEnabled').checked = !!s.hourlyEnabled;
@@ -28618,6 +28882,15 @@ function openBackupSettingsModal() {
   document.getElementById('bs_pruneByAgeDays').value = s.pruneByAgeDays;
   document.getElementById('bs_primaryFolderName').textContent = (_autoSaveState.primary.dirHandle && _autoSaveState.primary.dirHandle.name) ? _autoSaveState.primary.dirHandle.name : '(지정되지 않음)';
   document.getElementById('bs_usbFolderName').textContent = (_autoSaveState.usb.dirHandle && _autoSaveState.usb.dirHandle.name) ? _autoSaveState.usb.dirHandle.name : '(지정되지 않음)';
+  const gh = loadGithubBackupSettings();
+  document.getElementById('gh_enabled').checked = !!gh.enabled;
+  document.getElementById('gh_owner').value = gh.owner || '';
+  document.getElementById('gh_repo').value = gh.repo || '';
+  document.getElementById('gh_branch').value = gh.branch || 'main';
+  document.getElementById('gh_path').value = gh.path || GITHUB_BACKUP_DEFAULT.path;
+  document.getElementById('gh_intervalMin').value = gh.intervalMin || 60;
+  document.getElementById('gh_token').value = loadGithubToken();
+  updateGithubStatusUI();
   const m = document.getElementById('backupSettingsModal');
   m.classList.remove('hidden');
   m.style.display = 'flex';
@@ -28649,6 +28922,21 @@ function saveBackupSettingsModal() {
   // 간격을 줄였다면 바로 다음 저장 주기에 새로 생성되도록, "마지막 저장 시각" 기록을 초기화
   localStorage.removeItem('hourlySnapshotLastAt_primary');
   localStorage.removeItem('hourlySnapshotLastAt_usb');
+
+  // 🐙 GitHub 원격 백업 설정 저장
+  const ghIntervalMin = Math.max(5, Math.min(1440, parseInt(document.getElementById('gh_intervalMin').value, 10) || 60));
+  const ghSettings = {
+    enabled: document.getElementById('gh_enabled').checked,
+    owner:  document.getElementById('gh_owner').value.trim(),
+    repo:   document.getElementById('gh_repo').value.trim(),
+    branch: document.getElementById('gh_branch').value.trim() || 'main',
+    path:   document.getElementById('gh_path').value.trim() || GITHUB_BACKUP_DEFAULT.path,
+    intervalMin: ghIntervalMin
+  };
+  saveGithubBackupSettings(ghSettings);
+  saveGithubToken(document.getElementById('gh_token').value.trim());
+  // 간격/설정을 바꿨으면 다음 주기 판단을 새로 하도록 마지막 백업 시각 초기화하지는 않음(불필요한 즉시 커밋 방지)
+
   showToast('🗄️ 자동 복구 / 백업 설정이 저장되었습니다.');
   closeBackupSettingsModal();
 }
