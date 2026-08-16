@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>이진주방산업 - 인사말</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    
+    .container {
+      background: white;
+      border-radius: 20px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+      max-width: 500px;
+      width: 100%;
+      padding: 40px;
+      text-align: center;
+      animation: slideUp 0.6s ease-out;
+    }
+    
+    @keyframes slideUp {
+      from {
+        opacity: 0;
+        transform: translateY(30px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+    
+    .logo {
+      font-size: 48px;
+      margin-bottom: 20px;
+    }
+    
+    h1 {
+      color: #1a202c;
+      font-size: 28px;
+      margin-bottom: 15px;
+      font-weight: 700;
+    }
+    
+    .greeting {
+      color: #4a5568;
+      font-size: 16px;
+      line-height: 1.8;
+      margin-bottom: 30px;
+      font-weight: 500;
+    }
+    
+    .highlight {
+      color: #667eea;
+      font-weight: 700;
+    }
+    
+    .features {
+      background: #f7fafc;
+      border-radius: 12px;
+      padding: 20px;
+      margin-bottom: 30px;
+      text-align: left;
+    }
+    
+    .features h3 {
+      color: #2d3748;
+      font-size: 14px;
+      margin-bottom: 15px;
+      text-align: center;
+      font-weight: 700;
+    }
+    
+    .feature-item {
+      color: #4a5568;
+      font-size: 13px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    
+    .feature-item:before {
+      content: "✓";
+      color: #48bb78;
+      font-weight: bold;
+      flex-shrink: 0;
+    }
+    
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    
+    .btn {
+      flex: 1;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      display: inline-block;
+    }
+    
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+    
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(102, 126, 234, 0.4);
+    }
+    
+    .btn-secondary {
+      background: #e2e8f0;
+      color: #2d3748;
+    }
+    
+    .btn-secondary:hover {
+      background: #cbd5e0;
+      transform: translateY(-2px);
+    }
+    
+    .divider {
+      height: 1px;
+      background: #e2e8f0;
+      margin: 20px 0;
+    }
+    
+    .contact-info {
+      font-size: 13px;
+      color: #718096;
+      line-height: 1.8;
+    }
+    
+    .contact-info a {
+      color: #667eea;
+      text-decoration: none;
+      font-weight: 600;
+    }
+    
+    .contact-info a:hover {
+      text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="logo">🏭</div>
+    
+    <h1>이진주방산업에 오신 것을 환영합니다!</h1>
+    
+    <p class="greeting">
+      <span class="highlight">이진주방산업</span>은 견적서, 발주서, 거래명세표 등 <br>
+      업무 서류를 한 곳에서 관리하는 <br>
+      <span class="highlight">통합 관리 시스템</span>입니다.
+    </p>
+    
+    <div class="features">
+      <h3>📋 주요 기능</h3>
+      <div class="feature-item">견적서·발주서·거래명세표 작성</div>
+      <div class="feature-item">품목 단가표 및 거래처 관리</div>
+      <div class="feature-item">재고·가계부(수입/지출) 관리</div>
+      <div class="feature-item">자동 저장·백업 기능</div>
+      <div class="feature-item">인터넷 연결 없이도 사용 가능</div>
+      <div class="feature-item">PC/USB/GitHub 자동 백업</div>
+    </div>
+    
+    <div class="button-group">
+      <a href="index.html" class="btn btn-primary">📄 프로그램 시작</a>
+      <button class="btn btn-secondary" onclick="showGuide()">❓ 사용법</button>
+    </div>
+    
+    <div class="divider"></div>
+    
+    <div class="contact-info">
+      <p>💡 <strong>Tip:</strong> 처음 사용하시나요?</p>
+      <p style="margin-top: 8px;">프로그램을 열고 우측 상단의 <strong>⚙️ 설정</strong> → <strong>❓ 도움말</strong>을 클릭하세요!</p>
+    </div>
+  </div>
+  
+  <script>
+    function showGuide() {
+      alert(`🚀 처음 사용하시는 분께 추천하는 순서:\n\n` +
+            `1️⃣ 우리 회사 정보 입력 (견적서 화면)\n` +
+            `2️⃣ 품목 단가표 등록 (📦 탭)\n` +
+            `3️⃣ 거래처 저장 (👤 탭)\n` +
+            `4️⃣ 견적서 작성\n` +
+            `5️⃣ PDF로 저장 또는 인쇄\n\n` +
+            `더 자세한 내용은 프로그램 내 도움말을 참고하세요!`);
+    }
+  </script>
+</body>
+</html>
