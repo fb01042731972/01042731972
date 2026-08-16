@@ -302,6 +302,17 @@
         <div style="font-size:11px;color:#64748b;margin-bottom:2px">백업 파일 경로</div>
         <input type="text" id="gh_path" placeholder="backup/이진주방산업_자동백업.json" class="inp" style="font-size:11px">
       </div>
+      <div style="border-top:1px dashed #e2e8f0;padding-top:9px;margin-top:2px">
+        <label style="display:flex;align-items:center;gap:8px;font-size:12px;color:#334155;cursor:pointer;font-weight:700">
+          <input type="checkbox" id="gh_snapshotEnabled" checked>
+          <span>🕐 GitHub 시간별 백업 폴더도 함께 쌓기</span>
+        </label>
+        <p style="font-size:10px;color:#94a3b8;line-height:1.5;margin:4px 0 0">위 "백업 파일 경로"는 매번 같은 파일 1개에 덮어씁니다. 이 옵션을 켜두면 그 파일이 있는 폴더 안에 <b>"시간별_백업"</b> 하위 폴더를 만들고, 백업이 실제로 올라갈 때마다 시각이 들어간 <b>새 파일</b>로 별도 저장합니다(기존 파일을 지우지 않고 계속 쌓임). 혹시 실수로 빈 데이터가 덮어써지더라도, 이 폴더에서 이전 시점 파일을 그대로 찾아 쓸 수 있습니다.</p>
+        <div style="margin-top:6px">
+          <div style="font-size:11px;color:#64748b;margin-bottom:2px">보관할 최대 파일 수</div>
+          <input type="number" id="gh_snapshotKeepCount" min="1" max="1000" value="72" class="inp" style="font-size:11px;width:100px">
+        </div>
+      </div>
       <div>
         <div style="font-size:11px;color:#64748b;margin-bottom:2px">Fine-grained 토큰 (Contents: Read and write 권한)</div>
         <input type="password" id="gh_token" placeholder="github_pat_..." class="inp" style="font-size:11px" autocomplete="off">
@@ -28666,13 +28677,16 @@ const GITHUB_BACKUP_KEY   = 'githubBackupSettings_v1';
 const GITHUB_TOKEN_KEY    = 'githubBackupToken_v1';       // 토큰은 별도 키로 분리 보관(내보내기/백업 객체에 포함되지 않음)
 const GITHUB_LASTHASH_KEY = 'githubBackupLastHash_v1';
 const GITHUB_LASTAT_KEY   = 'githubBackupLastAt_v1';
+const GITHUB_SNAPSHOT_LASTAT_KEY = 'githubBackupLastSnapshotAt_v1'; // GitHub 시간별 백업(스냅샷)을 마지막으로 올린 시각
 const GITHUB_BACKUP_DEFAULT = {
   enabled: false,
   owner: '',
   repo: '',
   branch: 'main',
   path: 'backup/이진주방산업_자동백업.json',
-  intervalMin: 60
+  intervalMin: 60,
+  snapshotEnabled: true,      // 덮어쓰기 백업과 별도로, "시간별_백업" 폴더에 타임스탬프 파일을 함께 쌓을지
+  snapshotKeepCount: 72       // 그 폴더에 최대 몇 개까지 보관할지(넘으면 오래된 것부터 삭제)
 };
 
 function loadGithubBackupSettings() {
@@ -28772,6 +28786,93 @@ async function getGithubFileSha(owner, repo, path, branch, token) {
   throw new Error(`HTTP ${res.status} ${errText}`);
 }
 
+// 지정한 GitHub 저장소 폴더 안의 파일 목록을 조회(폴더가 없으면 빈 배열)
+async function listGithubDirFiles(owner, repo, dirPath, branch, token) {
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${dirPath.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(branch)}`;
+  const res = await fetch(url, { headers: githubApiHeaders(token) });
+  if (res.status === 200) {
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  }
+  if (res.status === 404) return []; // 폴더가 아직 없음
+  const errText = await res.text().catch(()=> '');
+  throw new Error(`HTTP ${res.status} ${errText}`);
+}
+
+// GitHub 저장소에서 파일 1개 삭제(정리용)
+async function deleteGithubFile(owner, repo, path, sha, branch, token, message) {
+  const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`;
+  const res = await fetch(url, {
+    method: 'DELETE',
+    headers: githubApiHeaders(token),
+    body: JSON.stringify({ message, sha, branch })
+  });
+  if (!(res.status === 200 || res.status === 201)) {
+    const errText = await res.text().catch(()=> '');
+    throw new Error(`HTTP ${res.status} ${errText}`);
+  }
+}
+
+// 백업 파일 경로("backup/이진주방산업_자동백업.json")를 기준으로, 그 폴더 안의
+// "시간별_백업" 하위 폴더 경로를 계산 (예: "backup/시간별_백업")
+function githubSnapshotDirPath(basePath) {
+  const idx = basePath.lastIndexOf('/');
+  const baseDir = idx >= 0 ? basePath.slice(0, idx) : '';
+  return (baseDir ? baseDir + '/' : '') + HOURLY_SNAPSHOT_SUBFOLDER;
+}
+
+// 오래된 GitHub 시간별 백업 파일 정리 — 최근 keepCount개만 남기고 나머지는 삭제
+async function pruneOldGithubSnapshots(owner, repo, dirPath, branch, token, keepCount) {
+  try {
+    const files = await listGithubDirFiles(owner, repo, dirPath, branch, token);
+    const snapshots = files
+      .filter(f => f && f.type === 'file' && f.name && f.name.indexOf(HOURLY_SNAPSHOT_FILE_PREFIX) === 0 && f.name.endsWith('.json'))
+      .sort((a, b) => b.name.localeCompare(a.name)); // 파일명에 시각이 들어있어 최신순 정렬됨
+    const toDelete = snapshots.slice(Math.max(0, keepCount));
+    for (const f of toDelete) {
+      try { await deleteGithubFile(owner, repo, f.path, f.sha, branch, token, '오래된 GitHub 시간별 백업 정리 · ' + f.name); }
+      catch (e) { console.error('GitHub 시간별 백업 정리 실패:', f.name, e); }
+    }
+  } catch (e) {
+    console.error('GitHub 시간별 백업 목록 조회 실패:', e);
+  }
+}
+
+// 🕐 GitHub 저장소에도 로컬 PC/USB와 같은 방식으로 "시간별_백업" 폴더에 타임스탬프 파일을 별도로 쌓아 둡니다.
+//    - 위쪽 덮어쓰기용 백업 파일과 달리 매번 새 파일로 저장되므로, 실수로 빈 데이터가 덮어써지더라도
+//      GitHub의 History를 뒤지지 않고도 이 폴더에서 바로 이전 시점 파일을 찾아 쓸 수 있습니다.
+//    - backupToGithubNow()가 실제로 파일을 올릴 때만 함께 호출되며, 자체 간격(기본 백업 간격과 동일)이
+//      지나지 않았다면 조용히 건너뜁니다. 실패하더라도 메인 백업 결과에는 영향을 주지 않습니다.
+async function backupGithubSnapshotIfDue(settings, token, jsonStr) {
+  if (!settings.snapshotEnabled) return;
+  const lastAt = localStorage.getItem(GITHUB_SNAPSHOT_LASTAT_KEY);
+  const intervalMs = Math.max(5, settings.intervalMin || 60) * 60 * 1000;
+  if (lastAt && (Date.now() - new Date(lastAt).getTime()) < intervalMs) return;
+
+  try {
+    const dirPath = githubSnapshotDirPath(settings.path);
+    const fileName = buildHourlySnapshotFileName();
+    const snapshotPath = dirPath + '/' + fileName;
+    const url = `https://api.github.com/repos/${encodeURIComponent(settings.owner)}/${encodeURIComponent(settings.repo)}/contents/${snapshotPath.split('/').map(encodeURIComponent).join('/')}`;
+    const body = {
+      message: '이진주방산업 시간별 백업 · ' + new Date().toISOString(),
+      content: utf8ToBase64(jsonStr),
+      branch: settings.branch
+    };
+    const res = await fetch(url, { method: 'PUT', headers: githubApiHeaders(token), body: JSON.stringify(body) });
+    if (res.status === 200 || res.status === 201) {
+      localStorage.setItem(GITHUB_SNAPSHOT_LASTAT_KEY, new Date().toISOString());
+      const keepCount = Math.max(1, Math.min(1000, settings.snapshotKeepCount || 72));
+      pruneOldGithubSnapshots(settings.owner, settings.repo, dirPath, settings.branch, token, keepCount);
+    } else {
+      const errText = await res.text().catch(()=> '');
+      console.error('GitHub 시간별 백업 실패:', res.status, errText);
+    }
+  } catch (e) {
+    console.error('GitHub 시간별 백업 실패:', e);
+  }
+}
+
 // ☁️ 지금 백업 — 현재 전체 데이터를 GitHub 저장소의 지정 경로에 즉시 업로드(사용자가 직접 누른 경우)
 // showAlert=true면 결과를 alert/toast로 사용자에게 알려줌 (버튼 클릭 시), 자동 백업 시에는 false로 조용히 처리
 async function backupToGithubNow(showAlert) {
@@ -28782,7 +28883,9 @@ async function backupToGithubNow(showAlert) {
         repo: document.getElementById('gh_repo').value.trim(),
         branch: document.getElementById('gh_branch').value.trim() || 'main',
         path: document.getElementById('gh_path').value.trim() || GITHUB_BACKUP_DEFAULT.path,
-        intervalMin: parseInt(document.getElementById('gh_intervalMin').value, 10) || 60
+        intervalMin: parseInt(document.getElementById('gh_intervalMin').value, 10) || 60,
+        snapshotEnabled: document.getElementById('gh_snapshotEnabled') ? document.getElementById('gh_snapshotEnabled').checked : GITHUB_BACKUP_DEFAULT.snapshotEnabled,
+        snapshotKeepCount: document.getElementById('gh_snapshotKeepCount') ? (parseInt(document.getElementById('gh_snapshotKeepCount').value, 10) || 72) : GITHUB_BACKUP_DEFAULT.snapshotKeepCount
       }
     : loadGithubBackupSettings();
   const token = (showAlert && document.getElementById('gh_token') && document.getElementById('gh_token').value.trim())
@@ -28822,6 +28925,9 @@ async function backupToGithubNow(showAlert) {
       localStorage.setItem(GITHUB_LASTHASH_KEY, simpleContentHash(jsonStr));
       localStorage.setItem(GITHUB_LASTAT_KEY, new Date().toISOString());
       updateGithubStatusUI();
+      // 🕐 덮어쓰기 백업이 성공한 김에, "시간별_백업" 폴더에도 별도 타임스탬프 파일로 함께 쌓아 둠
+      // (실패해도 메인 백업 완료 결과에는 영향을 주지 않도록 별도로 처리)
+      backupGithubSnapshotIfDue(settings, token, jsonStr).catch(e => console.error('GitHub 시간별 백업 실패:', e));
       if (showAlert) { showToast('🐙 GitHub 백업 완료!'); }
       return true;
     } else {
@@ -28889,6 +28995,8 @@ function openBackupSettingsModal() {
   document.getElementById('gh_branch').value = gh.branch || 'main';
   document.getElementById('gh_path').value = gh.path || GITHUB_BACKUP_DEFAULT.path;
   document.getElementById('gh_intervalMin').value = gh.intervalMin || 60;
+  document.getElementById('gh_snapshotEnabled').checked = gh.snapshotEnabled !== false;
+  document.getElementById('gh_snapshotKeepCount').value = gh.snapshotKeepCount || 72;
   document.getElementById('gh_token').value = loadGithubToken();
   updateGithubStatusUI();
   const m = document.getElementById('backupSettingsModal');
@@ -28925,13 +29033,16 @@ function saveBackupSettingsModal() {
 
   // 🐙 GitHub 원격 백업 설정 저장
   const ghIntervalMin = Math.max(5, Math.min(1440, parseInt(document.getElementById('gh_intervalMin').value, 10) || 60));
+  const ghSnapshotKeepCount = Math.max(1, Math.min(1000, parseInt(document.getElementById('gh_snapshotKeepCount').value, 10) || 72));
   const ghSettings = {
     enabled: document.getElementById('gh_enabled').checked,
     owner:  document.getElementById('gh_owner').value.trim(),
     repo:   document.getElementById('gh_repo').value.trim(),
     branch: document.getElementById('gh_branch').value.trim() || 'main',
     path:   document.getElementById('gh_path').value.trim() || GITHUB_BACKUP_DEFAULT.path,
-    intervalMin: ghIntervalMin
+    intervalMin: ghIntervalMin,
+    snapshotEnabled: document.getElementById('gh_snapshotEnabled').checked,
+    snapshotKeepCount: ghSnapshotKeepCount
   };
   saveGithubBackupSettings(ghSettings);
   saveGithubToken(document.getElementById('gh_token').value.trim());
