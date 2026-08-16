@@ -1,0 +1,11 @@
+{
+  "name": "이진주방산업",
+  "short_name": "이진주방산업",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ea580c",
+  "lang": "ko-KR",
+  "description": "이진주방산업 견적·거래처·재고 관리 프로그램"
+}
