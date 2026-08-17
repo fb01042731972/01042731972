@@ -183,9 +183,34 @@
   <div id="leChatHeader" style="background:#146C8E;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;">
     <div style="font-weight:800;font-size:13px;">💬 직원 채팅 <span id="leChatConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;margin-left:4px;"></span></div>
     <div style="display:flex;gap:10px;">
+      <button onclick="leChatOpenSoundSettings()" title="알림음 설정" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">⚙️</button>
       <button onclick="leChatMinimize()" title="최소화" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">—</button>
       <button onclick="leChatClose()" title="닫기" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">✕</button>
     </div>
+  </div>
+
+  <!-- 알림음 설정 화면 (개인별 설정, 이 브라우저에만 저장됨) -->
+  <div id="leChatSoundScreen" style="display:none;flex:1;flex-direction:column;gap:12px;padding:16px;overflow-y:auto;">
+    <div style="font-size:13px;font-weight:800;color:#146C8E;">🔔 내 알림음 설정</div>
+    <div style="font-size:11px;color:#64748b;line-height:1.6;">다른 사람이 메시지를 보내면(내가 받을 때) 이 소리가 재생됩니다. 기본값은 "띵동 - 메시지 왔습니다" 음성 알림이며, 원하는 소리 파일로 바꿀 수 있습니다.<br>이 설정은 이 브라우저(내 컴퓨터)에만 저장되며, 다른 직원에게는 영향을 주지 않습니다.</div>
+
+    <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;">
+      <input type="checkbox" id="leChatSoundEnabledChk" onchange="leChatToggleSoundEnabled()">
+      메시지 받을 때 알림음 켜기
+    </label>
+
+    <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:12px;color:#475569;">현재 등록된 소리: <span id="leChatSoundFileName" style="font-weight:700;color:#146C8E;">기본 (띵동 - 메시지 왔습니다)</span></div>
+      <input id="leChatSoundFileInput" type="file" accept="audio/*" style="display:none;" onchange="leChatSoundFileSelected(this)">
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="document.getElementById('leChatSoundFileInput').click()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📁 소리 파일 선택</button>
+        <button onclick="leChatSoundTestPlay()" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">▶ 테스트 재생</button>
+        <button onclick="leChatSoundRemove()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">기본 소리로 되돌리기</button>
+      </div>
+      <div id="leChatSoundError" style="display:none;color:#dc2626;font-size:11px;"></div>
+    </div>
+
+    <button onclick="leChatCloseSoundSettings()" style="margin-top:auto;background:#e2e8f0;color:#334155;border:none;border-radius:6px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;">닫기</button>
   </div>
 
   <!-- 잠금 화면 (공용 비밀번호) -->
@@ -266,6 +291,145 @@ const LE_CHAT_CONFIG = {
       win.style.display = 'none';
     }
   };
+  // ── 개인 알림음 설정 (이 브라우저에만 저장, localStorage 기반) ──
+  const LE_SOUND_MAX_BYTES = 1.5 * 1024 * 1024; // 원본 파일 기준 약 1.5MB (base64 저장 시 용량이 늘어나므로 여유를 둠)
+  let leChatSoundPrevScreen = null;
+
+  // 알림음 켜짐 여부: 명시적으로 '0'(끔)을 저장한 적이 없으면 기본값은 '켜짐'
+  function leChatSoundEnabled(){ return localStorage.getItem('leChatSoundEnabled') !== '0'; }
+  function leChatSoundData(){ return localStorage.getItem('leChatSoundData') || ''; }
+  function leChatSoundName(){ return localStorage.getItem('leChatSoundName') || ''; }
+
+  window.leChatOpenSoundSettings = function(){
+    // 현재 보이던 화면 기억해두기 (닫을 때 복원용)
+    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody'];
+    leChatSoundPrevScreen = null;
+    screens.forEach(function(id){
+      const el = document.getElementById(id);
+      if (el && el.style.display !== 'none' && el.style.display !== '') leChatSoundPrevScreen = id;
+    });
+    screens.forEach(function(id){ const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+
+    document.getElementById('leChatSoundEnabledChk').checked = leChatSoundEnabled();
+    document.getElementById('leChatSoundFileName').textContent = leChatSoundName() || '기본 (띵동 - 메시지 왔습니다)';
+    document.getElementById('leChatSoundError').style.display = 'none';
+    document.getElementById('leChatSoundScreen').style.display = 'flex';
+  };
+
+  window.leChatCloseSoundSettings = function(){
+    document.getElementById('leChatSoundScreen').style.display = 'none';
+    const restoreId = leChatSoundPrevScreen || 'leChatLockScreen';
+    const el = document.getElementById(restoreId);
+    if (el) el.style.display = (restoreId === 'leChatBody') ? 'flex' : 'flex';
+  };
+
+  window.leChatToggleSoundEnabled = function(){
+    const chk = document.getElementById('leChatSoundEnabledChk');
+    // 체크 해제 시에만 명시적으로 저장 (체크 시엔 기본값 '켜짐'과 동일하므로 키를 지워도 되지만, 명확히 '1'로 저장)
+    localStorage.setItem('leChatSoundEnabled', chk.checked ? '1' : '0');
+  };
+
+  window.leChatSoundFileSelected = function(inputEl){
+    const file = inputEl.files && inputEl.files[0];
+    inputEl.value = '';
+    const err = document.getElementById('leChatSoundError');
+    err.style.display = 'none';
+    if (!file) return;
+    if (!/^audio\//.test(file.type) && !/\.(mp3|wav|ogg|m4a|aac)$/i.test(file.name)) {
+      err.textContent = '오디오 파일만 선택할 수 있습니다.';
+      err.style.display = 'block';
+      return;
+    }
+    if (file.size > LE_SOUND_MAX_BYTES) {
+      err.textContent = '파일이 너무 큽니다. 1.5MB 이하의 짧은 소리 파일을 선택해주세요.';
+      err.style.display = 'block';
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = function(){
+      try {
+        localStorage.setItem('leChatSoundData', reader.result);
+        localStorage.setItem('leChatSoundName', file.name);
+        localStorage.setItem('leChatSoundEnabled', '1');
+        document.getElementById('leChatSoundFileName').textContent = file.name;
+        document.getElementById('leChatSoundEnabledChk').checked = true;
+      } catch(e) {
+        err.textContent = '저장에 실패했습니다. 더 작은 파일을 선택해주세요.';
+        err.style.display = 'block';
+      }
+    };
+    reader.onerror = function(){
+      err.textContent = '파일을 읽지 못했습니다.';
+      err.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
+  };
+
+  window.leChatSoundTestPlay = function(){
+    leChatPlaySound();
+  };
+
+  window.leChatSoundRemove = function(){
+    // 커스텀 소리만 지우고 기본 알림음(띵동-메시지 왔습니다)으로 되돌림. 알림음 자체는 계속 켜진 상태 유지.
+    localStorage.removeItem('leChatSoundData');
+    localStorage.removeItem('leChatSoundName');
+    document.getElementById('leChatSoundFileName').textContent = '기본 (띵동 - 메시지 왔습니다)';
+  };
+
+  function leChatPlaySound(){
+    const data = leChatSoundData();
+    if (data) {
+      try {
+        const audio = new Audio(data);
+        audio.volume = 1.0;
+        audio.play().catch(function(){ /* 브라우저 자동재생 정책으로 막힐 수 있음 - 무시 */ });
+      } catch(e){}
+      return;
+    }
+    leChatPlayDefaultSound();
+  }
+
+  // 기본 알림음: 띵동(도어벨 2음) + 음성 "메시지 왔습니다"
+  function leChatPlayDefaultSound(){
+    try {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) { leChatSpeakDefault(); return; }
+      const ctx = new Ctx();
+      const now = ctx.currentTime;
+      function tone(freq, start, dur){
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now + start);
+        gain.gain.setValueAtTime(0, now + start);
+        gain.gain.linearRampToValueAtTime(0.35, now + start + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + start + dur);
+        osc.connect(gain).connect(ctx.destination);
+        osc.start(now + start);
+        osc.stop(now + start + dur + 0.02);
+      }
+      // 띵(높은음) - 동(낮은음), 전형적인 도어벨 2음
+      tone(1046.5, 0,    0.45); // 띵 (C6)
+      tone(783.99, 0.28, 0.55); // 동 (G5)
+      if (ctx.close) { setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 1500); }
+    } catch(e){}
+    leChatSpeakDefault();
+  }
+
+  function leChatSpeakDefault(){
+    try {
+      if (!window.speechSynthesis) return;
+      // 도어벨 소리가 끝난 뒤 음성이 나오도록 약간의 지연
+      setTimeout(function(){
+        const u = new SpeechSynthesisUtterance('메시지 왔습니다');
+        u.lang = 'ko-KR';
+        u.rate = 1.0;
+        u.pitch = 1.0;
+        window.speechSynthesis.speak(u);
+      }, 650);
+    } catch(e){}
+  }
+
   window.leChatMinimize = function(){ document.getElementById('leChatWindow').style.display = 'none'; };
   window.leChatClose = function(){
     document.getElementById('leChatWindow').style.display = 'none';
@@ -355,11 +519,15 @@ const LE_CHAT_CONFIG = {
         const box = document.getElementById('leChatMessages');
         box.scrollTop = box.scrollHeight;
         const win = document.getElementById('leChatWindow');
-        if (win.style.display === 'none' && payload.new.sender !== leChatNickname) {
-          leChatUnreadCount++;
-          const badge = document.getElementById('leChatUnreadBadge');
-          badge.style.display = 'block';
-          badge.innerText = leChatUnreadCount;
+        if (payload.new.sender !== leChatNickname) {
+          // 받을 때만 알림음 (내가 보낸 메시지에는 재생 안 함)
+          if (leChatSoundEnabled()) leChatPlaySound();
+          if (win.style.display === 'none') {
+            leChatUnreadCount++;
+            const badge = document.getElementById('leChatUnreadBadge');
+            badge.style.display = 'block';
+            badge.innerText = leChatUnreadCount;
+          }
         }
       })
       .subscribe();
