@@ -208,6 +208,7 @@
       </span>
     </div>
     <div style="display:flex;gap:10px;">
+      <button onclick="leChatOpenMyProfileEdit()" title="내 프로필" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">🪪</button>
       <button onclick="leChatOpenNameChange()" title="이름 변경" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">✏️</button>
       <button onclick="leChatOpenSoundSettings()" title="알림음 설정" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">⚙️</button>
       <button onclick="leChatMinimize()" title="최소화" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">—</button>
@@ -318,6 +319,58 @@
 
   <div id="leChatResizeHandle" title="크기 조절" style="position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;opacity:.5;">
     <svg width="16" height="16" viewBox="0 0 16 16"><path d="M14 2 L2 14 M14 8 L8 14" stroke="#94a3b8" stroke-width="1.5"/></svg>
+  </div>
+</div>
+
+<!-- 🪪 프로필 보기 모달 (다른 사람 이름 클릭 시) -->
+<div id="leChatProfileViewModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) leChatCloseProfileView()">
+  <div style="background:#fff;border-radius:14px;max-width:320px;width:100%;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.3);">
+    <div style="background:linear-gradient(135deg,#0F3A4D 0%,#146C8E 100%);padding:22px 20px 44px;position:relative;">
+      <button onclick="leChatCloseProfileView()" style="position:absolute;top:10px;right:12px;border:none;background:rgba(255,255,255,.2);color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1;">✕</button>
+    </div>
+    <div style="padding:0 20px 20px;text-align:center;margin-top:-40px;">
+      <img id="leChatProfileViewPhoto" src="" style="display:none;width:80px;height:80px;border-radius:50%;object-fit:cover;border:4px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.2);background:#e2e8f0;margin:0 auto 10px;">
+      <div id="leChatProfileViewNoPhoto" style="width:80px;height:80px;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.2);background:#cbd5e1;color:#fff;font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">👤</div>
+      <div id="leChatProfileViewName" style="font-size:16px;font-weight:800;color:#1e293b;"></div>
+      <div id="leChatProfileViewPosition" style="font-size:12px;color:#146C8E;font-weight:700;margin-top:2px;"></div>
+      <div id="leChatProfileViewCard" style="margin-top:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:left;font-size:12px;color:#334155;display:flex;flex-direction:column;gap:6px;"></div>
+      <div id="leChatProfileViewIntro" style="margin-top:12px;font-size:12px;color:#475569;line-height:1.6;white-space:pre-wrap;text-align:left;"></div>
+      <div id="leChatProfileViewEmpty" style="display:none;margin-top:14px;font-size:12px;color:#94a3b8;">아직 등록된 프로필이 없습니다.</div>
+    </div>
+  </div>
+</div>
+
+<!-- 🪪 내 프로필 편집 모달 -->
+<div id="leChatProfileEditModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) leChatCloseProfileEdit()">
+  <div style="background:#fff;border-radius:12px;max-width:360px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.25);max-height:86vh;overflow-y:auto">
+    <div class="flex justify-between items-center mb-3">
+      <div class="text-sm font-bold text-gray-800">🪪 내 프로필 편집</div>
+      <button onclick="leChatCloseProfileEdit()" style="border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
+    </div>
+    <p class="text-[11px] text-gray-500 mb-3">여기서 저장한 정보는 채팅방의 다른 직원이 내 이름을 클릭했을 때 보이게 됩니다.</p>
+
+    <div style="text-align:center;margin-bottom:12px;">
+      <img id="leChatProfileEditPhotoPreview" src="" style="display:none;width:72px;height:72px;border-radius:50%;object-fit:cover;border:2px solid #e2e8f0;margin:0 auto 8px;">
+      <div id="leChatProfileEditNoPhoto" style="width:72px;height:72px;border-radius:50%;background:#e2e8f0;color:#94a3b8;font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;">👤</div>
+      <input id="leChatProfilePhotoInput" type="file" accept="image/*" style="display:none;" onchange="leChatProfilePhotoSelected(this)">
+      <button onclick="document.getElementById('leChatProfilePhotoInput').click()" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;">📷 사진 선택</button>
+      <div id="leChatProfilePhotoStatus" style="font-size:10.5px;color:#94a3b8;margin-top:4px;"></div>
+    </div>
+
+    <div class="text-xs font-bold text-gray-700 mb-1">직급/직책</div>
+    <input id="leChatProfilePosition" type="text" placeholder="예: 대리, 용접팀장" maxlength="30" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;box-sizing:border-box;margin-bottom:10px;">
+
+    <div class="text-xs font-bold text-gray-700 mb-1">연락처</div>
+    <input id="leChatProfilePhone" type="text" placeholder="예: 010-1234-5678" maxlength="30" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;box-sizing:border-box;margin-bottom:10px;">
+
+    <div class="text-xs font-bold text-gray-700 mb-1">이메일</div>
+    <input id="leChatProfileEmail" type="text" placeholder="예: name@leejin.com" maxlength="60" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;box-sizing:border-box;margin-bottom:10px;">
+
+    <div class="text-xs font-bold text-gray-700 mb-1">한줄 소개</div>
+    <textarea id="leChatProfileIntro" rows="3" placeholder="간단한 소개나 인사말을 남겨보세요" maxlength="200" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:8px 10px;font-size:12.5px;resize:vertical;box-sizing:border-box;margin-bottom:14px;"></textarea>
+
+    <div id="leChatProfileEditError" style="display:none;color:#dc2626;font-size:11px;margin-bottom:8px;"></div>
+    <button id="leChatProfileSaveBtn" onclick="leChatSaveProfile()" style="width:100%;background:#146C8E;color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;">저장</button>
   </div>
 </div>
 
@@ -764,7 +817,7 @@ const LE_CHAT_CONFIG = {
         listEl.innerHTML = '<div style="padding:8px 12px;font-size:11px;color:#94a3b8;white-space:nowrap;">접속자 없음</div>';
       } else {
         listEl.innerHTML = uniqueNames.map(function(n){
-          return '<div style="padding:6px 12px;font-size:12px;color:#1e293b;white-space:nowrap;">🟢 ' + leChatEscape(n) + '</div>';
+          return '<div onclick="leChatOpenProfile(\'' + leChatAttrEscape(n) + '\')" style="padding:6px 12px;font-size:12px;color:#1e293b;white-space:nowrap;cursor:pointer;" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'">🟢 ' + leChatEscape(n) + '</div>';
         }).join('');
       }
     }
@@ -864,13 +917,18 @@ const LE_CHAT_CONFIG = {
     const deleteBtnHtml = mine
       ? '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>'
       : '';
+    const senderNameHtml = '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(msg.sender) + '\')" style="cursor:pointer;text-decoration:underline dotted;">' + leChatEscape(msg.sender) + '</span>';
     div.innerHTML =
-      '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + deleteBtnHtml + dmLabel + leChatEscape(msg.sender) + ' · ' + time + '</div>' +
+      '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + deleteBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
       '<div style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;' + (isDm ? 'border:1px dashed #d8b4fe;' : '') + '">' + bodyHtml + '</div>';
     box.appendChild(div);
   }
   function leChatEscape(s){
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  // onclick="...('...')" 안에 안전하게 넣기 위한 이스케이프 (역슬래시/작은따옴표)
+  function leChatAttrEscape(s){
+    return String(s == null ? '' : s).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   }
   function leChatLinkify(escapedText){
     return escapedText.replace(/(https?:\/\/[^\s<]+)/g, function(url){
@@ -1758,6 +1816,153 @@ const LE_CHAT_CONFIG = {
     if (e.target.closest && e.target.closest('[onclick*="leChatToggleEmojiPicker"]')) return;
     p.style.display = 'none';
   });
+
+  // ════════════════════════════════════════════════════════════
+  // 🪪 직원 프로필 (이름 클릭 → 사진/명함 정보 보기, 내 프로필 편집)
+  // Supabase에 chat_profiles 테이블이 필요합니다. (안내 참고)
+  // ════════════════════════════════════════════════════════════
+  let leChatProfilePendingPhotoUrl = null; // 편집 중 새로 업로드한 사진의 URL(저장 전 임시 보관)
+
+  function leChatProfilesTable(){
+    return supaClient.from('chat_profiles');
+  }
+
+  // ── 프로필 보기 (다른 사람 이름 클릭 시) ──
+  window.leChatOpenProfile = async function(nickname){
+    if (!nickname || !supaClient) return;
+    const modal = document.getElementById('leChatProfileViewModal');
+    modal.style.display = 'flex';
+    // 초기화
+    document.getElementById('leChatProfileViewName').textContent = nickname;
+    document.getElementById('leChatProfileViewPosition').textContent = '';
+    document.getElementById('leChatProfileViewCard').innerHTML = '';
+    document.getElementById('leChatProfileViewIntro').textContent = '';
+    document.getElementById('leChatProfileViewEmpty').style.display = 'none';
+    document.getElementById('leChatProfileViewPhoto').style.display = 'none';
+    document.getElementById('leChatProfileViewNoPhoto').style.display = 'flex';
+    try {
+      const { data, error } = await leChatProfilesTable().select('*').eq('nickname', nickname).maybeSingle();
+      if (error) throw error;
+      if (!data) {
+        document.getElementById('leChatProfileViewEmpty').style.display = 'block';
+        return;
+      }
+      if (data.photo_url) {
+        const img = document.getElementById('leChatProfileViewPhoto');
+        img.src = data.photo_url;
+        img.style.display = 'block';
+        document.getElementById('leChatProfileViewNoPhoto').style.display = 'none';
+      }
+      if (data.position) document.getElementById('leChatProfileViewPosition').textContent = data.position;
+      const cardRows = [];
+      if (data.phone) cardRows.push('📞 ' + leChatEscape(data.phone));
+      if (data.email) cardRows.push('✉️ ' + leChatEscape(data.email));
+      const cardEl = document.getElementById('leChatProfileViewCard');
+      if (cardRows.length) {
+        cardEl.innerHTML = cardRows.map(function(r){ return '<div>' + r + '</div>'; }).join('');
+      } else {
+        cardEl.style.display = 'none';
+      }
+      if (data.intro) document.getElementById('leChatProfileViewIntro').textContent = data.intro;
+    } catch(e) {
+      document.getElementById('leChatProfileViewEmpty').style.display = 'block';
+      document.getElementById('leChatProfileViewEmpty').textContent = '프로필을 불러오지 못했습니다.';
+    }
+  };
+  window.leChatCloseProfileView = function(){
+    document.getElementById('leChatProfileViewModal').style.display = 'none';
+  };
+
+  // ── 내 프로필 편집 ──
+  window.leChatOpenMyProfileEdit = async function(){
+    if (!leChatNickname) { alert('먼저 채팅에 입장해서 이름을 설정해주세요.'); return; }
+    if (!supaClient) { alert('채팅 서버 연결 후 이용해주세요. (채팅창을 먼저 열어주세요)'); return; }
+    leChatProfilePendingPhotoUrl = null;
+    document.getElementById('leChatProfilePosition').value = '';
+    document.getElementById('leChatProfilePhone').value = '';
+    document.getElementById('leChatProfileEmail').value = '';
+    document.getElementById('leChatProfileIntro').value = '';
+    document.getElementById('leChatProfileEditPhotoPreview').style.display = 'none';
+    document.getElementById('leChatProfileEditNoPhoto').style.display = 'flex';
+    document.getElementById('leChatProfilePhotoStatus').textContent = '';
+    document.getElementById('leChatProfileEditError').style.display = 'none';
+    document.getElementById('leChatProfileEditModal').style.display = 'flex';
+    try {
+      const { data } = await leChatProfilesTable().select('*').eq('nickname', leChatNickname).maybeSingle();
+      if (data) {
+        document.getElementById('leChatProfilePosition').value = data.position || '';
+        document.getElementById('leChatProfilePhone').value = data.phone || '';
+        document.getElementById('leChatProfileEmail').value = data.email || '';
+        document.getElementById('leChatProfileIntro').value = data.intro || '';
+        if (data.photo_url) {
+          leChatProfilePendingPhotoUrl = data.photo_url;
+          const prev = document.getElementById('leChatProfileEditPhotoPreview');
+          prev.src = data.photo_url;
+          prev.style.display = 'block';
+          document.getElementById('leChatProfileEditNoPhoto').style.display = 'none';
+        }
+      }
+    } catch(e) { /* 프로필이 아직 없으면 빈 폼으로 시작 */ }
+  };
+  window.leChatCloseProfileEdit = function(){
+    document.getElementById('leChatProfileEditModal').style.display = 'none';
+  };
+
+  window.leChatProfilePhotoSelected = async function(inputEl){
+    const file = inputEl.files && inputEl.files[0];
+    inputEl.value = '';
+    if (!file || !supaClient) return;
+    if (!/^image\//.test(file.type)) { alert('이미지 파일만 선택할 수 있습니다.'); return; }
+    if (file.size > 5 * 1024 * 1024) { alert('사진 파일은 5MB 이하로 선택해주세요.'); return; }
+    const statusEl = document.getElementById('leChatProfilePhotoStatus');
+    statusEl.textContent = '업로드 중...';
+    try {
+      const extMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
+      const ext = extMatch ? extMatch[0] : '.jpg';
+      const path = 'profiles/' + leChatNickname + '_' + Date.now() + ext;
+      const { error: upErr } = await supaClient.storage.from('chat-files').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supaClient.storage.from('chat-files').getPublicUrl(path);
+      leChatProfilePendingPhotoUrl = pub.publicUrl;
+      const prev = document.getElementById('leChatProfileEditPhotoPreview');
+      prev.src = pub.publicUrl;
+      prev.style.display = 'block';
+      document.getElementById('leChatProfileEditNoPhoto').style.display = 'none';
+      statusEl.textContent = '사진이 준비되었습니다. 저장 버튼을 눌러주세요.';
+    } catch(e) {
+      statusEl.textContent = '업로드 실패: ' + (e.message || '');
+    }
+  };
+
+  window.leChatSaveProfile = async function(){
+    if (!leChatNickname || !supaClient) return;
+    const btn = document.getElementById('leChatProfileSaveBtn');
+    const errEl = document.getElementById('leChatProfileEditError');
+    errEl.style.display = 'none';
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
+    try {
+      const payload = {
+        nickname: leChatNickname,
+        photo_url: leChatProfilePendingPhotoUrl,
+        position: document.getElementById('leChatProfilePosition').value.trim(),
+        phone: document.getElementById('leChatProfilePhone').value.trim(),
+        email: document.getElementById('leChatProfileEmail').value.trim(),
+        intro: document.getElementById('leChatProfileIntro').value.trim(),
+        updated_at: new Date().toISOString()
+      };
+      const { error } = await leChatProfilesTable().upsert(payload, { onConflict: 'nickname' });
+      if (error) throw error;
+      document.getElementById('leChatProfileEditModal').style.display = 'none';
+      if (typeof showToast === 'function') showToast('프로필이 저장되었습니다.');
+    } catch(e) {
+      errEl.textContent = '저장 실패: ' + (e.message || '') + ' (Supabase에 chat_profiles 테이블이 있는지 확인해주세요)';
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '저장';
+    }
+  };
 })();
 </script>
 
