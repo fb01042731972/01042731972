@@ -563,16 +563,34 @@ const LE_CHAT_CONFIG = {
           }
         }
       })
+      .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, function(payload){
+        const old = payload.old || {};
+        let el = null;
+        if (old.id != null) {
+          el = document.querySelector('[data-msg-id="' + old.id + '"]');
+        } else if (old.created_at) {
+          el = document.querySelector('[data-msg-created="' + old.created_at + '"][data-msg-sender="' + (old.sender||'') + '"]');
+        }
+        if (el) el.remove();
+      })
       .subscribe();
   }
 
   function leChatRenderMessage(msg){
     const box = document.getElementById('leChatMessages');
-    const mine = msg.sender === leChatNickname;
+    const mine = String(msg.sender||'').trim() === String(leChatNickname||'').trim();
     const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
     const div = document.createElement('div');
     div.style.marginBottom = '8px';
     div.style.textAlign = mine ? 'right' : 'left';
+    // id 컬럼이 있으면 그걸 쓰고, 없으면 (sender+created_at) 조합으로 대체 식별
+    if (msg.id != null) {
+      div.dataset.msgId = String(msg.id);
+    } else if (msg.created_at) {
+      div.dataset.msgSender = msg.sender || '';
+      div.dataset.msgCreated = msg.created_at;
+    }
+    if (msg.file_url) div.dataset.fileUrl = msg.file_url;
     const bubbleBg = mine ? '#146C8E' : '#e2e8f0';
     const bubbleColor = mine ? '#fff' : '#1e293b';
     let bodyHtml = '';
@@ -594,14 +612,53 @@ const LE_CHAT_CONFIG = {
     if (msg.content) {
       bodyHtml += '<div>' + leChatEscape(msg.content) + '</div>';
     }
+    const deleteBtnHtml = mine
+      ? '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>'
+      : '';
     div.innerHTML =
-      '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + leChatEscape(msg.sender) + ' · ' + time + '</div>' +
+      '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + deleteBtnHtml + leChatEscape(msg.sender) + ' · ' + time + '</div>' +
       '<div style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;">' + bodyHtml + '</div>';
     box.appendChild(div);
   }
   function leChatEscape(s){
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
   }
+
+  // ── 메시지 삭제 (내가 보낸 메시지만, 실수로 올린 경우 대비) ──
+  function leChatExtractStoragePath(url){
+    if (!url) return null;
+    const marker = '/chat-files/';
+    const idx = url.indexOf(marker);
+    if (idx === -1) return null;
+    try { return decodeURIComponent(url.slice(idx + marker.length)); } catch(e) { return url.slice(idx + marker.length); }
+  }
+
+  window.leChatDeleteMessage = async function(el){
+    if (!supaClient) return;
+    const wrap = el.closest('[data-msg-id], [data-msg-created]');
+    if (!wrap) return;
+    const fileUrl = wrap.dataset.fileUrl || '';
+    if (!confirm('이 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
+    try {
+      let error;
+      if (wrap.dataset.msgId) {
+        ({ error } = await supaClient.from('chat_messages').delete().eq('id', wrap.dataset.msgId));
+      } else {
+        ({ error } = await supaClient.from('chat_messages').delete()
+          .eq('sender', wrap.dataset.msgSender || '')
+          .eq('created_at', wrap.dataset.msgCreated || ''));
+      }
+      if (error) throw error;
+      wrap.remove();
+      // 첨부 파일이 있었다면 저장소에서도 함께 삭제 (실패해도 메시지 삭제 자체는 이미 완료됨)
+      const path = leChatExtractStoragePath(fileUrl);
+      if (path) {
+        try { await supaClient.storage.from('chat-files').remove([path]); } catch(e){}
+      }
+    } catch(e) {
+      alert('삭제 실패: ' + (e.message || ''));
+    }
+  };
 
   window.leChatSend = async function(){
     const input = document.getElementById('leChatInput');
