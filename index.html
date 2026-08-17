@@ -211,6 +211,7 @@
       <button onclick="leChatOpenMyProfileEdit()" title="내 프로필" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">🪪</button>
       <button onclick="leChatOpenNameChange()" title="이름 변경" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">✏️</button>
       <button onclick="leChatOpenBgSettings()" title="채팅창 배경" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">🖼️</button>
+      <button onclick="leChatOpenSaveFolderSettings()" title="채팅 기록 저장 폴더" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">📁</button>
       <button onclick="leChatOpenSoundSettings()" title="알림음 설정" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">⚙️</button>
       <button onclick="leChatMinimize()" title="최소화" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">—</button>
       <button onclick="leChatClose()" title="닫기" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">✕</button>
@@ -260,6 +261,23 @@
     <button onclick="leChatCloseBgSettings()" style="margin-top:auto;background:#e2e8f0;color:#334155;border:none;border-radius:6px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;">닫기</button>
   </div>
 
+  <!-- 채팅 기록 저장 폴더 설정 화면 (직원 개인별로 각자 원하는 폴더를 지정, 이 브라우저에만 저장됨) -->
+  <div id="leChatSaveFolderScreen" style="display:none;flex:1;flex-direction:column;gap:12px;padding:16px;overflow-y:auto;">
+    <div style="font-size:13px;font-weight:800;color:#146C8E;">📁 채팅 기록 저장 폴더</div>
+    <div style="font-size:11px;color:#64748b;line-height:1.6;">폴더를 지정하면 새 채팅 메시지가 올 때마다(내가 보낸 메시지 포함) 이 폴더 안의 날짜별 텍스트 파일에 자동으로 이어서 저장됩니다.<br>이 설정은 <b>이 브라우저(내 컴퓨터)에만</b> 저장되며, <b>직원마다 각자 원하는 폴더를 따로 지정</b>할 수 있습니다. 다른 직원의 화면·설정에는 영향을 주지 않습니다.</div>
+
+    <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:12px;color:#475569;">현재 저장 폴더: <span id="leChatSaveFolderStatus" style="font-weight:700;color:#146C8E;">지정되지 않음</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <button onclick="leChatSetupSaveFolder()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📁 폴더 지정 / 변경</button>
+        <button onclick="leChatClearSaveFolder()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">폴더 해제</button>
+      </div>
+      <div id="leChatSaveFolderError" style="display:none;color:#dc2626;font-size:11px;"></div>
+    </div>
+
+    <button onclick="leChatCloseSaveFolderSettings()" style="margin-top:auto;background:#e2e8f0;color:#334155;border:none;border-radius:6px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;">닫기</button>
+  </div>
+
 
   <!-- 잠금 화면 (공용 비밀번호) -->
   <div id="leChatLockScreen" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;">
@@ -279,15 +297,21 @@
 
   <!-- 채팅 본체 -->
   <div id="leChatBody" style="display:none;flex-direction:column;flex:1;min-height:0;">
-    <div id="leChatMessages" style="flex:1;overflow-y:auto;padding:10px;font-size:12.5px;background:#f8fafc;"></div>
-    <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#146C8E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
-    <div id="leChatReceiverBar" style="display:flex;align-items:center;gap:6px;padding:5px 8px;border-top:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0;font-size:11px;color:#64748b;">
-      <span style="white-space:nowrap;">💌 받는 사람</span>
-      <select id="leChatReceiverSelect" onchange="leChatOnReceiverChange()" title="특정 인원을 선택하면 그 사람에게만 보이는 비밀 대화가 됩니다" style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:3px 6px;font-size:11px;background:#fff;color:#1e293b;min-width:0;">
-        <option value="">전체 (모두에게 공개)</option>
-      </select>
+
+    <!-- 채팅 목록 화면: 직원별 개별 채팅방 목록 (카카오톡 채팅탭 스타일) -->
+    <div id="leChatListScreen" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+      <div id="leChatListItems" style="flex:1;overflow-y:auto;background:#fff;"></div>
     </div>
-    <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
+
+    <!-- 개별 채팅방(스레드) 화면: 목록에서 하나를 선택하면 이 화면으로 전환됨 -->
+    <div id="leChatThreadScreen" style="display:none;flex-direction:column;flex:1;min-height:0;">
+      <div id="leChatThreadHeader" style="display:flex;align-items:center;gap:6px;padding:7px 8px;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0;">
+        <button onclick="leChatBackToList()" title="채팅 목록으로" style="background:none;border:none;color:#146C8E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
+        <span id="leChatThreadTitle" style="font-size:12.5px;font-weight:800;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">전체</span>
+      </div>
+      <div id="leChatMessages" style="flex:1;overflow-y:auto;padding:10px;font-size:12.5px;background:#f8fafc;"></div>
+      <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#146C8E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
+      <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
       <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
 
       <!-- '+' 눌렀을 때 뜨는 팝업 메뉴 -->
@@ -335,6 +359,7 @@
       <button id="leChatPlusBtn" onclick="leChatTogglePlusMenu(event)" title="더보기" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1;">＋</button>
       <input id="leChatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
       <button onclick="leChatSend()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
+      </div>
     </div>
   </div>
 
@@ -468,6 +493,29 @@ const LE_CHAT_CONFIG = {
   let leChatOpen = false;
   let leChatUnreadCount = 0;
 
+  // ── 직원별 개별 채팅(1:1) 목록 상태 ──
+  let leChatViewMode = 'list';      // 'list' | 'thread'
+  let leChatActiveConv = null;      // null(목록 화면) | ''(전체 공개방) | '상대닉네임'(1:1)
+  let leChatMsgCache = [];          // 내가 볼 수 있는 전체 메시지 캐시(전체+1:1)
+  let leChatOnlineNames = [];       // 현재 접속중인 다른 사람 닉네임 목록
+  const LE_CONV_UNREAD_KEY = 'leChatConvUnread'; // {convKey: count} localStorage에 저장(브라우저별)
+
+  function leChatConvUnreadMap(){
+    try { return JSON.parse(localStorage.getItem(LE_CONV_UNREAD_KEY) || '{}'); }
+    catch(e){ return {}; }
+  }
+  function leChatSaveConvUnreadMap(map){
+    try { localStorage.setItem(LE_CONV_UNREAD_KEY, JSON.stringify(map)); } catch(e){}
+  }
+  function leChatConvKeyOf(msg){
+    // 전체 공개 메시지는 '' 로, 1:1 비밀 대화는 상대방 닉네임으로 묶는다
+    if (!msg.receiver) return '';
+    const me = String(leChatNickname||'').trim().normalize('NFC');
+    const sender = String(msg.sender||'').trim().normalize('NFC');
+    const receiver = String(msg.receiver||'').trim().normalize('NFC');
+    return sender === me ? receiver : sender;
+  }
+
   function leChatConfigured(){
     return LE_CHAT_CONFIG.supabaseUrl.indexOf('YOUR-PROJECT') === -1 &&
            LE_CHAT_CONFIG.supabaseAnonKey.indexOf('YOUR-ANON') === -1;
@@ -526,7 +574,7 @@ const LE_CHAT_CONFIG = {
 
   window.leChatOpenSoundSettings = function(){
     // 현재 보이던 화면 기억해두기 (닫을 때 복원용)
-    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatBgScreen'];
+    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatBgScreen','leChatSaveFolderScreen'];
     leChatSoundPrevScreen = null;
     screens.forEach(function(id){
       const el = document.getElementById(id);
@@ -623,7 +671,7 @@ const LE_CHAT_CONFIG = {
   }
 
   window.leChatOpenBgSettings = function(){
-    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatSoundScreen'];
+    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatSoundScreen','leChatSaveFolderScreen'];
     leChatBgPrevScreen = null;
     screens.forEach(function(id){
       const el = document.getElementById(id);
@@ -688,6 +736,114 @@ const LE_CHAT_CONFIG = {
     document.getElementById('leChatBgPreview').style.backgroundImage = 'none';
     leChatApplyBg();
   };
+
+  // ── 채팅 기록 저장 폴더 (File System Access API + IndexedDB) ──
+  // 폴더 "핸들"은 localStorage에 저장할 수 없으므로, 이미 다른 기능(빠른접수 메모 폴더 등)에서
+  // 쓰고 있는 전역 idbSetAutoSave/idbGetAutoSave(IndexedDB 기반)를 그대로 재사용합니다.
+  // 이 값은 브라우저별로 완전히 독립적이므로, 직원마다 자기 컴퓨터에서 원하는 폴더를 각자 지정할 수 있습니다.
+  const LE_CHAT_SAVE_DIR_IDB_KEY = 'leChatSaveDirHandle';
+  let leChatSaveDirHandle = null;
+  let leChatSaveFolderPrevScreen = null;
+
+  function leChatUpdateSaveFolderStatusUI(){
+    const el = document.getElementById('leChatSaveFolderStatus');
+    if (!el) return;
+    el.textContent = leChatSaveDirHandle
+      ? ('✅ "' + leChatSaveDirHandle.name + '" (새 메시지마다 자동 저장 중)')
+      : '지정되지 않음';
+  }
+
+  // 채팅창을 처음 열 때(leChatInit) 이전에 지정해둔 폴더가 있으면 조용히 불러와 둠 (권한 요청은 실제 저장 시점에)
+  async function leChatRestoreSaveFolder(){
+    if (!window.indexedDB || typeof idbGetAutoSave !== 'function') { leChatUpdateSaveFolderStatusUI(); return; }
+    try {
+      const handle = await idbGetAutoSave(LE_CHAT_SAVE_DIR_IDB_KEY);
+      leChatSaveDirHandle = handle || null;
+    } catch(e) {
+      leChatSaveDirHandle = null;
+    }
+    leChatUpdateSaveFolderStatusUI();
+  }
+
+  window.leChatOpenSaveFolderSettings = function(){
+    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatBgScreen','leChatSoundScreen'];
+    leChatSaveFolderPrevScreen = null;
+    screens.forEach(function(id){
+      const el = document.getElementById(id);
+      if (el && el.style.display !== 'none' && el.style.display !== '') leChatSaveFolderPrevScreen = id;
+    });
+    screens.forEach(function(id){ const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    document.getElementById('leChatSaveFolderError').style.display = 'none';
+    leChatUpdateSaveFolderStatusUI();
+    document.getElementById('leChatSaveFolderScreen').style.display = 'flex';
+  };
+
+  window.leChatCloseSaveFolderSettings = function(){
+    document.getElementById('leChatSaveFolderScreen').style.display = 'none';
+    const restoreId = leChatSaveFolderPrevScreen || 'leChatLockScreen';
+    const el = document.getElementById(restoreId);
+    if (el) el.style.display = 'flex';
+  };
+
+  window.leChatSetupSaveFolder = async function(){
+    const err = document.getElementById('leChatSaveFolderError');
+    err.style.display = 'none';
+    if (!window.showDirectoryPicker) {
+      err.textContent = '이 브라우저는 "폴더 지정 저장" 기능을 지원하지 않습니다. Chrome, Edge 등 최신 브라우저에서 사용해 주세요.';
+      err.style.display = 'block';
+      return;
+    }
+    try {
+      const dirHandle = await window.showDirectoryPicker({ mode: 'readwrite' });
+      leChatSaveDirHandle = dirHandle;
+      if (typeof idbSetAutoSave === 'function') await idbSetAutoSave(LE_CHAT_SAVE_DIR_IDB_KEY, dirHandle);
+      leChatUpdateSaveFolderStatusUI();
+      if (typeof showToast2 === 'function') showToast2('📁 "' + dirHandle.name + '" 폴더가 채팅 기록 저장 폴더로 지정되었습니다.');
+    } catch(e) {
+      if (e && e.name !== 'AbortError') {
+        err.textContent = '폴더 지정 중 오류가 발생했습니다: ' + (e.message || '');
+        err.style.display = 'block';
+      }
+    }
+  };
+
+  window.leChatClearSaveFolder = async function(){
+    leChatSaveDirHandle = null;
+    try { if (typeof idbSetAutoSave === 'function') await idbSetAutoSave(LE_CHAT_SAVE_DIR_IDB_KEY, null); } catch(e){}
+    leChatUpdateSaveFolderStatusUI();
+    if (typeof showToast2 === 'function') showToast2('채팅 기록 저장 폴더 지정을 해제했습니다.');
+  };
+
+  // 메시지 1건을 텍스트로 만들어, 지정된 폴더 안 "YYYY-MM-DD_채팅기록.txt" 파일에 이어붙여 저장 (덮어쓰지 않고 계속 누적)
+  async function leChatAppendMessageToFile(msg){
+    if (!leChatSaveDirHandle || !msg) return;
+    try {
+      let perm = await leChatSaveDirHandle.queryPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') perm = await leChatSaveDirHandle.requestPermission({ mode: 'readwrite' });
+      if (perm !== 'granted') return; // 권한이 없으면 알림 없이 조용히 건너뜀 (백그라운드 자동 저장이므로 대화를 방해하지 않음)
+
+      const d = msg.created_at ? new Date(msg.created_at) : new Date();
+      const p = n => String(n).padStart(2, '0');
+      const fileName = d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + '_채팅기록.txt';
+      const timeStr = d.toLocaleString('ko-KR', { hour12: false });
+
+      let line = '[' + timeStr + '] ' + (msg.sender || '');
+      if (msg.receiver) line += ' → ' + msg.receiver + '(귓속말)';
+      line += ': ';
+      if (msg.content) line += msg.content;
+      if (msg.file_url) line += (msg.content ? ' ' : '') + '[첨부파일] ' + (msg.file_name || msg.file_url);
+      line += '\n';
+
+      const fileHandle = await leChatSaveDirHandle.getFileHandle(fileName, { create: true });
+      const file = await fileHandle.getFile();
+      const existing = await file.text();
+      const writable = await fileHandle.createWritable();
+      await writable.write(existing + line);
+      await writable.close();
+    } catch(e) {
+      console.error('채팅 기록 파일 저장 실패:', e);
+    }
+  }
 
   // 페이지 로드 시 저장된 배경 적용
   document.addEventListener('DOMContentLoaded', leChatApplyBg);
@@ -767,6 +923,7 @@ const LE_CHAT_CONFIG = {
     if (!leChatUnlocked && sessionStorage.getItem('leChatUnlocked') === '1') {
       leChatUnlocked = true;
     }
+    leChatRestoreSaveFolder();
     if (leChatUnlocked) leChatAfterUnlock();
   }
 
@@ -857,28 +1014,138 @@ const LE_CHAT_CONFIG = {
 
   async function leChatLoadHistory(){
     const box = document.getElementById('leChatMessages');
-    box.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;">불러오는 중...</div>';
+    const listBox = document.getElementById('leChatListItems');
+    if (listBox) listBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">불러오는 중...</div>';
     try {
       const nick = leChatNickname || '';
       let query = supaClient
         .from('chat_messages')
         .select('*')
         .order('created_at', { ascending: true })
-        .limit(50);
+        .limit(200);
       // 서버에서도 미리 걸러서 가져옴 (아래 leChatIsVisibleToMe로 한 번 더 안전하게 걸러냄)
       if (nick) {
         query = query.or('receiver.is.null,receiver.eq."' + nick + '",sender.eq."' + nick + '"');
       }
       const { data, error } = await query;
       if (error) throw error;
-      box.innerHTML = '';
-      (data||[]).filter(leChatIsVisibleToMe).forEach(leChatRenderMessage);
-      box.scrollTop = box.scrollHeight;
+      leChatMsgCache = (data||[]).filter(leChatIsVisibleToMe);
+      leChatRenderConvList();
+      if (leChatViewMode === 'thread' && leChatActiveConv !== null) {
+        leChatRenderThread(leChatActiveConv);
+      }
       document.getElementById('leChatConnDot').style.background = '#22c55e';
     } catch(e) {
-      box.innerHTML = '<div style="color:#dc2626;padding:10px;font-size:11px;line-height:1.6;">채팅 기록을 불러오지 못했습니다.<br>' + leChatEscape(e.message||'') + '</div>';
+      if (listBox) listBox.innerHTML = '<div style="color:#dc2626;padding:10px;font-size:11px;line-height:1.6;">채팅 기록을 불러오지 못했습니다.<br>' + leChatEscape(e.message||'') + '</div>';
       document.getElementById('leChatConnDot').style.background = '#ef4444';
     }
+  }
+
+  // ── 채팅 목록 화면: 대화(전체 + 직원별 1:1)별로 묶어서 최근 메시지 미리보기와 안읽음 표시 ──
+  function leChatRenderConvList(){
+    const listBox = document.getElementById('leChatListItems');
+    if (!listBox) return;
+    const unreadMap = leChatConvUnreadMap();
+
+    // convKey('' = 전체, 그 외 = 상대 닉네임) 별로 마지막 메시지를 모은다
+    const lastByConv = {};
+    leChatMsgCache.forEach(function(msg){
+      const key = leChatConvKeyOf(msg);
+      if (!lastByConv[key] || new Date(msg.created_at) > new Date(lastByConv[key].created_at)) {
+        lastByConv[key] = msg;
+      }
+    });
+
+    // 메시지 기록이 있는 상대 + 현재 접속중인 상대(아직 대화가 없어도 목록에 노출)를 합친다
+    const dmNames = new Set(Object.keys(lastByConv).filter(function(k){ return k !== ''; }));
+    (leChatOnlineNames||[]).forEach(function(n){
+      const nn = String(n||'').trim().normalize('NFC');
+      if (nn && nn !== String(leChatNickname||'').trim().normalize('NFC')) dmNames.add(nn);
+    });
+
+    const rows = [];
+    // ① 전체(공개) 채팅방 — 항상 맨 위
+    rows.push({ key: '', label: '전체', last: lastByConv[''] });
+    // ② 직원별 1:1 채팅방 — 최근 메시지 시각순 정렬(메시지가 없으면 맨 아래, 이름순)
+    Array.from(dmNames).sort(function(a,b){
+      const la = lastByConv[a], lb = lastByConv[b];
+      if (la && lb) return new Date(lb.created_at) - new Date(la.created_at);
+      if (la) return -1;
+      if (lb) return 1;
+      return a.localeCompare(b, 'ko');
+    }).forEach(function(n){
+      rows.push({ key: n, label: n, last: lastByConv[n] });
+    });
+
+    listBox.innerHTML = rows.map(function(row){
+      const unread = unreadMap[row.key] || 0;
+      const isOnline = row.key === '' ? false : (leChatOnlineNames||[]).some(function(n){ return String(n||'').trim().normalize('NFC') === row.key; });
+      const last = row.last;
+      let previewText = '아직 대화가 없습니다. 눌러서 대화를 시작해보세요.';
+      let timeText = '';
+      if (last) {
+        const mine = String(last.sender||'').trim().normalize('NFC') === String(leChatNickname||'').trim().normalize('NFC');
+        const prefix = row.key === '' ? (mine ? '나: ' : leChatEscape(last.sender) + ': ') : (mine ? '나: ' : '');
+        let bodyPreview = last.content ? last.content : (last.file_name ? ('📎 ' + last.file_name) : '');
+        if (!bodyPreview) bodyPreview = '(메시지)';
+        previewText = prefix + leChatEscape(bodyPreview);
+        timeText = new Date(last.created_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      }
+      const avatarHtml = row.key === ''
+        ? '<div style="width:40px;height:40px;border-radius:50%;background:#146C8E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💬</div>'
+        : leChatAvatarThumbHtml(row.key, 40);
+      return (
+        '<div onclick="leChatOpenConv(\'' + leChatAttrEscape(row.key) + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
+          '<div style="position:relative;flex-shrink:0;">' + avatarHtml +
+            (isOnline ? '<span style="position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #fff;"></span>' : '') +
+          '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">' +
+              '<span style="font-size:13px;font-weight:800;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + leChatEscape(row.label) + '</span>' +
+              (timeText ? '<span style="font-size:10px;color:#94a3b8;flex-shrink:0;">' + timeText + '</span>' : '') +
+            '</div>' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;margin-top:2px;">' +
+              '<span style="font-size:11.5px;color:#64748b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;">' + previewText + '</span>' +
+              (unread > 0 ? '<span style="flex-shrink:0;background:#ef4444;color:#fff;font-size:10.5px;font-weight:800;border-radius:9999px;min-width:17px;height:17px;line-height:17px;text-align:center;padding:0 4px;">' + unread + '</span>' : '') +
+            '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
+  // ── 목록에서 대화 하나를 선택해 개별 채팅방(스레드)으로 진입 ──
+  window.leChatOpenConv = function(convKey){
+    leChatActiveConv = convKey || '';
+    leChatViewMode = 'thread';
+    document.getElementById('leChatListScreen').style.display = 'none';
+    document.getElementById('leChatThreadScreen').style.display = 'flex';
+    document.getElementById('leChatThreadTitle').textContent = leChatActiveConv === '' ? '전체' : leChatActiveConv;
+    const input = document.getElementById('leChatInput');
+    if (input) input.placeholder = leChatActiveConv === '' ? '메시지 입력...' : ('🔒 ' + leChatActiveConv + '님에게만 보이는 채팅…');
+    // 이 대화방의 안읽음 카운트 초기화
+    const unreadMap = leChatConvUnreadMap();
+    if (unreadMap[leChatActiveConv]) { delete unreadMap[leChatActiveConv]; leChatSaveConvUnreadMap(unreadMap); }
+    leChatRenderThread(leChatActiveConv);
+  };
+
+  window.leChatBackToList = function(){
+    leChatViewMode = 'list';
+    leChatActiveConv = null;
+    document.getElementById('leChatThreadScreen').style.display = 'none';
+    document.getElementById('leChatListScreen').style.display = 'flex';
+    leChatRenderConvList();
+  };
+
+  // 특정 대화(convKey)에 해당하는 메시지만 골라 #leChatMessages 에 다시 그린다
+  function leChatRenderThread(convKey){
+    const box = document.getElementById('leChatMessages');
+    if (!box) return;
+    box.innerHTML = '';
+    leChatMsgCache
+      .filter(function(msg){ return leChatConvKeyOf(msg) === convKey; })
+      .forEach(leChatRenderMessage);
+    box.scrollTop = box.scrollHeight;
   }
 
   function leChatSubscribe(){
@@ -890,11 +1157,24 @@ const LE_CHAT_CONFIG = {
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, function(payload){
         if (!leChatIsVisibleToMe(payload.new)) return; // 나와 무관한 1:1 비밀 대화는 무시
-        leChatRenderMessage(payload.new);
-        const box = document.getElementById('leChatMessages');
-        box.scrollTop = box.scrollHeight;
+        leChatMsgCache.push(payload.new);
+        leChatAppendMessageToFile(payload.new); // 폴더가 지정되어 있으면 실시간으로 파일에도 자동 저장
+        const convKey = leChatConvKeyOf(payload.new);
+        const isMine = payload.new.sender === leChatNickname;
+        const inThisThread = leChatViewMode === 'thread' && leChatActiveConv === convKey;
+        if (inThisThread) {
+          leChatRenderMessage(payload.new);
+          const box = document.getElementById('leChatMessages');
+          box.scrollTop = box.scrollHeight;
+        } else if (!isMine) {
+          // 지금 보고 있지 않은 대화방에 새 메시지가 온 경우: 그 방의 안읽음 카운트를 올린다
+          const unreadMap = leChatConvUnreadMap();
+          unreadMap[convKey] = (unreadMap[convKey] || 0) + 1;
+          leChatSaveConvUnreadMap(unreadMap);
+        }
+        if (leChatViewMode === 'list' || !inThisThread) leChatRenderConvList();
         const win = document.getElementById('leChatWindow');
-        if (payload.new.sender !== leChatNickname) {
+        if (!isMine) {
           // 받을 때만 알림음 (내가 보낸 메시지에는 재생 안 함)
           if (leChatSoundEnabled()) leChatPlaySound();
           const windowOpen = win.style.display === 'flex';
@@ -913,6 +1193,10 @@ const LE_CHAT_CONFIG = {
       })
       .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'chat_messages' }, function(payload){
         const old = payload.old || {};
+        leChatMsgCache = leChatMsgCache.filter(function(m){
+          if (old.id != null) return String(m.id) !== String(old.id);
+          return !(m.sender === old.sender && m.created_at === old.created_at);
+        });
         let el = null;
         if (old.id != null) {
           el = document.querySelector('[data-msg-id="' + old.id + '"]');
@@ -920,6 +1204,7 @@ const LE_CHAT_CONFIG = {
           el = document.querySelector('[data-msg-created="' + old.created_at + '"][data-msg-sender="' + (old.sender||'') + '"]');
         }
         if (el) el.remove();
+        leChatRenderConvList();
       })
       .subscribe(function(status){
         if (status === 'SUBSCRIBED') {
@@ -968,42 +1253,16 @@ const LE_CHAT_CONFIG = {
         }).join('');
       }
     }
-    leChatUpdateReceiverOptions(uniqueNames);
-  }
-
-  // ── 받는 사람(비밀 대화 상대) 선택 목록 갱신 ──
-  function leChatUpdateReceiverOptions(onlineNames){
-    const sel = document.getElementById('leChatReceiverSelect');
-    if (!sel) return;
-    const prevValue = sel.value;
-    const others = (onlineNames || []).filter(function(n){
+    // 접속중인 직원 목록을 저장해두고, 채팅 목록(및 열려있다면 스레드) 화면을 갱신한다
+    leChatOnlineNames = uniqueNames.filter(function(n){
       return String(n||'').trim().normalize('NFC') !== String(leChatNickname||'').trim().normalize('NFC');
     });
-    sel.innerHTML = '<option value="">전체 (모두에게 공개)</option>' +
-      others.map(function(n){ return '<option value="' + leChatEscape(n) + '">🔒 ' + leChatEscape(n) + ' (귓속말)</option>'; }).join('');
-    // 이전에 선택했던 상대가 계속 접속 중이면 선택 유지, 아니면 자동으로 '전체'로 되돌림
-    if (prevValue && others.indexOf(prevValue) !== -1) {
-      sel.value = prevValue;
-    } else {
-      sel.value = '';
-    }
-    leChatOnReceiverChange();
+    leChatRenderConvList();
   }
 
-  window.leChatOnReceiverChange = function(){
-    const sel = document.getElementById('leChatReceiverSelect');
-    const bar = document.getElementById('leChatReceiverBar');
-    const input = document.getElementById('leChatInput');
-    if (!sel || !bar) return;
-    const isDm = !!sel.value;
-    bar.style.background = isDm ? '#fdf4ff' : '#f8fafc';
-    bar.style.color = isDm ? '#a21caf' : '#64748b';
-    if (input) input.placeholder = isDm ? ('🔒 ' + sel.value + '님에게만 보이는 비밀 메시지…') : '메시지 입력...';
-  };
-
+  // 현재 열려있는 대화방(전체='' / 직원 닉네임)이 곧 받는 사람이 된다
   function leChatCurrentReceiver(){
-    const sel = document.getElementById('leChatReceiverSelect');
-    return (sel && sel.value) ? sel.value : null;
+    return (leChatActiveConv && leChatActiveConv !== '') ? leChatActiveConv : null;
   }
 
   window.leChatToggleOnlineList = function(e){
