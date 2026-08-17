@@ -172,7 +172,349 @@
 </head>
 <body class="p-3 md:p-5">
 
-<!-- 💬 실시간 채팅 UI 비활성화됨 (서버 미구축) -->
+<!-- 💬 실시간 직원 채팅 (Supabase 기반, 무료) -->
+<div id="leChatToggleBtn" onclick="leChatToggle()" title="직원 채팅"
+  style="position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;background:#146C8E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;z-index:99990;">
+  💬
+  <span id="leChatUnreadBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;border-radius:9999px;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px;">0</span>
+</div>
+
+<div id="leChatWindow" style="display:none;position:fixed;right:20px;bottom:88px;width:340px;height:440px;min-width:280px;min-height:300px;background:#fff;border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.28);z-index:99991;flex-direction:column;overflow:hidden;border:1px solid #e2e8f0;">
+  <div id="leChatHeader" style="background:#146C8E;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;">
+    <div style="font-weight:800;font-size:13px;">💬 직원 채팅 <span id="leChatConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;margin-left:4px;"></span></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="leChatMinimize()" title="최소화" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">—</button>
+      <button onclick="leChatClose()" title="닫기" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+    </div>
+  </div>
+
+  <!-- 잠금 화면 (공용 비밀번호) -->
+  <div id="leChatLockScreen" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;">
+    <div style="font-size:13px;color:#475569;font-weight:700;text-align:center;">직원 전용 채팅방입니다<br>공용 비밀번호를 입력해주세요</div>
+    <input id="leChatPwInput" type="password" placeholder="비밀번호" style="border:1px solid #cbd5e1;border-radius:6px;padding:8px 10px;font-size:13px;width:80%;" onkeydown="if(event.key==='Enter') leChatUnlock()">
+    <button onclick="leChatUnlock()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;">입장</button>
+    <div id="leChatPwError" style="display:none;color:#dc2626;font-size:11px;">비밀번호가 올바르지 않습니다.</div>
+  </div>
+
+  <!-- 닉네임 입력 화면 -->
+  <div id="leChatNameScreen" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;">
+    <div style="font-size:13px;color:#475569;font-weight:700;">이름(닉네임)을 입력하세요</div>
+    <input id="leChatNameInput" type="text" placeholder="예: 김대리" maxlength="12" style="border:1px solid #cbd5e1;border-radius:6px;padding:8px 10px;font-size:13px;width:80%;" onkeydown="if(event.key==='Enter') leChatSetName()">
+    <button onclick="leChatSetName()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;">확인</button>
+  </div>
+
+  <!-- 채팅 본체 -->
+  <div id="leChatBody" style="display:none;flex-direction:column;flex:1;min-height:0;">
+    <div id="leChatMessages" style="flex:1;overflow-y:auto;padding:10px;font-size:12.5px;background:#f8fafc;"></div>
+    <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#146C8E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
+    <div style="display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
+      <input id="leChatFileInput" type="file" style="display:none;" onchange="leChatFileSelected(this)">
+      <button onclick="document.getElementById('leChatFileInput').click()" title="파일 첨부" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;">📎</button>
+      <input id="leChatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
+      <button onclick="leChatSend()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
+    </div>
+  </div>
+
+  <div id="leChatResizeHandle" title="크기 조절" style="position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;opacity:.5;">
+    <svg width="16" height="16" viewBox="0 0 16 16"><path d="M14 2 L2 14 M14 8 L8 14" stroke="#94a3b8" stroke-width="1.5"/></svg>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════
+// 💬 직원 채팅 설정 — Supabase 프로젝트를 만든 뒤 아래 3줄만 채우세요.
+// (설정 방법은 채팅창을 만들어준 안내 메시지를 참고하세요)
+// ═══════════════════════════════════════════════════════════════
+const LE_CHAT_CONFIG = {
+  supabaseUrl:      'https://qabrelgdencnuicsxsnk.supabase.co',
+  supabaseAnonKey:  'sb_publishable_E7ncnVoccs3RxcZNO6ywXA_Ii05_l_L',
+  roomPassword:     '0088'
+};
+
+(function(){
+  let supaClient = null;
+  let leChatUnlocked = false;
+  let leChatNickname = '';
+  let leChatChannel = null;
+  let leChatOpen = false;
+  let leChatUnreadCount = 0;
+
+  function leChatConfigured(){
+    return LE_CHAT_CONFIG.supabaseUrl.indexOf('YOUR-PROJECT') === -1 &&
+           LE_CHAT_CONFIG.supabaseAnonKey.indexOf('YOUR-ANON') === -1;
+  }
+
+  function loadSupabaseLib(cb){
+    if (window.supabase) { cb(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.onload = cb;
+    s.onerror = function(){ alert('채팅 서버 연결 스크립트를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.'); };
+    document.head.appendChild(s);
+  }
+
+  window.leChatToggle = function(){
+    const win = document.getElementById('leChatWindow');
+    if (win.style.display === 'none' || win.style.display === '') {
+      win.style.display = 'flex';
+      leChatOpen = true;
+      leChatUnreadCount = 0;
+      document.getElementById('leChatUnreadBadge').style.display = 'none';
+      document.getElementById('leChatUnreadBadge').innerText = '0';
+      leChatInit();
+    } else {
+      win.style.display = 'none';
+    }
+  };
+  window.leChatMinimize = function(){ document.getElementById('leChatWindow').style.display = 'none'; };
+  window.leChatClose = function(){
+    document.getElementById('leChatWindow').style.display = 'none';
+    leChatOpen = false;
+  };
+
+  function leChatInit(){
+    if (!leChatConfigured()) {
+      document.getElementById('leChatLockScreen').innerHTML =
+        '<div style="font-size:12px;color:#b45309;text-align:center;line-height:1.7;">⚠️ 채팅 서버가 아직 연결되지 않았습니다.<br>Supabase 설정 후 다시 열어주세요.</div>';
+      return;
+    }
+    if (!leChatUnlocked && sessionStorage.getItem('leChatUnlocked') === '1') {
+      leChatUnlocked = true;
+    }
+    if (leChatUnlocked) leChatAfterUnlock();
+  }
+
+  window.leChatUnlock = function(){
+    const pw = document.getElementById('leChatPwInput').value;
+    if (pw === LE_CHAT_CONFIG.roomPassword) {
+      leChatUnlocked = true;
+      sessionStorage.setItem('leChatUnlocked', '1');
+      document.getElementById('leChatPwError').style.display = 'none';
+      leChatAfterUnlock();
+    } else {
+      document.getElementById('leChatPwError').style.display = 'block';
+    }
+  };
+
+  function leChatAfterUnlock(){
+    document.getElementById('leChatLockScreen').style.display = 'none';
+    leChatNickname = localStorage.getItem('leChatNickname') || '';
+    if (!leChatNickname) {
+      document.getElementById('leChatNameScreen').style.display = 'flex';
+    } else {
+      leChatStart();
+    }
+  }
+
+  window.leChatSetName = function(){
+    const v = document.getElementById('leChatNameInput').value.trim();
+    if (!v) return;
+    leChatNickname = v;
+    localStorage.setItem('leChatNickname', v);
+    document.getElementById('leChatNameScreen').style.display = 'none';
+    leChatStart();
+  };
+
+  function leChatStart(){
+    document.getElementById('leChatBody').style.display = 'flex';
+    loadSupabaseLib(function(){
+      if (!supaClient) {
+        supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      }
+      leChatLoadHistory();
+      leChatSubscribe();
+    });
+  }
+
+  async function leChatLoadHistory(){
+    const box = document.getElementById('leChatMessages');
+    box.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:10px;">불러오는 중...</div>';
+    try {
+      const { data, error } = await supaClient
+        .from('chat_messages')
+        .select('*')
+        .order('created_at', { ascending: true })
+        .limit(50);
+      if (error) throw error;
+      box.innerHTML = '';
+      (data||[]).forEach(leChatRenderMessage);
+      box.scrollTop = box.scrollHeight;
+      document.getElementById('leChatConnDot').style.background = '#22c55e';
+    } catch(e) {
+      box.innerHTML = '<div style="color:#dc2626;padding:10px;font-size:11px;line-height:1.6;">채팅 기록을 불러오지 못했습니다.<br>' + leChatEscape(e.message||'') + '</div>';
+      document.getElementById('leChatConnDot').style.background = '#ef4444';
+    }
+  }
+
+  function leChatSubscribe(){
+    if (leChatChannel) return;
+    leChatChannel = supaClient
+      .channel('chat_messages_room')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, function(payload){
+        leChatRenderMessage(payload.new);
+        const box = document.getElementById('leChatMessages');
+        box.scrollTop = box.scrollHeight;
+        const win = document.getElementById('leChatWindow');
+        if (win.style.display === 'none' && payload.new.sender !== leChatNickname) {
+          leChatUnreadCount++;
+          const badge = document.getElementById('leChatUnreadBadge');
+          badge.style.display = 'block';
+          badge.innerText = leChatUnreadCount;
+        }
+      })
+      .subscribe();
+  }
+
+  function leChatRenderMessage(msg){
+    const box = document.getElementById('leChatMessages');
+    const mine = msg.sender === leChatNickname;
+    const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+    const div = document.createElement('div');
+    div.style.marginBottom = '8px';
+    div.style.textAlign = mine ? 'right' : 'left';
+    const bubbleBg = mine ? '#146C8E' : '#e2e8f0';
+    const bubbleColor = mine ? '#fff' : '#1e293b';
+    let bodyHtml = '';
+    if (msg.file_url) {
+      const isImage = /\.(png|jpe?g|gif|webp|bmp)$/i.test(msg.file_name || msg.file_url);
+      if (isImage) {
+        bodyHtml =
+          '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" style="display:inline-block;">' +
+            '<img src="' + leChatEscape(msg.file_url) + '" style="max-width:160px;max-height:160px;border-radius:8px;display:block;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
+          '</a>';
+      } else {
+        bodyHtml =
+          '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" download="' + leChatEscape(msg.file_name||'') + '" ' +
+          'style="display:flex;align-items:center;gap:6px;color:' + bubbleColor + ';text-decoration:underline;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
+            '📎 ' + leChatEscape(msg.file_name || '파일') +
+          '</a>';
+      }
+    }
+    if (msg.content) {
+      bodyHtml += '<div>' + leChatEscape(msg.content) + '</div>';
+    }
+    div.innerHTML =
+      '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + leChatEscape(msg.sender) + ' · ' + time + '</div>' +
+      '<div style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;">' + bodyHtml + '</div>';
+    box.appendChild(div);
+  }
+  function leChatEscape(s){
+    return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+
+  window.leChatSend = async function(){
+    const input = document.getElementById('leChatInput');
+    const text = input.value.trim();
+    if (!text || !supaClient) return;
+    input.value = '';
+    try {
+      const { error } = await supaClient.from('chat_messages').insert({ sender: leChatNickname, content: text });
+      if (error) throw error;
+    } catch(e) {
+      alert('메시지 전송 실패: ' + (e.message || ''));
+    }
+  };
+
+  window.leChatFileSelected = async function(inputEl){
+    const file = inputEl.files && inputEl.files[0];
+    inputEl.value = '';
+    if (!file || !supaClient) return;
+    if (file.size > 20 * 1024 * 1024) {
+      alert('파일 크기는 20MB 이하만 가능합니다.');
+      return;
+    }
+    const progressEl = document.getElementById('leChatUploadProgress');
+    progressEl.style.display = 'block';
+    try {
+      const extMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
+      const ext = extMatch ? extMatch[0] : '';
+      const path = Date.now() + '_' + Math.random().toString(36).slice(2,8) + ext;
+      const { error: upErr } = await supaClient.storage.from('chat-files').upload(path, file);
+      if (upErr) throw upErr;
+      const { data: pub } = supaClient.storage.from('chat-files').getPublicUrl(path);
+      const { error: insErr } = await supaClient.from('chat_messages').insert({
+        sender: leChatNickname,
+        content: '',
+        file_url: pub.publicUrl,
+        file_name: file.name
+      });
+      if (insErr) throw insErr;
+    } catch(e) {
+      alert('파일 전송 실패: ' + (e.message || '') + '\n(Supabase Storage에 chat-files 버킷이 있는지 확인하세요)');
+    } finally {
+      progressEl.style.display = 'none';
+    }
+  };
+
+  // ── 창 드래그 이동 ──
+  (function enableDrag(){
+    const win = document.getElementById('leChatWindow');
+    const header = document.getElementById('leChatHeader');
+    let dragging=false, startX=0, startY=0, startRight=0, startBottom=0;
+    header.addEventListener('mousedown', function(e){
+      dragging = true;
+      startX = e.clientX; startY = e.clientY;
+      const rect = win.getBoundingClientRect();
+      startRight = window.innerWidth - rect.right;
+      startBottom = window.innerHeight - rect.bottom;
+      e.preventDefault();
+    });
+    document.addEventListener('mousemove', function(e){
+      if (!dragging) return;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
+      win.style.right = Math.max(0, startRight - dx) + 'px';
+      win.style.bottom = Math.max(0, startBottom - dy) + 'px';
+    });
+    document.addEventListener('mouseup', function(){
+      if (dragging) { dragging = false; leChatSavePos(); }
+    });
+  })();
+
+  // ── 창 크기 조절 ──
+  (function enableResize(){
+    const win = document.getElementById('leChatWindow');
+    const handle = document.getElementById('leChatResizeHandle');
+    let resizing=false, startX=0, startY=0, startW=0, startH=0;
+    handle.addEventListener('mousedown', function(e){
+      resizing = true;
+      startX = e.clientX; startY = e.clientY;
+      startW = win.offsetWidth; startH = win.offsetHeight;
+      e.preventDefault(); e.stopPropagation();
+    });
+    document.addEventListener('mousemove', function(e){
+      if (!resizing) return;
+      const dw = e.clientX - startX, dh = e.clientY - startY;
+      win.style.width  = Math.max(280, startW + dw) + 'px';
+      win.style.height = Math.max(300, startH + dh) + 'px';
+    });
+    document.addEventListener('mouseup', function(){
+      if (resizing) { resizing = false; leChatSavePos(); }
+    });
+  })();
+
+  function leChatSavePos(){
+    const win = document.getElementById('leChatWindow');
+    try {
+      localStorage.setItem('leChatPos', JSON.stringify({
+        right: win.style.right, bottom: win.style.bottom,
+        width: win.style.width, height: win.style.height
+      }));
+    } catch(e){}
+  }
+  (function restorePos(){
+    try {
+      const p = JSON.parse(localStorage.getItem('leChatPos'));
+      if (!p) return;
+      const win = document.getElementById('leChatWindow');
+      if (p.right)  win.style.right  = p.right;
+      if (p.bottom) win.style.bottom = p.bottom;
+      if (p.width)  win.style.width  = p.width;
+      if (p.height) win.style.height = p.height;
+    } catch(e){}
+  })();
+})();
+</script>
+
 
 
 <!-- ════════════════════════ ⚙️ 테마 설정 모달 ════════════════════════ -->
