@@ -173,6 +173,14 @@
 <body class="p-3 md:p-5">
 
 <!-- 💬 실시간 직원 채팅 (Supabase 기반, 무료) -->
+<style>
+@keyframes leChatBlinkAnim {
+  0%   { transform: scale(1);    background:#146C8E; box-shadow:0 4px 14px rgba(0,0,0,.28); }
+  50%  { transform: scale(1.12); background:#ef4444; box-shadow:0 4px 22px rgba(239,68,68,.6); }
+  100% { transform: scale(1);    background:#146C8E; box-shadow:0 4px 14px rgba(0,0,0,.28); }
+}
+#leChatToggleBtn.leChatBlink { animation: leChatBlinkAnim 1s ease-in-out infinite; }
+</style>
 <div id="leChatToggleBtn" onclick="leChatToggle()" title="직원 채팅"
   style="position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;background:#146C8E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;z-index:99990;">
   💬
@@ -287,10 +295,29 @@ const LE_CHAT_CONFIG = {
       document.getElementById('leChatUnreadBadge').style.display = 'none';
       document.getElementById('leChatUnreadBadge').innerText = '0';
       leChatInit();
+      leChatUpdateBlinkState();
     } else {
       win.style.display = 'none';
     }
   };
+
+  // ── 새 메시지 도착 시 우측 하단 버튼 깜빡임 ──
+  // 채팅창이 닫혀있거나(최소화 포함) / 이 탭이 비활성화 상태(다른 탭을 보는 중)일 때 모두 깜빡임
+  function leChatUpdateBlinkState(){
+    const win = document.getElementById('leChatWindow');
+    const btn = document.getElementById('leChatToggleBtn');
+    if (!win || !btn) return;
+    const windowOpen = win.style.display === 'flex';
+    const tabVisible = !document.hidden;
+    if (windowOpen && tabVisible) {
+      btn.classList.remove('leChatBlink');
+    }
+  }
+  function leChatStartBlink(){
+    const btn = document.getElementById('leChatToggleBtn');
+    if (btn) btn.classList.add('leChatBlink');
+  }
+  document.addEventListener('visibilitychange', leChatUpdateBlinkState);
   // ── 개인 알림음 설정 (이 브라우저에만 저장, localStorage 기반) ──
   const LE_SOUND_MAX_BYTES = 1.5 * 1024 * 1024; // 원본 파일 기준 약 1.5MB (base64 저장 시 용량이 늘어나므로 여유를 둠)
   let leChatSoundPrevScreen = null;
@@ -522,6 +549,12 @@ const LE_CHAT_CONFIG = {
         if (payload.new.sender !== leChatNickname) {
           // 받을 때만 알림음 (내가 보낸 메시지에는 재생 안 함)
           if (leChatSoundEnabled()) leChatPlaySound();
+          const windowOpen = win.style.display === 'flex';
+          const tabVisible = !document.hidden;
+          if (!(windowOpen && tabVisible)) {
+            // 채팅창이 닫혀있거나 최소화된 상태, 또는 이 탭이 비활성화 상태면 버튼이 깜빡임
+            leChatStartBlink();
+          }
           if (win.style.display === 'none') {
             leChatUnreadCount++;
             const badge = document.getElementById('leChatUnreadBadge');
