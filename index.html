@@ -199,6 +199,7 @@
 <div id="leChatWindow" style="display:none;position:fixed;right:20px;bottom:88px;width:340px;height:440px;min-width:280px;min-height:300px;background:#fff;border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.28);z-index:99991;flex-direction:column;overflow:hidden;border:1px solid #e2e8f0;">
   <div id="leChatHeader" style="background:#146C8E;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;">
     <div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;">💬 직원 채팅 <span id="leChatConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;margin-left:4px;"></span>
+      <span id="leChatGuestBadge" style="display:none;background:rgba(255,255,255,.22);border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:800;">🔓 게스트</span>
       <span id="leChatOnlineWrap" style="position:relative;">
         <button id="leChatOnlineBtn" onclick="leChatToggleOnlineList(event)" title="접속자 목록" style="background:rgba(255,255,255,.18);border:none;color:#fff;cursor:pointer;font-size:10.5px;font-weight:700;border-radius:9999px;padding:2px 8px;display:flex;align-items:center;gap:4px;">
           <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span>
@@ -213,6 +214,7 @@
       <button onclick="leChatOpenBgSettings()" title="채팅창 배경" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">🖼️</button>
       <button onclick="leChatOpenSaveFolderSettings()" title="채팅 기록 저장 폴더" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">📁</button>
       <button onclick="leChatOpenSoundSettings()" title="알림음 설정" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">⚙️</button>
+      <button id="leChatInviteBtn" onclick="leChatOpenInviteScreen()" title="외부인 초대 링크 관리" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">👥</button>
       <button onclick="leChatMinimize()" title="최소화" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">—</button>
       <button onclick="leChatClose()" title="닫기" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">✕</button>
     </div>
@@ -276,6 +278,32 @@
     </div>
 
     <button onclick="leChatCloseSaveFolderSettings()" style="margin-top:auto;background:#e2e8f0;color:#334155;border:none;border-radius:6px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;">닫기</button>
+  </div>
+
+  <!-- 👥 외부인 초대 링크 관리 화면 (직원 전용) -->
+  <div id="leChatInviteScreen" style="display:none;flex:1;flex-direction:column;gap:10px;padding:16px;overflow-y:auto;">
+    <div style="font-size:13px;font-weight:800;color:#146C8E;">👥 외부인 초대 링크 관리</div>
+    <div style="font-size:11px;color:#64748b;line-height:1.6;">초대 링크로 들어온 외부인은 <b>전체 공개방</b>과 <b>직원과의 1:1 대화</b>만 볼 수 있고, 다른 외부인과는 대화할 수 없습니다.<br>언제든 아래에서 차단하면 그 즉시(최대 약 1분 이내) 접속이 끊깁니다.</div>
+
+    <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
+      <div style="font-size:12px;color:#475569;font-weight:700;">새 초대 링크 만들기</div>
+      <input id="leChatInviteLabelInput" type="text" placeholder="예: OO업체 김대리 (메모용, 상대방에게 표시되지 않음)" maxlength="30" style="border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;box-sizing:border-box;">
+      <button onclick="leChatCreateInvite()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:8px;font-size:12.5px;font-weight:700;cursor:pointer;">➕ 초대 링크 생성</button>
+      <div id="leChatInviteNewLinkBox" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:8px;font-size:11px;color:#0c4a6e;word-break:break-all;"></div>
+      <div id="leChatInviteError" style="display:none;color:#dc2626;font-size:11px;"></div>
+    </div>
+
+    <div style="font-size:12px;color:#475569;font-weight:700;margin-top:4px;">발급된 초대 목록</div>
+    <div id="leChatInviteList" style="display:flex;flex-direction:column;gap:8px;"></div>
+
+    <button onclick="leChatCloseInviteScreen()" style="margin-top:auto;background:#e2e8f0;color:#334155;border:none;border-radius:6px;padding:8px 12px;font-size:12.5px;font-weight:700;cursor:pointer;">닫기</button>
+  </div>
+
+  <!-- 🔒 게스트 접근 차단/만료 안내 화면 -->
+  <div id="leChatGuestBlockedScreen" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;text-align:center;">
+    <div style="font-size:28px;">🔒</div>
+    <div style="font-size:13px;color:#475569;font-weight:700;">이 초대 링크는 더 이상 사용할 수 없습니다<br>(만료되었거나 차단되었습니다)</div>
+    <div style="font-size:11px;color:#94a3b8;">초대한 담당자에게 새 링크를 요청해주세요.</div>
   </div>
 
 
@@ -492,6 +520,13 @@ const LE_CHAT_CONFIG = {
   let leChatChannel = null;
   let leChatOpen = false;
   let leChatUnreadCount = 0;
+  // ── 외부인(게스트) 초대 관련 상태 ──
+  let leChatIsGuest = false;        // 초대 링크로 들어온 외부인이면 true
+  let leChatGuestToken = '';        // 이 브라우저가 사용중인 초대 토큰
+  let leChatOnlineRoles = {};       // 닉네임(정규화) -> 'staff' | 'guest' (현재 접속자 역할)
+  const LE_GUEST_TOKEN_KEY = 'leChatGuestToken';   // 게스트 토큰 저장(브라우저별)
+  const LE_GUEST_NICK_KEY  = 'leChatGuestNickname'; // 게스트 닉네임 저장(직원 닉네임과 분리)
+  function leChatNickStorageKey(){ return leChatIsGuest ? LE_GUEST_NICK_KEY : 'leChatNickname'; }
 
   // ── 직원별 개별 채팅(1:1) 목록 상태 ──
   let leChatViewMode = 'list';      // 'list' | 'thread'
@@ -574,7 +609,7 @@ const LE_CHAT_CONFIG = {
 
   window.leChatOpenSoundSettings = function(){
     // 현재 보이던 화면 기억해두기 (닫을 때 복원용)
-    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatBgScreen','leChatSaveFolderScreen'];
+    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatBgScreen','leChatSaveFolderScreen','leChatInviteScreen'];
     leChatSoundPrevScreen = null;
     screens.forEach(function(id){
       const el = document.getElementById(id);
@@ -671,7 +706,7 @@ const LE_CHAT_CONFIG = {
   }
 
   window.leChatOpenBgSettings = function(){
-    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatSoundScreen','leChatSaveFolderScreen'];
+    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatSoundScreen','leChatSaveFolderScreen','leChatInviteScreen'];
     leChatBgPrevScreen = null;
     screens.forEach(function(id){
       const el = document.getElementById(id);
@@ -766,7 +801,7 @@ const LE_CHAT_CONFIG = {
   }
 
   window.leChatOpenSaveFolderSettings = function(){
-    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatBgScreen','leChatSoundScreen'];
+    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatBgScreen','leChatSoundScreen','leChatInviteScreen'];
     leChatSaveFolderPrevScreen = null;
     screens.forEach(function(id){
       const el = document.getElementById(id);
@@ -783,6 +818,141 @@ const LE_CHAT_CONFIG = {
     const restoreId = leChatSaveFolderPrevScreen || 'leChatLockScreen';
     const el = document.getElementById(restoreId);
     if (el) el.style.display = 'flex';
+  };
+
+  // ── 👥 외부인 초대 링크 관리 (직원 전용) ──
+  let leChatInvitePrevScreen = null;
+
+  window.leChatOpenInviteScreen = function(){
+    if (leChatIsGuest) return; // 게스트는 초대 관리를 열 수 없음(버튼도 숨김 처리되지만 이중 방어)
+    const screens = ['leChatLockScreen','leChatNameScreen','leChatBody','leChatBgScreen','leChatSoundScreen','leChatSaveFolderScreen'];
+    leChatInvitePrevScreen = null;
+    screens.forEach(function(id){
+      const el = document.getElementById(id);
+      if (el && el.style.display !== 'none' && el.style.display !== '') leChatInvitePrevScreen = id;
+    });
+    screens.forEach(function(id){ const el = document.getElementById(id); if (el) el.style.display = 'none'; });
+    document.getElementById('leChatInviteError').style.display = 'none';
+    document.getElementById('leChatInviteNewLinkBox').style.display = 'none';
+    document.getElementById('leChatInviteLabelInput').value = '';
+    document.getElementById('leChatInviteScreen').style.display = 'flex';
+    leChatLoadInviteList();
+  };
+
+  window.leChatCloseInviteScreen = function(){
+    document.getElementById('leChatInviteScreen').style.display = 'none';
+    const restoreId = leChatInvitePrevScreen || 'leChatLockScreen';
+    const el = document.getElementById(restoreId);
+    if (el) el.style.display = 'flex';
+  };
+
+  function leChatInviteErr(msg){
+    const err = document.getElementById('leChatInviteError');
+    err.textContent = msg;
+    err.style.display = 'block';
+  }
+
+  function leChatMakeToken(){
+    try {
+      if (window.crypto && window.crypto.randomUUID) return window.crypto.randomUUID().replace(/-/g, '');
+    } catch(e) {}
+    return 'g' + Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  }
+
+  window.leChatCreateInvite = async function(){
+    const err = document.getElementById('leChatInviteError');
+    err.style.display = 'none';
+    document.getElementById('leChatInviteNewLinkBox').style.display = 'none';
+    const label = document.getElementById('leChatInviteLabelInput').value.trim() || '(메모 없음)';
+    const token = leChatMakeToken();
+    try {
+      loadSupabaseLib(async function(){
+        if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+        const { error } = await supaClient.from('chat_guests').insert({
+          token: token, guest_name: label, created_by: leChatNickname, active: true
+        });
+        if (error) { leChatInviteErr('생성 실패: ' + (error.message||'') + ' (Supabase에 chat_guests 테이블이 있는지 확인해주세요)'); return; }
+        const url = window.location.origin + window.location.pathname + '?chatGuest=' + token;
+        const box = document.getElementById('leChatInviteNewLinkBox');
+        box.style.display = 'block';
+        box.innerHTML = '✅ 링크가 생성되었습니다. 아래 링크를 외부인에게 전달하세요:<br><b style="user-select:all;">' + leChatEscape(url) + '</b>' +
+          '<br><button onclick="leChatCopyInviteLink(this,\'' + leChatAttrEscape(url) + '\')" style="margin-top:6px;background:#146C8E;color:#fff;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">📋 링크 복사</button>';
+        document.getElementById('leChatInviteLabelInput').value = '';
+        leChatLoadInviteList();
+      });
+    } catch(e) {
+      leChatInviteErr('생성 실패: ' + (e.message||''));
+    }
+  };
+
+  window.leChatCopyInviteLink = function(btn, url){
+    try {
+      navigator.clipboard.writeText(url).then(function(){
+        const orig = btn.textContent;
+        btn.textContent = '✅ 복사됨';
+        setTimeout(function(){ btn.textContent = orig; }, 1500);
+      });
+    } catch(e) {}
+  };
+
+  async function leChatLoadInviteList(){
+    const listEl = document.getElementById('leChatInviteList');
+    listEl.innerHTML = '<div style="color:#94a3b8;font-size:11px;">불러오는 중...</div>';
+    loadSupabaseLib(async function(){
+      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      try {
+        const { data, error } = await supaClient.from('chat_guests').select('*').order('created_at', { ascending: false });
+        if (error) throw error;
+        if (!data || !data.length) {
+          listEl.innerHTML = '<div style="color:#94a3b8;font-size:11px;">아직 발급된 초대가 없습니다.</div>';
+          return;
+        }
+        listEl.innerHTML = data.map(function(row){
+          const active = row.active !== false;
+          const created = row.created_at ? new Date(row.created_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) : '';
+          const url = window.location.origin + window.location.pathname + '?chatGuest=' + row.token;
+          return (
+            '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:4px;">' +
+              '<div style="display:flex;justify-content:space-between;align-items:center;gap:6px;">' +
+                '<span style="font-size:12px;font-weight:800;color:#1e293b;">' + leChatEscape(row.guest_name||'(메모 없음)') + '</span>' +
+                '<span style="font-size:10px;font-weight:800;padding:2px 8px;border-radius:9999px;' + (active ? 'background:#dcfce7;color:#15803d;' : 'background:#fee2e2;color:#b91c1c;') + '">' + (active ? '사용중' : '차단됨') + '</span>' +
+              '</div>' +
+              '<div style="font-size:10.5px;color:#94a3b8;">발급: ' + leChatEscape(row.created_by||'') + (created ? ' · ' + created : '') + '</div>' +
+              '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;">' +
+                '<button onclick="leChatCopyInviteLink(this,\'' + leChatAttrEscape(url) + '\')" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">📋 링크 복사</button>' +
+                '<button onclick="leChatToggleInviteActive(\'' + leChatAttrEscape(row.token) + '\', ' + (!active) + ')" style="background:' + (active ? '#fef2f2' : '#f0fdf4') + ';color:' + (active ? '#dc2626' : '#15803d') + ';border:1px solid ' + (active ? '#fecaca' : '#bbf7d0') + ';border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">' + (active ? '🚫 차단' : '✅ 차단 해제') + '</button>' +
+                '<button onclick="leChatDeleteInvite(\'' + leChatAttrEscape(row.token) + '\')" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
+              '</div>' +
+            '</div>'
+          );
+        }).join('');
+      } catch(e) {
+        listEl.innerHTML = '<div style="color:#dc2626;font-size:11px;">목록을 불러오지 못했습니다: ' + leChatEscape(e.message||'') + ' (Supabase에 chat_guests 테이블이 있는지 확인해주세요)</div>';
+      }
+    });
+  }
+
+  window.leChatToggleInviteActive = async function(token, newActive){
+    if (!supaClient) return;
+    try {
+      const { error } = await supaClient.from('chat_guests').update({ active: newActive }).eq('token', token);
+      if (error) throw error;
+      leChatLoadInviteList();
+    } catch(e) {
+      leChatInviteErr('변경 실패: ' + (e.message||''));
+    }
+  };
+
+  window.leChatDeleteInvite = async function(token){
+    if (!confirm('이 초대 링크를 완전히 삭제할까요? (되돌릴 수 없습니다)')) return;
+    if (!supaClient) return;
+    try {
+      const { error } = await supaClient.from('chat_guests').delete().eq('token', token);
+      if (error) throw error;
+      leChatLoadInviteList();
+    } catch(e) {
+      leChatInviteErr('삭제 실패: ' + (e.message||''));
+    }
   };
 
   window.leChatSetupSaveFolder = async function(){
@@ -920,12 +1090,80 @@ const LE_CHAT_CONFIG = {
         '<div style="font-size:12px;color:#b45309;text-align:center;line-height:1.7;">⚠️ 채팅 서버가 아직 연결되지 않았습니다.<br>Supabase 설정 후 다시 열어주세요.</div>';
       return;
     }
+    leChatRestoreSaveFolder();
+
+    // URL에 초대 토큰(?chatGuest=...)이 있으면 이번 브라우저를 게스트 세션으로 등록
+    try {
+      const urlToken = new URLSearchParams(window.location.search).get('chatGuest');
+      if (urlToken) localStorage.setItem(LE_GUEST_TOKEN_KEY, urlToken);
+    } catch(e) {}
+
+    const storedGuestToken = localStorage.getItem(LE_GUEST_TOKEN_KEY) || '';
+    if (storedGuestToken) {
+      leChatIsGuest = true;
+      leChatGuestToken = storedGuestToken;
+      const badge = document.getElementById('leChatGuestBadge');
+      if (badge) badge.style.display = 'inline-block';
+      const inviteBtn = document.getElementById('leChatInviteBtn');
+      if (inviteBtn) inviteBtn.style.display = 'none';
+      leChatVerifyGuestToken(true);
+      return;
+    }
+
     if (!leChatUnlocked && sessionStorage.getItem('leChatUnlocked') === '1') {
       leChatUnlocked = true;
     }
-    leChatRestoreSaveFolder();
     if (leChatUnlocked) leChatAfterUnlock();
   }
+
+  // 게스트 토큰이 chat_guests 테이블에서 여전히 유효(active)한지 확인.
+  // enterOnSuccess=true 이면 최초 진입 시 통과하면 잠금화면 없이 바로 닉네임 입력으로 넘어간다.
+  function leChatVerifyGuestToken(enterOnSuccess){
+    loadSupabaseLib(function(){
+      if (!supaClient) {
+        supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      }
+      supaClient.from('chat_guests').select('*').eq('token', leChatGuestToken).maybeSingle()
+        .then(function(res){
+          const row = res && res.data;
+          if (!row || row.active === false) {
+            leChatShowGuestBlocked();
+            return;
+          }
+          if (enterOnSuccess) {
+            document.getElementById('leChatLockScreen').style.display = 'none';
+            leChatUnlocked = true;
+            leChatNickname = localStorage.getItem(LE_GUEST_NICK_KEY) || '';
+            if (!leChatNickname) {
+              document.getElementById('leChatNameScreen').style.display = 'flex';
+            } else {
+              leChatStart();
+            }
+          }
+        })
+        .catch(function(){
+          // 조회 자체가 실패하면(네트워크 등) 일단 통과시키되, 다음 주기적 점검에서 다시 확인한다.
+        });
+    });
+  }
+
+  function leChatShowGuestBlocked(){
+    leChatUntrackPresence();
+    try { if (leChatChannel) { supaClient.removeChannel(leChatChannel); leChatChannel = null; } } catch(e) {}
+    localStorage.removeItem(LE_GUEST_TOKEN_KEY);
+    ['leChatLockScreen','leChatNameScreen','leChatBody','leChatInviteScreen'].forEach(function(id){
+      const el = document.getElementById(id); if (el) el.style.display = 'none';
+    });
+    const blocked = document.getElementById('leChatGuestBlockedScreen');
+    if (blocked) blocked.style.display = 'flex';
+  }
+
+  // 게스트가 채팅을 열어둔 동안, 직원이 접근을 차단했는지 주기적으로 확인
+  setInterval(function(){
+    if (leChatIsGuest && leChatGuestToken && leChatOpen) {
+      leChatVerifyGuestToken(false);
+    }
+  }, 45000);
 
   window.leChatUnlock = function(){
     const pw = document.getElementById('leChatPwInput').value;
@@ -941,7 +1179,7 @@ const LE_CHAT_CONFIG = {
 
   function leChatAfterUnlock(){
     document.getElementById('leChatLockScreen').style.display = 'none';
-    leChatNickname = localStorage.getItem('leChatNickname') || '';
+    leChatNickname = localStorage.getItem(leChatNickStorageKey()) || '';
     if (!leChatNickname) {
       document.getElementById('leChatNameScreen').style.display = 'flex';
     } else {
@@ -954,7 +1192,7 @@ const LE_CHAT_CONFIG = {
     if (!v) return;
     const wasRenaming = leChatIsRenaming;
     leChatNickname = v;
-    localStorage.setItem('leChatNickname', v);
+    localStorage.setItem(leChatNickStorageKey(), v);
     document.getElementById('leChatNameScreen').style.display = 'none';
     document.getElementById('leChatNameCancelBtn').style.display = 'none';
     if (wasRenaming) {
@@ -1057,10 +1295,13 @@ const LE_CHAT_CONFIG = {
     });
 
     // 메시지 기록이 있는 상대 + 현재 접속중인 상대(아직 대화가 없어도 목록에 노출)를 합친다
+    // 게스트(외부인)는 다른 게스트와는 새로운 1:1을 시작할 수 없고 직원과만 대화 가능
     const dmNames = new Set(Object.keys(lastByConv).filter(function(k){ return k !== ''; }));
     (leChatOnlineNames||[]).forEach(function(n){
       const nn = String(n||'').trim().normalize('NFC');
-      if (nn && nn !== String(leChatNickname||'').trim().normalize('NFC')) dmNames.add(nn);
+      if (!nn || nn === String(leChatNickname||'').trim().normalize('NFC')) return;
+      if (leChatIsGuest && leChatOnlineRoles[nn] === 'guest') return;
+      dmNames.add(nn);
     });
 
     const rows = [];
@@ -1217,7 +1458,7 @@ const LE_CHAT_CONFIG = {
   function leChatTrackPresence(){
     if (!leChatChannel || !leChatNickname) return;
     try {
-      leChatChannel.track({ nickname: leChatNickname, online_at: new Date().toISOString() });
+      leChatChannel.track({ nickname: leChatNickname, online_at: new Date().toISOString(), role: leChatIsGuest ? 'guest' : 'staff' });
     } catch(e) {}
   }
   function leChatUntrackPresence(){
@@ -1233,11 +1474,16 @@ const LE_CHAT_CONFIG = {
     let state = {};
     try { state = leChatChannel.presenceState(); } catch(e) {}
     const names = [];
+    const roles = {};
     Object.keys(state).forEach(function(key){
       (state[key] || []).forEach(function(p){
-        if (p && p.nickname) names.push(p.nickname);
+        if (p && p.nickname) {
+          names.push(p.nickname);
+          roles[String(p.nickname).trim().normalize('NFC')] = (p.role === 'guest') ? 'guest' : 'staff';
+        }
       });
     });
+    leChatOnlineRoles = roles;
     const uniqueNames = Array.from(new Set(names)).sort(function(a,b){ return a.localeCompare(b, 'ko'); });
 
     const countEl = document.getElementById('leChatOnlineCount');
