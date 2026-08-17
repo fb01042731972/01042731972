@@ -184,45 +184,45 @@
 <!-- 💬 실시간 직원 채팅 (Supabase 기반, 무료) -->
 <style>
 @keyframes leChatBlinkAnim {
-  0%   { transform: scale(1);    background:#146C8E; box-shadow:0 4px 14px rgba(0,0,0,.28); }
-  50%  { transform: scale(1.12); background:#ef4444; box-shadow:0 4px 22px rgba(239,68,68,.6); }
-  100% { transform: scale(1);    background:#146C8E; box-shadow:0 4px 14px rgba(0,0,0,.28); }
+  0%   { transform: scale(1);    background:#51667E; box-shadow:0 3px 10px rgba(20,30,40,.22); }
+  50%  { transform: scale(1.1);  background:#51667E; box-shadow:0 3px 16px rgba(81,102,126,.45); }
+  100% { transform: scale(1);    background:#51667E; box-shadow:0 3px 10px rgba(20,30,40,.22); }
 }
 #leChatToggleBtn.leChatBlink { animation: leChatBlinkAnim 1s ease-in-out infinite; }
 </style>
 <div id="leChatToggleBtn" onclick="leChatToggle()" title="직원 채팅"
-  style="position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;background:#146C8E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 14px rgba(0,0,0,.28);cursor:pointer;z-index:99990;">
+  style="position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;background:#51667E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 3px 10px rgba(20,30,40,.22);cursor:pointer;z-index:99990;">
   💬
   <span id="leChatUnreadBadge" style="display:none;position:absolute;top:-4px;right:-4px;background:#ef4444;color:#fff;font-size:11px;font-weight:800;border-radius:9999px;min-width:18px;height:18px;line-height:18px;text-align:center;padding:0 4px;">0</span>
 </div>
 
-<div id="leChatWindow" style="display:none;position:fixed;right:20px;bottom:88px;width:340px;height:440px;min-width:280px;min-height:300px;background:#fff;border-radius:12px;box-shadow:0 12px 34px rgba(0,0,0,.28);z-index:99991;flex-direction:column;overflow:hidden;border:1px solid #e2e8f0;">
-  <div id="leChatHeader" style="background:#146C8E;color:#fff;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;">
+<div id="leChatWindow" style="display:none;position:fixed;right:20px;bottom:88px;width:340px;height:440px;min-width:280px;min-height:300px;background:#FDFCFB;border-radius:12px;box-shadow:0 4px 20px rgba(20,30,40,.12);z-index:99991;flex-direction:column;overflow:hidden;border:1px solid #eceeef;">
+  <div id="leChatHeader" style="background:#fff;color:#1e293b;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;border-bottom:1px solid #eceeef;">
     <div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;">💬 직원 채팅 <span id="leChatConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;margin-left:4px;"></span>
-      <span id="leChatGuestBadge" style="display:none;background:rgba(255,255,255,.22);border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:800;">🔓 게스트</span>
+      <span id="leChatGuestBadge" style="display:none;background:#F2F4F5;color:#51667E;border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:800;">🔓 게스트</span>
       <span id="leChatOnlineWrap" style="position:relative;">
-        <button id="leChatOnlineBtn" onclick="leChatToggleOnlineList(event)" title="접속자 목록" style="background:rgba(255,255,255,.18);border:none;color:#fff;cursor:pointer;font-size:10.5px;font-weight:700;border-radius:9999px;padding:2px 8px;display:flex;align-items:center;gap:4px;">
+        <button id="leChatOnlineBtn" onclick="leChatToggleOnlineList(event)" title="접속자 목록" style="background:#F2F4F5;border:none;color:#51667E;cursor:pointer;font-size:10.5px;font-weight:700;border-radius:9999px;padding:2px 8px;display:flex;align-items:center;gap:4px;">
           <span style="width:6px;height:6px;border-radius:50%;background:#22c55e;display:inline-block;flex-shrink:0;"></span>
           <span id="leChatOnlineCount">0</span>명
         </button>
-        <div id="leChatOnlineList" style="display:none;position:absolute;top:100%;left:0;margin-top:6px;background:#fff;color:#1e293b;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.2);min-width:110px;max-height:180px;overflow-y:auto;z-index:10;padding:6px 0;"></div>
+        <div id="leChatOnlineList" style="display:none;position:absolute;top:100%;left:0;margin-top:6px;background:#fff;color:#1e293b;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 14px rgba(20,30,40,.10);min-width:110px;max-height:180px;overflow-y:auto;z-index:10;padding:6px 0;"></div>
       </span>
     </div>
     <div style="display:flex;gap:10px;">
-      <button onclick="leChatOpenMyProfileEdit()" title="내 프로필" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">🪪</button>
-      <button onclick="leChatOpenNameChange()" title="이름 변경" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">✏️</button>
-      <button onclick="leChatOpenBgSettings()" title="채팅창 배경" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">🖼️</button>
-      <button onclick="leChatOpenSaveFolderSettings()" title="채팅 기록 저장 폴더" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">📁</button>
-      <button onclick="leChatOpenSoundSettings()" title="알림음 설정" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">⚙️</button>
-      <button id="leChatInviteBtn" onclick="leChatOpenInviteScreen()" title="외부인 초대 링크 관리" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">👥</button>
-      <button onclick="leChatMinimize()" title="최소화" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">—</button>
-      <button onclick="leChatClose()" title="닫기" style="background:none;border:none;color:#fff;cursor:pointer;font-size:14px;line-height:1;">✕</button>
+      <button onclick="leChatOpenMyProfileEdit()" title="내 프로필" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">🪪</button>
+      <button onclick="leChatOpenNameChange()" title="이름 변경" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">✏️</button>
+      <button onclick="leChatOpenBgSettings()" title="채팅창 배경" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">🖼️</button>
+      <button onclick="leChatOpenSaveFolderSettings()" title="채팅 기록 저장 폴더" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">📁</button>
+      <button onclick="leChatOpenSoundSettings()" title="알림음 설정" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">⚙️</button>
+      <button id="leChatInviteBtn" onclick="leChatOpenInviteScreen()" title="외부인 초대 링크 관리" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">👥</button>
+      <button onclick="leChatMinimize()" title="최소화" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">—</button>
+      <button onclick="leChatClose()" title="닫기" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">✕</button>
     </div>
   </div>
 
   <!-- 알림음 설정 화면 (개인별 설정, 이 브라우저에만 저장됨) -->
   <div id="leChatSoundScreen" style="display:none;flex:1;flex-direction:column;gap:12px;padding:16px;overflow-y:auto;">
-    <div style="font-size:13px;font-weight:800;color:#146C8E;">🔔 내 알림음 설정</div>
+    <div style="font-size:13px;font-weight:800;color:#51667E;">🔔 내 알림음 설정</div>
     <div style="font-size:11px;color:#64748b;line-height:1.6;">다른 사람이 메시지를 보내면(내가 받을 때) 이 소리가 재생됩니다. 기본값은 "띵동 - 메시지 왔습니다" 음성 알림이며, 원하는 소리 파일로 바꿀 수 있습니다.<br>이 설정은 이 브라우저(내 컴퓨터)에만 저장되며, 다른 직원에게는 영향을 주지 않습니다.</div>
 
     <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:700;color:#334155;cursor:pointer;">
@@ -231,11 +231,11 @@
     </label>
 
     <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
-      <div style="font-size:12px;color:#475569;">현재 등록된 소리: <span id="leChatSoundFileName" style="font-weight:700;color:#146C8E;">기본 (띵동 - 메시지 왔습니다)</span></div>
+      <div style="font-size:12px;color:#475569;">현재 등록된 소리: <span id="leChatSoundFileName" style="font-weight:700;color:#51667E;">기본 (띵동 - 메시지 왔습니다)</span></div>
       <input id="leChatSoundFileInput" type="file" accept="audio/*" style="display:none;" onchange="leChatSoundFileSelected(this)">
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button onclick="document.getElementById('leChatSoundFileInput').click()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📁 소리 파일 선택</button>
-        <button onclick="leChatSoundTestPlay()" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">▶ 테스트 재생</button>
+        <button onclick="document.getElementById('leChatSoundFileInput').click()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📁 소리 파일 선택</button>
+        <button onclick="leChatSoundTestPlay()" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">▶ 테스트 재생</button>
         <button onclick="leChatSoundRemove()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">기본 소리로 되돌리기</button>
       </div>
       <div id="leChatSoundError" style="display:none;color:#dc2626;font-size:11px;"></div>
@@ -246,15 +246,15 @@
 
   <!-- 채팅창 배경 테마 설정 화면 (개인별 설정, 이 브라우저에만 저장됨) -->
   <div id="leChatBgScreen" style="display:none;flex:1;flex-direction:column;gap:12px;padding:16px;overflow-y:auto;">
-    <div style="font-size:13px;font-weight:800;color:#146C8E;">🖼️ 채팅창 배경 설정</div>
+    <div style="font-size:13px;font-weight:800;color:#51667E;">🖼️ 채팅창 배경 설정</div>
     <div style="font-size:11px;color:#64748b;line-height:1.6;">채팅 대화 영역의 배경 이미지를 원하는 사진으로 바꿀 수 있습니다.<br>이 설정은 이 브라우저(내 컴퓨터)에만 저장되며, 다른 직원에게는 영향을 주지 않습니다.</div>
 
     <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
       <div id="leChatBgPreview" style="width:100%;height:90px;border-radius:6px;background:#f8fafc;background-size:cover;background-position:center;border:1px solid #e2e8f0;"></div>
-      <div style="font-size:12px;color:#475569;">현재 배경: <span id="leChatBgFileName" style="font-weight:700;color:#146C8E;">기본 배경</span></div>
+      <div style="font-size:12px;color:#475569;">현재 배경: <span id="leChatBgFileName" style="font-weight:700;color:#51667E;">기본 배경</span></div>
       <input id="leChatBgFileInput" type="file" accept="image/*" style="display:none;" onchange="leChatBgFileSelected(this)">
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button onclick="document.getElementById('leChatBgFileInput').click()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📁 사진 선택</button>
+        <button onclick="document.getElementById('leChatBgFileInput').click()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📁 사진 선택</button>
         <button onclick="leChatBgRemove()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">기본 배경으로</button>
       </div>
       <div id="leChatBgError" style="display:none;color:#dc2626;font-size:11px;"></div>
@@ -265,13 +265,13 @@
 
   <!-- 채팅 기록 저장 폴더 설정 화면 (직원 개인별로 각자 원하는 폴더를 지정, 이 브라우저에만 저장됨) -->
   <div id="leChatSaveFolderScreen" style="display:none;flex:1;flex-direction:column;gap:12px;padding:16px;overflow-y:auto;">
-    <div style="font-size:13px;font-weight:800;color:#146C8E;">📁 채팅 기록 저장 폴더</div>
+    <div style="font-size:13px;font-weight:800;color:#51667E;">📁 채팅 기록 저장 폴더</div>
     <div style="font-size:11px;color:#64748b;line-height:1.6;">폴더를 지정하면 새 채팅 메시지가 올 때마다(내가 보낸 메시지 포함) 이 폴더 안의 날짜별 텍스트 파일에 자동으로 이어서 저장됩니다.<br>이 설정은 <b>이 브라우저(내 컴퓨터)에만</b> 저장되며, <b>직원마다 각자 원하는 폴더를 따로 지정</b>할 수 있습니다. 다른 직원의 화면·설정에는 영향을 주지 않습니다.</div>
 
     <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
-      <div style="font-size:12px;color:#475569;">현재 저장 폴더: <span id="leChatSaveFolderStatus" style="font-weight:700;color:#146C8E;">지정되지 않음</span></div>
+      <div style="font-size:12px;color:#475569;">현재 저장 폴더: <span id="leChatSaveFolderStatus" style="font-weight:700;color:#51667E;">지정되지 않음</span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;">
-        <button onclick="leChatSetupSaveFolder()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📁 폴더 지정 / 변경</button>
+        <button onclick="leChatSetupSaveFolder()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">📁 폴더 지정 / 변경</button>
         <button onclick="leChatClearSaveFolder()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;">폴더 해제</button>
       </div>
       <div id="leChatSaveFolderError" style="display:none;color:#dc2626;font-size:11px;"></div>
@@ -282,13 +282,13 @@
 
   <!-- 👥 외부인 초대 링크 관리 화면 (직원 전용) -->
   <div id="leChatInviteScreen" style="display:none;flex:1;flex-direction:column;gap:10px;padding:16px;overflow-y:auto;">
-    <div style="font-size:13px;font-weight:800;color:#146C8E;">👥 외부인 초대 링크 관리</div>
+    <div style="font-size:13px;font-weight:800;color:#51667E;">👥 외부인 초대 링크 관리</div>
     <div style="font-size:11px;color:#64748b;line-height:1.6;">초대 링크로 들어온 외부인은 <b>전체 공개방</b>과 <b>직원과의 1:1 대화</b>만 볼 수 있고, 다른 외부인과는 대화할 수 없습니다.<br>언제든 아래에서 차단하면 그 즉시(최대 약 1분 이내) 접속이 끊깁니다.</div>
 
     <div style="border:1px dashed #cbd5e1;border-radius:8px;padding:12px;display:flex;flex-direction:column;gap:8px;">
       <div style="font-size:12px;color:#475569;font-weight:700;">새 초대 링크 만들기</div>
       <input id="leChatInviteLabelInput" type="text" placeholder="예: OO업체 김대리 (메모용, 상대방에게 표시되지 않음)" maxlength="30" style="border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;box-sizing:border-box;">
-      <button onclick="leChatCreateInvite()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:8px;font-size:12.5px;font-weight:700;cursor:pointer;">➕ 초대 링크 생성</button>
+      <button onclick="leChatCreateInvite()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:8px;font-size:12.5px;font-weight:700;cursor:pointer;">➕ 초대 링크 생성</button>
       <div id="leChatInviteNewLinkBox" style="display:none;background:#f0f9ff;border:1px solid #bae6fd;border-radius:6px;padding:8px;font-size:11px;color:#0c4a6e;word-break:break-all;"></div>
       <div id="leChatInviteError" style="display:none;color:#dc2626;font-size:11px;"></div>
     </div>
@@ -311,7 +311,7 @@
   <div id="leChatLockScreen" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;">
     <div style="font-size:13px;color:#475569;font-weight:700;text-align:center;">직원 전용 채팅방입니다<br>공용 비밀번호를 입력해주세요</div>
     <input id="leChatPwInput" type="password" placeholder="비밀번호" style="border:1px solid #cbd5e1;border-radius:6px;padding:8px 10px;font-size:13px;width:80%;" onkeydown="if(event.key==='Enter') leChatUnlock()">
-    <button onclick="leChatUnlock()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;">입장</button>
+    <button onclick="leChatUnlock()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;">입장</button>
     <div id="leChatPwError" style="display:none;color:#dc2626;font-size:11px;">비밀번호가 올바르지 않습니다.</div>
   </div>
 
@@ -319,7 +319,7 @@
   <div id="leChatNameScreen" style="display:none;flex:1;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;">
     <div style="font-size:13px;color:#475569;font-weight:700;">이름(닉네임)을 입력하세요</div>
     <input id="leChatNameInput" type="text" placeholder="예: 김대리" maxlength="12" style="border:1px solid #cbd5e1;border-radius:6px;padding:8px 10px;font-size:13px;width:80%;" onkeydown="if(event.key==='Enter') leChatSetName()">
-    <button onclick="leChatSetName()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;">확인</button>
+    <button onclick="leChatSetName()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:8px 18px;font-size:13px;font-weight:700;cursor:pointer;">확인</button>
     <button id="leChatNameCancelBtn" onclick="leChatCancelNameChange()" style="display:none;background:#e2e8f0;color:#334155;border:none;border-radius:6px;padding:6px 14px;font-size:12px;font-weight:700;cursor:pointer;">취소</button>
   </div>
 
@@ -334,32 +334,32 @@
     <!-- 개별 채팅방(스레드) 화면: 목록에서 하나를 선택하면 이 화면으로 전환됨 -->
     <div id="leChatThreadScreen" style="display:none;flex-direction:column;flex:1;min-height:0;">
       <div id="leChatThreadHeader" style="display:flex;align-items:center;gap:6px;padding:7px 8px;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0;">
-        <button onclick="leChatBackToList()" title="채팅 목록으로" style="background:none;border:none;color:#146C8E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
+        <button onclick="leChatBackToList()" title="채팅 목록으로" style="background:none;border:none;color:#51667E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
         <span id="leChatThreadTitle" style="font-size:12.5px;font-weight:800;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">전체</span>
-        <button onclick="leChatOpenSearch()" title="채팅 검색" style="background:none;border:none;color:#146C8E;font-size:14px;cursor:pointer;padding:2px 5px;line-height:1;">🔍</button>
+        <button onclick="leChatOpenSearch()" title="채팅 검색" style="background:none;border:none;color:#51667E;font-size:14px;cursor:pointer;padding:2px 5px;line-height:1;">🔍</button>
       </div>
-      <div id="leChatPinBanner" onclick="leChatJumpToPinned()" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#fef9c3;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;cursor:pointer;flex-shrink:0;">
+      <div id="leChatPinBanner" onclick="leChatJumpToPinned()" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#F5F3EC;border-bottom:1px solid #eceeef;font-size:11px;color:#7A6A3F;cursor:pointer;flex-shrink:0;">
         <span style="flex-shrink:0;">📌</span>
         <span id="leChatPinBannerText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;"></span>
-        <span onclick="event.stopPropagation();leChatUnpinFromBanner()" title="고정 해제" style="flex-shrink:0;color:#a16207;font-weight:800;cursor:pointer;">✕</span>
+        <span onclick="event.stopPropagation();leChatUnpinFromBanner()" title="고정 해제" style="flex-shrink:0;color:#7A6A3F;font-weight:800;cursor:pointer;">✕</span>
       </div>
       <div id="leChatMessages" style="flex:1;overflow-y:auto;padding:10px;font-size:12.5px;background:#f8fafc;"></div>
-      <div id="leChatReplyBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#eef2ff;border-top:1px solid #c7d2fe;font-size:11px;color:#3730a3;flex-shrink:0;">
+      <div id="leChatReplyBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#F2F4F5;border-top:1px solid #eceeef;font-size:11px;color:#51667E;flex-shrink:0;">
         <span style="flex-shrink:0;">↩</span>
         <span id="leChatReplyBarText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
-        <span onclick="leChatCancelReply()" title="답장 취소" style="flex-shrink:0;color:#4338ca;font-weight:800;cursor:pointer;">✕</span>
+        <span onclick="leChatCancelReply()" title="답장 취소" style="flex-shrink:0;color:#51667E;font-weight:800;cursor:pointer;">✕</span>
       </div>
-      <div id="leChatEditBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#fff7ed;border-top:1px solid #fed7aa;font-size:11px;color:#9a3412;flex-shrink:0;">
+      <div id="leChatEditBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#F2F4F5;border-top:1px solid #eceeef;font-size:11px;color:#51667E;flex-shrink:0;">
         <span style="flex-shrink:0;">✏</span>
         <span style="flex:1;">메시지 수정 중...</span>
-        <span onclick="leChatCancelEdit()" title="수정 취소" style="flex-shrink:0;color:#c2410c;font-weight:800;cursor:pointer;">✕</span>
+        <span onclick="leChatCancelEdit()" title="수정 취소" style="flex-shrink:0;color:#51667E;font-weight:800;cursor:pointer;">✕</span>
       </div>
-      <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#146C8E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
+      <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#51667E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
       <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
-      <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
+      <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 14px rgba(20,30,40,.12);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
 
       <!-- '+' 눌렀을 때 뜨는 팝업 메뉴 -->
-      <div id="leChatPlusMenu" style="display:none;position:absolute;bottom:100%;left:0;margin-bottom:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.2);min-width:168px;overflow:hidden;z-index:6;">
+      <div id="leChatPlusMenu" style="display:none;position:absolute;bottom:100%;left:0;margin-bottom:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 16px rgba(20,30,40,.12);min-width:168px;overflow:hidden;z-index:6;">
         <button onclick="leChatToggleCaptureSubMenu(event)" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
           <span style="font-size:16px;width:20px;text-align:center;">📷</span>캡처<span style="margin-left:auto;color:#94a3b8;font-size:11px;">›</span>
         </button>
@@ -381,7 +381,7 @@
       </div>
 
       <!-- '캡처' 하위 메뉴 (카톡 스타일: 사각형 캡처 / 대화 캡처 / 전체화면 캡처 / 화면 녹화) -->
-      <div id="leChatCaptureSubMenu" style="display:none;position:absolute;bottom:100%;left:0;margin-bottom:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 8px 22px rgba(0,0,0,.2);min-width:168px;overflow:hidden;z-index:7;">
+      <div id="leChatCaptureSubMenu" style="display:none;position:absolute;bottom:100%;left:0;margin-bottom:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 16px rgba(20,30,40,.12);min-width:168px;overflow:hidden;z-index:7;">
         <button onclick="leChatToggleCaptureSubMenu(event)" style="display:flex;align-items:center;gap:10px;width:100%;padding:9px 14px;background:#f8fafc;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12px;color:#64748b;font-weight:700;">
           <span style="font-size:14px;width:20px;text-align:center;">‹</span>뒤로
         </button>
@@ -400,9 +400,9 @@
       </div>
 
       <input id="leChatFileInput" type="file" style="display:none;" onchange="leChatFileSelected(this)">
-      <button id="leChatPlusBtn" onclick="leChatTogglePlusMenu(event)" title="더보기" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1;">＋</button>
+      <button id="leChatPlusBtn" onclick="leChatTogglePlusMenu(event)" title="더보기" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1;">＋</button>
       <input id="leChatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
-      <button onclick="leChatSend()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
+      <button onclick="leChatSend()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
       </div>
     </div>
   </div>
@@ -410,7 +410,7 @@
   <!-- 🔍 채팅 검색 화면 -->
   <div id="leChatSearchScreen" style="display:none;position:absolute;inset:0;background:#fff;flex-direction:column;z-index:20;">
     <div style="display:flex;align-items:center;gap:6px;padding:8px;border-bottom:1px solid #e2e8f0;flex-shrink:0;">
-      <button onclick="leChatCloseSearch()" title="닫기" style="background:none;border:none;color:#146C8E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
+      <button onclick="leChatCloseSearch()" title="닫기" style="background:none;border:none;color:#51667E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
       <input id="leChatSearchInput" type="text" placeholder="검색할 내용 입력 (예: 견적, SUS304, 납기)" style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" oninput="leChatRunSearch()" onkeydown="if(event.key==='Enter') leChatRunSearch()">
     </div>
     <div id="leChatSearchResults" style="flex:1;overflow-y:auto;background:#fff;padding:4px 0;"></div>
@@ -424,14 +424,14 @@
 <!-- 🪪 프로필 보기 모달 (다른 사람 이름 클릭 시) -->
 <div id="leChatProfileViewModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) leChatCloseProfileView()">
   <div style="background:#fff;border-radius:14px;max-width:320px;width:100%;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.3);">
-    <div id="leChatProfileViewHeader" style="background:linear-gradient(135deg,#0F3A4D 0%,#146C8E 100%);background-size:cover;background-position:center;padding:22px 20px 44px;position:relative;">
+    <div id="leChatProfileViewHeader" style="background:linear-gradient(135deg,#0F3A4D 0%,#51667E 100%);background-size:cover;background-position:center;padding:22px 20px 44px;position:relative;">
       <button onclick="leChatCloseProfileView()" style="position:absolute;top:10px;right:12px;border:none;background:rgba(255,255,255,.2);color:#fff;width:24px;height:24px;border-radius:50%;cursor:pointer;font-size:13px;line-height:1;">✕</button>
     </div>
     <div style="padding:0 20px 20px;text-align:center;margin-top:-40px;">
       <img id="leChatProfileViewPhoto" src="" onclick="leChatOpenProfilePhotoLightbox(event)" style="display:none;width:80px;height:80px;border-radius:50%;object-fit:cover;object-position:center 20%;border:4px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.2);background:#e2e8f0;margin:0 auto 10px;cursor:zoom-in;">
       <div id="leChatProfileViewNoPhoto" style="width:80px;height:80px;border-radius:50%;border:4px solid #fff;box-shadow:0 4px 10px rgba(0,0,0,.2);background:#cbd5e1;color:#fff;font-size:30px;font-weight:800;display:flex;align-items:center;justify-content:center;margin:0 auto 10px;">👤</div>
       <div id="leChatProfileViewName" style="font-size:16px;font-weight:800;color:#1e293b;"></div>
-      <div id="leChatProfileViewPosition" style="font-size:12px;color:#146C8E;font-weight:700;margin-top:2px;"></div>
+      <div id="leChatProfileViewPosition" style="font-size:12px;color:#51667E;font-weight:700;margin-top:2px;"></div>
       <div id="leChatProfileViewCard" style="margin-top:14px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:10px;padding:12px;text-align:left;font-size:12px;color:#334155;display:flex;flex-direction:column;gap:6px;"></div>
       <div id="leChatProfileViewIntro" style="margin-top:12px;font-size:12px;color:#475569;line-height:1.6;white-space:pre-wrap;text-align:left;"></div>
       <div id="leChatProfileViewMusicWrap" style="display:none;margin-top:12px;">
@@ -460,10 +460,10 @@
 
     <!-- 배경 사진 -->
     <div class="text-xs font-bold text-gray-700 mb-1">프로필 배경 사진</div>
-    <div id="leChatProfileEditBgPreview" style="width:100%;height:70px;border-radius:8px;background:linear-gradient(135deg,#0F3A4D 0%,#146C8E 100%);background-size:cover;background-position:center;margin-bottom:6px;"></div>
+    <div id="leChatProfileEditBgPreview" style="width:100%;height:70px;border-radius:8px;background:linear-gradient(135deg,#0F3A4D 0%,#51667E 100%);background-size:cover;background-position:center;margin-bottom:6px;"></div>
     <input id="leChatProfileBgInput" type="file" accept="image/*" style="display:none;" onchange="leChatProfileBgSelected(this)">
     <div style="display:flex;gap:6px;margin-bottom:6px;">
-      <button onclick="document.getElementById('leChatProfileBgInput').click()" style="flex:1;background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">🖼️ 배경 선택</button>
+      <button onclick="document.getElementById('leChatProfileBgInput').click()" style="flex:1;background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">🖼️ 배경 선택</button>
       <button onclick="leChatProfileBgRemove()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">기본으로</button>
     </div>
     <div id="leChatProfileBgStatus" style="font-size:10.5px;color:#94a3b8;margin-bottom:12px;"></div>
@@ -472,7 +472,7 @@
       <img id="leChatProfileEditPhotoPreview" src="" style="display:none;width:72px;height:72px;border-radius:50%;object-fit:cover;object-position:center 20%;border:2px solid #e2e8f0;margin:0 auto 8px;">
       <div id="leChatProfileEditNoPhoto" style="width:72px;height:72px;border-radius:50%;background:#e2e8f0;color:#94a3b8;font-size:26px;display:flex;align-items:center;justify-content:center;margin:0 auto 8px;">👤</div>
       <input id="leChatProfilePhotoInput" type="file" accept="image/*" style="display:none;" onchange="leChatProfilePhotoSelected(this)">
-      <button onclick="document.getElementById('leChatProfilePhotoInput').click()" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;">📷 사진 선택</button>
+      <button onclick="document.getElementById('leChatProfilePhotoInput').click()" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 12px;font-size:11.5px;font-weight:700;cursor:pointer;">📷 사진 선택</button>
       <div id="leChatProfilePhotoStatus" style="font-size:10.5px;color:#94a3b8;margin-top:4px;"></div>
     </div>
 
@@ -494,12 +494,12 @@
     <div id="leChatProfileMusicName" style="font-size:11.5px;color:#334155;margin-bottom:6px;"></div>
     <input id="leChatProfileMusicInput" type="file" accept="audio/*" style="display:none;" onchange="leChatProfileMusicSelected(this)">
     <div style="display:flex;gap:6px;margin-bottom:14px;">
-      <button onclick="document.getElementById('leChatProfileMusicInput').click()" style="flex:1;background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">🎵 음악 선택</button>
+      <button onclick="document.getElementById('leChatProfileMusicInput').click()" style="flex:1;background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">🎵 음악 선택</button>
       <button onclick="leChatProfileMusicRemove()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">삭제</button>
     </div>
 
     <div id="leChatProfileEditError" style="display:none;color:#dc2626;font-size:11px;margin-bottom:8px;"></div>
-    <button id="leChatProfileSaveBtn" onclick="leChatSaveProfile()" style="width:100%;background:#146C8E;color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;">저장</button>
+    <button id="leChatProfileSaveBtn" onclick="leChatSaveProfile()" style="width:100%;background:#51667E;color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;">저장</button>
   </div>
 </div>
 
@@ -518,7 +518,7 @@
     <div class="text-xs font-bold text-gray-700 mb-1">보낼 시간</div>
     <input id="leChatScheduleTime" type="datetime-local" style="width:100%;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;box-sizing:border-box;margin-bottom:12px;">
 
-    <button onclick="leChatAddScheduledMessage()" style="width:100%;background:#146C8E;color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;margin-bottom:14px;">➕ 예약 등록</button>
+    <button onclick="leChatAddScheduledMessage()" style="width:100%;background:#51667E;color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;margin-bottom:14px;">➕ 예약 등록</button>
 
     <div class="text-xs font-bold text-gray-700 mb-2">예약된 메시지</div>
     <div id="leChatScheduleList" style="display:flex;flex-direction:column;gap:8px;"></div>
@@ -905,7 +905,7 @@ const LE_CHAT_CONFIG = {
         const box = document.getElementById('leChatInviteNewLinkBox');
         box.style.display = 'block';
         box.innerHTML = '✅ 링크가 생성되었습니다. 아래 링크를 외부인에게 전달하세요:<br><b style="user-select:all;">' + leChatEscape(url) + '</b>' +
-          '<br><button onclick="leChatCopyInviteLink(this,\'' + leChatAttrEscape(url) + '\')" style="margin-top:6px;background:#146C8E;color:#fff;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">📋 링크 복사</button>';
+          '<br><button onclick="leChatCopyInviteLink(this,\'' + leChatAttrEscape(url) + '\')" style="margin-top:6px;background:#51667E;color:#fff;border:none;border-radius:5px;padding:5px 10px;font-size:11px;font-weight:700;cursor:pointer;">📋 링크 복사</button>';
         document.getElementById('leChatInviteLabelInput').value = '';
         leChatLoadInviteList();
       });
@@ -948,7 +948,7 @@ const LE_CHAT_CONFIG = {
               '</div>' +
               '<div style="font-size:10.5px;color:#94a3b8;">발급: ' + leChatEscape(row.created_by||'') + (created ? ' · ' + created : '') + '</div>' +
               '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px;">' +
-                '<button onclick="leChatCopyInviteLink(this,\'' + leChatAttrEscape(url) + '\')" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">📋 링크 복사</button>' +
+                '<button onclick="leChatCopyInviteLink(this,\'' + leChatAttrEscape(url) + '\')" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">📋 링크 복사</button>' +
                 '<button onclick="leChatToggleInviteActive(\'' + leChatAttrEscape(row.token) + '\', ' + (!active) + ')" style="background:' + (active ? '#fef2f2' : '#f0fdf4') + ';color:' + (active ? '#dc2626' : '#15803d') + ';border:1px solid ' + (active ? '#fecaca' : '#bbf7d0') + ';border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">' + (active ? '🚫 차단' : '✅ 차단 해제') + '</button>' +
                 '<button onclick="leChatDeleteInvite(\'' + leChatAttrEscape(row.token) + '\')" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:5px;padding:5px 9px;font-size:11px;font-weight:700;cursor:pointer;">🗑 삭제</button>' +
               '</div>' +
@@ -1367,7 +1367,7 @@ const LE_CHAT_CONFIG = {
         timeText = new Date(last.created_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
       }
       const avatarHtml = row.key === ''
-        ? '<div style="width:40px;height:40px;border-radius:50%;background:#146C8E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💬</div>'
+        ? '<div style="width:40px;height:40px;border-radius:50%;background:#51667E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;">💬</div>'
         : leChatAvatarThumbHtml(row.key, 40);
       return (
         '<div onclick="leChatOpenConv(\'' + leChatAttrEscape(row.key) + '\')" style="display:flex;align-items:center;gap:10px;padding:10px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
@@ -1654,10 +1654,10 @@ const LE_CHAT_CONFIG = {
     if (msg.content != null) div.dataset.msgContent = msg.content;
     div.dataset.msgSenderName = msg.sender || '';
     const isDm = !!msg.receiver;
-    const bubbleBg = isDm ? (mine ? '#a21caf' : '#f3e8ff') : (mine ? '#146C8E' : '#e2e8f0');
-    const bubbleColor = isDm ? (mine ? '#fff' : '#6b21a8') : (mine ? '#fff' : '#1e293b');
+    const bubbleBg = mine ? '#51667E' : '#FFFFFF';
+    const bubbleColor = mine ? '#fff' : '#1e293b';
     const dmLabel = isDm
-      ? ('<span style="color:#a21caf;font-weight:700;">🔒 ' + (mine ? ('→ ' + leChatEscape(msg.receiver) + ' 귓속말') : '나에게만 온 귓속말') + '</span> · ')
+      ? ('<span style="color:#51667E;font-weight:700;">🔒 ' + (mine ? ('→ ' + leChatEscape(msg.receiver) + ' 귓속말') : '나에게만 온 귓속말') + '</span> · ')
       : '';
     // 답장 대상이 있으면 인용 미리보기를 말풍선 위에 붙임
     let quoteHtml = '';
@@ -1700,20 +1700,20 @@ const LE_CHAT_CONFIG = {
     if (msg.edited_at) {
       bodyHtml += '<span style="font-size:9.5px;opacity:.7;margin-left:2px;">(수정됨)</span>';
     }
-    const replyBtnHtml = '<span onclick="leChatStartReply(this)" title="답장" style="cursor:pointer;color:#146C8E;font-weight:800;margin-right:4px;">↩</span>';
-    const pinBtnHtml = '<span onclick="leChatTogglePin(this)" title="공지로 고정/해제" style="cursor:pointer;color:' + (msg.pinned ? '#ca8a04' : '#94a3b8') + ';font-weight:800;margin-right:4px;">📌</span>';
+    const replyBtnHtml = '<span onclick="leChatStartReply(this)" title="답장" style="cursor:pointer;color:#51667E;font-weight:800;margin-right:4px;">↩</span>';
+    const pinBtnHtml = '<span onclick="leChatTogglePin(this)" title="공지로 고정/해제" style="cursor:pointer;color:' + (msg.pinned ? '#51667E' : '#94a3b8') + ';font-weight:800;margin-right:4px;">📌</span>';
     const editBtnHtml = (mine && msg.content && !msg.file_url)
-      ? '<span onclick="leChatStartEdit(this)" title="수정" style="cursor:pointer;color:#146C8E;font-weight:800;margin-right:4px;">✏</span>'
+      ? '<span onclick="leChatStartEdit(this)" title="수정" style="cursor:pointer;color:#51667E;font-weight:800;margin-right:4px;">✏</span>'
       : '';
     const deleteBtnHtml = mine
       ? '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>'
       : '';
     const senderNameHtml = '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(msg.sender) + '\')" style="cursor:pointer;display:inline-flex;align-items:center;">' + leChatAvatarThumbHtml(msg.sender, 16) + '<span style="text-decoration:underline dotted;">' + leChatEscape(msg.sender) + '</span></span>';
-    const readHtml = (mine && leChatIsReadByOther(msg)) ? '<div style="font-size:9.5px;color:#146C8E;margin-top:1px;">읽음</div>' : '';
+    const readHtml = (mine && leChatIsReadByOther(msg)) ? '<div style="font-size:9.5px;color:#51667E;margin-top:1px;">읽음</div>' : '';
     div.innerHTML =
-      (msg.pinned ? '<div style="font-size:10px;color:#ca8a04;font-weight:700;margin-bottom:1px;">📌 고정된 메시지</div>' : '') +
+      (msg.pinned ? '<div style="font-size:10px;color:#7A6A3F;font-weight:700;margin-bottom:1px;">📌 고정된 메시지</div>' : '') +
       '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
-      '<div style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;' + (isDm ? 'border:1px dashed #d8b4fe;' : '') + (msg.pinned ? 'box-shadow:0 0 0 2px #fde68a;' : '') + '">' + quoteHtml + bodyHtml + '</div>' +
+      '<div style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;' + (mine ? '' : 'border:1px solid #E7EAED;') + (isDm ? 'border:1px dashed #B9C2CA;' : '') + (msg.pinned ? 'box-shadow:0 0 0 2px #E4C77A;' : '') + '">' + quoteHtml + bodyHtml + '</div>' +
       readHtml;
     box.appendChild(div);
   }
@@ -1819,7 +1819,7 @@ const LE_CHAT_CONFIG = {
     if (bubble) {
       const prevBoxShadow = bubble.style.boxShadow;
       bubble.style.transition = 'box-shadow .2s';
-      bubble.style.boxShadow = '0 0 0 2px #146C8E';
+      bubble.style.boxShadow = '0 0 0 2px #51667E';
       setTimeout(function(){ bubble.style.boxShadow = prevBoxShadow || ''; }, 1200);
     }
   };
@@ -1939,7 +1939,7 @@ const LE_CHAT_CONFIG = {
       const timeText = new Date(m.created_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
       return (
         '<div onclick="leChatGoToSearchResult(\'' + leChatAttrEscape(convKey) + '\',\'' + leChatAttrEscape(m.id!=null?String(m.id):'') + '\')" style="padding:9px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
-          '<div style="display:flex;justify-content:space-between;gap:6px;"><span style="font-size:11.5px;font-weight:800;color:#146C8E;">' + leChatEscape(roomLabel) + ' · ' + leChatEscape(m.sender||'') + '</span><span style="font-size:10px;color:#94a3b8;flex-shrink:0;">' + timeText + '</span></div>' +
+          '<div style="display:flex;justify-content:space-between;gap:6px;"><span style="font-size:11.5px;font-weight:800;color:#51667E;">' + leChatEscape(roomLabel) + ' · ' + leChatEscape(m.sender||'') + '</span><span style="font-size:10px;color:#94a3b8;flex-shrink:0;">' + timeText + '</span></div>' +
           '<div style="font-size:11.5px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">' + leChatEscape(bodyPreview) + '</div>' +
         '</div>'
       );
@@ -2110,7 +2110,7 @@ const LE_CHAT_CONFIG = {
       const timeStr = (d.getMonth()+1) + '/' + d.getDate() + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
       return '<div style="border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;">' +
         '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
-          '<span style="font-size:11px;font-weight:700;color:#146C8E;">⏰ ' + timeStr + '</span>' +
+          '<span style="font-size:11px;font-weight:700;color:#51667E;">⏰ ' + timeStr + '</span>' +
           '<span onclick="leChatCancelScheduledMessage(\'' + item.id + '\')" style="cursor:pointer;color:#ef4444;font-size:11px;font-weight:700;">✕ 취소</span>' +
         '</div>' +
         '<div style="font-size:12px;color:#334155;white-space:pre-wrap;word-break:break-word;">' + leChatEscape(item.text) + '</div>' +
@@ -2413,7 +2413,7 @@ const LE_CHAT_CONFIG = {
         text = (text ? text + '\n' : '') + '📎 ' + (fileLink.textContent || '').trim();
       }
       if (!text) return;
-      const bg = (bubbleEl.style && bubbleEl.style.background) || (mine ? '#146C8E' : '#e2e8f0');
+      const bg = (bubbleEl.style && bubbleEl.style.background) || (mine ? '#51667E' : '#e2e8f0');
       const color = (bubbleEl.style && bubbleEl.style.color) || (mine ? '#ffffff' : '#1e293b');
       items.push({ mine: mine, header: headerText, text: text, bg: bg, color: color });
     });
