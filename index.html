@@ -336,8 +336,24 @@
       <div id="leChatThreadHeader" style="display:flex;align-items:center;gap:6px;padding:7px 8px;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0;">
         <button onclick="leChatBackToList()" title="채팅 목록으로" style="background:none;border:none;color:#146C8E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
         <span id="leChatThreadTitle" style="font-size:12.5px;font-weight:800;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">전체</span>
+        <button onclick="leChatOpenSearch()" title="채팅 검색" style="background:none;border:none;color:#146C8E;font-size:14px;cursor:pointer;padding:2px 5px;line-height:1;">🔍</button>
+      </div>
+      <div id="leChatPinBanner" onclick="leChatJumpToPinned()" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#fef9c3;border-bottom:1px solid #fde68a;font-size:11px;color:#92400e;cursor:pointer;flex-shrink:0;">
+        <span style="flex-shrink:0;">📌</span>
+        <span id="leChatPinBannerText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-weight:700;"></span>
+        <span onclick="event.stopPropagation();leChatUnpinFromBanner()" title="고정 해제" style="flex-shrink:0;color:#a16207;font-weight:800;cursor:pointer;">✕</span>
       </div>
       <div id="leChatMessages" style="flex:1;overflow-y:auto;padding:10px;font-size:12.5px;background:#f8fafc;"></div>
+      <div id="leChatReplyBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#eef2ff;border-top:1px solid #c7d2fe;font-size:11px;color:#3730a3;flex-shrink:0;">
+        <span style="flex-shrink:0;">↩</span>
+        <span id="leChatReplyBarText" style="flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"></span>
+        <span onclick="leChatCancelReply()" title="답장 취소" style="flex-shrink:0;color:#4338ca;font-weight:800;cursor:pointer;">✕</span>
+      </div>
+      <div id="leChatEditBar" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#fff7ed;border-top:1px solid #fed7aa;font-size:11px;color:#9a3412;flex-shrink:0;">
+        <span style="flex-shrink:0;">✏</span>
+        <span style="flex:1;">메시지 수정 중...</span>
+        <span onclick="leChatCancelEdit()" title="수정 취소" style="flex-shrink:0;color:#c2410c;font-weight:800;cursor:pointer;">✕</span>
+      </div>
       <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#146C8E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
       <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
       <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
@@ -389,6 +405,15 @@
       <button onclick="leChatSend()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
       </div>
     </div>
+  </div>
+
+  <!-- 🔍 채팅 검색 화면 -->
+  <div id="leChatSearchScreen" style="display:none;position:absolute;inset:0;background:#fff;flex-direction:column;z-index:20;">
+    <div style="display:flex;align-items:center;gap:6px;padding:8px;border-bottom:1px solid #e2e8f0;flex-shrink:0;">
+      <button onclick="leChatCloseSearch()" title="닫기" style="background:none;border:none;color:#146C8E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
+      <input id="leChatSearchInput" type="text" placeholder="검색할 내용 입력 (예: 견적, SUS304, 납기)" style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" oninput="leChatRunSearch()" onkeydown="if(event.key==='Enter') leChatRunSearch()">
+    </div>
+    <div id="leChatSearchResults" style="flex:1;overflow-y:auto;background:#fff;padding:4px 0;"></div>
   </div>
 
   <div id="leChatResizeHandle" title="크기 조절" style="position:absolute;right:2px;bottom:2px;width:16px;height:16px;cursor:nwse-resize;opacity:.5;">
@@ -533,6 +558,10 @@ const LE_CHAT_CONFIG = {
   let leChatActiveConv = null;      // null(목록 화면) | ''(전체 공개방) | '상대닉네임'(1:1)
   let leChatMsgCache = [];          // 내가 볼 수 있는 전체 메시지 캐시(전체+1:1)
   let leChatOnlineNames = [];       // 현재 접속중인 다른 사람 닉네임 목록
+  let leChatReplyTarget = null;     // 답장 대상 메시지 { id, sender, content }
+  let leChatEditTarget = null;      // 수정 중인 메시지 id
+  let leChatReadState = {};         // convKey -> { [닉네임]: 마지막으로 읽은 시각(ISO) } (상대방의 읽음 시각 캐시)
+  let leChatReadChannel = null;     // chat_read_state 실시간 구독 채널
   const LE_CONV_UNREAD_KEY = 'leChatConvUnread'; // {convKey: count} localStorage에 저장(브라우저별)
 
   function leChatConvUnreadMap(){
@@ -1236,6 +1265,10 @@ const LE_CHAT_CONFIG = {
       leChatRefreshAvatarCache().then(function(){
         leChatLoadHistory();
         leChatSubscribe();
+        leChatLoadReadState().then(function(){
+          leChatSubscribeReadState();
+          if (leChatViewMode === 'thread' && leChatActiveConv !== null) leChatRenderThread(leChatActiveConv);
+        });
       });
     });
   }
@@ -1271,6 +1304,7 @@ const LE_CHAT_CONFIG = {
       leChatRenderConvList();
       if (leChatViewMode === 'thread' && leChatActiveConv !== null) {
         leChatRenderThread(leChatActiveConv);
+        leChatUpdatePinBanner();
       }
       document.getElementById('leChatConnDot').style.background = '#22c55e';
     } catch(e) {
@@ -1367,7 +1401,11 @@ const LE_CHAT_CONFIG = {
     // 이 대화방의 안읽음 카운트 초기화
     const unreadMap = leChatConvUnreadMap();
     if (unreadMap[leChatActiveConv]) { delete unreadMap[leChatActiveConv]; leChatSaveConvUnreadMap(unreadMap); }
+    leChatCancelReply();
+    leChatCancelEdit();
     leChatRenderThread(leChatActiveConv);
+    leChatUpdatePinBanner();
+    leChatMarkRead(leChatActiveConv);
   };
 
   window.leChatBackToList = function(){
@@ -1389,6 +1427,45 @@ const LE_CHAT_CONFIG = {
     box.scrollTop = box.scrollHeight;
   }
 
+  // ── 읽음 표시: chat_read_state 테이블에 내 마지막 읽음 시각을 기록하고, 실시간으로 다른 사람의 읽음 시각을 받아온다 ──
+  async function leChatMarkRead(convKey){
+    if (!supaClient || !leChatNickname) return;
+    const now = new Date().toISOString();
+    if (!leChatReadState[convKey]) leChatReadState[convKey] = {};
+    leChatReadState[convKey][leChatNickname] = now;
+    try {
+      await supaClient.from('chat_read_state').upsert({ nickname: leChatNickname, conv_key: convKey, last_read_at: now }, { onConflict: 'nickname,conv_key' });
+    } catch(e) { /* chat_read_state 테이블이 없으면 읽음 표시 기능만 조용히 비활성화됨 */ }
+  }
+  async function leChatLoadReadState(){
+    if (!supaClient) return;
+    try {
+      const { data, error } = await supaClient.from('chat_read_state').select('*');
+      if (error) throw error;
+      leChatReadState = {};
+      (data||[]).forEach(function(row){
+        if (!leChatReadState[row.conv_key]) leChatReadState[row.conv_key] = {};
+        leChatReadState[row.conv_key][row.nickname] = row.last_read_at;
+      });
+    } catch(e) { /* 테이블 미생성 시 읽음 표시 없이 나머지 기능은 정상 동작 */ }
+  }
+  function leChatSubscribeReadState(){
+    if (leChatReadChannel || !supaClient) return;
+    try {
+      leChatReadChannel = supaClient
+        .channel('chat_read_state_room')
+        .on('postgres_changes', { event: '*', schema: 'public', table: 'chat_read_state' }, function(payload){
+          const row = payload.new || payload.old;
+          if (!row) return;
+          if (!leChatReadState[row.conv_key]) leChatReadState[row.conv_key] = {};
+          if (payload.eventType === 'DELETE') { delete leChatReadState[row.conv_key][row.nickname]; }
+          else { leChatReadState[row.conv_key][row.nickname] = row.last_read_at; }
+          if (leChatViewMode === 'thread' && leChatActiveConv === row.conv_key) leChatRenderThread(leChatActiveConv);
+        })
+        .subscribe();
+    } catch(e) {}
+  }
+
   function leChatSubscribe(){
     if (leChatChannel) return;
     leChatChannel = supaClient
@@ -1407,6 +1484,8 @@ const LE_CHAT_CONFIG = {
           leChatRenderMessage(payload.new);
           const box = document.getElementById('leChatMessages');
           box.scrollTop = box.scrollHeight;
+          leChatUpdatePinBanner();
+          if (!isMine) leChatMarkRead(convKey); // 지금 보고 있는 방에 새 메시지가 오면 즉시 읽음 처리
         } else if (!isMine) {
           // 지금 보고 있지 않은 대화방에 새 메시지가 온 경우: 그 방의 안읽음 카운트를 올린다
           const unreadMap = leChatConvUnreadMap();
@@ -1445,6 +1524,19 @@ const LE_CHAT_CONFIG = {
           el = document.querySelector('[data-msg-created="' + old.created_at + '"][data-msg-sender="' + (old.sender||'') + '"]');
         }
         if (el) el.remove();
+        leChatRenderConvList();
+        leChatUpdatePinBanner();
+      })
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'chat_messages' }, function(payload){
+        // 메시지 수정(edited_at)이나 고정(pinned) 상태가 바뀌면 캐시와 화면을 갱신
+        if (!leChatIsVisibleToMe(payload.new)) return;
+        const idx = leChatMsgCache.findIndex(function(m){ return payload.new.id != null && String(m.id) === String(payload.new.id); });
+        if (idx !== -1) leChatMsgCache[idx] = payload.new;
+        const convKey = leChatConvKeyOf(payload.new);
+        if (leChatViewMode === 'thread' && leChatActiveConv === convKey) {
+          leChatRenderThread(leChatActiveConv);
+          leChatUpdatePinBanner();
+        }
         leChatRenderConvList();
       })
       .subscribe(function(status){
@@ -1526,6 +1618,24 @@ const LE_CHAT_CONFIG = {
   });
   window.addEventListener('pagehide', function(){ leChatUntrackPresence(); });
 
+  function leChatFindCachedMsg(id){
+    if (id == null) return null;
+    return leChatMsgCache.find(function(m){ return m.id != null && String(m.id) === String(id); }) || null;
+  }
+
+  // 상대방(1:1 대화 상대, 또는 전체방일 때는 온라인인 다른 누군가)이 이 메시지를 읽었는지 여부
+  function leChatIsReadByOther(msg){
+    const convKey = leChatConvKeyOf(msg);
+    const readers = leChatReadState[convKey];
+    if (!readers) return false;
+    const me = String(leChatNickname||'').trim().normalize('NFC');
+    const msgTime = new Date(msg.created_at).getTime();
+    return Object.keys(readers).some(function(nick){
+      if (nick === me) return false;
+      return new Date(readers[nick]).getTime() >= msgTime;
+    });
+  }
+
   function leChatRenderMessage(msg){
     const box = document.getElementById('leChatMessages');
     const mine = String(msg.sender||'').trim().normalize('NFC') === String(leChatNickname||'').trim().normalize('NFC');
@@ -1541,19 +1651,40 @@ const LE_CHAT_CONFIG = {
       div.dataset.msgCreated = msg.created_at;
     }
     if (msg.file_url) div.dataset.fileUrl = msg.file_url;
+    if (msg.content != null) div.dataset.msgContent = msg.content;
+    div.dataset.msgSenderName = msg.sender || '';
     const isDm = !!msg.receiver;
     const bubbleBg = isDm ? (mine ? '#a21caf' : '#f3e8ff') : (mine ? '#146C8E' : '#e2e8f0');
     const bubbleColor = isDm ? (mine ? '#fff' : '#6b21a8') : (mine ? '#fff' : '#1e293b');
     const dmLabel = isDm
       ? ('<span style="color:#a21caf;font-weight:700;">🔒 ' + (mine ? ('→ ' + leChatEscape(msg.receiver) + ' 귓속말') : '나에게만 온 귓속말') + '</span> · ')
       : '';
+    // 답장 대상이 있으면 인용 미리보기를 말풍선 위에 붙임
+    let quoteHtml = '';
+    if (msg.reply_to != null) {
+      const orig = leChatFindCachedMsg(msg.reply_to);
+      const origText = orig ? (orig.content || (orig.file_name ? ('📎 ' + orig.file_name) : '(메시지)')) : '(삭제된 메시지)';
+      const origSender = orig ? orig.sender : '';
+      quoteHtml =
+        '<div onclick="leChatJumpToMessage(\'' + leChatAttrEscape(String(msg.reply_to)) + '\')" style="cursor:pointer;border-left:3px solid ' + (mine ? 'rgba(255,255,255,.6)' : '#94a3b8') + ';padding:3px 6px;margin-bottom:4px;font-size:11px;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;">' +
+          (origSender ? '<b>' + leChatEscape(origSender) + '</b> ' : '') + leChatEscape(origText) +
+        '</div>';
+    }
     let bodyHtml = '';
     if (msg.file_url) {
       const isImage = /\.(png|jpe?g|gif|webp|bmp)$/i.test(msg.file_name || msg.file_url);
+      const isPdf = /\.pdf$/i.test(msg.file_name || msg.file_url);
       if (isImage) {
         bodyHtml =
           '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" style="display:inline-block;">' +
             '<img src="' + leChatEscape(msg.file_url) + '" style="max-width:160px;max-height:160px;border-radius:8px;display:block;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
+          '</a>';
+      } else if (isPdf) {
+        bodyHtml =
+          '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" style="display:block;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
+            '<div style="width:160px;height:110px;border-radius:8px;background:#fff;border:1px solid ' + (mine?'rgba(255,255,255,.5)':'#cbd5e1') + ';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">' +
+              '<span style="font-size:26px;">📄</span><span style="font-size:10px;color:' + bubbleColor + ';padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">' + leChatEscape(msg.file_name||'PDF') + '</span>' +
+            '</div>' +
           '</a>';
       } else {
         bodyHtml =
@@ -1566,13 +1697,24 @@ const LE_CHAT_CONFIG = {
     if (msg.content) {
       bodyHtml += '<div style="white-space:pre-wrap;">' + leChatLinkify(leChatEscape(msg.content)) + '</div>';
     }
+    if (msg.edited_at) {
+      bodyHtml += '<span style="font-size:9.5px;opacity:.7;margin-left:2px;">(수정됨)</span>';
+    }
+    const replyBtnHtml = '<span onclick="leChatStartReply(this)" title="답장" style="cursor:pointer;color:#146C8E;font-weight:800;margin-right:4px;">↩</span>';
+    const pinBtnHtml = '<span onclick="leChatTogglePin(this)" title="공지로 고정/해제" style="cursor:pointer;color:' + (msg.pinned ? '#ca8a04' : '#94a3b8') + ';font-weight:800;margin-right:4px;">📌</span>';
+    const editBtnHtml = (mine && msg.content && !msg.file_url)
+      ? '<span onclick="leChatStartEdit(this)" title="수정" style="cursor:pointer;color:#146C8E;font-weight:800;margin-right:4px;">✏</span>'
+      : '';
     const deleteBtnHtml = mine
       ? '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>'
       : '';
     const senderNameHtml = '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(msg.sender) + '\')" style="cursor:pointer;display:inline-flex;align-items:center;">' + leChatAvatarThumbHtml(msg.sender, 16) + '<span style="text-decoration:underline dotted;">' + leChatEscape(msg.sender) + '</span></span>';
+    const readHtml = (mine && leChatIsReadByOther(msg)) ? '<div style="font-size:9.5px;color:#146C8E;margin-top:1px;">읽음</div>' : '';
     div.innerHTML =
-      '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + deleteBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
-      '<div style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;' + (isDm ? 'border:1px dashed #d8b4fe;' : '') + '">' + bodyHtml + '</div>';
+      (msg.pinned ? '<div style="font-size:10px;color:#ca8a04;font-weight:700;margin-bottom:1px;">📌 고정된 메시지</div>' : '') +
+      '<div style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
+      '<div style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;' + (isDm ? 'border:1px dashed #d8b4fe;' : '') + (msg.pinned ? 'box-shadow:0 0 0 2px #fde68a;' : '') + '">' + quoteHtml + bodyHtml + '</div>' +
+      readHtml;
     box.appendChild(div);
   }
   function leChatEscape(s){
@@ -1628,14 +1770,185 @@ const LE_CHAT_CONFIG = {
     const input = document.getElementById('leChatInput');
     const text = input.value.trim();
     if (!text || !supaClient) return;
+    // 수정 모드였다면 이 전송은 수정 저장으로 처리
+    if (leChatEditTarget != null) {
+      await leChatSaveEdit(text);
+      return;
+    }
     input.value = '';
     try {
       const receiver = leChatCurrentReceiver();
-      const { error } = await supaClient.from('chat_messages').insert({ sender: leChatNickname, content: text, receiver: receiver });
+      const payload = { sender: leChatNickname, content: text, receiver: receiver };
+      if (leChatReplyTarget) payload.reply_to = leChatReplyTarget.id;
+      const { error } = await supaClient.from('chat_messages').insert(payload);
       if (error) throw error;
+      leChatCancelReply();
     } catch(e) {
       alert('메시지 전송 실패: ' + (e.message || ''));
     }
+  };
+
+  // ── 답장 ──
+  window.leChatStartReply = function(el){
+    const wrap = el.closest('[data-msg-id], [data-msg-created]');
+    if (!wrap) return;
+    const id = wrap.dataset.msgId;
+    if (!id) { alert('이 메시지는 오래된 형식이라 답장을 지원하지 않습니다.'); return; }
+    leChatCancelEdit();
+    const sender = wrap.dataset.msgSenderName || '';
+    const content = wrap.dataset.msgContent || (wrap.dataset.fileUrl ? '📎 첨부파일' : '(메시지)');
+    leChatReplyTarget = { id: id, sender: sender, content: content };
+    const bar = document.getElementById('leChatReplyBar');
+    document.getElementById('leChatReplyBarText').textContent = sender + ': ' + content;
+    bar.style.display = 'flex';
+    const input = document.getElementById('leChatInput');
+    if (input) input.focus();
+  };
+  window.leChatCancelReply = function(){
+    leChatReplyTarget = null;
+    const bar = document.getElementById('leChatReplyBar');
+    if (bar) bar.style.display = 'none';
+  };
+
+  // 인용문 또는 검색결과를 눌렀을 때 원본 메시지 위치로 스크롤 + 강조
+  window.leChatJumpToMessage = function(id){
+    const el = document.querySelector('[data-msg-id="' + id + '"]');
+    if (!el) return;
+    el.scrollIntoView({ behavior:'smooth', block:'center' });
+    const bubble = el.querySelector('div[style*="display:inline-block"]');
+    if (bubble) {
+      const prevBoxShadow = bubble.style.boxShadow;
+      bubble.style.transition = 'box-shadow .2s';
+      bubble.style.boxShadow = '0 0 0 2px #146C8E';
+      setTimeout(function(){ bubble.style.boxShadow = prevBoxShadow || ''; }, 1200);
+    }
+  };
+
+  // ── 수정 ──
+  window.leChatStartEdit = function(el){
+    const wrap = el.closest('[data-msg-id], [data-msg-created]');
+    if (!wrap || !wrap.dataset.msgId) { alert('이 메시지는 수정할 수 없습니다.'); return; }
+    leChatCancelReply();
+    leChatEditTarget = wrap.dataset.msgId;
+    const input = document.getElementById('leChatInput');
+    input.value = wrap.dataset.msgContent || '';
+    input.focus();
+    document.getElementById('leChatEditBar').style.display = 'flex';
+  };
+  window.leChatCancelEdit = function(){
+    if (leChatEditTarget != null) {
+      const input = document.getElementById('leChatInput');
+      if (input) input.value = '';
+    }
+    leChatEditTarget = null;
+    const bar = document.getElementById('leChatEditBar');
+    if (bar) bar.style.display = 'none';
+  };
+  async function leChatSaveEdit(text){
+    const id = leChatEditTarget;
+    const input = document.getElementById('leChatInput');
+    try {
+      const { error } = await supaClient.from('chat_messages').update({ content: text, edited_at: new Date().toISOString() }).eq('id', id);
+      if (error) throw error;
+      input.value = '';
+      leChatCancelEdit();
+      // 로컬 캐시도 즉시 반영 (실시간 UPDATE 이벤트가 오기 전에도 바로 보이도록)
+      const cached = leChatFindCachedMsg(id);
+      if (cached) { cached.content = text; cached.edited_at = new Date().toISOString(); }
+      if (leChatViewMode === 'thread') leChatRenderThread(leChatActiveConv);
+    } catch(e) {
+      alert('수정 실패: ' + (e.message || '') + '\n(Supabase chat_messages 테이블에 edited_at 컬럼이 있는지 확인해주세요)');
+    }
+  }
+
+  // ── 공지 고정(핀) ──
+  window.leChatTogglePin = async function(el){
+    if (leChatIsGuest) { alert('게스트는 공지를 고정할 수 없습니다.'); return; }
+    const wrap = el.closest('[data-msg-id], [data-msg-created]');
+    if (!wrap || !wrap.dataset.msgId) { alert('이 메시지는 고정할 수 없습니다.'); return; }
+    const id = wrap.dataset.msgId;
+    const cached = leChatFindCachedMsg(id);
+    const nextPinned = !(cached && cached.pinned);
+    try {
+      const { error } = await supaClient.from('chat_messages').update({ pinned: nextPinned }).eq('id', id);
+      if (error) throw error;
+      if (cached) cached.pinned = nextPinned;
+      if (leChatViewMode === 'thread') { leChatRenderThread(leChatActiveConv); leChatUpdatePinBanner(); }
+    } catch(e) {
+      alert('고정 실패: ' + (e.message || '') + '\n(Supabase chat_messages 테이블에 pinned 컬럼이 있는지 확인해주세요)');
+    }
+  };
+  // 현재 대화방의 고정된 메시지 중 가장 최근 것을 상단 배너에 표시
+  function leChatUpdatePinBanner(){
+    const banner = document.getElementById('leChatPinBanner');
+    if (!banner) return;
+    const pinned = leChatMsgCache
+      .filter(function(m){ return m.pinned && leChatConvKeyOf(m) === leChatActiveConv; })
+      .sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); })[0];
+    if (!pinned) { banner.style.display = 'none'; banner.dataset.msgId=''; return; }
+    banner.dataset.msgId = pinned.id != null ? String(pinned.id) : '';
+    document.getElementById('leChatPinBannerText').textContent = (pinned.sender||'') + ': ' + (pinned.content || (pinned.file_name ? ('📎 ' + pinned.file_name) : '(메시지)'));
+    banner.style.display = 'flex';
+  }
+  window.leChatJumpToPinned = function(){
+    const banner = document.getElementById('leChatPinBanner');
+    if (banner && banner.dataset.msgId) leChatJumpToMessage(banner.dataset.msgId);
+  };
+  window.leChatUnpinFromBanner = async function(){
+    const banner = document.getElementById('leChatPinBanner');
+    if (!banner || !banner.dataset.msgId) return;
+    try {
+      const { error } = await supaClient.from('chat_messages').update({ pinned: false }).eq('id', banner.dataset.msgId);
+      if (error) throw error;
+      const cached = leChatFindCachedMsg(banner.dataset.msgId);
+      if (cached) cached.pinned = false;
+      leChatUpdatePinBanner();
+      if (leChatViewMode === 'thread') leChatRenderThread(leChatActiveConv);
+    } catch(e) {
+      alert('고정 해제 실패: ' + (e.message || ''));
+    }
+  };
+
+  // ── 채팅 검색 ──
+  window.leChatOpenSearch = function(){
+    document.getElementById('leChatSearchScreen').style.display = 'flex';
+    document.getElementById('leChatSearchInput').value = '';
+    document.getElementById('leChatSearchResults').innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;font-size:11.5px;">검색어를 입력해주세요.</div>';
+    setTimeout(function(){ document.getElementById('leChatSearchInput').focus(); }, 50);
+  };
+  window.leChatCloseSearch = function(){
+    document.getElementById('leChatSearchScreen').style.display = 'none';
+  };
+  window.leChatRunSearch = function(){
+    const q = (document.getElementById('leChatSearchInput').value || '').trim().normalize('NFC');
+    const resultsBox = document.getElementById('leChatSearchResults');
+    if (!q) { resultsBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;font-size:11.5px;">검색어를 입력해주세요.</div>'; return; }
+    const qLower = q.toLowerCase();
+    const matches = leChatMsgCache
+      .filter(function(m){
+        const hay = ((m.content||'') + ' ' + (m.sender||'') + ' ' + (m.file_name||'')).normalize('NFC').toLowerCase();
+        return hay.indexOf(qLower) !== -1;
+      })
+      .sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); })
+      .slice(0, 60);
+    if (!matches.length) { resultsBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;font-size:11.5px;">검색 결과가 없습니다.</div>'; return; }
+    resultsBox.innerHTML = matches.map(function(m){
+      const convKey = leChatConvKeyOf(m);
+      const roomLabel = convKey === '' ? '전체' : convKey;
+      const bodyPreview = m.content || (m.file_name ? ('📎 ' + m.file_name) : '(메시지)');
+      const timeText = new Date(m.created_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      return (
+        '<div onclick="leChatGoToSearchResult(\'' + leChatAttrEscape(convKey) + '\',\'' + leChatAttrEscape(m.id!=null?String(m.id):'') + '\')" style="padding:9px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'\'">' +
+          '<div style="display:flex;justify-content:space-between;gap:6px;"><span style="font-size:11.5px;font-weight:800;color:#146C8E;">' + leChatEscape(roomLabel) + ' · ' + leChatEscape(m.sender||'') + '</span><span style="font-size:10px;color:#94a3b8;flex-shrink:0;">' + timeText + '</span></div>' +
+          '<div style="font-size:11.5px;color:#334155;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-top:2px;">' + leChatEscape(bodyPreview) + '</div>' +
+        '</div>'
+      );
+    }).join('');
+  };
+  window.leChatGoToSearchResult = function(convKey, msgId){
+    leChatCloseSearch();
+    leChatOpenConv(convKey);
+    if (msgId) setTimeout(function(){ leChatJumpToMessage(msgId); }, 100);
   };
 
   window.leChatSendLocation = function(){
