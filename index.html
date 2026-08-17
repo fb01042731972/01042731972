@@ -240,9 +240,12 @@
   <div id="leChatBody" style="display:none;flex-direction:column;flex:1;min-height:0;">
     <div id="leChatMessages" style="flex:1;overflow-y:auto;padding:10px;font-size:12.5px;background:#f8fafc;"></div>
     <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#146C8E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
-    <div style="display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
+    <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
+      <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 6px 18px rgba(0,0,0,.18);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
       <input id="leChatFileInput" type="file" style="display:none;" onchange="leChatFileSelected(this)">
       <button onclick="document.getElementById('leChatFileInput').click()" title="파일 첨부" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;">📎</button>
+      <button id="leChatLocationBtn" onclick="leChatSendLocation()" title="현재 위치 보내기" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;">📍</button>
+      <button onclick="leChatToggleEmojiPicker(event)" title="이모티콘" style="background:#f1f5f9;color:#146C8E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:14px;font-weight:700;cursor:pointer;flex-shrink:0;">😊</button>
       <input id="leChatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
       <button onclick="leChatSend()" style="background:#146C8E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
     </div>
@@ -578,7 +581,7 @@ const LE_CHAT_CONFIG = {
 
   function leChatRenderMessage(msg){
     const box = document.getElementById('leChatMessages');
-    const mine = String(msg.sender||'').trim() === String(leChatNickname||'').trim();
+    const mine = String(msg.sender||'').trim().normalize('NFC') === String(leChatNickname||'').trim().normalize('NFC');
     const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
     const div = document.createElement('div');
     div.style.marginBottom = '8px';
@@ -610,7 +613,7 @@ const LE_CHAT_CONFIG = {
       }
     }
     if (msg.content) {
-      bodyHtml += '<div>' + leChatEscape(msg.content) + '</div>';
+      bodyHtml += '<div style="white-space:pre-wrap;">' + leChatLinkify(leChatEscape(msg.content)) + '</div>';
     }
     const deleteBtnHtml = mine
       ? '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>'
@@ -622,6 +625,11 @@ const LE_CHAT_CONFIG = {
   }
   function leChatEscape(s){
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+  }
+  function leChatLinkify(escapedText){
+    return escapedText.replace(/(https?:\/\/[^\s<]+)/g, function(url){
+      return '<a href="' + url + '" target="_blank" style="color:inherit;text-decoration:underline;">' + url + '</a>';
+    });
   }
 
   // ── 메시지 삭제 (내가 보낸 메시지만, 실수로 올린 경우 대비) ──
@@ -671,6 +679,46 @@ const LE_CHAT_CONFIG = {
     } catch(e) {
       alert('메시지 전송 실패: ' + (e.message || ''));
     }
+  };
+
+  window.leChatSendLocation = function(){
+    if (!supaClient) return;
+    if (!navigator.geolocation) {
+      alert('이 브라우저에서는 위치 정보를 지원하지 않습니다.');
+      return;
+    }
+    const btn = document.getElementById('leChatLocationBtn');
+    const progressEl = document.getElementById('leChatUploadProgress');
+    if (btn) btn.disabled = true;
+    progressEl.textContent = '📍 위치 가져오는 중...';
+    progressEl.style.display = 'block';
+    navigator.geolocation.getCurrentPosition(async function(pos){
+      const lat = pos.coords.latitude;
+      const lng = pos.coords.longitude;
+      const mapUrl = 'https://maps.google.com/?q=' + lat + ',' + lng;
+      try {
+        const { error } = await supaClient.from('chat_messages').insert({
+          sender: leChatNickname,
+          content: '📍 현재 위치\n' + mapUrl
+        });
+        if (error) throw error;
+      } catch(e) {
+        alert('위치 전송 실패: ' + (e.message || ''));
+      } finally {
+        if (btn) btn.disabled = false;
+        progressEl.style.display = 'none';
+        progressEl.textContent = '📎 업로드 중...';
+      }
+    }, function(err){
+      if (btn) btn.disabled = false;
+      progressEl.style.display = 'none';
+      progressEl.textContent = '📎 업로드 중...';
+      let msg = '위치를 가져오지 못했습니다.';
+      if (err && err.code === 1) msg = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 접근을 허용해주세요.';
+      else if (err && err.code === 2) msg = '위치를 확인할 수 없습니다.';
+      else if (err && err.code === 3) msg = '위치를 가져오는데 시간이 너무 오래 걸립니다.';
+      alert(msg);
+    }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   };
 
   window.leChatFileSelected = async function(inputEl){
@@ -770,6 +818,55 @@ const LE_CHAT_CONFIG = {
       if (p.height) win.style.height = p.height;
     } catch(e){}
   })();
+
+  // ── 이모티콘 선택 ──
+  const LE_CHAT_EMOJIS = [
+    '😀','😃','😄','😁','😆','😅','😂','🤣','😊','😇',
+    '🙂','🙃','😉','😍','🥰','😘','😜','🤔','😐','🙄',
+    '😴','😪','🤤','😷','🤒','🤕','🤢','🥳','🥺','😭',
+    '😢','😤','😡','🤬','😱','😨','😰','😥','🤗','😳',
+    '🥵','🥶','😬','🤭','👍','👎','👏','🙌','🤝','🙏',
+    '💪','✌️','👌','🤞','👋','💯','🔥','✨','🎉','⭐',
+    '❤️','🧡','💛','💚','💙','💜','🖤','🤍','💕','💗',
+    '😊','😅','☕','🍚','🚗','⏰','✅','❌','❓','❗'
+  ];
+  let leChatEmojiPickerBuilt = false;
+
+  function leChatBuildEmojiPicker(){
+    if (leChatEmojiPickerBuilt) return;
+    const box = document.getElementById('leChatEmojiPicker');
+    box.innerHTML = LE_CHAT_EMOJIS.map(function(em){
+      return '<span onclick="leChatInsertEmoji(\'' + em + '\')" style="display:flex;align-items:center;justify-content:center;font-size:19px;padding:3px;border-radius:5px;cursor:pointer;line-height:1;" ' +
+        'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'transparent\'">' + em + '</span>';
+    }).join('');
+    leChatEmojiPickerBuilt = true;
+  }
+
+  window.leChatToggleEmojiPicker = function(e){
+    if (e) e.stopPropagation();
+    leChatBuildEmojiPicker();
+    const p = document.getElementById('leChatEmojiPicker');
+    const isOpen = p.style.display === 'grid';
+    p.style.display = isOpen ? 'none' : 'grid';
+  };
+
+  window.leChatInsertEmoji = function(emoji){
+    const input = document.getElementById('leChatInput');
+    const start = (input.selectionStart != null) ? input.selectionStart : input.value.length;
+    const end = (input.selectionEnd != null) ? input.selectionEnd : input.value.length;
+    input.value = input.value.slice(0, start) + emoji + input.value.slice(end);
+    const pos = start + emoji.length;
+    input.focus();
+    try { input.setSelectionRange(pos, pos); } catch(e){}
+  };
+
+  document.addEventListener('click', function(e){
+    const p = document.getElementById('leChatEmojiPicker');
+    if (!p || p.style.display === 'none') return;
+    if (p.contains(e.target)) return;
+    if (e.target.closest && e.target.closest('[onclick*="leChatToggleEmojiPicker"]')) return;
+    p.style.display = 'none';
+  });
 })();
 </script>
 
