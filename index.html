@@ -553,6 +553,17 @@ const LE_CHAT_CONFIG = {
   const LE_GUEST_NICK_KEY  = 'leChatGuestNickname'; // 게스트 닉네임 저장(직원 닉네임과 분리)
   function leChatNickStorageKey(){ return leChatIsGuest ? LE_GUEST_NICK_KEY : 'leChatNickname'; }
 
+  // localStorage가 막혀있거나(시크릿모드 등) 저장에 실패해도 화면이 멈추지 않도록 하는 안전 래퍼.
+  // 저장/조회가 실패하면 콘솔에 경고를 남겨서, 왜 이름이 계속 초기화되는지 바로 확인할 수 있게 함.
+  function leSafeGet(key){
+    try { return localStorage.getItem(key); }
+    catch(e){ console.warn('[leChat] localStorage 읽기 실패 (' + key + '):', e); return null; }
+  }
+  function leSafeSet(key, val){
+    try { localStorage.setItem(key, val); return true; }
+    catch(e){ console.warn('[leChat] localStorage 저장 실패 (' + key + ') — 이 브라우저/모드에서는 닉네임이 저장되지 않아 다음에 열면 다시 물어볼 수 있습니다.', e); return false; }
+  }
+
   // ── 직원별 개별 채팅(1:1) 목록 상태 ──
   let leChatViewMode = 'list';      // 'list' | 'thread'
   let leChatActiveConv = null;      // null(목록 화면) | ''(전체 공개방) | '상대닉네임'(1:1)
@@ -1124,10 +1135,10 @@ const LE_CHAT_CONFIG = {
     // URL에 초대 토큰(?chatGuest=...)이 있으면 이번 브라우저를 게스트 세션으로 등록
     try {
       const urlToken = new URLSearchParams(window.location.search).get('chatGuest');
-      if (urlToken) localStorage.setItem(LE_GUEST_TOKEN_KEY, urlToken);
+      if (urlToken) leSafeSet(LE_GUEST_TOKEN_KEY, urlToken);
     } catch(e) {}
 
-    const storedGuestToken = localStorage.getItem(LE_GUEST_TOKEN_KEY) || '';
+    const storedGuestToken = leSafeGet(LE_GUEST_TOKEN_KEY) || '';
     if (storedGuestToken) {
       leChatIsGuest = true;
       leChatGuestToken = storedGuestToken;
@@ -1162,7 +1173,7 @@ const LE_CHAT_CONFIG = {
           if (enterOnSuccess) {
             document.getElementById('leChatLockScreen').style.display = 'none';
             leChatUnlocked = true;
-            leChatNickname = localStorage.getItem(LE_GUEST_NICK_KEY) || '';
+            leChatNickname = leSafeGet(LE_GUEST_NICK_KEY) || '';
             if (!leChatNickname) {
               document.getElementById('leChatNameScreen').style.display = 'flex';
             } else {
@@ -1208,7 +1219,7 @@ const LE_CHAT_CONFIG = {
 
   function leChatAfterUnlock(){
     document.getElementById('leChatLockScreen').style.display = 'none';
-    leChatNickname = localStorage.getItem(leChatNickStorageKey()) || '';
+    leChatNickname = leSafeGet(leChatNickStorageKey()) || '';
     if (!leChatNickname) {
       document.getElementById('leChatNameScreen').style.display = 'flex';
     } else {
@@ -1221,7 +1232,10 @@ const LE_CHAT_CONFIG = {
     if (!v) return;
     const wasRenaming = leChatIsRenaming;
     leChatNickname = v;
-    localStorage.setItem(leChatNickStorageKey(), v);
+    const saved = leSafeSet(leChatNickStorageKey(), v);
+    if (!saved) {
+      alert('⚠️ 이 브라우저(시크릿 모드 등)에서는 이름 저장이 되지 않아, 다음에 열면 이름을 다시 물어볼 수 있습니다.');
+    }
     document.getElementById('leChatNameScreen').style.display = 'none';
     document.getElementById('leChatNameCancelBtn').style.display = 'none';
     if (wasRenaming) {
