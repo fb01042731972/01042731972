@@ -2039,8 +2039,8 @@ const LE_CHAT_CONFIG = {
     const file = inputEl.files && inputEl.files[0];
     inputEl.value = '';
     if (!file || !supaClient) return;
-    if (file.size > 20 * 1024 * 1024) {
-      alert('파일 크기는 20MB 이하만 가능합니다.');
+    if (file.size > 50 * 1024 * 1024) {
+      alert('파일 크기는 50MB 이하만 가능합니다.');
       return;
     }
     const progressEl = document.getElementById('leChatUploadProgress');
@@ -2202,8 +2202,8 @@ const LE_CHAT_CONFIG = {
   window.leChatUploadBlobAndSend = async function(blob, filename){
     if (!blob) return false;
     if (!supaClient) { alert('채팅 연결이 아직 준비되지 않았습니다. 잠시 후 다시 시도해주세요.'); return false; }
-    if (blob.size > 20 * 1024 * 1024) {
-      alert('캡처 파일 크기가 20MB를 초과하여 전송할 수 없습니다.');
+    if (blob.size > 50 * 1024 * 1024) {
+      alert('캡처 파일 크기가 50MB를 초과하여 전송할 수 없습니다.');
       return false;
     }
     const progressEl = document.getElementById('leChatUploadProgress');
