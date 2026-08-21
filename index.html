@@ -181,6 +181,173 @@
 </head>
 <body class="p-3 md:p-5">
 
+<div id="pwGate" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0F3A4D,#146C8E);display:flex;align-items:center;justify-content:center;padding:20px;">
+  <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:340px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3);text-align:center;">
+
+    <div id="pwStageLogin">
+      <div style="font-size:40px;margin-bottom:8px;">🔒</div>
+      <div style="font-size:18px;font-weight:800;color:#1B2A31;margin-bottom:4px;">이진주방산업</div>
+      <div style="font-size:13px;color:#64748b;margin-bottom:20px;">비밀번호를 입력해 주세요</div>
+      <input id="pwInput" type="password" inputmode="numeric" autocomplete="off" placeholder="비밀번호" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;text-align:center;letter-spacing:2px;margin-bottom:12px;">
+      <div id="pwError" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px;">비밀번호가 올바르지 않습니다.</div>
+      <button id="pwSubmit" style="width:100%;padding:12px;border:none;border-radius:10px;background:#146C8E;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">확인</button>
+      <div style="margin-top:14px;">
+        <a id="pwAdminLink" href="javascript:void(0)" style="font-size:11px;color:#94a3b8;text-decoration:underline;">관리자 - 비밀번호 변경</a>
+      </div>
+    </div>
+
+    <div id="pwStageAdminAuth" style="display:none;">
+      <div style="font-size:32px;margin-bottom:8px;">🛠️</div>
+      <div style="font-size:16px;font-weight:800;color:#1B2A31;margin-bottom:4px;">관리자 인증</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:18px;">관리자 암호를 입력하세요</div>
+      <input id="adminPwInput" type="password" inputmode="numeric" autocomplete="off" placeholder="관리자 암호" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;text-align:center;letter-spacing:2px;margin-bottom:12px;">
+      <div id="adminPwError" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px;">관리자 암호가 올바르지 않습니다.</div>
+      <button id="adminPwSubmit" style="width:100%;padding:12px;border:none;border-radius:10px;background:#374151;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">확인</button>
+      <button id="adminPwCancel" style="width:100%;padding:10px;border:none;border-radius:10px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;">취소</button>
+    </div>
+
+    <div id="pwStageChange" style="display:none;">
+      <div style="font-size:32px;margin-bottom:8px;">🔑</div>
+      <div style="font-size:16px;font-weight:800;color:#1B2A31;margin-bottom:4px;">새 비밀번호 설정</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:16px;">이용자가 입력할 새 비밀번호를 정하세요</div>
+      <input id="newPwInput" type="password" inputmode="numeric" autocomplete="off" placeholder="새 비밀번호" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;text-align:center;letter-spacing:2px;margin-bottom:10px;">
+      <input id="newPwInput2" type="password" inputmode="numeric" autocomplete="off" placeholder="새 비밀번호 확인" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:16px;text-align:center;letter-spacing:2px;margin-bottom:12px;">
+      <div id="newPwError" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px;">두 비밀번호가 일치하지 않거나 비어 있습니다.</div>
+      <div id="newPwSuccess" style="display:none;color:#16a34a;font-size:12px;margin-bottom:10px;">비밀번호가 변경되었습니다.</div>
+      <button id="newPwSubmit" style="width:100%;padding:12px;border:none;border-radius:10px;background:#146C8E;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">변경 저장</button>
+      <button id="newPwCancel" style="width:100%;padding:10px;border:none;border-radius:10px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;">취소</button>
+    </div>
+
+  </div>
+</div>
+<script>
+(function(){
+  var DEFAULT_PW = '0088';
+  var ADMIN_PW = '720818';
+  var STORAGE_KEY = 'jinjoo_gate_pw';
+
+  function getGatePw(){
+    try{
+      var v = localStorage.getItem(STORAGE_KEY);
+      return v ? v : DEFAULT_PW;
+    }catch(e){ return DEFAULT_PW; }
+  }
+  function setGatePw(v){
+    try{ localStorage.setItem(STORAGE_KEY, v); }catch(e){}
+  }
+
+  var gate = document.getElementById('pwGate');
+
+  var stageLogin = document.getElementById('pwStageLogin');
+  var stageAdminAuth = document.getElementById('pwStageAdminAuth');
+  var stageChange = document.getElementById('pwStageChange');
+
+  function showStage(el){
+    [stageLogin, stageAdminAuth, stageChange].forEach(function(s){ s.style.display = 'none'; });
+    el.style.display = 'block';
+  }
+
+  // --- 로그인 단계 ---
+  var input = document.getElementById('pwInput');
+  var err = document.getElementById('pwError');
+  var btn = document.getElementById('pwSubmit');
+  var adminLink = document.getElementById('pwAdminLink');
+
+  function tryUnlock(){
+    if(input.value === getGatePw()){
+      try{ sessionStorage.setItem('jinjoo_pw_ok','1'); }catch(e){}
+      gate.style.display = 'none';
+    } else {
+      err.style.display = 'block';
+      input.value = '';
+      input.focus();
+    }
+  }
+
+  var alreadyOk = false;
+  try{ alreadyOk = sessionStorage.getItem('jinjoo_pw_ok') === '1'; }catch(e){}
+  if(alreadyOk){
+    gate.style.display = 'none';
+  } else {
+    setTimeout(function(){ input.focus(); }, 100);
+  }
+
+  btn.addEventListener('click', tryUnlock);
+  input.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ tryUnlock(); }
+  });
+
+  // --- 관리자 인증 단계 ---
+  var adminInput = document.getElementById('adminPwInput');
+  var adminErr = document.getElementById('adminPwError');
+  var adminSubmit = document.getElementById('adminPwSubmit');
+  var adminCancel = document.getElementById('adminPwCancel');
+
+  adminLink.addEventListener('click', function(){
+    err.style.display = 'none';
+    adminErr.style.display = 'none';
+    adminInput.value = '';
+    showStage(stageAdminAuth);
+    setTimeout(function(){ adminInput.focus(); }, 50);
+  });
+
+  function tryAdminAuth(){
+    if(adminInput.value === ADMIN_PW){
+      showStage(stageChange);
+      document.getElementById('newPwInput').value = '';
+      document.getElementById('newPwInput2').value = '';
+      document.getElementById('newPwError').style.display = 'none';
+      document.getElementById('newPwSuccess').style.display = 'none';
+      setTimeout(function(){ document.getElementById('newPwInput').focus(); }, 50);
+    } else {
+      adminErr.style.display = 'block';
+      adminInput.value = '';
+      adminInput.focus();
+    }
+  }
+  adminSubmit.addEventListener('click', tryAdminAuth);
+  adminInput.addEventListener('keydown', function(e){
+    if(e.key === 'Enter'){ tryAdminAuth(); }
+  });
+  adminCancel.addEventListener('click', function(){
+    showStage(stageLogin);
+    setTimeout(function(){ input.focus(); }, 50);
+  });
+
+  // --- 비밀번호 변경 단계 ---
+  var newPwInput = document.getElementById('newPwInput');
+  var newPwInput2 = document.getElementById('newPwInput2');
+  var newPwError = document.getElementById('newPwError');
+  var newPwSuccess = document.getElementById('newPwSuccess');
+  var newPwSubmit = document.getElementById('newPwSubmit');
+  var newPwCancel = document.getElementById('newPwCancel');
+
+  function trySavePw(){
+    var v1 = newPwInput.value;
+    var v2 = newPwInput2.value;
+    if(!v1 || v1 !== v2){
+      newPwError.style.display = 'block';
+      newPwSuccess.style.display = 'none';
+      return;
+    }
+    setGatePw(v1);
+    newPwError.style.display = 'none';
+    newPwSuccess.style.display = 'block';
+    setTimeout(function(){
+      showStage(stageLogin);
+      input.value = '';
+      input.focus();
+    }, 1200);
+  }
+  newPwSubmit.addEventListener('click', trySavePw);
+  newPwCancel.addEventListener('click', function(){
+    showStage(stageLogin);
+    setTimeout(function(){ input.focus(); }, 50);
+  });
+})();
+</script>
+
+
 <!-- 💬 실시간 직원 채팅 (Supabase 기반, 무료) -->
 <style>
 @keyframes leChatBlinkAnim {
