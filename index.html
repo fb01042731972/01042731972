@@ -306,7 +306,6 @@
     <div style="font-size:11px;color:#94a3b8;">초대한 담당자에게 새 링크를 요청해주세요.</div>
   </div>
 
-
   <!-- 잠금 화면 (공용 비밀번호) -->
   <div id="leChatLockScreen" style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:20px;">
     <div style="font-size:13px;color:#475569;font-weight:700;text-align:center;">직원 전용 채팅방입니다<br>공용 비밀번호를 입력해주세요</div>
@@ -525,6 +524,36 @@
   </div>
 </div>
 
+<!-- 🚫 사이트 전체 IP 차단 안내 화면 (전체 프로그램을 덮는 전면 오버레이) -->
+<div id="leSiteBannedOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:#0f172a;color:#fff;flex-direction:column;align-items:center;justify-content:center;gap:14px;text-align:center;padding:20px;">
+  <div style="font-size:44px;">🚫</div>
+  <div style="font-size:16px;font-weight:800;">이 접속 주소(IP)는 차단되었습니다</div>
+  <div style="font-size:12.5px;color:#cbd5e1;max-width:360px;line-height:1.6;">관리자에 의해 접근이 제한되었습니다. 문의사항이 있으시면 회사로 직접 연락해주세요.</div>
+</div>
+
+<!-- 🌐 접속자 실시간 관리 / 영구 차단·차단 해제 모달 -->
+<div id="leVisitorAdminModal" style="display:none;position:fixed;inset:0;z-index:99998;background:rgba(15,23,42,.55);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:12px;width:100%;max-width:620px;max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 10px 30px rgba(0,0,0,.3);">
+    <div style="padding:14px 18px;border-bottom:1px solid #e5e7eb;display:flex;align-items:center;justify-content:space-between;">
+      <div style="font-size:15px;font-weight:800;color:#1f2937;">🌐 접속자 실시간 관리</div>
+      <button onclick="window.leCloseVisitorAdmin&&window.leCloseVisitorAdmin()" style="background:none;border:none;font-size:18px;cursor:pointer;color:#64748b;">✕</button>
+    </div>
+    <div style="padding:14px 18px;overflow-y:auto;flex:1;">
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">🟢 지금 접속 중 (실시간)</div>
+      <div id="leVisitorLiveList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"><div style="font-size:11px;color:#94a3b8;">불러오는 중...</div></div>
+
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">직접 IP 차단</div>
+      <div style="display:flex;gap:6px;margin-bottom:16px;">
+        <input id="leVisitorManualIp" type="text" placeholder="예: 123.45.67.89" style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;">
+        <button onclick="window.leBanIp&&window.leBanIp(document.getElementById('leVisitorManualIp').value)" style="background:#dc2626;color:#fff;border:none;border-radius:6px;padding:7px 12px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap;">🚫 차단</button>
+      </div>
+
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">🚫 영구 차단된 IP 목록</div>
+      <div id="leVisitorBannedList" style="display:flex;flex-direction:column;gap:6px;"><div style="font-size:11px;color:#94a3b8;">불러오는 중...</div></div>
+    </div>
+  </div>
+</div>
+
 <script>
 
 // ═══════════════════════════════════════════════════════════════
@@ -549,6 +578,10 @@ const LE_CHAT_CONFIG = {
   let leChatIsGuest = false;        // 초대 링크로 들어온 외부인이면 true
   let leChatGuestToken = '';        // 이 브라우저가 사용중인 초대 토큰
   let leChatOnlineRoles = {};       // 닉네임(정규화) -> 'staff' | 'guest' (현재 접속자 역할)
+  // ── 사이트 전체 접속자/IP 차단 관련 상태 (채팅을 열지 않아도 항상 동작) ──
+  let leSiteIp = '';
+  let leSiteChannel = null;
+  let leSiteBanWatchChannel = null;
   const LE_GUEST_TOKEN_KEY = 'leChatGuestToken';   // 게스트 토큰 저장(브라우저별)
   const LE_GUEST_NICK_KEY  = 'leChatGuestNickname'; // 게스트 닉네임 저장(직원 닉네임과 분리)
   function leChatNickStorageKey(){ return leChatIsGuest ? LE_GUEST_NICK_KEY : 'leChatNickname'; }
@@ -1174,6 +1207,179 @@ const LE_CHAT_CONFIG = {
       .catch(function(){ cb('guest_' + Date.now()); });
   }
 
+  // ══════════════════════════════════════════════════════════════
+  // 🌐 사이트 전체 접속자 실시간 추적 + IP 영구 차단/차단 해제
+  //   - 채팅을 열지 않아도 index.html에 접속하는 즉시 동작한다.
+  //   - Supabase 'banned_ips' 테이블(컬럼: ip text primary key, created_at)이 필요하다.
+  // ══════════════════════════════════════════════════════════════
+  function leSiteShowBannedOverlay(){
+    const el = document.getElementById('leSiteBannedOverlay');
+    if (el) el.style.display = 'flex';
+    try { document.body.style.overflow = 'hidden'; } catch(e){}
+    try { if (leSiteChannel) { supaClient.removeChannel(leSiteChannel); leSiteChannel = null; } } catch(e){}
+  }
+
+  function leSiteCheckBanned(cb){
+    if (!supaClient || !leSiteIp) { cb(false); return; }
+    supaClient.from('banned_ips').select('ip').eq('ip', leSiteIp).maybeSingle()
+      .then(function(res){ cb(!!(res && res.data)); })
+      .catch(function(){ cb(false); });
+  }
+
+  function leSiteTrackVisitor(){
+    if (!supaClient || !leSiteIp) return;
+    try {
+      leSiteChannel = supaClient.channel('site_visitors_room', {
+        config: { presence: { key: leSiteIp + '_' + Math.random().toString(36).slice(2,8) } }
+      });
+      leSiteChannel.on('presence', { event: 'sync' }, function(){ leSiteRefreshAdminListIfOpen(); });
+      leSiteChannel.subscribe(function(status){
+        if (status === 'SUBSCRIBED') {
+          leSiteUpdateSitePresence();
+        }
+      });
+    } catch(e) {}
+  }
+
+  // 닉네임이 나중에 정해지면(로그인 등) 접속자 목록에 이름을 반영하기 위해 다시 track 한다.
+  function leSiteUpdateSitePresence(){
+    if (!leSiteChannel) return;
+    try {
+      leSiteChannel.track({ ip: leSiteIp, nickname: leChatNickname || '', online_at: new Date().toISOString() });
+    } catch(e) {}
+  }
+
+  function leSiteSubscribeBanChanges(){
+    if (!supaClient) return;
+    try {
+      leSiteBanWatchChannel = supaClient.channel('banned_ips_watch')
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'banned_ips' }, function(payload){
+          if (payload && payload.new && payload.new.ip === leSiteIp) { leSiteShowBannedOverlay(); }
+          leSiteRefreshBannedListIfOpen();
+        })
+        .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'banned_ips' }, function(){
+          leSiteRefreshBannedListIfOpen();
+        })
+        .subscribe();
+    } catch(e) {}
+  }
+
+  function leSiteInit(){
+    if (!leChatConfigured()) return;
+    loadSupabaseLib(function(){
+      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      leChatFetchPublicIp(function(ip){
+        leSiteIp = ip;
+        leSiteCheckBanned(function(banned){
+          if (banned) { leSiteShowBannedOverlay(); return; }
+          leSiteTrackVisitor();
+          leSiteSubscribeBanChanges();
+        });
+      });
+    });
+  }
+  // 채팅 잠금 여부와 무관하게, 페이지가 열리는 즉시 접속자 추적/차단 확인을 시작한다.
+  if (document.readyState === 'complete' || document.readyState === 'interactive') { leSiteInit(); }
+  else { document.addEventListener('DOMContentLoaded', leSiteInit); }
+  window.addEventListener('pagehide', function(){ try { if (leSiteChannel) leSiteChannel.untrack(); } catch(e){} });
+
+  // ── 🌐 접속자 실시간 관리 모달: 열기/닫기 + 목록 렌더링 ──
+  window.leOpenVisitorAdmin = function(){
+    const modal = document.getElementById('leVisitorAdminModal');
+    if (modal) modal.style.display = 'flex';
+    leSiteRefreshAdminListIfOpen();
+    leSiteRefreshBannedListIfOpen();
+  };
+  window.leCloseVisitorAdmin = function(){
+    const modal = document.getElementById('leVisitorAdminModal');
+    if (modal) modal.style.display = 'none';
+  };
+
+  function leSiteRefreshAdminListIfOpen(){
+    const modal = document.getElementById('leVisitorAdminModal');
+    if (!modal || modal.style.display === 'none') return;
+    const listEl = document.getElementById('leVisitorLiveList');
+    if (!listEl) return;
+    if (!leSiteChannel) { listEl.innerHTML = '<div style="font-size:11px;color:#94a3b8;">접속자 추적이 아직 준비되지 않았습니다.</div>'; return; }
+    let state = {};
+    try { state = leSiteChannel.presenceState(); } catch(e) {}
+    const byIp = {};
+    Object.keys(state).forEach(function(key){
+      (state[key] || []).forEach(function(p){
+        if (p && p.ip) byIp[p.ip] = p;
+      });
+    });
+    const ips = Object.keys(byIp);
+    if (ips.length === 0) {
+      listEl.innerHTML = '<div style="font-size:11px;color:#94a3b8;">현재 접속자가 없습니다.</div>';
+      return;
+    }
+    listEl.innerHTML = ips.map(function(ip){
+      const p = byIp[ip];
+      const name = p.nickname ? leChatEscape(p.nickname) : '(이름 미설정)';
+      return '<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 10px;">' +
+        '<div style="font-size:12px;color:#1e293b;"><b>' + leChatEscape(ip) + '</b> <span style="color:#64748b;">' + name + '</span></div>' +
+        '<button onclick="window.leBanIp&&window.leBanIp(\'' + leChatAttrEscape(ip) + '\')" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:5px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🚫 영구 차단</button>' +
+        '</div>';
+    }).join('');
+  }
+
+  function leSiteRefreshBannedListIfOpen(){
+    const modal = document.getElementById('leVisitorAdminModal');
+    if (!modal || modal.style.display === 'none') return;
+    const listEl = document.getElementById('leVisitorBannedList');
+    if (!listEl) return;
+    loadSupabaseLib(function(){
+      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      supaClient.from('banned_ips').select('*').order('created_at', { ascending: false })
+        .then(function(res){
+          const rows = (res && res.data) || [];
+          if (rows.length === 0) {
+            listEl.innerHTML = '<div style="font-size:11px;color:#94a3b8;">차단된 IP가 없습니다.</div>';
+            return;
+          }
+          listEl.innerHTML = rows.map(function(row){
+            return '<div style="display:flex;align-items:center;justify-content:space-between;background:#fef2f2;border:1px solid #fecaca;border-radius:6px;padding:7px 10px;">' +
+              '<div style="font-size:12px;color:#7f1d1d;font-weight:700;">' + leChatEscape(row.ip) + '</div>' +
+              '<button onclick="window.leUnbanIp&&window.leUnbanIp(\'' + leChatAttrEscape(row.ip) + '\')" style="background:#f0fdf4;color:#15803d;border:1px solid #bbf7d0;border-radius:5px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">✅ 차단 해제</button>' +
+              '</div>';
+          }).join('');
+        })
+        .catch(function(){
+          listEl.innerHTML = '<div style="font-size:11px;color:#dc2626;">목록을 불러오지 못했습니다 (Supabase에 banned_ips 테이블이 있는지 확인해주세요).</div>';
+        });
+    });
+  }
+
+  window.leBanIp = function(ip){
+    ip = String(ip||'').trim();
+    if (!ip) { alert('차단할 IP를 입력해주세요.'); return; }
+    if (!confirm(ip + ' 을(를) 영구 차단하시겠습니까?\n이 IP는 즉시(최대 몇 초 이내) 접속이 차단됩니다.')) return;
+    loadSupabaseLib(function(){
+      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      supaClient.from('banned_ips').upsert({ ip: ip }).then(function(res){
+        if (res && res.error) { alert('차단 실패: ' + res.error.message + ' (Supabase에 banned_ips 테이블이 있는지 확인해주세요)'); return; }
+        const input = document.getElementById('leVisitorManualIp');
+        if (input) input.value = '';
+        leSiteRefreshBannedListIfOpen();
+        leSiteRefreshAdminListIfOpen();
+        if (typeof showToast === 'function') showToast('🚫 ' + ip + ' 이(가) 차단되었습니다.');
+      });
+    });
+  };
+
+  window.leUnbanIp = function(ip){
+    if (!confirm(ip + ' 의 차단을 해제하시겠습니까?')) return;
+    loadSupabaseLib(function(){
+      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      supaClient.from('banned_ips').delete().eq('ip', ip).then(function(res){
+        if (res && res.error) { alert('해제 실패: ' + res.error.message); return; }
+        leSiteRefreshBannedListIfOpen();
+        if (typeof showToast === 'function') showToast('✅ ' + ip + ' 차단이 해제되었습니다.');
+      });
+    });
+  };
+
   // 게스트 토큰이 chat_guests 테이블에서 여전히 유효(active)한지 확인.
   // enterOnSuccess=true 이면 최초 진입 시 통과하면 잠금화면 없이 바로 닉네임 입력으로 넘어간다.
   function leChatVerifyGuestToken(enterOnSuccess){
@@ -1592,8 +1798,10 @@ const LE_CHAT_CONFIG = {
   function leChatTrackPresence(){
     if (!leChatChannel || !leChatNickname) return;
     try {
-      leChatChannel.track({ nickname: leChatNickname, online_at: new Date().toISOString(), role: leChatIsGuest ? 'guest' : 'staff' });
+      leChatChannel.track({ nickname: leChatNickname, online_at: new Date().toISOString(), role: leChatIsGuest ? 'guest' : 'staff', ip: leSiteIp || '' });
     } catch(e) {}
+    // 채팅에서 닉네임이 정해지면, 사이트 전체 접속자 목록에도 그 이름이 보이도록 갱신
+    leSiteUpdateSitePresence();
   }
   function leChatUntrackPresence(){
     if (!leChatChannel) return;
@@ -1609,11 +1817,14 @@ const LE_CHAT_CONFIG = {
     try { state = leChatChannel.presenceState(); } catch(e) {}
     const names = [];
     const roles = {};
+    const ips = {};
     Object.keys(state).forEach(function(key){
       (state[key] || []).forEach(function(p){
         if (p && p.nickname) {
           names.push(p.nickname);
-          roles[String(p.nickname).trim().normalize('NFC')] = (p.role === 'guest') ? 'guest' : 'staff';
+          const nk = String(p.nickname).trim().normalize('NFC');
+          roles[nk] = (p.role === 'guest') ? 'guest' : 'staff';
+          if (p.ip) ips[nk] = p.ip;
         }
       });
     });
@@ -1630,7 +1841,11 @@ const LE_CHAT_CONFIG = {
         listEl.innerHTML = '<div style="padding:8px 12px;font-size:11px;color:#94a3b8;white-space:nowrap;">접속자 없음</div>';
       } else {
         listEl.innerHTML = uniqueNames.map(function(n){
-          return '<div onclick="leChatOpenProfile(\'' + leChatAttrEscape(n) + '\')" style="padding:6px 12px;font-size:12px;color:#1e293b;white-space:nowrap;cursor:pointer;display:flex;align-items:center;" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'">🟢 ' + leChatAvatarThumbHtml(n, 16) + leChatEscape(n) + '</div>';
+          const nk = String(n).trim().normalize('NFC');
+          const ip = ips[nk];
+          const banBtn = ip ? ' <span onclick="event.stopPropagation();window.leBanIp&&window.leBanIp(\'' + leChatAttrEscape(ip) + '\')" title="이 사람의 IP(' + leChatAttrEscape(ip) + ') 영구 차단" style="margin-left:auto;color:#dc2626;font-size:11px;cursor:pointer;">🚫</span>' : '';
+          return '<div style="padding:6px 12px;font-size:12px;color:#1e293b;white-space:nowrap;display:flex;align-items:center;" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'">' +
+            '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(n) + '\')" style="cursor:pointer;display:flex;align-items:center;flex:1;">🟢 ' + leChatAvatarThumbHtml(n, 16) + leChatEscape(n) + '</span>' + banBtn + '</div>';
         }).join('');
       }
     }
@@ -3456,6 +3671,7 @@ const LE_CHAT_CONFIG = {
         <div id="settingsMenu" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:60;min-width:220px;overflow:hidden">
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openThemeSettingsModal()">⚙️ 환경 설정 (메일·테마 색상)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openAdSettingsModal()" title="프로그램을 하루 중 처음 열었을 때 뜨는 광고 사진/문구를 설정합니다">📢 광고 설정</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.leOpenVisitorAdmin&&window.leOpenVisitorAdmin()" title="지금 접속 중인 사람들의 IP를 보고, 영구 차단·차단 해제를 할 수 있습니다">🌐 접속자 / 차단 관리</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeSettingsMenu();openHelpGuide()" title="처음 사용하시나요? 이 프로그램 사용법을 쉽게 안내해 드려요">❓ 도움말</div>
         </div>
       </div>
