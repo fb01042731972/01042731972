@@ -222,9 +222,29 @@
 </div>
 <script>
 (function(){
-  var DEFAULT_PW = '0088';
-  var ADMIN_PW = '720818';
-  var STORAGE_KEY = 'jinjoo_gate_pw';
+  // 비밀번호 원문은 HTML 소스에 저장하지 않습니다.
+  var DEFAULT_PW_HASH = 'c64306c91d63dfeed553ccc9e3ba29bc7e84449a67c5714a2f5f497d140f845f';
+  var ADMIN_PW_HASH = 'f06cc37baeab1d5525c2a8d0bbc11920e973af4e89d0c8d7258b4c27aad2bb50';
+  var STORAGE_KEY = 'jinjoo_gate_pw_hash';
+
+  async function sha256Hex(text){
+    var data = new TextEncoder().encode(text);
+    var hash = await crypto.subtle.digest('SHA-256', data);
+    return Array.from(new Uint8Array(hash)).map(function(b){return b.toString(16).padStart(2,'0');}).join('');
+  }
+
+  window.jinjooSha256Hex = sha256Hex;
+
+  async function getGatePwHash(){
+    try{
+      var v = localStorage.getItem(STORAGE_KEY);
+      return v ? v : DEFAULT_PW_HASH;
+    }catch(e){ return DEFAULT_PW_HASH; }
+  }
+
+  function setGatePwHash(v){
+    try{ localStorage.setItem(STORAGE_KEY, v); }catch(e){}
+  }
 
   function getGatePw(){
     try{
@@ -253,8 +273,11 @@
   var btn = document.getElementById('pwSubmit');
   var adminLink = document.getElementById('pwAdminLink');
 
-  function tryUnlock(){
-    if(input.value === getGatePw()){
+  async function tryUnlock(){
+    var entered = input.value;
+    var savedHash = await getGatePwHash();
+    var enteredHash = await sha256Hex(entered);
+    if(enteredHash === savedHash){
       try{ sessionStorage.setItem('jinjoo_pw_ok','1'); }catch(e){}
       gate.style.display = 'none';
     } else {
@@ -291,8 +314,9 @@
     setTimeout(function(){ adminInput.focus(); }, 50);
   });
 
-  function tryAdminAuth(){
-    if(adminInput.value === ADMIN_PW){
+  async function tryAdminAuth(){
+    var enteredHash = await sha256Hex(adminInput.value);
+    if(enteredHash === ADMIN_PW_HASH){
       showStage(stageChange);
       document.getElementById('newPwInput').value = '';
       document.getElementById('newPwInput2').value = '';
@@ -322,7 +346,7 @@
   var newPwSubmit = document.getElementById('newPwSubmit');
   var newPwCancel = document.getElementById('newPwCancel');
 
-  function trySavePw(){
+  async function trySavePw(){
     var v1 = newPwInput.value;
     var v2 = newPwInput2.value;
     if(!v1 || v1 !== v2){
@@ -330,7 +354,8 @@
       newPwSuccess.style.display = 'none';
       return;
     }
-    setGatePw(v1);
+    var newHash = await sha256Hex(v1);
+    setGatePwHash(newHash);
     newPwError.style.display = 'none';
     newPwSuccess.style.display = 'block';
     setTimeout(function(){
@@ -730,7 +755,7 @@
 const LE_CHAT_CONFIG = {
   supabaseUrl:      'https://qabrelgdencnuicsxsnk.supabase.co',
   supabaseAnonKey:  'sb_publishable_E7ncnVoccs3RxcZNO6ywXA_Ii05_l_L',
-  roomPassword:     '0088'
+  roomPasswordHash: 'c64306c91d63dfeed553ccc9e3ba29bc7e84449a67c5714a2f5f497d140f845f'
 };
 
 (function(){
@@ -1601,9 +1626,10 @@ const LE_CHAT_CONFIG = {
     }
   }, 45000);
 
-  window.leChatUnlock = function(){
+  window.leChatUnlock = async function(){
     const pw = document.getElementById('leChatPwInput').value;
-    if (pw === LE_CHAT_CONFIG.roomPassword) {
+    const hash = await window.jinjooSha256Hex(pw);
+    if (hash === LE_CHAT_CONFIG.roomPasswordHash) {
       leChatUnlocked = true;
       sessionStorage.setItem('leChatUnlocked', '1');
       document.getElementById('leChatPwError').style.display = 'none';
