@@ -819,6 +819,7 @@
       </div>
       <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#51667E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
       <div id="leChatSelectBar">
+        <label style="display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none;flex-shrink:0;"><input type="checkbox" id="leChatSelectAllCb" onclick="leChatToggleSelectAll(this)">전체선택</label>
         <span id="leChatSelectCount" style="flex:1;font-weight:700;">0개 선택됨</span>
         <button type="button" class="le-select-cancel" onclick="leChatToggleSelectMode()">취소</button>
         <button type="button" class="le-select-delete" onclick="leChatBulkDeleteSelected()">선택 삭제</button>
@@ -2734,7 +2735,21 @@ const LE_CHAT_CONFIG = {
     if (!leChatSelectMode) {
       leChatSelectedIds.clear();
       if (box) box.querySelectorAll('.le-select-cb').forEach(function(cb){ cb.checked = false; });
+      const allCb = document.getElementById('leChatSelectAllCb');
+      if (allCb) allCb.checked = false;
     }
+    leChatUpdateSelectBar();
+  };
+  window.leChatToggleSelectAll = function(cb){
+    const box = document.getElementById('leChatMessages');
+    if (!box) return;
+    box.querySelectorAll('.le-select-cb').forEach(function(cbEl){
+      cbEl.checked = cb.checked;
+      const wrap = cbEl.closest('[data-msg-id], [data-msg-created]');
+      if (!wrap) return;
+      if (cb.checked) leChatSelectedIds.add(wrap);
+      else leChatSelectedIds.delete(wrap);
+    });
     leChatUpdateSelectBar();
   };
   window.leChatOnSelectCheckbox = function(cb){
@@ -2749,7 +2764,13 @@ const LE_CHAT_CONFIG = {
     const countEl = document.getElementById('leChatSelectCount');
     const n = leChatSelectedIds.size;
     if (countEl) countEl.textContent = n + '개 선택됨';
-    if (bar) bar.classList.toggle('active', leChatSelectMode && n > 0);
+    if (bar) bar.classList.toggle('active', leChatSelectMode);
+    const allCb = document.getElementById('leChatSelectAllCb');
+    if (allCb) {
+      const box = document.getElementById('leChatMessages');
+      const visible = box ? Array.from(box.querySelectorAll('.le-select-cb')) : [];
+      allCb.checked = visible.length > 0 && visible.every(function(cbEl){ return cbEl.checked; });
+    }
   }
   window.leChatBulkDeleteSelected = async function(){
     if (!supaClient) return;
@@ -7806,6 +7827,12 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
   function init(){
     if(!$('bulletinBoardBtn'))return;
     $('bulletinBoardBtn').onclick=openModal;window.openBulletinBoard=openModal;$('boardCloseBtn').onclick=closeModal;$('boardWriteBtn').onclick=openWrite;$('boardWriteCloseBtn').onclick=closeWrite;$('boardWriteCancelBtn').onclick=closeWrite;$('boardSaveBtn').onclick=savePost;$('boardSearch').oninput=renderList;$('boardSearchClear').onclick=clearSearch;$('boardSearch').addEventListener('keydown',e=>{if(e.key==='Escape')clearSearch();});
+    // 전체선택 체크박스와 게시글 목록의 개별 체크박스는 HTML 문자열의 inline onclick/onchange로 호출되므로,
+    // IIFE 스코프 안의 함수가 아니라 전역(window)에서 찾을 수 있어야 동작합니다. (전체선택 안 되던 버그 수정)
+    window.boardToggleSelectAll=boardToggleSelectAll;
+    window.boardOnCheckbox=boardOnCheckbox;
+    window.boardClearSelection=boardClearSelection;
+    window.boardDeleteSelected=boardDeleteSelected;
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
