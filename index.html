@@ -205,6 +205,8 @@
 .le-kakao-msg.mine .le-kakao-bubble{background:#fee500!important;color:#222!important;border:0!important;border-radius:15px 4px 15px 15px!important;}
 .le-kakao-msg:not(.mine) .le-kakao-bubble{background:#fff!important;color:#222!important;border:0!important;}
 .le-kakao-msg .le-kakao-read{font-size:9px!important;color:#806f00!important;margin-top:2px!important;}
+@keyframes leMsgPop{0%{opacity:0;transform:translateY(18px) scale(.92);}55%{opacity:1;transform:translateY(-4px) scale(1.01);}100%{opacity:1;transform:translateY(0) scale(1);}}
+.le-kakao-msg.le-msg-pop{animation:leMsgPop .32s cubic-bezier(.34,1.56,.64,1) both;}
 #leChatPinBanner{background:#fff8bf!important;border-bottom:1px solid #eadf92!important;color:#6b5b00!important;font-size:12px!important;}
 #leChatInputBar{background:#fff!important;border-top:1px solid #e5e5e5!important;padding:8px 9px!important;}
 #leChatInput{background:#f7f7f7!important;border:1px solid #e2e2e2!important;border-radius:20px!important;padding:9px 13px!important;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",Arial,sans-serif!important;font-size:13px!important;color:#222!important;outline:none!important;}
@@ -378,6 +380,23 @@
 }
 </style>
 
+<style id="leChatBulkSelectStyle">
+/* 채팅 메시지 일괄 삭제용 체크박스: 선택모드일 때만 보이도록 */
+.le-select-cb{display:none;vertical-align:middle;margin-right:5px;cursor:pointer;}
+#leChatMessages.le-select-mode .le-select-cb{display:inline-block!important;}
+#leChatSelectBar{display:none;align-items:center;gap:8px;padding:8px 10px;background:#FFF3F3;border-top:1px solid #FCA5A5;font-size:12px;color:#991B1B;flex-shrink:0;}
+#leChatSelectBar.active{display:flex;}
+#leChatSelectBar button{border:0;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:800;cursor:pointer;}
+#leChatSelectBar .le-select-delete{background:#ef4444;color:#fff;}
+#leChatSelectBar .le-select-cancel{background:#fff;color:#64748b;border:1px solid #e2e8f0!important;}
+/* 게시판 일괄 삭제용 체크박스 */
+.board-select-cb{margin-right:8px;vertical-align:middle;}
+#boardBulkBar{display:none;align-items:center;gap:8px;padding:8px 10px;background:#FFF3F3;border-bottom:1px solid #FCA5A5;font-size:12px;color:#991B1B;}
+#boardBulkBar.active{display:flex;}
+#boardBulkBar button{border:0;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:800;cursor:pointer;}
+#boardBulkBar .board-bulk-delete{background:#ef4444;color:#fff;}
+#boardBulkBar .board-bulk-cancel{background:#fff;color:#64748b;border:1px solid #e2e8f0!important;}
+</style>
 <style id="leChatFileTextFix">
 
 /* 첨부파일 말풍선 가독성 수정
@@ -476,6 +495,9 @@
   }
 
   window.jinjooSha256Hex = sha256Hex;
+  // 관리자 비밀번호 해시를 전역에서 재사용(다른 삭제 기능 등)할 수 있도록 노출.
+  // 평문 비밀번호는 어디에도 저장하지 않고, SHA-256 해시만 비교합니다.
+  window.jinjooAdminPwHash = ADMIN_PW_HASH;
 
   async function getGatePwHash(){
     try{
@@ -613,10 +635,10 @@
 <div id="bulletinBoardModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99997;display:none;align-items:center;justify-content:center;padding:14px;">
   <div style="background:#fff;width:min(980px,96vw);height:min(760px,92vh);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;">
     <div style="background:linear-gradient(135deg,#0F3A4D,#0891b2);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px"><b style="flex:1">📋 공용 게시판</b><span id="boardStatus" style="font-size:10px;background:rgba(255,255,255,.14);padding:4px 7px;border-radius:12px">연결 중...</span><button id="boardCloseBtn" style="border:0;background:rgba(255,255,255,.16);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button></div>
-    <div style="display:flex;flex:1;min-height:0"><div style="width:42%;min-width:300px;border-right:1px solid #e5e7eb;display:flex;flex-direction:column"><div style="padding:10px;border-bottom:1px solid #e5e7eb"><div style="display:flex;gap:6px"><div style="position:relative;flex:1"><input id="boardSearch" placeholder="제목·내용·작성자 검색" style="width:100%;box-sizing:border-box;padding:8px 34px 8px 10px;border:1px solid #cbd5e1;border-radius:7px"><button id="boardSearchClear" title="검색 지우기" style="position:absolute;right:4px;top:3px;width:28px;height:28px;border:0;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer">×</button></div><button id="boardWriteBtn" style="border:0;background:#0891b2;color:#fff;border-radius:7px;padding:0 12px;font-weight:800;cursor:pointer;white-space:nowrap">✏️ 글쓰기</button></div><div id="boardCount" style="font-size:10px;color:#94a3b8;margin-top:6px">전체 0건</div></div><div id="boardList" style="flex:1;overflow:auto;padding:6px"></div></div><div style="flex:1;overflow:auto;background:#fafafa"><div id="boardEmpty" style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8">게시글을 선택하세요.</div><div id="boardDetail" style="display:none;padding:18px"></div></div></div>
+    <div style="display:flex;flex:1;min-height:0"><div style="width:42%;min-width:300px;border-right:1px solid #e5e7eb;display:flex;flex-direction:column"><div style="padding:10px;border-bottom:1px solid #e5e7eb"><div style="display:flex;gap:6px"><div style="position:relative;flex:1"><input id="boardSearch" placeholder="제목·내용·작성자 검색" style="width:100%;box-sizing:border-box;padding:8px 34px 8px 10px;border:1px solid #cbd5e1;border-radius:7px"><button id="boardSearchClear" title="검색 지우기" style="position:absolute;right:4px;top:3px;width:28px;height:28px;border:0;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer">×</button></div><button id="boardWriteBtn" style="border:0;background:#0891b2;color:#fff;border-radius:7px;padding:0 12px;font-weight:800;cursor:pointer;white-space:nowrap">✏️ 글쓰기</button></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><div id="boardCount" style="font-size:10px;color:#94a3b8">전체 0건</div><label style="font-size:10px;color:#64748b;display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none"><input type="checkbox" id="boardSelectAllCb" onclick="boardToggleSelectAll(this)">전체선택</label></div></div><div id="boardBulkBar"><span id="boardBulkCount" style="flex:1;font-weight:700;">0개 선택됨</span><button type="button" class="board-bulk-cancel" onclick="boardClearSelection()">취소</button><button type="button" class="board-bulk-delete" onclick="boardDeleteSelected()">선택 삭제</button></div><div id="boardList" style="flex:1;overflow:auto;padding:6px"></div></div><div style="flex:1;overflow:auto;background:#fafafa"><div id="boardEmpty" style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8">게시글을 선택하세요.</div><div id="boardDetail" style="display:none;padding:18px"></div></div></div>
   </div>
 </div>
-<div id="boardWriteModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99998;display:none;align-items:center;justify-content:center;padding:14px"><div style="background:#fff;width:min(680px,94vw);max-height:92vh;border-radius:14px;overflow:auto"><div style="padding:12px 16px;background:#0F3A4D;color:#fff;display:flex;justify-content:space-between;position:sticky;top:0;z-index:2"><b>✏️ 새 글 작성</b><button id="boardWriteCloseBtn" style="border:0;background:none;color:#fff;font-size:18px;cursor:pointer">✕</button></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><input id="boardAuthor" placeholder="작성자 이름" maxlength="30" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><input id="boardPostTitle" placeholder="제목" maxlength="120" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><textarea id="boardPostBody" rows="10" maxlength="10000" placeholder="내용을 입력하세요" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px;resize:vertical"></textarea><div class="board-attach-box"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div><b style="font-size:12px">📎 파일 / 사진 첨부</b><div style="font-size:10px;color:#64748b;margin-top:3px">최대 5개 · 파일 1개당 20MB · 사진은 게시글에서 바로 볼 수 있습니다.</div></div><button type="button" id="boardAttachBtn" class="board-file-btn">📂 파일 선택</button></div><input id="boardFileInput" type="file" multiple style="display:none" accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.doc,.docx,.zip,.rar,.7z"><div id="boardPendingFiles" style="margin-top:8px"></div></div><div style="text-align:right"><button id="boardWriteCancelBtn" style="padding:8px 14px">취소</button><button id="boardSaveBtn" style="padding:8px 16px;background:#0891b2;color:#fff;border:0;border-radius:6px;font-weight:800">등록</button></div><div id="boardWriteError" style="display:none;color:#dc2626;font-size:11px"></div></div></div></div>
+<div id="boardWriteModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99998;display:none;align-items:center;justify-content:center;padding:14px"><div style="background:#fff;width:min(680px,94vw);max-height:92vh;border-radius:14px;overflow:auto"><div style="padding:12px 16px;background:#0F3A4D;color:#fff;display:flex;justify-content:space-between;position:sticky;top:0;z-index:2"><b>✏️ 새 글 작성</b><button id="boardWriteCloseBtn" style="border:0;background:none;color:#fff;font-size:18px;cursor:pointer">✕</button></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><input id="boardAuthor" placeholder="작성자 이름" maxlength="30" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><input id="boardPostTitle" placeholder="제목" maxlength="120" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><textarea id="boardPostBody" rows="10" maxlength="10000" placeholder="내용을 입력하세요" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px;resize:vertical"></textarea><div style="text-align:right"><button id="boardWriteCancelBtn" style="padding:8px 14px">취소</button><button id="boardSaveBtn" style="padding:8px 16px;background:#0891b2;color:#fff;border:0;border-radius:6px;font-weight:800">등록</button></div><div id="boardWriteError" style="display:none;color:#dc2626;font-size:11px"></div></div></div></div>
 
 <!-- 💬 실시간 직원 채팅 (Supabase 기반, 무료) -->
 <style>
@@ -777,6 +799,7 @@
         <button onclick="leChatBackToList()" title="채팅 목록으로" style="background:none;border:none;color:#51667E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
         <span id="leChatThreadTitle" style="font-size:12.5px;font-weight:800;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">전체</span>
         <button onclick="leChatOpenSearch()" title="채팅 검색" style="background:none;border:none;color:#51667E;font-size:14px;cursor:pointer;padding:2px 5px;line-height:1;">🔍</button>
+        <button id="leChatSelectModeBtn" onclick="leChatToggleSelectMode()" title="여러 메시지 선택 삭제" style="background:none;border:none;color:#51667E;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;">☑️</button>
       </div>
       <div id="leChatPinBanner" onclick="leChatJumpToPinned()" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#F5F3EC;border-bottom:1px solid #eceeef;font-size:11px;color:#7A6A3F;cursor:pointer;flex-shrink:0;">
         <span style="flex-shrink:0;">📌</span>
@@ -795,6 +818,11 @@
         <span onclick="leChatCancelEdit()" title="수정 취소" style="flex-shrink:0;color:#51667E;font-weight:800;cursor:pointer;">✕</span>
       </div>
       <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#51667E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
+      <div id="leChatSelectBar">
+        <span id="leChatSelectCount" style="flex:1;font-weight:700;">0개 선택됨</span>
+        <button type="button" class="le-select-cancel" onclick="leChatToggleSelectMode()">취소</button>
+        <button type="button" class="le-select-delete" onclick="leChatBulkDeleteSelected()">선택 삭제</button>
+      </div>
       <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
       <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 14px rgba(20,30,40,.12);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
 
@@ -1012,6 +1040,16 @@ const LE_CHAT_CONFIG = {
   let leChatNickname = '';
   let leChatBoardLiveChannel = null;
   let leChatBoardLivePosts = [];
+  let leChatBoardClient = null;
+  // 채팅창 하단 게시판 미리보기는 공용 게시판(📋 게시판 모달)과 같은 Supabase 프로젝트를 봐야 함
+  const LE_BOARD_URL = 'https://yzgmqbnrsylxrwokrjii.supabase.co';
+  const LE_BOARD_KEY = 'sb_publishable_s-xgGybt-6N5RLqn_8r6Bw_nRF5yIHG';
+  function leChatMakeBoardClient(){
+    if (leChatBoardClient) return leChatBoardClient;
+    if (!window.supabase || !window.supabase.createClient) return null;
+    leChatBoardClient = window.supabase.createClient(LE_BOARD_URL, LE_BOARD_KEY);
+    return leChatBoardClient;
+  }
   // 내가 방금 이 브라우저에서 보낸 메시지를 Realtime 이벤트와 연결
   const leChatPendingOwnMessages = [];
   function leChatNorm(v){
@@ -2039,10 +2077,12 @@ const LE_CHAT_CONFIG = {
   async function leChatLoadBoardLive(){
     const box = document.getElementById('leChatBoardLiveItems');
     const status = document.getElementById('leChatBoardLiveStatus');
-    if (!box || !supaClient) return;
+    if (!box) return;
+    const boardClient = leChatMakeBoardClient();
+    if (!boardClient) return;
 
     try {
-      const r = await supaClient
+      const r = await boardClient
         .from('board_posts')
         .select('id,title,content,author,created_at')
         .order('created_at', { ascending:false })
@@ -2063,16 +2103,17 @@ const LE_CHAT_CONFIG = {
   }
 
   function leChatSubscribeBoardLive(){
-    if (!supaClient) return;
+    const boardClient = leChatMakeBoardClient();
+    if (!boardClient) return;
 
     try {
       if (leChatBoardLiveChannel) {
-        supaClient.removeChannel(leChatBoardLiveChannel);
+        boardClient.removeChannel(leChatBoardLiveChannel);
         leChatBoardLiveChannel = null;
       }
     } catch(e) {}
 
-    leChatBoardLiveChannel = supaClient
+    leChatBoardLiveChannel = boardClient
       .channel('le-chat-board-live-' + Math.random().toString(36).slice(2))
       .on('postgres_changes', {
         event:'*',
@@ -2251,9 +2292,12 @@ const LE_CHAT_CONFIG = {
     const box = document.getElementById('leChatMessages');
     if (!box) return;
     box.innerHTML = '';
+    // 방을 옮기면 이전 선택 상태는 초기화 (DOM이 새로 그려지므로)
+    if (typeof leChatSelectedIds !== 'undefined') leChatSelectedIds.clear();
+    if (typeof leChatUpdateSelectBar === 'function') leChatUpdateSelectBar();
     leChatMsgCache
       .filter(function(msg){ return leChatConvKeyOf(msg) === convKey; })
-      .forEach(leChatRenderMessage);
+      .forEach(function(msg){ leChatRenderMessage(msg, false); });
     box.scrollTop = box.scrollHeight;
   }
 
@@ -2314,7 +2358,7 @@ const LE_CHAT_CONFIG = {
         );
         const inThisThread = leChatViewMode === 'thread' && leChatActiveConv === convKey;
         if (inThisThread) {
-          leChatRenderMessage(payload.new);
+          leChatRenderMessage(payload.new, true);
           const box = document.getElementById('leChatMessages');
           box.scrollTop = box.scrollHeight;
           leChatUpdatePinBanner();
@@ -2532,12 +2576,12 @@ const LE_CHAT_CONFIG = {
     return unread;
   }
 
-  function leChatRenderMessage(msg){
+  function leChatRenderMessage(msg, animate){
     const box = document.getElementById('leChatMessages');
     const mine = String(msg.sender||'').trim().normalize('NFC') === String(leChatNickname||'').trim().normalize('NFC');
     const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
     const div = document.createElement('div');
-    div.className = 'le-kakao-msg ' + (mine ? 'mine' : 'other');
+    div.className = 'le-kakao-msg ' + (mine ? 'mine' : 'other') + (animate ? ' le-msg-pop' : '');
     div.style.textAlign = mine ? 'right' : 'left';
     // id 컬럼이 있으면 그걸 쓰고, 없으면 (sender+created_at) 조합으로 대체 식별
     if (msg.id != null) {
@@ -2601,9 +2645,7 @@ const LE_CHAT_CONFIG = {
     const editBtnHtml = (mine && msg.content && !msg.file_url)
       ? '<span onclick="leChatStartEdit(this)" title="수정" style="cursor:pointer;color:#51667E;font-weight:800;margin-right:4px;">✏</span>'
       : '';
-    const deleteBtnHtml = mine
-      ? '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>'
-      : '';
+    const deleteBtnHtml = '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>';
     const senderNameHtml = '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(msg.sender) + '\')" style="cursor:pointer;display:inline-flex;align-items:center;">' + leChatAvatarThumbHtml(msg.sender, 16) + '<span style="text-decoration:underline dotted;">' + leChatEscape(msg.sender) + '</span></span>';
 // 카카오톡식 수신 확인:
     // 내가 보낸 메시지이고 상대방이 아직 읽지 않았으면 '1',
@@ -2619,9 +2661,10 @@ const LE_CHAT_CONFIG = {
         readHtml = '<div class="le-kakao-read le-kakao-unread-count">' + unreadCount + '</div>';
       }
     }
+    const selectCbHtml = '<input type="checkbox" class="le-select-cb" onclick="leChatOnSelectCheckbox(this)">';
     div.innerHTML =
       (msg.pinned ? '<div style="font-size:10px;color:#7A6A3F;font-weight:700;margin-bottom:1px;">📌 고정된 메시지</div>' : '') +
-      '<div class="le-kakao-meta" style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
+      '<div class="le-kakao-meta" style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + selectCbHtml + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
       '<div class="le-kakao-bubble" style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;' + (mine ? '' : 'border:1px solid #E7EAED;') + (isDm ? 'border:1px dashed #B9C2CA;' : '') + (msg.pinned ? 'box-shadow:0 0 0 2px #E4C77A;' : '') + '">' + quoteHtml + bodyHtml + '</div>' +
       readHtml;
     box.appendChild(div);
@@ -2653,6 +2696,10 @@ const LE_CHAT_CONFIG = {
     const wrap = el.closest('[data-msg-id], [data-msg-created]');
     if (!wrap) return;
     const fileUrl = wrap.dataset.fileUrl || '';
+    const pw = prompt('관리자 비밀번호를 입력하세요.');
+    if (pw === null) return;
+    const pwHash = await window.jinjooSha256Hex(pw);
+    if (pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
     if (!confirm('이 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
     try {
       let error;
@@ -2673,6 +2720,69 @@ const LE_CHAT_CONFIG = {
     } catch(e) {
       alert('삭제 실패: ' + (e.message || ''));
     }
+  };
+
+  // ── 메시지 여러 개 선택 후 한 번에 삭제 (일괄 삭제) ──
+  let leChatSelectMode = false;
+  const leChatSelectedIds = new Set(); // wrap 요소 자체를 저장 (msgId 없는 경우도 처리하기 위해)
+  window.leChatToggleSelectMode = function(){
+    leChatSelectMode = !leChatSelectMode;
+    const box = document.getElementById('leChatMessages');
+    const btn = document.getElementById('leChatSelectModeBtn');
+    if (box) box.classList.toggle('le-select-mode', leChatSelectMode);
+    if (btn) btn.style.color = leChatSelectMode ? '#ef4444' : '#51667E';
+    if (!leChatSelectMode) {
+      leChatSelectedIds.clear();
+      if (box) box.querySelectorAll('.le-select-cb').forEach(function(cb){ cb.checked = false; });
+    }
+    leChatUpdateSelectBar();
+  };
+  window.leChatOnSelectCheckbox = function(cb){
+    const wrap = cb.closest('[data-msg-id], [data-msg-created]');
+    if (!wrap) return;
+    if (cb.checked) leChatSelectedIds.add(wrap);
+    else leChatSelectedIds.delete(wrap);
+    leChatUpdateSelectBar();
+  };
+  function leChatUpdateSelectBar(){
+    const bar = document.getElementById('leChatSelectBar');
+    const countEl = document.getElementById('leChatSelectCount');
+    const n = leChatSelectedIds.size;
+    if (countEl) countEl.textContent = n + '개 선택됨';
+    if (bar) bar.classList.toggle('active', leChatSelectMode && n > 0);
+  }
+  window.leChatBulkDeleteSelected = async function(){
+    if (!supaClient) return;
+    const wraps = Array.from(leChatSelectedIds);
+    if (!wraps.length) return;
+    const pw = prompt('관리자 비밀번호를 입력하세요.');
+    if (pw === null) return;
+    const pwHash = await window.jinjooSha256Hex(pw);
+    if (pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
+    if (!confirm(wraps.length + '개의 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
+    let failCount = 0;
+    for (const wrap of wraps) {
+      const fileUrl = wrap.dataset.fileUrl || '';
+      try {
+        let error;
+        if (wrap.dataset.msgId) {
+          ({ error } = await supaClient.from('chat_messages').delete().eq('id', wrap.dataset.msgId));
+        } else {
+          ({ error } = await supaClient.from('chat_messages').delete()
+            .eq('sender', wrap.dataset.msgSender || '')
+            .eq('created_at', wrap.dataset.msgCreated || ''));
+        }
+        if (error) throw error;
+        wrap.remove();
+        const path = leChatExtractStoragePath(fileUrl);
+        if (path) { try { await supaClient.storage.from('chat-files').remove([path]); } catch(e){} }
+      } catch(e) {
+        failCount++;
+      }
+    }
+    leChatSelectedIds.clear();
+    leChatUpdateSelectBar();
+    if (failCount > 0) alert(failCount + '개 메시지 삭제에 실패했습니다.');
   };
 
   window.leChatSend = async function(){
@@ -2696,7 +2806,7 @@ const LE_CHAT_CONFIG = {
       if (inserted && !leChatMsgCache.some(function(m){ return inserted.id != null && m.id != null && String(m.id) === String(inserted.id); })) {
         leChatMsgCache.push(inserted);
         if (leChatViewMode === 'thread' && leChatActiveConv === leChatConvKeyOf(inserted)) {
-          leChatRenderMessage(inserted);
+          leChatRenderMessage(inserted, true);
           const box = document.getElementById('leChatMessages');
           if (box) box.scrollTop = box.scrollHeight;
         }
@@ -7580,12 +7690,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
   const BOARD_KEY='sb_publishable_s-xgGybt-6N5RLqn_8r6Bw_nRF5yIHG';
   const BOARD_BUCKET='board-files';
-  let bc=null, posts=[], selected=null, pendingFiles=[];
+  let bc=null, posts=[], selected=null;
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const fmt=v=>{try{return new Date(v).toLocaleString('ko-KR')}catch(e){return ''}};
   const sizeFmt=n=>{n=Number(n)||0;if(n<1024)return n+' B';if(n<1024*1024)return (n/1024).toFixed(1)+' KB';if(n<1024*1024*1024)return (n/1024/1024).toFixed(1)+' MB';return (n/1024/1024/1024).toFixed(1)+' GB'};
-  const isImg=f=>/^image\/(jpeg|png|gif|webp|bmp|svg\+xml)$/i.test(f?.type||'');
   function makeClient(){if(bc)return bc;if(!window.supabase?.createClient)return null;bc=window.supabase.createClient(BOARD_URL,BOARD_KEY);return bc;}
   async function ensureSupabase(){
     if(window.supabase)return true;
@@ -7604,27 +7713,9 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
   function openWrite(){
     $('boardWriteModal').classList.remove('hidden');$('boardWriteModal').style.display='flex';
     $('boardAuthor').value=localStorage.getItem('board_author')||'';$('boardPostTitle').value='';$('boardPostBody').value='';
-    $('boardWriteError').style.display='none';pendingFiles=[];renderPendingFiles();setTimeout(()=>$('boardPostTitle')?.focus(),50);
+    $('boardWriteError').style.display='none';setTimeout(()=>$('boardPostTitle')?.focus(),50);
   }
-  function closeWrite(){ $('boardWriteModal').style.display='none';$('boardWriteModal').classList.add('hidden');pendingFiles=[]; }
-  function renderPendingFiles(){
-    const box=$('boardPendingFiles');if(!box)return;
-    if(!pendingFiles.length){box.innerHTML='<div style="font-size:10px;color:#94a3b8">첨부된 파일이 없습니다.</div>';return;}
-    box.innerHTML=pendingFiles.map((f,i)=>`<div class="board-attach-row"><span style="font-size:18px">${isImg(f)?'🖼️':'📎'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span><span style="color:#94a3b8">${sizeFmt(f.size)}</span><button type="button" data-rm="${i}" style="border:0;background:none;color:#dc2626;cursor:pointer;font-size:16px">×</button></div>`).join('');
-    box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{pendingFiles.splice(Number(b.dataset.rm),1);renderPendingFiles();});
-  }
-  function pickFiles(fileList){
-    const maxCount=5,maxEach=20*1024*1024;
-    const incoming=Array.from(fileList||[]);
-    for(const f of incoming){
-      if(pendingFiles.length>=maxCount){alert('첨부파일은 게시글당 최대 5개입니다.');break;}
-      if(f.size>maxEach){alert(f.name+' 파일이 20MB를 초과합니다.');continue;}
-      if(pendingFiles.some(x=>x.name===f.name&&x.size===f.size))continue;
-      pendingFiles.push(f);
-    }
-    renderPendingFiles();
-    const input=$('boardFileInput');if(input)input.value='';
-  }
+  function closeWrite(){ $('boardWriteModal').style.display='none';$('boardWriteModal').classList.add('hidden'); }
   async function loadPosts(){
     if(!(await ensureSupabase())){$('boardStatus').textContent='Supabase 로딩 실패';return;}
     const c=makeClient();if(!c)return;
@@ -7637,44 +7728,69 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
     const filtered=posts.filter(p=>!q||String((p.title||'')+' '+(p.content||'')+' '+(p.author||'')).toLowerCase().includes(q));
     $('boardCount').textContent=q?`검색 결과 ${filtered.length}건 / 전체 ${posts.length}건`:`전체 ${posts.length}건`;
     if(!filtered.length){box.innerHTML=q?'<div style="padding:42px 20px;text-align:center;color:#94a3b8;font-size:12px">🔎 검색 결과가 없습니다.<br><span style="font-size:11px">검색어를 지우면 전체 게시글이 표시됩니다.</span></div>':'<div style="padding:42px 20px;text-align:center;color:#94a3b8;font-size:12px">게시글이 없습니다.<br>첫 글을 작성해 보세요.</div>';selected=null;$('boardEmpty').style.display='flex';$('boardDetail').style.display='none';return;}
-    box.innerHTML=filtered.map(p=>`<div data-board-id="${p.id}" style="padding:12px 10px;border-bottom:1px solid #eef2f7;cursor:pointer;background:${selected==p.id?'#ecfeff':'#fff'}"><div style="display:flex;align-items:center;gap:5px"><span style="font-weight:800;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.title)}</span>${Number(p.views||0)>0?`<span style="font-size:9px;color:#94a3b8">👁 ${Number(p.views||0)}</span>`:''}</div><div style="font-size:10px;color:#94a3b8;margin-top:5px">${esc(p.author)} · ${fmt(p.created_at)}</div></div>`).join('');
+    box.innerHTML=filtered.map(p=>`<div data-board-id="${p.id}" style="padding:12px 10px;border-bottom:1px solid #eef2f7;cursor:pointer;background:${selected==p.id?'#ecfeff':'#fff'}"><div style="display:flex;align-items:center;gap:5px"><input type="checkbox" class="board-select-cb" onclick="event.stopPropagation()" onchange="boardOnCheckbox(this,${p.id})" ${boardSelectedIds.has(p.id)?'checked':''}><span style="font-weight:800;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.title)}</span>${Number(p.views||0)>0?`<span style="font-size:9px;color:#94a3b8">👁 ${Number(p.views||0)}</span>`:''}</div><div style="font-size:10px;color:#94a3b8;margin-top:5px">${esc(p.author)} · ${fmt(p.created_at)}</div></div>`).join('');
     box.querySelectorAll('[data-board-id]').forEach(e=>e.onclick=()=>openPost(Number(e.dataset.boardId)));
+    boardUpdateBulkBar();
   }
-  async function getAttachments(postId){
-    const r=await makeClient().from('board_attachments').select('*').eq('post_id',postId).order('created_at',{ascending:true});
-    return r.error?{error:r.error,data:[]}: {error:null,data:r.data||[]};
+  // ── 게시글 여러 개 선택 후 한 번에 삭제 (일괄 삭제) ──
+  const boardSelectedIds = new Set();
+  function boardOnCheckbox(cb, id){
+    if(cb.checked) boardSelectedIds.add(id); else boardSelectedIds.delete(id);
+    boardUpdateBulkBar();
+  }
+  function boardUpdateBulkBar(){
+    const bar=$('boardBulkBar'),countEl=$('boardBulkCount');
+    const n=boardSelectedIds.size;
+    if(countEl) countEl.textContent=n+'개 선택됨';
+    if(bar) bar.classList.toggle('active', n>0);
+    const allCb=$('boardSelectAllCb');
+    if(allCb){ const visible=Array.from(document.querySelectorAll('#boardList .board-select-cb')); allCb.checked = visible.length>0 && visible.every(cb=>cb.checked); }
+  }
+  function boardToggleSelectAll(cb){
+    document.querySelectorAll('#boardList [data-board-id]').forEach(row=>{
+      const id=Number(row.dataset.boardId);
+      const box=row.querySelector('.board-select-cb');
+      if(box) box.checked=cb.checked;
+      if(cb.checked) boardSelectedIds.add(id); else boardSelectedIds.delete(id);
+    });
+    boardUpdateBulkBar();
+  }
+  function boardClearSelection(){
+    boardSelectedIds.clear();
+    document.querySelectorAll('#boardList .board-select-cb').forEach(cb=>cb.checked=false);
+    if($('boardSelectAllCb')) $('boardSelectAllCb').checked=false;
+    boardUpdateBulkBar();
+  }
+  async function boardDeleteSelected(){
+    const ids=Array.from(boardSelectedIds);
+    if(!ids.length)return;
+    const pw=prompt('관리자 비밀번호를 입력하세요.');if(pw===null)return;
+    const pwHash=await window.jinjooSha256Hex(pw);
+    if(pwHash!==window.jinjooAdminPwHash){alert('비밀번호가 일치하지 않습니다.');return;}
+    if(!confirm(ids.length+'개의 게시글을 삭제하시겠습니까?\n댓글도 함께 정리합니다.'))return;
+    const c=makeClient();
+    const r=await c.from('board_posts').delete().in('id', ids);
+    if(r.error){alert('삭제 실패: '+r.error.message);return;}
+    boardSelectedIds.clear();
+    selected=null;
+    $('boardEmpty').style.display='flex';$('boardDetail').style.display='none';
+    await loadPosts();
   }
   async function openPost(id){
     selected=id;renderList();const p=posts.find(x=>Number(x.id)===id);if(!p)return;
     $('boardEmpty').style.display='none';$('boardDetail').style.display='block';
-    $('boardDetail').innerHTML=`<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><h2 style="margin:0;font-size:20px;word-break:break-word">${esc(p.title)}</h2><div id="boardMeta" style="font-size:11px;color:#94a3b8;margin-top:6px">작성자: ${esc(p.author)} · ${fmt(p.created_at)} · 조회 ${Number(p.views||0)}</div></div><button id="boardDeleteBtn" style="border:1px solid #fecaca;background:#fff;color:#dc2626;border-radius:6px;padding:6px 9px;font-size:11px;cursor:pointer">삭제</button></div><div style="white-space:pre-wrap;line-height:1.8;margin-top:20px;padding-bottom:18px;border-bottom:1px solid #e5e7eb;word-break:break-word">${esc(p.content)}</div><div id="boardAttachments" class="board-attach-list"><span style="color:#94a3b8;font-size:11px">첨부파일 불러오는 중...</span></div><h3 style="font-size:13px;margin:16px 0 8px">💬 댓글</h3><div id="boardComments">불러오는 중...</div><div style="display:flex;gap:6px;margin-top:10px"><input id="bcAuthor" placeholder="이름" maxlength="30" style="width:80px;padding:7px;border:1px solid #cbd5e1;border-radius:6px"><input id="bcBody" placeholder="댓글" maxlength="2000" style="flex:1;padding:7px;border:1px solid #cbd5e1;border-radius:6px"><button id="bcSend" style="background:#0891b2;color:#fff;border:0;border-radius:6px;padding:0 12px">등록</button></div>`;
+    $('boardDetail').innerHTML=`<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><h2 style="margin:0;font-size:20px;word-break:break-word">${esc(p.title)}</h2><div id="boardMeta" style="font-size:11px;color:#94a3b8;margin-top:6px">작성자: ${esc(p.author)} · ${fmt(p.created_at)} · 조회 ${Number(p.views||0)}</div></div><button id="boardDeleteBtn" style="border:1px solid #fecaca;background:#fff;color:#dc2626;border-radius:6px;padding:6px 9px;font-size:11px;cursor:pointer">삭제</button></div><div style="white-space:pre-wrap;line-height:1.8;margin-top:20px;padding-bottom:18px;border-bottom:1px solid #e5e7eb;word-break:break-word">${esc(p.content)}</div><h3 style="font-size:13px;margin:16px 0 8px">💬 댓글</h3><div id="boardComments">불러오는 중...</div><div style="display:flex;gap:6px;margin-top:10px"><input id="bcAuthor" placeholder="이름" maxlength="30" style="width:80px;padding:7px;border:1px solid #cbd5e1;border-radius:6px"><input id="bcBody" placeholder="댓글" maxlength="2000" style="flex:1;padding:7px;border:1px solid #cbd5e1;border-radius:6px"><button id="bcSend" style="background:#0891b2;color:#fff;border:0;border-radius:6px;padding:0 12px">등록</button></div>`;
     $('bcSend').onclick=addComment;$('boardDeleteBtn').onclick=()=>deletePost(p);
     const c=makeClient(),newViews=Number(p.views||0)+1;const vr=await c.from('board_posts').update({views:newViews}).eq('id',id);if(!vr.error){p.views=newViews;$('boardMeta').textContent=`작성자: ${p.author} · ${fmt(p.created_at)} · 조회 ${newViews}`;}
-    const ar=await getAttachments(id);renderAttachments(ar);
     const r=await c.from('board_comments').select('*').eq('post_id',id).order('created_at',{ascending:true});
     $('boardComments').innerHTML=r.error?'<span style="color:#dc2626">댓글 DB 오류: '+esc(r.error.message)+'</span>':((r.data||[]).map(x=>`<div style="padding:8px;border:1px solid #eef2f7;border-radius:7px;background:#fff;margin-bottom:6px"><b>${esc(x.author)}</b> <span style="font-size:9px;color:#94a3b8">${fmt(x.created_at)}</span><div style="white-space:pre-wrap;margin-top:4px;word-break:break-word">${esc(x.content)}</div></div>`).join('')||'<span style="color:#94a3b8;font-size:11px">첫 댓글을 남겨보세요.</span>');
   }
-  function renderAttachments(result){
-    const box=$('boardAttachments');if(!box)return;
-    if(result.error){box.innerHTML='<div style="padding:9px;border:1px solid #fecaca;border-radius:7px;color:#b91c1c;background:#fff7f7;font-size:11px">첨부파일 정보를 불러오지 못했습니다.<br>'+esc(result.error.message)+'</div>';return;}
-    if(!result.data.length){box.innerHTML='';return;}
-    box.innerHTML='<div style="font-weight:800;font-size:12px;margin-bottom:2px">📎 첨부파일 '+result.data.length+'개</div>'+result.data.map(a=>{const img=/^image\//i.test(a.mime_type||'');return `<div class="board-attach-card">${img?`<img src="${esc(a.public_url)}" alt="" onclick="window.open(this.src,'_blank')">`:'<div style="font-size:32px;width:70px;text-align:center">📄</div>'}<div class="meta"><div class="name">${esc(a.file_name)}</div><div class="size">${esc(a.mime_type||'파일')} · ${sizeFmt(a.file_size)}</div><a href="${esc(a.public_url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;color:#0369a1;font-size:11px;font-weight:700">${img?'🖼️ 사진 보기':'📥 파일 열기/다운로드'}</a></div></div>`}).join('');
-  }
-  async function uploadAttachments(postId,files){
-    if(!files.length)return {ok:true,count:0};
-    const c=makeClient(),rows=[];
-    for(const f of files){
-      const safe=f.name.replace(/[^\w가-힣.()\- ]+/g,'_').slice(-160);const path=`board/${postId}/${crypto.randomUUID()}-${safe}`;
-      const up=await c.storage.from(BOARD_BUCKET).upload(path,f,{upsert:false,contentType:f.type||'application/octet-stream'});
-      if(up.error)return {ok:false,error:`${f.name}: ${up.error.message}`};
-      const pub=c.storage.from(BOARD_BUCKET).getPublicUrl(path);const url=pub?.data?.publicUrl||'';
-      rows.push({post_id:postId,file_name:f.name,file_path:path,file_size:f.size,mime_type:f.type||'application/octet-stream',public_url:url});
-    }
-    const ir=await c.from('board_attachments').insert(rows);if(ir.error)return {ok:false,error:ir.error.message};return {ok:true,count:rows.length};
-  }
   async function deletePost(p){
-    const name=prompt('게시글 작성자 이름을 입력하세요.\n(게시글 작성자: '+p.author+')');if(name===null)return;if(name.trim()!==String(p.author||'')){alert('작성자 이름이 일치하지 않습니다.');return;}if(!confirm('이 게시글을 삭제하시겠습니까?\n댓글과 첨부파일도 함께 정리합니다.'))return;
-    const c=makeClient();const ar=await c.from('board_attachments').select('file_path').eq('post_id',p.id);if(!ar.error&&ar.data?.length){await c.storage.from(BOARD_BUCKET).remove(ar.data.map(x=>x.file_path));await c.from('board_attachments').delete().eq('post_id',p.id);}
+    const pw=prompt('관리자 비밀번호를 입력하세요.');if(pw===null)return;
+    const pwHash=await window.jinjooSha256Hex(pw);
+    if(pwHash!==window.jinjooAdminPwHash){alert('비밀번호가 일치하지 않습니다.');return;}
+    if(!confirm('이 게시글을 삭제하시겠습니까?\n댓글도 함께 정리합니다.'))return;
+    const c=makeClient();
     const r=await c.from('board_posts').delete().eq('id',p.id);if(r.error){alert('삭제 실패: '+r.error.message);return;}selected=null;await loadPosts();
   }
   async function savePost(){
@@ -7683,14 +7799,13 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
     if(!(await ensureSupabase())){$('boardWriteError').textContent='DB 연결에 실패했습니다.';$('boardWriteError').style.display='block';return;}
     const c=makeClient();const r=await c.from('board_posts').insert({author,title,content,views:0}).select().single();
     if(r.error){$('boardWriteError').textContent='게시글 저장 실패: '+r.error.message;$('boardWriteError').style.display='block';return;}
-    let warning='';if(pendingFiles.length){const ur=await uploadAttachments(r.data.id,pendingFiles);if(!ur.ok)warning='\n게시글은 저장됐지만 첨부파일 업로드에 실패했습니다: '+ur.error;}
-    localStorage.setItem('board_author',author);closeWrite();await loadPosts();if(typeof leChatLoadBoardLive==='function') leChatLoadBoardLive();if(warning)alert(warning);if(r.data)openPost(r.data.id);
+    localStorage.setItem('board_author',author);closeWrite();await loadPosts();if(typeof leChatLoadBoardLive==='function') leChatLoadBoardLive();if(r.data)openPost(r.data.id);
   }
   async function addComment(){const a=$('bcAuthor').value.trim(),b=$('bcBody').value.trim();if(!a||!b){alert('이름과 댓글을 입력하세요.');return;}const r=await makeClient().from('board_comments').insert({post_id:selected,author:a,content:b});if(r.error){alert('댓글 등록 실패: '+r.error.message);return;}openPost(selected);}
   function clearSearch(){if($('boardSearch')){$('boardSearch').value='';renderList();$('boardSearch').focus();}}
   function init(){
     if(!$('bulletinBoardBtn'))return;
-    $('bulletinBoardBtn').onclick=openModal;window.openBulletinBoard=openModal;$('boardCloseBtn').onclick=closeModal;$('boardWriteBtn').onclick=openWrite;$('boardWriteCloseBtn').onclick=closeWrite;$('boardWriteCancelBtn').onclick=closeWrite;$('boardSaveBtn').onclick=savePost;$('boardSearch').oninput=renderList;$('boardSearchClear').onclick=clearSearch;$('boardFileInput').addEventListener('change',e=>pickFiles(e.target.files));$('boardAttachBtn').onclick=()=>$('boardFileInput').click();$('boardSearch').addEventListener('keydown',e=>{if(e.key==='Escape')clearSearch();});
+    $('bulletinBoardBtn').onclick=openModal;window.openBulletinBoard=openModal;$('boardCloseBtn').onclick=closeModal;$('boardWriteBtn').onclick=openWrite;$('boardWriteCloseBtn').onclick=closeWrite;$('boardWriteCancelBtn').onclick=closeWrite;$('boardSaveBtn').onclick=savePost;$('boardSearch').oninput=renderList;$('boardSearchClear').onclick=clearSearch;$('boardSearch').addEventListener('keydown',e=>{if(e.key==='Escape')clearSearch();});
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
