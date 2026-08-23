@@ -2072,6 +2072,8 @@ const LE_CHAT_CONFIG = {
       if (!supaClient) {
         supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
       }
+      // 채팅에 들어오는 즉시 화상통화 신호 채널을 구독해둠 (그래야 상대방이 걸었을 때 벨이 울림)
+      if (typeof leCallEnsureChannel === 'function') leCallEnsureChannel();
       leChatRefreshAvatarCache().then(function(){
         leChatLoadHistory();
         leChatLoadBoardLive();
