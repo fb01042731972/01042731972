@@ -34278,6 +34278,12 @@ function bindAutoSaveReacquireOnFirstInteraction() {
   if (_autoSaveReacquireBound) return;
   _autoSaveReacquireBound = true;
   const tryReacquire = async () => {
+    // 🔒 비밀번호 입력 화면(pwGate)이 아직 떠 있는 동안에는 폴더 접근 권한을
+    // 재요청하지 않음 — 브라우저의 "폴더 접근 허용" 팝업이 비밀번호 입력을
+    // 가로막는 문제를 막기 위함. 잠금 화면이 닫힌 뒤 실제 클릭/키입력이
+    // 있을 때만 재연결을 시도한다.
+    const gateEl = document.getElementById('pwGate');
+    if (gateEl && gateEl.style.display !== 'none') return;
     document.removeEventListener('click', tryReacquire, true);
     document.removeEventListener('keydown', tryReacquire, true);
     document.removeEventListener('touchstart', tryReacquire, true);
