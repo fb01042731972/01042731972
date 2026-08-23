@@ -418,6 +418,23 @@
 }
 
 </style>
+<style id="leChatZoomMaximizeStyle">
+/* 채팅창 글자 확대/축소 (A-/A+ 버튼) 및 창 크게 보기(⛶) 지원용 스타일
+   #leChatMessages(id) 선택자를 써서 기존 .le-kakao-msg .le-kakao-bubble(class 2개, !important)보다
+   우선순위(specificity)를 높여 글자 크기를 실제로 덮어쓸 수 있게 함 */
+#leChatMessages .le-kakao-bubble{
+  font-size:calc(13px * var(--leChatFontScale, 1))!important;
+}
+#leChatMessages .le-kakao-meta{
+  font-size:calc(10.5px * var(--leChatFontScale, 1))!important;
+}
+#leChatWindow.leChatMaximized{
+  border-radius:0!important;
+}
+#leChatMaximizeBtn.active{
+  color:#146C8E!important;
+}
+</style>
 
 <style id="leKakaoUnreadOneStyle">
 .le-kakao-unread-count{
@@ -675,6 +692,9 @@
       <button onclick="leChatOpenSaveFolderSettings()" title="채팅 기록 저장 폴더" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">📁</button>
       <button onclick="leChatOpenSoundSettings()" title="알림음 설정" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">⚙️</button>
       <button id="leChatInviteBtn" onclick="leChatOpenInviteScreen()" title="외부인 초대 링크 관리" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">👥</button>
+      <button onclick="leChatFontZoom(-1)" title="글자 작게" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:11px;line-height:1;font-weight:800;padding:0 1px;">A-</button>
+      <button onclick="leChatFontZoom(1)" title="글자 크게" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:15px;line-height:1;font-weight:800;padding:0 1px;">A+</button>
+      <button id="leChatMaximizeBtn" onclick="leChatToggleMaximize()" title="채팅창 크게 보기" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">⛶</button>
       <button onclick="leChatMinimize()" title="최소화" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">—</button>
       <button onclick="leChatClose()" title="닫기" style="background:none;border:none;color:#64748b;cursor:pointer;font-size:14px;line-height:1;">✕</button>
     </div>
@@ -918,6 +938,20 @@
 <div id="leChatProfilePhotoLightbox" class="hidden no-print" onclick="leChatCloseProfilePhotoLightbox()" style="position:fixed;inset:0;background:rgba(0,0,0,.85);z-index:99999;align-items:center;justify-content:center;padding:20px;cursor:zoom-out;">
   <button onclick="leChatCloseProfilePhotoLightbox()" style="position:absolute;top:14px;right:16px;border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1;">✕</button>
   <img id="leChatProfilePhotoLightboxImg" src="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);">
+</div>
+
+<!-- 🖼️ 채팅에 올라온 사진 크게 보기 (확대/축소 가능한 라이트박스) -->
+<div id="leChatImgLightbox" class="hidden no-print" style="position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:center;justify-content:center;padding:20px;overflow:hidden;">
+  <button onclick="leChatCloseImgLightbox()" title="닫기" style="position:absolute;top:14px;right:16px;border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1;z-index:2;">✕</button>
+  <div style="position:absolute;top:14px;left:16px;display:flex;gap:6px;z-index:2;">
+    <button onclick="leChatImgZoom(0.25)" title="확대" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:17px;line-height:1;">＋</button>
+    <button onclick="leChatImgZoom(-0.25)" title="축소" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:17px;line-height:1;">－</button>
+    <button onclick="leChatImgZoomReset()" title="원래 크기로" style="border:none;background:rgba(255,255,255,.15);color:#fff;height:32px;border-radius:16px;cursor:pointer;font-size:11px;font-weight:700;padding:0 10px;">100%</button>
+    <a id="leChatImgLightboxOpenNew" href="" target="_blank" title="새 창에서 원본 열기" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;text-decoration:none;">↗</a>
+  </div>
+  <div id="leChatImgLightboxWrap" onclick="leChatCloseImgLightbox()" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:auto;cursor:zoom-out;">
+    <img id="leChatImgLightboxImg" src="" onclick="event.stopPropagation()" style="max-width:90%;max-height:90%;transform:scale(1);transition:transform .12s ease;box-shadow:0 10px 40px rgba(0,0,0,.5);border-radius:4px;cursor:default;">
+  </div>
 </div>
 
 <!-- 🪪 내 프로필 편집 모달 -->
@@ -1733,6 +1767,99 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     leChatOpen = false;
     leChatUntrackPresence();
   };
+
+  // ── 채팅창 글자 크기 확대/축소 (A-/A+ 버튼, 개인 브라우저에 저장) ──
+  let leChatFontScale = parseFloat(localStorage.getItem('leChatFontScale') || '1');
+  if (!isFinite(leChatFontScale) || leChatFontScale <= 0) leChatFontScale = 1;
+  function leChatApplyFontScale(){
+    const win = document.getElementById('leChatWindow');
+    if (win) win.style.setProperty('--leChatFontScale', String(leChatFontScale));
+  }
+  window.leChatFontZoom = function(dir){
+    leChatFontScale = Math.max(0.8, Math.min(2.2, Math.round((leChatFontScale + dir * 0.15) * 100) / 100));
+    localStorage.setItem('leChatFontScale', String(leChatFontScale));
+    leChatApplyFontScale();
+  };
+  leChatApplyFontScale();
+
+  // ── 채팅창 크게 보기 (⛶ 버튼): 화면 전체에 가깝게 확대, 다시 누르면 이전 크기·위치로 복원 ──
+  let leChatMaximized = false;
+  let leChatPrevWinRect = null;
+  window.leChatToggleMaximize = function(){
+    const win = document.getElementById('leChatWindow');
+    const btn = document.getElementById('leChatMaximizeBtn');
+    if (!win) return;
+    if (!leChatMaximized) {
+      leChatPrevWinRect = {
+        width: win.style.width, height: win.style.height,
+        left: win.style.left, top: win.style.top,
+        right: win.style.right, bottom: win.style.bottom
+      };
+      win.style.left = '10px';
+      win.style.top = '10px';
+      win.style.right = '10px';
+      win.style.bottom = '10px';
+      win.style.width = 'calc(100vw - 20px)';
+      win.style.height = 'calc(100vh - 20px)';
+      win.classList.add('leChatMaximized');
+      leChatMaximized = true;
+      if (btn) { btn.classList.add('active'); btn.title = '원래 크기로'; }
+    } else {
+      const r = leChatPrevWinRect || {};
+      win.style.width = r.width || '340px';
+      win.style.height = r.height || '440px';
+      win.style.left = r.left || '';
+      win.style.top = r.top || '';
+      win.style.right = r.right || '20px';
+      win.style.bottom = r.bottom || '88px';
+      win.classList.remove('leChatMaximized');
+      leChatMaximized = false;
+      if (btn) { btn.classList.remove('active'); btn.title = '채팅창 크게 보기'; }
+    }
+  };
+
+  // ── 채팅에 올라온 사진: 클릭하면 확대/축소 가능한 큰 화면으로 보기 ──
+  let leChatImgLightboxScale = 1;
+  window.leChatOpenImageLightbox = function(ev, url){
+    if (ev) { ev.preventDefault(); ev.stopPropagation(); }
+    const modal = document.getElementById('leChatImgLightbox');
+    const img = document.getElementById('leChatImgLightboxImg');
+    const openNew = document.getElementById('leChatImgLightboxOpenNew');
+    if (!modal || !img || !url) return;
+    img.src = url;
+    if (openNew) openNew.href = url;
+    leChatImgLightboxScale = 1;
+    img.style.transform = 'scale(1)';
+    modal.classList.remove('hidden');
+    modal.style.display = 'flex';
+  };
+  window.leChatCloseImgLightbox = function(){
+    const modal = document.getElementById('leChatImgLightbox');
+    if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
+  };
+  window.leChatImgZoom = function(delta){
+    leChatImgLightboxScale = Math.max(0.25, Math.min(6, Math.round((leChatImgLightboxScale + delta) * 100) / 100));
+    const img = document.getElementById('leChatImgLightboxImg');
+    if (img) img.style.transform = 'scale(' + leChatImgLightboxScale + ')';
+  };
+  window.leChatImgZoomReset = function(){
+    leChatImgLightboxScale = 1;
+    const img = document.getElementById('leChatImgLightboxImg');
+    if (img) img.style.transform = 'scale(1)';
+  };
+  document.addEventListener('keydown', function(e){
+    if (e.key === 'Escape') {
+      const modal = document.getElementById('leChatImgLightbox');
+      if (modal && modal.style.display === 'flex') leChatCloseImgLightbox();
+    }
+  });
+  document.addEventListener('wheel', function(e){
+    const modal = document.getElementById('leChatImgLightbox');
+    if (modal && modal.style.display === 'flex') {
+      e.preventDefault();
+      leChatImgZoom(e.deltaY < 0 ? 0.2 : -0.2);
+    }
+  }, {passive:false});
 
   // 견적서(페이지)를 열면 채팅창이 자동으로 열리도록 처리
   function leChatAutoOpen(){
@@ -2683,9 +2810,9 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       const isPdf = /\.pdf$/i.test(msg.file_name || msg.file_url);
       if (isImage) {
         bodyHtml =
-          '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" style="display:inline-block;">' +
+          '<span onclick="leChatOpenImageLightbox(event,\'' + leChatAttrEscape(msg.file_url) + '\')" style="display:inline-block;cursor:zoom-in;" title="클릭하면 크게 보기">' +
             '<img src="' + leChatEscape(msg.file_url) + '" style="max-width:160px;max-height:160px;border-radius:8px;display:block;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
-          '</a>';
+          '</span>';
       } else if (isPdf) {
         bodyHtml =
           '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" style="display:block;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
