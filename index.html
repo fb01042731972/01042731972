@@ -798,6 +798,7 @@
       <div id="leChatThreadHeader" style="display:flex;align-items:center;gap:6px;padding:7px 8px;border-bottom:1px solid #e2e8f0;background:#f8fafc;flex-shrink:0;">
         <button onclick="leChatBackToList()" title="채팅 목록으로" style="background:none;border:none;color:#51667E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
         <span id="leChatThreadTitle" style="font-size:12.5px;font-weight:800;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">전체</span>
+        <button onclick="leCallStart()" title="화상통화 시작" style="background:none;border:none;color:#51667E;font-size:14px;cursor:pointer;padding:2px 5px;line-height:1;">🎥</button>
         <button onclick="leChatOpenSearch()" title="채팅 검색" style="background:none;border:none;color:#51667E;font-size:14px;cursor:pointer;padding:2px 5px;line-height:1;">🔍</button>
         <button id="leChatSelectModeBtn" onclick="leChatToggleSelectMode()" title="여러 메시지 선택 삭제" style="background:none;border:none;color:#51667E;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;">☑️</button>
       </div>
@@ -982,6 +983,50 @@
     <button id="leChatProfileSaveBtn" onclick="leChatSaveProfile()" style="width:100%;background:#51667E;color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;">저장</button>
   </div>
 </div>
+
+<!-- ════════════════════════ 🎥 화상통화 (개인/단체) ════════════════════════ -->
+<!-- 단체통화 대상 선택 모달 (전체 공개방에서 🎥 눌렀을 때) -->
+<div id="leCallPickerModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:100000;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) leCallClosePicker()">
+  <div style="background:#fff;border-radius:12px;max-width:320px;width:100%;padding:18px;box-shadow:0 20px 50px rgba(0,0,0,.25);max-height:80vh;overflow-y:auto">
+    <div class="flex justify-between items-center mb-3">
+      <div class="text-sm font-bold text-gray-800">🎥 화상통화 시작</div>
+      <button onclick="leCallClosePicker()" style="border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
+    </div>
+    <p style="font-size:11px;color:#94a3b8;margin-bottom:8px;line-height:1.5;">함께 통화할 접속중인 직원을 선택하세요. 아무도 선택하지 않으면 시작할 수 없습니다.</p>
+    <div id="leCallPickerList" style="display:flex;flex-direction:column;gap:4px;margin-bottom:12px;max-height:240px;overflow-y:auto;"></div>
+    <button onclick="leCallStartFromPicker()" style="width:100%;background:#51667E;color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;">선택한 사람에게 통화 걸기</button>
+  </div>
+</div>
+
+<!-- 수신 전화 알림 모달 -->
+<div id="leCallIncomingModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.6);z-index:100001;align-items:center;justify-content:center;padding:16px">
+  <div style="background:#fff;border-radius:14px;max-width:300px;width:100%;padding:26px 22px;text-align:center;box-shadow:0 20px 50px rgba(0,0,0,.3);">
+    <div style="font-size:34px;margin-bottom:8px;">🎥</div>
+    <div id="leCallIncomingTitle" style="font-size:15px;font-weight:800;color:#1e293b;margin-bottom:4px;">화상통화</div>
+    <div id="leCallIncomingSub" style="font-size:11.5px;color:#64748b;margin-bottom:18px;"></div>
+    <div style="display:flex;gap:10px;">
+      <button onclick="leCallDecline()" style="flex:1;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:8px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;">거절</button>
+      <button onclick="leCallAccept()" style="flex:1;background:#16a34a;color:#fff;border:none;border-radius:8px;padding:10px;font-size:13px;font-weight:800;cursor:pointer;">수락</button>
+    </div>
+  </div>
+</div>
+
+<!-- 통화중 화면 (플로팅) -->
+<div id="leCallWindow" class="hidden no-print" style="position:fixed;right:16px;bottom:16px;width:340px;max-width:calc(100vw - 24px);background:#0f172a;border-radius:14px;box-shadow:0 20px 50px rgba(0,0,0,.4);z-index:100002;overflow:hidden;display:flex;flex-direction:column;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#1e293b;">
+    <span id="leCallStatusText" style="font-size:11.5px;color:#e2e8f0;font-weight:700;">연결 중...</span>
+    <button onclick="leCallMinimize()" title="최소화" style="background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:2px 5px;">—</button>
+  </div>
+  <div id="leCallGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:2px;background:#000;max-height:360px;overflow-y:auto;"></div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;background:#1e293b;">
+    <button id="leCallMicBtn" onclick="leCallToggleMic()" title="마이크 켜기/끄기" style="width:38px;height:38px;border-radius:50%;border:none;background:#334155;color:#fff;font-size:15px;cursor:pointer;">🎤</button>
+    <button id="leCallCamBtn" onclick="leCallToggleCam()" title="카메라 켜기/끄기" style="width:38px;height:38px;border-radius:50%;border:none;background:#334155;color:#fff;font-size:15px;cursor:pointer;">📷</button>
+    <button onclick="leCallLeave()" title="통화 종료" style="width:38px;height:38px;border-radius:50%;border:none;background:#dc2626;color:#fff;font-size:15px;cursor:pointer;">📴</button>
+  </div>
+</div>
+
+<!-- 통화 최소화 시 다시 열기 버튼 -->
+<div id="leCallMinimizedBadge" class="hidden no-print" onclick="leCallRestore()" style="position:fixed;right:16px;bottom:16px;background:#16a34a;color:#fff;border-radius:24px;padding:10px 16px;font-size:12.5px;font-weight:800;cursor:pointer;z-index:100002;box-shadow:0 8px 20px rgba(0,0,0,.3);">🎥 통화 중 · 탭하여 열기</div>
 
 <!-- ⏰ 메시지 예약 모달 -->
 <div id="leChatScheduleModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99997;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) leChatCloseScheduleModal()">
@@ -4279,6 +4324,381 @@ const LE_CHAT_CONFIG = {
       btn.textContent = '저장';
     }
   };
+
+  // ════════════════════════════════════════════════════════════
+  // 🎥 화상통화 (1:1 / 단체, WebRTC + Supabase Realtime 브로드캐스트 시그널링)
+  // 별도 서버 없이 동작하며, STUN 서버만 사용합니다.
+  // 회사 밖 네트워크 환경(대칭형 NAT 등)에 따라 일부 연결이 실패할 수 있습니다.
+  // ════════════════════════════════════════════════════════════
+  const LE_CALL_ICE_SERVERS = [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ];
+  let leCallChannel = null;          // 시그널링 전용 realtime 채널 (전체 공용, 메시지와 별개)
+  let leCallId = null;               // 현재 참여중인 통화 id (없으면 null)
+  let leCallIsInitiator = false;
+  let leCallLocalStream = null;
+  const leCallPeers = {};            // nickname -> RTCPeerConnection
+  const leCallVideoEls = {};         // nickname('__me__' 포함) -> <video> element
+  const leCallJoined = new Set();    // 실제로 통화에 들어온(수락 완료) 사람들 (나 포함)
+  let leCallPendingInvitees = new Set(); // 내가 걸었을 때, 아직 응답 없는 사람들
+  let leCallIncoming = null;         // 수신중인 통화 정보 { callId, from, to, group }
+  let leCallRingTimer = null;
+  let leCallMicOn = true;
+  let leCallCamOn = true;
+
+  function leCallSafeName(n){ return String(n||'').replace(/[^a-zA-Z0-9_-]/g, '_'); }
+
+  function leCallEnsureChannel(){
+    if (leCallChannel || !supaClient) return;
+    leCallChannel = supaClient.channel('le_video_call_signal', { config: { broadcast: { self: false } } });
+    leCallChannel.on('broadcast', { event: 'signal' }, function(msg){
+      leCallHandleSignal(msg.payload || {});
+    }).subscribe();
+  }
+
+  function leCallSend(payload){
+    leCallEnsureChannel();
+    if (!leCallChannel) return;
+    try { leCallChannel.send({ type: 'broadcast', event: 'signal', payload: payload }); } catch(e){}
+  }
+
+  // ── 통화 시작하기 (버튼) ──
+  window.leCallStart = function(){
+    if (!leChatNickname) { alert('먼저 채팅에 입장해서 이름을 설정해주세요.'); return; }
+    if (leCallId) { alert('이미 통화 중입니다. 통화를 종료한 뒤 다시 시도해주세요.'); return; }
+    if (leChatActiveConv === '' || !leChatActiveConv) {
+      // 전체 공개방: 여러 명 중 선택해서 단체통화
+      leCallOpenPicker();
+    } else {
+      // 1:1 채팅방: 상대방에게 바로 통화 걸기
+      leCallInitiate([leChatActiveConv]);
+    }
+  };
+
+  window.leCallOpenPicker = function(){
+    const list = document.getElementById('leCallPickerList');
+    const names = leChatOnlineNames || [];
+    if (!names.length) { alert('현재 접속중인 다른 직원이 없습니다.'); return; }
+    list.innerHTML = names.map(function(n){
+      const id = 'leCallPick_' + leCallSafeName(n);
+      return '<label style="display:flex;align-items:center;gap:6px;padding:6px 8px;border:1px solid #e2e8f0;border-radius:6px;font-size:12.5px;cursor:pointer;">' +
+        '<input type="checkbox" id="' + id + '" value="' + leChatAttrEscape(n) + '"> ' + leChatEscape(n) +
+        '</label>';
+    }).join('');
+    document.getElementById('leCallPickerModal').style.display = 'flex';
+  };
+  window.leCallClosePicker = function(){
+    document.getElementById('leCallPickerModal').style.display = 'none';
+  };
+  window.leCallStartFromPicker = function(){
+    const list = document.getElementById('leCallPickerList');
+    const checked = Array.from(list.querySelectorAll('input[type="checkbox"]:checked')).map(function(cb){ return cb.value; });
+    if (!checked.length) { alert('한 명 이상 선택해주세요.'); return; }
+    leCallClosePicker();
+    leCallInitiate(checked);
+  };
+
+  async function leCallInitiate(invitees){
+    try {
+      leCallLocalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    } catch(e) {
+      alert('카메라/마이크 접근에 실패했습니다: ' + (e.message || ''));
+      return;
+    }
+    leCallId = 'call_' + Date.now() + '_' + Math.random().toString(36).slice(2,8);
+    leCallIsInitiator = true;
+    leCallJoined.clear();
+    leCallJoined.add(leChatNickname);
+    leCallPendingInvitees = new Set(invitees);
+    leCallMicOn = true; leCallCamOn = true;
+    leCallOpenWindow();
+    leCallSetStatus(invitees.length > 1 ? (invitees.join(', ') + '님에게 거는 중...') : (invitees[0] + '님에게 거는 중...'));
+    leCallEnsureChannel();
+    leCallSend({ type: 'invite', callId: leCallId, from: leChatNickname, to: invitees, group: invitees.length > 1 });
+  }
+
+  function leCallHandleSignal(p){
+    if (!p || !p.type) return;
+    // 나에게 해당되지 않는 타겟 메시지는 무시 (to가 있는 경우만 검사)
+    if (p.to) {
+      const targets = Array.isArray(p.to) ? p.to : [p.to];
+      if (!targets.some(function(t){ return leChatNorm(t) === leChatNorm(leChatNickname); })) return;
+    }
+    if (p.type === 'invite') {
+      if (leCallId) {
+        // 이미 통화 중이면 자동 거절(통화중)
+        leCallSend({ type: 'decline', callId: p.callId, from: leChatNickname, to: p.from, reason: 'busy' });
+        return;
+      }
+      leCallIncoming = { callId: p.callId, from: p.from, to: p.to, group: !!p.group };
+      leCallShowIncoming();
+      return;
+    }
+    if (p.callId !== leCallId) return; // 이 아래는 전부 현재 내 통화에 대한 신호만 처리
+    if (p.type === 'cancel') {
+      if (leCallIncoming && leCallIncoming.callId === p.callId) {
+        leCallHideIncoming();
+        leCallIncoming = null;
+      }
+      return;
+    }
+    if (p.type === 'decline') {
+      leCallPendingInvitees.delete(p.from);
+      if (typeof showToast === 'function') showToast(p.from + '님이 통화를 거절했습니다' + (p.reason === 'busy' ? ' (통화중)' : '') + '.');
+      if (leCallJoined.size <= 1 && leCallPendingInvitees.size === 0) {
+        leCallSetStatus('상대방이 응답하지 않았습니다.');
+        setTimeout(function(){ if (leCallId && leCallJoined.size <= 1) leCallLeave(); }, 1500);
+      }
+      return;
+    }
+    if (p.type === 'join') {
+      leCallPendingInvitees.delete(p.from);
+      // 이미 통화에 들어와 있는 나는, 새로 들어온 사람에게 내 존재를 알려서 서로 연결되게 함
+      leCallSend({ type: 'join-ack', callId: leCallId, from: leChatNickname, to: p.from });
+      leCallJoined.add(p.from);
+      leCallMaybeConnectPeer(p.from);
+      leCallSetStatus('통화 중');
+      return;
+    }
+    if (p.type === 'join-ack') {
+      leCallJoined.add(p.from);
+      leCallMaybeConnectPeer(p.from);
+      leCallSetStatus('통화 중');
+      return;
+    }
+    if (p.type === 'offer') {
+      leCallHandleOffer(p.from, p.sdp);
+      return;
+    }
+    if (p.type === 'answer') {
+      const pc = leCallPeers[p.from];
+      if (pc) pc.setRemoteDescription(new RTCSessionDescription(p.sdp)).catch(function(){});
+      return;
+    }
+    if (p.type === 'ice') {
+      const pc = leCallPeers[p.from];
+      if (pc && p.candidate) pc.addIceCandidate(new RTCIceCandidate(p.candidate)).catch(function(){});
+      return;
+    }
+    if (p.type === 'leave') {
+      leCallRemovePeer(p.from);
+      leCallJoined.delete(p.from);
+      if (typeof showToast === 'function') showToast(p.from + '님이 통화를 나갔습니다.');
+      if (leCallJoined.size <= 1) leCallSetStatus('상대방이 나갔습니다.');
+      return;
+    }
+  }
+
+  window.leCallShowIncoming = function(){
+    if (!leCallIncoming) return;
+    document.getElementById('leCallIncomingSub').textContent =
+      leCallIncoming.group ? (leCallIncoming.from + '님이 단체 화상통화에 초대했습니다.') : (leCallIncoming.from + '님이 화상통화를 걸었습니다.');
+    document.getElementById('leCallIncomingModal').style.display = 'flex';
+    leCallStartRing();
+  };
+  function leCallHideIncoming(){
+    document.getElementById('leCallIncomingModal').style.display = 'none';
+    leCallStopRing();
+  }
+  function leCallStartRing(){
+    leCallStopRing();
+    function ring(){
+      try {
+        const Ctx = window.AudioContext || window.webkitAudioContext;
+        if (!Ctx) return;
+        const ctx = new Ctx();
+        const now = ctx.currentTime;
+        [0, 0.25].forEach(function(start){
+          const osc = ctx.createOscillator(); const gain = ctx.createGain();
+          osc.type = 'sine'; osc.frequency.setValueAtTime(880, now + start);
+          gain.gain.setValueAtTime(0, now + start);
+          gain.gain.linearRampToValueAtTime(0.3, now + start + 0.02);
+          gain.gain.exponentialRampToValueAtTime(0.001, now + start + 0.22);
+          osc.connect(gain).connect(ctx.destination);
+          osc.start(now + start); osc.stop(now + start + 0.25);
+        });
+        if (ctx.close) setTimeout(function(){ try{ ctx.close(); }catch(e){} }, 800);
+      } catch(e){}
+    }
+    ring();
+    leCallRingTimer = setInterval(ring, 1800);
+  }
+  function leCallStopRing(){
+    if (leCallRingTimer) { clearInterval(leCallRingTimer); leCallRingTimer = null; }
+  }
+
+  window.leCallAccept = async function(){
+    if (!leCallIncoming) return;
+    const info = leCallIncoming;
+    leCallHideIncoming();
+    try {
+      leCallLocalStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+    } catch(e) {
+      alert('카메라/마이크 접근에 실패했습니다: ' + (e.message || ''));
+      leCallSend({ type: 'decline', callId: info.callId, from: leChatNickname, to: info.from, reason: 'device' });
+      leCallIncoming = null;
+      return;
+    }
+    leCallId = info.callId;
+    leCallIsInitiator = false;
+    leCallJoined.clear();
+    leCallJoined.add(leChatNickname);
+    leCallMicOn = true; leCallCamOn = true;
+    leCallOpenWindow();
+    leCallSetStatus('연결 중...');
+    leCallEnsureChannel();
+    leCallSend({ type: 'join', callId: leCallId, from: leChatNickname, to: null });
+    leCallIncoming = null;
+  };
+  window.leCallDecline = function(){
+    if (!leCallIncoming) return;
+    leCallSend({ type: 'decline', callId: leCallIncoming.callId, from: leChatNickname, to: leCallIncoming.from });
+    leCallHideIncoming();
+    leCallIncoming = null;
+  };
+
+  function leCallMaybeConnectPeer(peerName){
+    if (!peerName || leCallNorm(peerName) === leCallNorm(leChatNickname)) return;
+    if (leCallPeers[peerName]) return; // 이미 연결(시도) 중
+    const pc = leCallCreatePeerConnection(peerName);
+    // 결정적 규칙: 닉네임을 사전순으로 비교해서 더 앞서는 쪽이 offer를 보낸다 (양쪽에서 동시에 offer 보내는 것 방지)
+    const iOffer = leChatNorm(leChatNickname) < leChatNorm(peerName);
+    if (iOffer) {
+      pc.createOffer().then(function(offer){
+        return pc.setLocalDescription(offer);
+      }).then(function(){
+        leCallSend({ type: 'offer', callId: leCallId, from: leChatNickname, to: peerName, sdp: pc.localDescription });
+      }).catch(function(){});
+    }
+  }
+  function leCallNorm(v){ return String(v||'').trim().normalize('NFC'); }
+
+  function leCallCreatePeerConnection(peerName){
+    const pc = new RTCPeerConnection({ iceServers: LE_CALL_ICE_SERVERS });
+    leCallPeers[peerName] = pc;
+    if (leCallLocalStream) {
+      leCallLocalStream.getTracks().forEach(function(track){ pc.addTrack(track, leCallLocalStream); });
+    }
+    pc.onicecandidate = function(ev){
+      if (ev.candidate) leCallSend({ type: 'ice', callId: leCallId, from: leChatNickname, to: peerName, candidate: ev.candidate });
+    };
+    pc.ontrack = function(ev){
+      leCallShowRemoteVideo(peerName, ev.streams[0]);
+    };
+    pc.onconnectionstatechange = function(){
+      if (pc.connectionState === 'failed' || pc.connectionState === 'closed') {
+        leCallRemovePeer(peerName);
+      }
+    };
+    return pc;
+  }
+
+  async function leCallHandleOffer(peerName, sdp){
+    let pc = leCallPeers[peerName];
+    if (!pc) pc = leCallCreatePeerConnection(peerName);
+    try {
+      await pc.setRemoteDescription(new RTCSessionDescription(sdp));
+      const answer = await pc.createAnswer();
+      await pc.setLocalDescription(answer);
+      leCallSend({ type: 'answer', callId: leCallId, from: leChatNickname, to: peerName, sdp: pc.localDescription });
+    } catch(e){}
+  }
+
+  function leCallRemovePeer(peerName){
+    const pc = leCallPeers[peerName];
+    if (pc) { try { pc.close(); } catch(e){} delete leCallPeers[peerName]; }
+    const el = leCallVideoEls[peerName];
+    if (el && el.parentNode) el.parentNode.removeChild(el);
+    delete leCallVideoEls[peerName];
+  }
+
+  // ── 통화 창 UI ──
+  function leCallOpenWindow(){
+    document.getElementById('leCallWindow').style.display = 'flex';
+    document.getElementById('leCallMinimizedBadge').style.display = 'none';
+    const grid = document.getElementById('leCallGrid');
+    grid.innerHTML = '';
+    Object.keys(leCallVideoEls).forEach(function(k){ delete leCallVideoEls[k]; });
+    leCallAddLocalTile();
+  }
+  function leCallAddLocalTile(){
+    const grid = document.getElementById('leCallGrid');
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;aspect-ratio:4/3;background:#111;';
+    const video = document.createElement('video');
+    video.autoplay = true; video.muted = true; video.playsInline = true;
+    video.style.cssText = 'width:100%;height:100%;object-fit:cover;transform:scaleX(-1);';
+    video.srcObject = leCallLocalStream;
+    const label = document.createElement('div');
+    label.textContent = '나';
+    label.style.cssText = 'position:absolute;left:4px;bottom:4px;font-size:10px;color:#fff;background:rgba(0,0,0,.5);padding:1px 6px;border-radius:4px;';
+    wrap.appendChild(video); wrap.appendChild(label);
+    grid.appendChild(wrap);
+    leCallVideoEls['__me__'] = wrap;
+  }
+  function leCallShowRemoteVideo(peerName, stream){
+    if (leCallVideoEls[peerName]) return; // 이미 있으면 스킵
+    const grid = document.getElementById('leCallGrid');
+    const wrap = document.createElement('div');
+    wrap.style.cssText = 'position:relative;aspect-ratio:4/3;background:#111;';
+    const video = document.createElement('video');
+    video.autoplay = true; video.playsInline = true;
+    video.style.cssText = 'width:100%;height:100%;object-fit:cover;';
+    video.srcObject = stream;
+    const label = document.createElement('div');
+    label.textContent = peerName;
+    label.style.cssText = 'position:absolute;left:4px;bottom:4px;font-size:10px;color:#fff;background:rgba(0,0,0,.5);padding:1px 6px;border-radius:4px;';
+    wrap.appendChild(video); wrap.appendChild(label);
+    grid.appendChild(wrap);
+    leCallVideoEls[peerName] = wrap;
+  }
+  function leCallSetStatus(text){
+    const el = document.getElementById('leCallStatusText');
+    if (el) el.textContent = text;
+  }
+
+  window.leCallToggleMic = function(){
+    if (!leCallLocalStream) return;
+    leCallMicOn = !leCallMicOn;
+    leCallLocalStream.getAudioTracks().forEach(function(t){ t.enabled = leCallMicOn; });
+    const btn = document.getElementById('leCallMicBtn');
+    if (btn) { btn.textContent = leCallMicOn ? '🎤' : '🔇'; btn.style.background = leCallMicOn ? '#334155' : '#dc2626'; }
+  };
+  window.leCallToggleCam = function(){
+    if (!leCallLocalStream) return;
+    leCallCamOn = !leCallCamOn;
+    leCallLocalStream.getVideoTracks().forEach(function(t){ t.enabled = leCallCamOn; });
+    const btn = document.getElementById('leCallCamBtn');
+    if (btn) { btn.textContent = leCallCamOn ? '📷' : '🚫'; btn.style.background = leCallCamOn ? '#334155' : '#dc2626'; }
+  };
+  window.leCallMinimize = function(){
+    document.getElementById('leCallWindow').style.display = 'none';
+    document.getElementById('leCallMinimizedBadge').style.display = leCallId ? 'block' : 'none';
+  };
+  window.leCallRestore = function(){
+    document.getElementById('leCallWindow').style.display = 'flex';
+    document.getElementById('leCallMinimizedBadge').style.display = 'none';
+  };
+  window.leCallLeave = function(){
+    if (leCallId) {
+      Object.keys(leCallPeers).forEach(function(peerName){
+        leCallSend({ type: 'leave', callId: leCallId, from: leChatNickname, to: peerName });
+      });
+      // 아직 아무도 받지 않은 상태에서 내가(발신자) 취소하는 경우
+      if (leCallPendingInvitees.size) {
+        leCallSend({ type: 'cancel', callId: leCallId, from: leChatNickname, to: Array.from(leCallPendingInvitees) });
+      }
+    }
+    Object.keys(leCallPeers).forEach(leCallRemovePeer);
+    if (leCallLocalStream) { leCallLocalStream.getTracks().forEach(function(t){ t.stop(); }); leCallLocalStream = null; }
+    leCallId = null; leCallIsInitiator = false;
+    leCallJoined.clear(); leCallPendingInvitees = new Set();
+    document.getElementById('leCallWindow').style.display = 'none';
+    document.getElementById('leCallMinimizedBadge').style.display = 'none';
+    document.getElementById('leCallGrid').innerHTML = '';
+  };
+  window.addEventListener('pagehide', function(){ if (leCallId) leCallLeave(); });
 })();
 </script>
 
