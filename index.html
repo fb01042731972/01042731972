@@ -967,6 +967,17 @@
       <button onclick="leChatProfileMusicRemove()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">삭제</button>
     </div>
 
+    <!-- 발신 알림음 (내가 메시지를 보낼 때 상대방 화면에서 재생될 소리) -->
+    <div class="text-xs font-bold text-gray-700 mb-1">🔔 내가 보낼 때 상대방에게 들릴 알림음</div>
+    <div style="font-size:10.5px;color:#94a3b8;margin-bottom:6px;line-height:1.5;">내가 메시지를 보내면, 받는 사람 화면에서 (그 사람이 알림음을 꺼두지 않았다면) 여기서 등록한 소리가 재생됩니다. 등록하지 않으면 받는 사람의 기본 알림음이 재생됩니다.</div>
+    <div id="leChatProfileNotifySoundName" style="font-size:11.5px;color:#334155;margin-bottom:6px;"></div>
+    <input id="leChatProfileNotifySoundInput" type="file" accept="audio/*" style="display:none;" onchange="leChatProfileNotifySoundSelected(this)">
+    <div style="display:flex;gap:6px;margin-bottom:14px;">
+      <button onclick="document.getElementById('leChatProfileNotifySoundInput').click()" style="flex:1;background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">🔔 소리 선택</button>
+      <button onclick="leChatProfileNotifySoundTest()" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">▶ 미리듣기</button>
+      <button onclick="leChatProfileNotifySoundRemove()" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:700;cursor:pointer;">삭제</button>
+    </div>
+
     <div id="leChatProfileEditError" style="display:none;color:#dc2626;font-size:11px;margin-bottom:8px;"></div>
     <button id="leChatProfileSaveBtn" onclick="leChatSaveProfile()" style="width:100%;background:#51667E;color:#fff;border:none;border-radius:6px;padding:9px;font-size:12.5px;font-weight:700;cursor:pointer;">저장</button>
   </div>
@@ -2373,8 +2384,8 @@ const LE_CHAT_CONFIG = {
         if (leChatViewMode === 'list' || !inThisThread) leChatRenderConvList();
         const win = document.getElementById('leChatWindow');
         if (!isMine) {
-          // 받을 때만 알림음 (내가 보낸 메시지에는 재생 안 함)
-          if (leChatSoundEnabled()) leChatPlaySound();
+          // 받을 때만 알림음 (내가 보낸 메시지에는 재생 안 함). 보낸 사람이 알림음을 지정해뒀으면 그 소리를 재생.
+          if (leChatSoundEnabled()) leChatPlayNotifySoundFor(payload.new.sender);
           const windowOpen = win.style.display === 'flex';
           const tabVisible = !document.hidden;
           if (!(windowOpen && tabVisible)) {
@@ -2697,11 +2708,18 @@ const LE_CHAT_CONFIG = {
     const wrap = el.closest('[data-msg-id], [data-msg-created]');
     if (!wrap) return;
     const fileUrl = wrap.dataset.fileUrl || '';
-    const pw = prompt('관리자 비밀번호를 입력하세요.');
-    if (pw === null) return;
-    const pwHash = await window.jinjooSha256Hex(pw);
-    if (pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
-    if (!confirm('이 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
+    // 내가 쓴 메시지면 관리자 비밀번호 없이 바로 삭제 가능. 남의 메시지는 기존처럼 관리자 비밀번호 필요.
+    const msgSenderName = wrap.dataset.msgSenderName || wrap.dataset.msgSender || '';
+    const isMine = leChatNorm(msgSenderName) === leChatNorm(leChatNickname);
+    if (isMine) {
+      if (!confirm('내가 보낸 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
+    } else {
+      const pw = prompt('다른 사람이 보낸 메시지입니다. 삭제하려면 관리자 비밀번호를 입력하세요.');
+      if (pw === null) return;
+      const pwHash = await window.jinjooSha256Hex(pw);
+      if (pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
+      if (!confirm('이 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
+    }
     try {
       let error;
       if (wrap.dataset.msgId) {
@@ -3912,7 +3930,10 @@ const LE_CHAT_CONFIG = {
   let leChatProfilePendingBgUrl = null;    // 편집 중 새로 업로드한 배경 URL
   let leChatProfilePendingMusicUrl = null; // 편집 중 새로 업로드한 음악 URL
   let leChatProfilePendingMusicName = '';
+  let leChatProfilePendingNotifySoundUrl = null; // 편집 중 새로 업로드한 발신 알림음 URL
+  let leChatProfilePendingNotifySoundName = '';
   const leChatAvatarCache = {}; // nickname -> photo_url (없으면 null). 메시지/접속자 목록의 작은 사진에 사용.
+  const leChatNotifySoundCache = {}; // nickname -> notify_sound_url (없으면 null). 메시지를 보낸 사람이 지정한 알림음.
 
   function leChatProfilesTable(){
     return supaClient.from('chat_profiles');
@@ -3922,12 +3943,33 @@ const LE_CHAT_CONFIG = {
   async function leChatRefreshAvatarCache(){
     if (!supaClient) return;
     try {
-      const { data, error } = await leChatProfilesTable().select('nickname, photo_url');
+      const { data, error } = await leChatProfilesTable().select('nickname, photo_url, notify_sound_url');
       if (error) throw error;
       (data || []).forEach(function(row){
         leChatAvatarCache[row.nickname] = row.photo_url || null;
+        leChatNotifySoundCache[row.nickname] = row.notify_sound_url || null;
       });
-    } catch(e) { /* 캐시 실패해도 채팅 자체는 계속 동작 */ }
+    } catch(e) {
+      // notify_sound_url 컬럼이 아직 없는 등의 이유로 실패하면, 사진만이라도 다시 시도해서 캐시
+      try {
+        const { data } = await leChatProfilesTable().select('nickname, photo_url');
+        (data || []).forEach(function(row){ leChatAvatarCache[row.nickname] = row.photo_url || null; });
+      } catch(e2) { /* 캐시 실패해도 채팅 자체는 계속 동작 */ }
+    }
+  }
+
+  // 메시지를 보낸 사람이 지정한 알림음이 있으면 그 소리를, 없으면 내(받는 사람)가 설정한 기본 알림음을 재생
+  function leChatPlayNotifySoundFor(senderNickname){
+    const url = leChatNotifySoundCache[senderNickname];
+    if (url) {
+      try {
+        const audio = new Audio(url);
+        audio.volume = 1.0;
+        audio.play().catch(function(){ /* 자동재생 정책으로 막힐 수 있음 - 무시 */ });
+        return;
+      } catch(e){ /* 재생 실패 시 기본 알림음으로 대체 */ }
+    }
+    leChatPlaySound();
   }
 
   // 메시지/접속자 목록에서 쓰는 작은 원형 아바타 HTML (사진 없으면 빈 문자열)
@@ -4023,6 +4065,8 @@ const LE_CHAT_CONFIG = {
     leChatProfilePendingBgUrl = null;
     leChatProfilePendingMusicUrl = null;
     leChatProfilePendingMusicName = '';
+    leChatProfilePendingNotifySoundUrl = null;
+    leChatProfilePendingNotifySoundName = '';
     document.getElementById('leChatProfilePosition').value = '';
     document.getElementById('leChatProfilePhone').value = '';
     document.getElementById('leChatProfileEmail').value = '';
@@ -4033,6 +4077,7 @@ const LE_CHAT_CONFIG = {
     document.getElementById('leChatProfileEditBgPreview').style.backgroundImage = 'none';
     document.getElementById('leChatProfileBgStatus').textContent = '';
     document.getElementById('leChatProfileMusicName').textContent = '등록된 음악 없음';
+    document.getElementById('leChatProfileNotifySoundName').textContent = '등록된 알림음 없음 (상대방의 기본 알림음이 재생됩니다)';
     document.getElementById('leChatProfileEditError').style.display = 'none';
     document.getElementById('leChatProfileEditModal').style.display = 'flex';
     try {
@@ -4057,6 +4102,11 @@ const LE_CHAT_CONFIG = {
           leChatProfilePendingMusicUrl = data.music_url;
           leChatProfilePendingMusicName = data.music_name || '등록된 음악';
           document.getElementById('leChatProfileMusicName').textContent = '🎵 ' + leChatProfilePendingMusicName;
+        }
+        if (data.notify_sound_url) {
+          leChatProfilePendingNotifySoundUrl = data.notify_sound_url;
+          leChatProfilePendingNotifySoundName = data.notify_sound_name || '등록된 알림음';
+          document.getElementById('leChatProfileNotifySoundName').textContent = '🔔 ' + leChatProfilePendingNotifySoundName;
         }
       }
     } catch(e) { /* 프로필이 아직 없으면 빈 폼으로 시작 */ }
@@ -4152,6 +4202,47 @@ const LE_CHAT_CONFIG = {
     document.getElementById('leChatProfileMusicName').textContent = '음악이 삭제됩니다. 저장 버튼을 눌러주세요.';
   };
 
+  // ── 발신 알림음 (내가 보낼 때 상대방에게 들릴 소리) ──
+  window.leChatProfileNotifySoundSelected = async function(inputEl){
+    const file = inputEl.files && inputEl.files[0];
+    inputEl.value = '';
+    if (!file || !supaClient) return;
+    if (!/^audio\//.test(file.type) && !/\.(mp3|wav|ogg|m4a|aac)$/i.test(file.name)) {
+      alert('오디오 파일만 선택할 수 있습니다.');
+      return;
+    }
+    if (file.size > LE_SOUND_MAX_BYTES) { alert('파일이 너무 큽니다. 1.5MB 이하의 짧은 소리 파일을 선택해주세요.'); return; }
+    const nameEl = document.getElementById('leChatProfileNotifySoundName');
+    nameEl.textContent = '업로드 중...';
+    try {
+      const extMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
+      const ext = extMatch ? extMatch[0] : '.mp3';
+      const path = 'profiles/notify_' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + ext;
+      const { error: upErr } = await supaClient.storage.from('chat-files').upload(path, file, { upsert: true });
+      if (upErr) throw upErr;
+      const { data: pub } = supaClient.storage.from('chat-files').getPublicUrl(path);
+      leChatProfilePendingNotifySoundUrl = pub.publicUrl;
+      leChatProfilePendingNotifySoundName = file.name;
+      nameEl.textContent = '🔔 ' + file.name + ' (저장 버튼을 눌러주세요)';
+    } catch(e) {
+      nameEl.textContent = '업로드 실패: ' + (e.message || '');
+    }
+  };
+  window.leChatProfileNotifySoundTest = function(){
+    const url = leChatProfilePendingNotifySoundUrl;
+    if (!url) { leChatPlaySound(); return; } // 등록된 게 없으면 지금 재생될 기본 알림음을 들려줌
+    try {
+      const audio = new Audio(url);
+      audio.volume = 1.0;
+      audio.play().catch(function(){});
+    } catch(e){}
+  };
+  window.leChatProfileNotifySoundRemove = function(){
+    leChatProfilePendingNotifySoundUrl = null;
+    leChatProfilePendingNotifySoundName = '';
+    document.getElementById('leChatProfileNotifySoundName').textContent = '알림음이 삭제됩니다. 저장 버튼을 눌러주세요. (상대방의 기본 알림음이 재생됩니다)';
+  };
+
   window.leChatSaveProfile = async function(){
     if (!leChatNickname || !supaClient) return;
     const btn = document.getElementById('leChatProfileSaveBtn');
@@ -4166,6 +4257,8 @@ const LE_CHAT_CONFIG = {
         bg_url: leChatProfilePendingBgUrl,
         music_url: leChatProfilePendingMusicUrl,
         music_name: leChatProfilePendingMusicName || null,
+        notify_sound_url: leChatProfilePendingNotifySoundUrl,
+        notify_sound_name: leChatProfilePendingNotifySoundName || null,
         position: document.getElementById('leChatProfilePosition').value.trim(),
         phone: document.getElementById('leChatProfilePhone').value.trim(),
         email: document.getElementById('leChatProfileEmail').value.trim(),
@@ -4175,6 +4268,7 @@ const LE_CHAT_CONFIG = {
       const { error } = await leChatProfilesTable().upsert(payload, { onConflict: 'nickname' });
       if (error) throw error;
       leChatAvatarCache[leChatNickname] = leChatProfilePendingPhotoUrl || null;
+      leChatNotifySoundCache[leChatNickname] = leChatProfilePendingNotifySoundUrl || null;
       document.getElementById('leChatProfileEditModal').style.display = 'none';
       if (typeof showToast === 'function') showToast('프로필이 저장되었습니다.');
     } catch(e) {

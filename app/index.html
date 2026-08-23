@@ -178,6 +178,260 @@
   #scheduleAlarmCard .schedule-alarm-bell,#scheduleAlarmCard .schedule-alarm-title{animation:scheduleAlarmPulse .8s infinite}
 
 </style>
+
+<style id="leChatKakaoStyle">
+/* 직원 채팅 - 깔끔한 카카오톡 스타일 / 기능·ID·이벤트는 변경하지 않음 */
+#leChatWindow{width:420px;height:650px;min-width:320px;min-height:400px;max-width:calc(100vw - 20px);max-height:calc(100vh - 20px);border-radius:18px!important;overflow:hidden!important;background:#b2c7d9!important;border:1px solid #d6d9dd!important;box-shadow:0 16px 45px rgba(0,0,0,.22)!important;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",Arial,sans-serif!important;color:#222!important;font-size:13px!important;}
+#leChatHeader,#leChatThreadHeader{height:54px!important;box-sizing:border-box!important;background:#fff!important;color:#222!important;border-bottom:1px solid #e7e7e7!important;}
+#leChatHeader{padding:0 14px!important;}
+#leChatHeader>div:first-child{font-size:15px!important;font-weight:600!important;gap:7px!important;}
+#leChatHeader button,#leChatThreadHeader button{color:#555!important;font-size:14px!important;}
+#leChatOnlineBtn{background:#f5f5f5!important;color:#666!important;border-radius:14px!important;padding:4px 8px!important;font-size:11px!important;}
+#leChatListScreen,#leChatListItems,#leChatSearchScreen{background:#fff!important;}
+#leChatListScreen>div:first-child,#leChatSearchScreen>div:first-child{background:#fff!important;border-bottom:1px solid #eee!important;}
+#leChatListItems{padding:0!important;}
+.le-kakao-list-row{min-height:72px!important;box-sizing:border-box!important;padding:11px 14px!important;border-bottom:1px solid #f0f0f0!important;background:#fff!important;transition:background .12s ease!important;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",Arial,sans-serif!important;}
+.le-kakao-list-row:hover{background:#fafafa!important;}
+.le-kakao-list-row:active{background:#f3f3f3!important;}
+.le-kakao-list-row img,.le-kakao-list-row>div img{width:46px!important;height:46px!important;border-radius:16px!important;object-fit:cover!important;}
+.le-kakao-list-row>div:first-child>div{border-radius:16px!important;}
+#leChatThreadHeader{padding:0 10px!important;}
+#leChatThreadTitle{font-size:15px!important;font-weight:600!important;color:#222!important;}
+#leChatThreadScreen,#leChatMessages{background:#b2c7d9!important;}
+#leChatMessages{padding:16px 13px 20px!important;scroll-behavior:smooth!important;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",Arial,sans-serif!important;}
+.le-kakao-msg{margin-bottom:11px!important;position:relative!important;}
+.le-kakao-msg .le-kakao-meta{font-size:10px!important;color:#687481!important;margin-bottom:3px!important;line-height:1.35!important;}
+.le-kakao-msg .le-kakao-bubble{padding:8px 11px!important;border-radius:4px 15px 15px 15px!important;line-height:1.55!important;box-shadow:0 1px 2px rgba(0,0,0,.06)!important;font-size:13px!important;font-weight:400!important;word-break:break-word!important;}
+.le-kakao-msg.mine .le-kakao-bubble{background:#fee500!important;color:#222!important;border:0!important;border-radius:15px 4px 15px 15px!important;}
+.le-kakao-msg:not(.mine) .le-kakao-bubble{background:#fff!important;color:#222!important;border:0!important;}
+.le-kakao-msg .le-kakao-read{font-size:9px!important;color:#806f00!important;margin-top:2px!important;}
+@keyframes leMsgPop{0%{opacity:0;transform:translateY(18px) scale(.92);}55%{opacity:1;transform:translateY(-4px) scale(1.01);}100%{opacity:1;transform:translateY(0) scale(1);}}
+.le-kakao-msg.le-msg-pop{animation:leMsgPop .32s cubic-bezier(.34,1.56,.64,1) both;}
+#leChatPinBanner{background:#fff8bf!important;border-bottom:1px solid #eadf92!important;color:#6b5b00!important;font-size:12px!important;}
+#leChatInputBar{background:#fff!important;border-top:1px solid #e5e5e5!important;padding:8px 9px!important;}
+#leChatInput{background:#f7f7f7!important;border:1px solid #e2e2e2!important;border-radius:20px!important;padding:9px 13px!important;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",Arial,sans-serif!important;font-size:13px!important;color:#222!important;outline:none!important;}
+#leChatInput::placeholder{color:#999!important;}
+#leChatInput:focus{border-color:#d4d4d4!important;box-shadow:none!important;}
+#leChatPlusBtn{width:36px!important;height:36px!important;padding:0!important;border-radius:50%!important;background:#f3f3f3!important;border:1px solid #ddd!important;color:#666!important;}
+#leChatInputBar>button[onclick="leChatSend()"]{width:40px!important;height:36px!important;padding:0!important;border-radius:50%!important;background:#fee500!important;color:#222!important;font-size:0!important;box-shadow:none!important;}
+#leChatInputBar>button[onclick="leChatSend()"]::after{content:"➤";font-size:16px;}
+#leChatToggleBtn{width:58px!important;height:58px!important;border-radius:50%!important;background:#fee500!important;color:#222!important;box-shadow:0 7px 20px rgba(0,0,0,.22)!important;}
+#leChatUnreadBadge{background:#ff3b30!important;color:#fff!important;border:2px solid #fff!important;}
+#leChatSearchInput{border-radius:18px!important;background:#f5f5f5!important;border:0!important;padding:9px 13px!important;font-size:13px!important;}
+#leChatOnlineList{border-radius:10px!important;box-shadow:0 8px 24px rgba(0,0,0,.16)!important;}
+@media(max-width:520px){#leChatWindow{right:0;bottom:0;width:100vw;height:100vh;max-height:100vh;border-radius:0!important;}#leChatToggleBtn{right:14px!important;bottom:14px!important;}}
+</style>
+
+
+<style id="leChatFinalFix">
+/* 채팅창 최종 정리: 카카오톡처럼 우하단 모서리에서 크기 조절 */
+#leChatWindow{
+  box-sizing:border-box!important;
+  width:420px; height:650px;
+  min-width:320px!important; min-height:400px!important;
+  max-width:calc(100vw - 20px)!important;
+  max-height:calc(100vh - 20px)!important;
+}
+#leChatWindow *{box-sizing:border-box;}
+#leChatThreadScreen,#leChatListScreen,#leChatSearchScreen{min-width:0;min-height:0;}
+#leChatMessages{min-width:0;min-height:0;overflow-x:hidden!important;overflow-y:auto!important;}
+#leChatMessages>*{min-width:0;max-width:100%;}
+.le-kakao-msg{min-width:0;max-width:100%;}
+.le-kakao-msg .le-kakao-meta{max-width:100%;overflow-wrap:anywhere;word-break:break-word;}
+.le-kakao-msg .le-kakao-bubble{display:inline-block;max-width:calc(100% - 8px)!important;white-space:pre-wrap!important;overflow-wrap:anywhere!important;word-break:break-word!important;line-height:1.55!important;}
+.le-kakao-msg.mine .le-kakao-bubble{max-width:calc(100% - 8px)!important;}
+#leChatInputBar{min-width:0;}
+#leChatInput{min-width:0;flex:1 1 auto;box-sizing:border-box!important;}
+#leChatResizeHandle{
+  position:absolute!important;right:0!important;bottom:0!important;
+  width:24px!important;height:24px!important;
+  z-index:100!important;
+  cursor:nwse-resize!important;
+  touch-action:none!important;
+  opacity:.75!important;
+  display:flex!important;align-items:flex-end!important;justify-content:flex-end!important;
+  padding:0 2px 2px 0!important;
+  background:transparent!important;
+}
+#leChatResizeHandle svg{width:20px!important;height:20px!important;pointer-events:none!important;}
+#leChatResizeHandle svg path{stroke:#7b8794!important;stroke-width:1.7!important;}
+@media(max-width:520px){
+  #leChatWindow{width:100vw!important;height:100vh!important;max-width:100vw!important;max-height:100vh!important;min-width:280px!important;min-height:360px!important;border-radius:0!important;}
+  #leChatResizeHandle{display:none!important;}
+}
+</style>
+
+<style id="leChatKakaoSafeUI">
+/* 카카오톡 PC 느낌만 적용 — 기존 HTML/JS 기능은 변경하지 않음 */
+#leChatWindow{
+  width:490px;
+  height:670px;
+  min-width:420px;
+  min-height:520px;
+  max-width:calc(100vw - 24px);
+  max-height:calc(100vh - 24px);
+  box-sizing:border-box;
+  background:#fff;
+  border:1px solid #d9d9d9;
+  border-radius:12px;
+  box-shadow:0 8px 28px rgba(0,0,0,.18);
+  font-family:"Malgun Gothic","Noto Sans KR",Arial,sans-serif;
+}
+/* 왼쪽 메뉴는 실제 요소를 가리지 않는 장식용 영역 */
+#leChatWindow::before{
+  content:"";
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:0;
+  pointer-events:none;
+}
+/* 헤더 */
+#leChatHeader{
+  background:#fff!important;
+  color:#222!important;
+  min-height:58px;
+  border-bottom:1px solid #e5e5e5!important;
+}
+/* 목록 */
+#leChatListScreen,
+#leChatListItems{background:#fff!important;}
+.le-kakao-list-row{
+  min-height:82px!important;
+  padding:13px 16px!important;
+  border-bottom:1px solid #ededed!important;
+  box-sizing:border-box!important;
+}
+.le-kakao-list-row:hover{background:#f7f7f7!important;}
+/* 대화 화면 */
+#leChatThreadScreen{background:#b2c7d9!important;}
+#leChatMessages{
+  background:#b2c7d9!important;
+  padding:16px 14px 20px!important;
+}
+.le-kakao-msg{margin-bottom:12px!important;}
+.le-kakao-msg .le-kakao-bubble{
+  font-size:13px!important;
+  line-height:1.5!important;
+  box-shadow:0 1px 2px rgba(0,0,0,.08)!important;
+}
+.le-kakao-msg.mine .le-kakao-bubble{
+  background:#fee500!important;
+  color:#222!important;
+}
+.le-kakao-msg:not(.mine) .le-kakao-bubble{
+  background:#fff!important;
+  color:#222!important;
+}
+/* 입력창 */
+#leChatInputBar{
+  background:#fff!important;
+  border-top:1px solid #e5e5e5!important;
+}
+#leChatInput{
+  background:#fff!important;
+  color:#222!important;
+  border:1px solid #d8d8d8!important;
+  border-radius:20px!important;
+}
+#leChatInputBar>button[onclick="leChatSend()"]{
+  background:#fee500!important;
+  color:#222!important;
+  border-radius:50%!important;
+}
+/* 크기 조절 손잡이 — JS의 inline width/height를 막지 않음 */
+#leChatResizeHandle{
+  position:absolute!important;
+  right:0!important;
+  bottom:0!important;
+  width:28px!important;
+  height:28px!important;
+  z-index:999999!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:flex-end!important;
+  padding:0 3px 3px 0!important;
+  box-sizing:border-box!important;
+  cursor:nwse-resize!important;
+  pointer-events:auto!important;
+  touch-action:none!important;
+  opacity:.8!important;
+  background:transparent!important;
+}
+#leChatResizeHandle svg{
+  width:22px!important;
+  height:22px!important;
+  pointer-events:none!important;
+}
+#leChatResizeHandle svg path{
+  stroke:#777!important;
+  stroke-width:1.8!important;
+}
+/* 작은 화면에서는 기존 채팅 기능을 유지하면서 화면에 맞춤 */
+@media(max-width:700px){
+  #leChatWindow{
+    width:calc(100vw - 12px);
+    height:calc(100vh - 12px);
+    min-width:280px;
+    min-height:360px;
+    right:6px!important;
+    bottom:6px!important;
+    border-radius:10px!important;
+  }
+}
+</style>
+
+<style id="leChatBulkSelectStyle">
+/* 채팅 메시지 일괄 삭제용 체크박스: 선택모드일 때만 보이도록 */
+.le-select-cb{display:none;vertical-align:middle;margin-right:5px;cursor:pointer;}
+#leChatMessages.le-select-mode .le-select-cb{display:inline-block!important;}
+#leChatSelectBar{display:none;align-items:center;gap:8px;padding:8px 10px;background:#FFF3F3;border-top:1px solid #FCA5A5;font-size:12px;color:#991B1B;flex-shrink:0;}
+#leChatSelectBar.active{display:flex;}
+#leChatSelectBar button{border:0;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:800;cursor:pointer;}
+#leChatSelectBar .le-select-delete{background:#ef4444;color:#fff;}
+#leChatSelectBar .le-select-cancel{background:#fff;color:#64748b;border:1px solid #e2e8f0!important;}
+/* 게시판 일괄 삭제용 체크박스 */
+.board-select-cb{margin-right:8px;vertical-align:middle;}
+#boardBulkBar{display:none;align-items:center;gap:8px;padding:8px 10px;background:#FFF3F3;border-bottom:1px solid #FCA5A5;font-size:12px;color:#991B1B;}
+#boardBulkBar.active{display:flex;}
+#boardBulkBar button{border:0;border-radius:6px;padding:6px 10px;font-size:11.5px;font-weight:800;cursor:pointer;}
+#boardBulkBar .board-bulk-delete{background:#ef4444;color:#fff;}
+#boardBulkBar .board-bulk-cancel{background:#fff;color:#64748b;border:1px solid #e2e8f0!important;}
+</style>
+<style id="leChatFileTextFix">
+
+/* 첨부파일 말풍선 가독성 수정
+   기존 JS가 파일 링크에 흰색 글씨를 inline으로 넣어 노란 말풍선에서 안 보이는 문제 해결 */
+#leChatMessages .le-kakao-bubble a{
+  color:inherit!important;
+}
+#leChatMessages .le-kakao-bubble a span{
+  color:inherit!important;
+}
+#leChatMessages .le-kakao-bubble{
+  color:#222;
+}
+.le-kakao-msg:not(.mine) .le-kakao-bubble{
+  color:#222!important;
+}
+.le-kakao-msg.mine .le-kakao-bubble{
+  color:#222!important;
+}
+
+</style>
+
+<style id="leKakaoUnreadOneStyle">
+.le-kakao-unread-count{
+  display:inline-block;
+  min-width:11px;
+  font-size:10px!important;
+  line-height:12px!important;
+  color:#f15a24!important;
+  font-weight:700!important;
+  text-align:right;
+  margin-top:1px!important;
+}
+</style>
+
 </head>
 <body class="p-3 md:p-5">
 
@@ -241,6 +495,9 @@
   }
 
   window.jinjooSha256Hex = sha256Hex;
+  // 관리자 비밀번호 해시를 전역에서 재사용(다른 삭제 기능 등)할 수 있도록 노출.
+  // 평문 비밀번호는 어디에도 저장하지 않고, SHA-256 해시만 비교합니다.
+  window.jinjooAdminPwHash = ADMIN_PW_HASH;
 
   async function getGatePwHash(){
     try{
@@ -378,10 +635,10 @@
 <div id="bulletinBoardModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99997;display:none;align-items:center;justify-content:center;padding:14px;">
   <div style="background:#fff;width:min(980px,96vw);height:min(760px,92vh);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;">
     <div style="background:linear-gradient(135deg,#0F3A4D,#0891b2);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px"><b style="flex:1">📋 공용 게시판</b><span id="boardStatus" style="font-size:10px;background:rgba(255,255,255,.14);padding:4px 7px;border-radius:12px">연결 중...</span><button id="boardCloseBtn" style="border:0;background:rgba(255,255,255,.16);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button></div>
-    <div style="display:flex;flex:1;min-height:0"><div style="width:42%;min-width:300px;border-right:1px solid #e5e7eb;display:flex;flex-direction:column"><div style="padding:10px;border-bottom:1px solid #e5e7eb"><div style="display:flex;gap:6px"><div style="position:relative;flex:1"><input id="boardSearch" placeholder="제목·내용·작성자 검색" style="width:100%;box-sizing:border-box;padding:8px 34px 8px 10px;border:1px solid #cbd5e1;border-radius:7px"><button id="boardSearchClear" title="검색 지우기" style="position:absolute;right:4px;top:3px;width:28px;height:28px;border:0;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer">×</button></div><button id="boardWriteBtn" style="border:0;background:#0891b2;color:#fff;border-radius:7px;padding:0 12px;font-weight:800;cursor:pointer;white-space:nowrap">✏️ 글쓰기</button></div><div id="boardCount" style="font-size:10px;color:#94a3b8;margin-top:6px">전체 0건</div></div><div id="boardList" style="flex:1;overflow:auto;padding:6px"></div></div><div style="flex:1;overflow:auto;background:#fafafa"><div id="boardEmpty" style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8">게시글을 선택하세요.</div><div id="boardDetail" style="display:none;padding:18px"></div></div></div>
+    <div style="display:flex;flex:1;min-height:0"><div style="width:42%;min-width:300px;border-right:1px solid #e5e7eb;display:flex;flex-direction:column"><div style="padding:10px;border-bottom:1px solid #e5e7eb"><div style="display:flex;gap:6px"><div style="position:relative;flex:1"><input id="boardSearch" placeholder="제목·내용·작성자 검색" style="width:100%;box-sizing:border-box;padding:8px 34px 8px 10px;border:1px solid #cbd5e1;border-radius:7px"><button id="boardSearchClear" title="검색 지우기" style="position:absolute;right:4px;top:3px;width:28px;height:28px;border:0;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer">×</button></div><button id="boardWriteBtn" style="border:0;background:#0891b2;color:#fff;border-radius:7px;padding:0 12px;font-weight:800;cursor:pointer;white-space:nowrap">✏️ 글쓰기</button></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><div id="boardCount" style="font-size:10px;color:#94a3b8">전체 0건</div><label style="font-size:10px;color:#64748b;display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none"><input type="checkbox" id="boardSelectAllCb" onclick="boardToggleSelectAll(this)">전체선택</label></div></div><div id="boardBulkBar"><span id="boardBulkCount" style="flex:1;font-weight:700;">0개 선택됨</span><button type="button" class="board-bulk-cancel" onclick="boardClearSelection()">취소</button><button type="button" class="board-bulk-delete" onclick="boardDeleteSelected()">선택 삭제</button></div><div id="boardList" style="flex:1;overflow:auto;padding:6px"></div></div><div style="flex:1;overflow:auto;background:#fafafa"><div id="boardEmpty" style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8">게시글을 선택하세요.</div><div id="boardDetail" style="display:none;padding:18px"></div></div></div>
   </div>
 </div>
-<div id="boardWriteModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99998;display:none;align-items:center;justify-content:center;padding:14px"><div style="background:#fff;width:min(680px,94vw);max-height:92vh;border-radius:14px;overflow:auto"><div style="padding:12px 16px;background:#0F3A4D;color:#fff;display:flex;justify-content:space-between;position:sticky;top:0;z-index:2"><b>✏️ 새 글 작성</b><button id="boardWriteCloseBtn" style="border:0;background:none;color:#fff;font-size:18px;cursor:pointer">✕</button></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><input id="boardAuthor" placeholder="작성자 이름" maxlength="30" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><input id="boardPostTitle" placeholder="제목" maxlength="120" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><textarea id="boardPostBody" rows="10" maxlength="10000" placeholder="내용을 입력하세요" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px;resize:vertical"></textarea><div class="board-attach-box"><div style="display:flex;align-items:center;justify-content:space-between;gap:8px"><div><b style="font-size:12px">📎 파일 / 사진 첨부</b><div style="font-size:10px;color:#64748b;margin-top:3px">최대 5개 · 파일 1개당 20MB · 사진은 게시글에서 바로 볼 수 있습니다.</div></div><button type="button" id="boardAttachBtn" class="board-file-btn">📂 파일 선택</button></div><input id="boardFileInput" type="file" multiple style="display:none" accept="image/*,.pdf,.txt,.csv,.xlsx,.xls,.doc,.docx,.zip,.rar,.7z"><div id="boardPendingFiles" style="margin-top:8px"></div></div><div style="text-align:right"><button id="boardWriteCancelBtn" style="padding:8px 14px">취소</button><button id="boardSaveBtn" style="padding:8px 16px;background:#0891b2;color:#fff;border:0;border-radius:6px;font-weight:800">등록</button></div><div id="boardWriteError" style="display:none;color:#dc2626;font-size:11px"></div></div></div></div>
+<div id="boardWriteModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99998;display:none;align-items:center;justify-content:center;padding:14px"><div style="background:#fff;width:min(680px,94vw);max-height:92vh;border-radius:14px;overflow:auto"><div style="padding:12px 16px;background:#0F3A4D;color:#fff;display:flex;justify-content:space-between;position:sticky;top:0;z-index:2"><b>✏️ 새 글 작성</b><button id="boardWriteCloseBtn" style="border:0;background:none;color:#fff;font-size:18px;cursor:pointer">✕</button></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><input id="boardAuthor" placeholder="작성자 이름" maxlength="30" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><input id="boardPostTitle" placeholder="제목" maxlength="120" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><textarea id="boardPostBody" rows="10" maxlength="10000" placeholder="내용을 입력하세요" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px;resize:vertical"></textarea><div style="text-align:right"><button id="boardWriteCancelBtn" style="padding:8px 14px">취소</button><button id="boardSaveBtn" style="padding:8px 16px;background:#0891b2;color:#fff;border:0;border-radius:6px;font-weight:800">등록</button></div><div id="boardWriteError" style="display:none;color:#dc2626;font-size:11px"></div></div></div></div>
 
 <!-- 💬 실시간 직원 채팅 (Supabase 기반, 무료) -->
 <style>
@@ -392,38 +649,7 @@
 }
 #leChatToggleBtn.leChatBlink { animation: leChatBlinkAnim 1s ease-in-out infinite; }
 </style>
-<style id="leChatKakaoStyle">
-/* 메신저 스타일 개선: 기존 기능/ID는 그대로 두고 화면만 메신저처럼 정리 */
-#leChatWindow{width:400px !important;height:620px !important;min-width:340px !important;min-height:420px !important;border-radius:16px !important;border:1px solid #d7dbe0 !important;background:#b7c9d8 !important;box-shadow:0 18px 50px rgba(15,23,42,.28) !important;}
-#leChatHeader{background:#f9fafb !important;color:#111827 !important;padding:12px 14px !important;border-bottom:1px solid #e5e7eb !important;}
-#leChatHeader button{color:#4b5563 !important;}
-#leChatThreadHeader{background:#f9fafb !important;border-bottom:1px solid #dfe3e8 !important;padding:10px 10px !important;}
-#leChatThreadTitle{font-size:14px !important;color:#111827 !important;}
-#leChatMessages{background:#b7c9d8 !important;padding:14px 12px 18px !important;scroll-behavior:smooth;}
-#leChatListScreen,#leChatListItems{background:#fff !important;}
-.le-kakao-list-row{padding:12px 14px !important;border-bottom:1px solid #f0f1f3 !important;}
-.le-kakao-list-row:hover{background:#f8f9fa !important;}
-#leChatInputBar{background:#f9fafb !important;padding:9px !important;border-top:1px solid #dfe3e8 !important;}
-#leChatInput{background:#fff !important;border:1px solid #d1d5db !important;border-radius:20px !important;padding:9px 13px !important;font-size:13px !important;outline:none;}
-#leChatInput:focus{border-color:#b7bec8 !important;box-shadow:0 0 0 2px rgba(254,229,0,.25) !important;}
-#leChatPlusBtn{width:36px !important;height:36px !important;padding:0 !important;border-radius:50% !important;background:#f3f4f6 !important;border:1px solid #d1d5db !important;color:#374151 !important;}
-#leChatInputBar>button[onclick="leChatSend()"]{width:40px !important;height:36px !important;padding:0 !important;border-radius:50% !important;background:#FEE500 !important;color:#111827 !important;font-size:0 !important;}
-#leChatInputBar>button[onclick="leChatSend()"]::after{content:'➤';font-size:16px;}
-#leChatToggleBtn{background:#FEE500 !important;color:#111827 !important;box-shadow:0 6px 18px rgba(0,0,0,.22) !important;}
-#leChatUnreadBadge{background:#ef4444 !important;color:#fff !important;}
-#leChatPinBanner{background:#fff8c9 !important;border-bottom:1px solid #eadf9b !important;color:#6b5b00 !important;}
-/* 메시지 카드: 렌더 함수가 붙이는 클래스와 함께 사용 */
-.le-kakao-msg{margin-bottom:10px !important;position:relative;}
-.le-kakao-msg .le-kakao-meta{font-size:10px !important;color:#667085 !important;margin-bottom:3px !important;}
-.le-kakao-msg .le-kakao-bubble{padding:8px 11px !important;border-radius:4px 14px 14px 14px !important;line-height:1.5 !important;box-shadow:0 1px 1px rgba(0,0,0,.04) !important;}
-.le-kakao-msg.mine .le-kakao-bubble{background:#FEE500 !important;color:#111827 !important;border:0 !important;border-radius:14px 4px 14px 14px !important;}
-.le-kakao-msg:not(.mine) .le-kakao-bubble{background:#fff !important;color:#111827 !important;border:0 !important;}
-.le-kakao-msg .le-kakao-read{font-size:9px !important;color:#8b6f00 !important;margin-top:2px !important;}
-@media (max-width:520px){
-  #leChatWindow{right:0 !important;bottom:0 !important;width:100vw !important;height:100vh !important;max-height:100vh !important;border-radius:0 !important;}
-  #leChatToggleBtn{right:14px !important;bottom:14px !important;}
-}
-</style>
+
 <div id="leChatToggleBtn" onclick="leChatToggle()" title="직원 채팅"
   style="position:fixed;right:20px;bottom:20px;width:56px;height:56px;border-radius:50%;background:#51667E;color:#fff;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 3px 10px rgba(20,30,40,.22);cursor:pointer;z-index:99990;">
   💬
@@ -432,7 +658,7 @@
 
 <div id="leChatWindow" style="display:none;position:fixed;right:20px;bottom:88px;width:340px;height:440px;min-width:280px;min-height:300px;background:#FDFCFB;border-radius:12px;box-shadow:0 4px 20px rgba(20,30,40,.12);z-index:99991;flex-direction:column;overflow:hidden;border:1px solid #eceeef;">
   <div id="leChatHeader" style="background:#fff;color:#1e293b;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;border-bottom:1px solid #eceeef;">
-    <div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;">💬 직원 채팅 <span id="leChatConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;margin-left:4px;"></span>
+    <div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;">💬 <span id="leChatConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;margin-left:4px;"></span>
       <span id="leChatGuestBadge" style="display:none;background:#F2F4F5;color:#51667E;border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:800;">🔓 게스트</span>
       <span id="leChatOnlineWrap" style="position:relative;">
         <button id="leChatOnlineBtn" onclick="leChatToggleOnlineList(event)" title="접속자 목록" style="background:#F2F4F5;border:none;color:#51667E;cursor:pointer;font-size:10.5px;font-weight:700;border-radius:9999px;padding:2px 8px;display:flex;align-items:center;gap:4px;">
@@ -557,6 +783,14 @@
     <!-- 채팅 목록 화면: 직원별 개별 채팅방 목록 (카카오톡 채팅탭 스타일) -->
     <div id="leChatListScreen" style="display:flex;flex-direction:column;flex:1;min-height:0;">
       <div id="leChatListItems" style="flex:1;overflow-y:auto;background:#fff;"></div>
+      <!-- 게시판 실시간 미리보기: 채팅 목록 하단에 항상 표시 -->
+      <div id="leChatBoardLive" style="flex:0 0 112px;background:#fff;border-top:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;">
+        <div style="height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #f0f0f0;background:#fafafa;">
+          <button type="button" onclick="openBulletinBoard()" style="border:0;background:none;padding:0;cursor:pointer;font-size:12px;font-weight:800;color:#334155;">📋 게시판</button>
+          <span id="leChatBoardLiveStatus" style="font-size:9px;color:#94a3b8;">실시간</span>
+        </div>
+        <div id="leChatBoardLiveItems" style="flex:1;min-height:0;overflow:hidden;"></div>
+      </div>
     </div>
 
     <!-- 개별 채팅방(스레드) 화면: 목록에서 하나를 선택하면 이 화면으로 전환됨 -->
@@ -565,6 +799,7 @@
         <button onclick="leChatBackToList()" title="채팅 목록으로" style="background:none;border:none;color:#51667E;font-size:18px;font-weight:800;cursor:pointer;padding:2px 6px;line-height:1;">‹</button>
         <span id="leChatThreadTitle" style="font-size:12.5px;font-weight:800;color:#1e293b;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">전체</span>
         <button onclick="leChatOpenSearch()" title="채팅 검색" style="background:none;border:none;color:#51667E;font-size:14px;cursor:pointer;padding:2px 5px;line-height:1;">🔍</button>
+        <button id="leChatSelectModeBtn" onclick="leChatToggleSelectMode()" title="여러 메시지 선택 삭제" style="background:none;border:none;color:#51667E;font-size:13px;cursor:pointer;padding:2px 5px;line-height:1;">☑️</button>
       </div>
       <div id="leChatPinBanner" onclick="leChatJumpToPinned()" style="display:none;align-items:center;gap:6px;padding:6px 10px;background:#F5F3EC;border-bottom:1px solid #eceeef;font-size:11px;color:#7A6A3F;cursor:pointer;flex-shrink:0;">
         <span style="flex-shrink:0;">📌</span>
@@ -583,6 +818,12 @@
         <span onclick="leChatCancelEdit()" title="수정 취소" style="flex-shrink:0;color:#51667E;font-weight:800;cursor:pointer;">✕</span>
       </div>
       <div id="leChatUploadProgress" style="display:none;padding:4px 10px;font-size:11px;color:#51667E;background:#f0f9ff;flex-shrink:0;">📎 업로드 중...</div>
+      <div id="leChatSelectBar">
+        <label style="display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none;flex-shrink:0;"><input type="checkbox" id="leChatSelectAllCb" onclick="leChatToggleSelectAll(this)">전체선택</label>
+        <span id="leChatSelectCount" style="flex:1;font-weight:700;">0개 선택됨</span>
+        <button type="button" class="le-select-cancel" onclick="leChatToggleSelectMode()">취소</button>
+        <button type="button" class="le-select-delete" onclick="leChatBulkDeleteSelected()">선택 삭제</button>
+      </div>
       <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
       <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 14px rgba(20,30,40,.12);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
 
@@ -798,6 +1039,52 @@ const LE_CHAT_CONFIG = {
   let supaClient = null;
   let leChatUnlocked = true;
   let leChatNickname = '';
+  let leChatBoardLiveChannel = null;
+  let leChatBoardLivePosts = [];
+  let leChatBoardClient = null;
+  // 채팅창 하단 게시판 미리보기는 공용 게시판(📋 게시판 모달)과 같은 Supabase 프로젝트를 봐야 함
+  const LE_BOARD_URL = 'https://yzgmqbnrsylxrwokrjii.supabase.co';
+  const LE_BOARD_KEY = 'sb_publishable_s-xgGybt-6N5RLqn_8r6Bw_nRF5yIHG';
+  function leChatMakeBoardClient(){
+    if (leChatBoardClient) return leChatBoardClient;
+    if (!window.supabase || !window.supabase.createClient) return null;
+    leChatBoardClient = window.supabase.createClient(LE_BOARD_URL, LE_BOARD_KEY);
+    return leChatBoardClient;
+  }
+  // 내가 방금 이 브라우저에서 보낸 메시지를 Realtime 이벤트와 연결
+  const leChatPendingOwnMessages = [];
+  function leChatNorm(v){
+    return String(v == null ? '' : v).trim().normalize('NFC');
+  }
+  function leChatPendingKey(sender, receiver, content, fileName){
+    return leChatNorm(sender) + '\n' + leChatNorm(receiver) + '\n' +
+           leChatNorm(content) + '\n' + leChatNorm(fileName);
+  }
+  function leChatMarkPendingOwnMessage(sender, receiver, content, fileName){
+    leChatPendingOwnMessages.push({
+      key: leChatPendingKey(sender, receiver, content, fileName),
+      at: Date.now()
+    });
+    setTimeout(function(){
+      const cutoff = Date.now() - 20000;
+      for(let i=leChatPendingOwnMessages.length-1;i>=0;i--){
+        if(leChatPendingOwnMessages[i].at < cutoff) leChatPendingOwnMessages.splice(i,1);
+      }
+    }, 21000);
+  }
+  function leChatTakePendingOwnMessage(msg){
+    const key = leChatPendingKey(
+      msg && msg.sender, msg && msg.receiver,
+      msg && msg.content, msg && msg.file_name
+    );
+    for(let i=0;i<leChatPendingOwnMessages.length;i++){
+      if(leChatPendingOwnMessages[i].key === key){
+        leChatPendingOwnMessages.splice(i,1);
+        return true;
+      }
+    }
+    return false;
+  }
   let leChatIsRenaming = false;
   let leChatChannel = null;
   let leChatOpen = false;
@@ -1731,6 +2018,8 @@ const LE_CHAT_CONFIG = {
       }
       leChatRefreshAvatarCache().then(function(){
         leChatLoadHistory();
+        leChatLoadBoardLive();
+        leChatSubscribeBoardLive();
         leChatSubscribe();
         leChatLoadReadState().then(function(){
           leChatSubscribeReadState();
@@ -1748,6 +2037,122 @@ const LE_CHAT_CONFIG = {
     const r = String(receiver).trim().normalize('NFC');
     const s = String((msg && msg.sender) || '').trim().normalize('NFC');
     return r === me || s === me; // 내가 받는 사람이거나, 내가 보낸 사람인 경우만
+  }
+
+
+  // ── 채팅 목록 하단 게시판 실시간 미리보기 ──
+  function leChatRenderBoardLive(){
+    const box = document.getElementById('leChatBoardLiveItems');
+    if (!box) return;
+
+    const posts = (leChatBoardLivePosts || []).slice(0, 3);
+    if (!posts.length) {
+      box.innerHTML = '<div style="height:100%;display:flex;align-items:center;padding:0 12px;color:#94a3b8;font-size:10.5px;">등록된 게시글이 없습니다.</div>';
+      return;
+    }
+
+    box.innerHTML = posts.map(function(p){
+      const title = leChatEscape(String(p.title || '(제목 없음)'));
+      const body = String(p.content || '').replace(/\s+/g,' ').trim();
+      const preview = leChatEscape(body ? body.slice(0, 42) : '게시글 내용이 없습니다.');
+      const author = leChatEscape(String(p.author || ''));
+      const dt = p.created_at ? new Date(p.created_at).toLocaleString('ko-KR', {
+        month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit'
+      }) : '';
+
+      return '<div onclick="openBulletinBoard()" style="height:38px;display:flex;align-items:center;gap:7px;padding:0 10px;border-bottom:1px solid #f3f4f6;cursor:pointer;background:#fff;" onmouseover="this.style.background=\'#f8fafc\'" onmouseout="this.style.background=\'#fff\'">' +
+        '<span style="flex-shrink:0;width:5px;height:5px;border-radius:50%;background:#ef4444;"></span>' +
+        '<div style="min-width:0;flex:1;overflow:hidden;">' +
+          '<div style="display:flex;gap:6px;align-items:center;white-space:nowrap;overflow:hidden;">' +
+            '<span style="font-size:10.5px;font-weight:800;color:#334155;overflow:hidden;text-overflow:ellipsis;">' + title + '</span>' +
+            '<span style="font-size:8.5px;color:#94a3b8;flex-shrink:0;">' + dt + '</span>' +
+          '</div>' +
+          '<div style="font-size:9.5px;color:#64748b;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px;">' +
+            preview + (author ? ' · ' + author : '') +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  async function leChatLoadBoardLive(){
+    const box = document.getElementById('leChatBoardLiveItems');
+    const status = document.getElementById('leChatBoardLiveStatus');
+    if (!box) return;
+    const boardClient = leChatMakeBoardClient();
+    if (!boardClient) return;
+
+    try {
+      const r = await boardClient
+        .from('board_posts')
+        .select('id,title,content,author,created_at')
+        .order('created_at', { ascending:false })
+        .limit(3);
+      if (r.error) throw r.error;
+      leChatBoardLivePosts = r.data || [];
+      leChatRenderBoardLive();
+      if (status) status.textContent = '● 실시간';
+      if (status) status.style.color = '#16a34a';
+    } catch(e) {
+      leChatBoardLivePosts = [];
+      leChatRenderBoardLive();
+      if (status) {
+        status.textContent = '연결 안 됨';
+        status.style.color = '#ef4444';
+      }
+    }
+  }
+
+  function leChatSubscribeBoardLive(){
+    const boardClient = leChatMakeBoardClient();
+    if (!boardClient) return;
+
+    try {
+      if (leChatBoardLiveChannel) {
+        boardClient.removeChannel(leChatBoardLiveChannel);
+        leChatBoardLiveChannel = null;
+      }
+    } catch(e) {}
+
+    leChatBoardLiveChannel = boardClient
+      .channel('le-chat-board-live-' + Math.random().toString(36).slice(2))
+      .on('postgres_changes', {
+        event:'*',
+        schema:'public',
+        table:'board_posts'
+      }, function(payload){
+        const row = payload.new || payload.old || {};
+        if (payload.eventType === 'DELETE') {
+          leChatBoardLivePosts = (leChatBoardLivePosts || []).filter(function(p){ return String(p.id) !== String(row.id); });
+        } else if (payload.eventType === 'INSERT') {
+          leChatBoardLivePosts = [row].concat(leChatBoardLivePosts || [])
+            .filter(function(p,i,a){ return a.findIndex(function(x){ return String(x.id) === String(p.id); }) === i; })
+            .sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); })
+            .slice(0,3);
+        } else if (payload.eventType === 'UPDATE') {
+          const arr = (leChatBoardLivePosts || []).filter(function(p){ return String(p.id) !== String(row.id); });
+          leChatBoardLivePosts = [row].concat(arr)
+            .sort(function(a,b){ return new Date(b.created_at) - new Date(a.created_at); })
+            .slice(0,3);
+        }
+        leChatRenderBoardLive();
+        const status = document.getElementById('leChatBoardLiveStatus');
+        if (status) {
+          status.textContent = '● 실시간';
+          status.style.color = '#16a34a';
+        }
+      })
+      .subscribe(function(status){
+        const el = document.getElementById('leChatBoardLiveStatus');
+        if (!el) return;
+        if (status === 'SUBSCRIBED') {
+          el.textContent = '● 실시간';
+          el.style.color = '#16a34a';
+        } else if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          el.textContent = '연결 오류';
+          el.style.color = '#ef4444';
+        }
+      });
   }
 
   async function leChatLoadHistory(){
@@ -1888,9 +2293,12 @@ const LE_CHAT_CONFIG = {
     const box = document.getElementById('leChatMessages');
     if (!box) return;
     box.innerHTML = '';
+    // 방을 옮기면 이전 선택 상태는 초기화 (DOM이 새로 그려지므로)
+    if (typeof leChatSelectedIds !== 'undefined') leChatSelectedIds.clear();
+    if (typeof leChatUpdateSelectBar === 'function') leChatUpdateSelectBar();
     leChatMsgCache
       .filter(function(msg){ return leChatConvKeyOf(msg) === convKey; })
-      .forEach(leChatRenderMessage);
+      .forEach(function(msg){ leChatRenderMessage(msg, false); });
     box.scrollTop = box.scrollHeight;
   }
 
@@ -1945,10 +2353,13 @@ const LE_CHAT_CONFIG = {
         leChatMsgCache.push(payload.new);
         leChatAppendMessageToFile(payload.new); // 폴더가 지정되어 있으면 실시간으로 파일에도 자동 저장
         const convKey = leChatConvKeyOf(payload.new);
-        const isMine = payload.new.sender === leChatNickname;
+        const pendingOwn = leChatTakePendingOwnMessage(payload.new);
+        const isMine = pendingOwn || (
+          leChatNorm(payload.new.sender) === leChatNorm(leChatNickname)
+        );
         const inThisThread = leChatViewMode === 'thread' && leChatActiveConv === convKey;
         if (inThisThread) {
-          leChatRenderMessage(payload.new);
+          leChatRenderMessage(payload.new, true);
           const box = document.getElementById('leChatMessages');
           box.scrollTop = box.scrollHeight;
           leChatUpdatePinBanner();
@@ -2113,12 +2524,65 @@ const LE_CHAT_CONFIG = {
     });
   }
 
-  function leChatRenderMessage(msg){
+  // 메시지를 읽은 상대방 인원 수
+  function leChatReadCountByOther(msg){
+    const convKey = leChatConvKeyOf(msg);
+    const readers = leChatReadState[convKey];
+    if (!readers) return 0;
+    const me = String(leChatNickname||'').trim().normalize('NFC');
+    const msgTime = new Date(msg.created_at).getTime();
+    let count = 0;
+    Object.keys(readers).forEach(function(nick){
+      if (String(nick).trim().normalize('NFC') === me) return;
+      const readAt = new Date(readers[nick]).getTime();
+      if (!isNaN(readAt) && readAt >= msgTime) count++;
+    });
+    return count;
+  }
+
+  // 카카오톡식 안읽은 사람 수
+  // 공개 단체방: 현재 온라인/읽음 상태에 있는 다른 사용자 중 아직 메시지를 읽지 않은 인원
+  // 1:1: 상대방이 아직 읽지 않았으면 1, 읽었으면 0
+  function leChatUnreadCountByOther(msg){
+    const convKey = leChatConvKeyOf(msg);
+    const readers = leChatReadState[convKey] || {};
+    const me = String(leChatNickname||'').trim().normalize('NFC');
+    const msgTime = new Date(msg.created_at).getTime();
+
+    // 현재 채팅방의 상대방 목록을 구성
+    const names = [];
+    if (msg.receiver) {
+      const r = String(msg.receiver||'').trim().normalize('NFC');
+      if (r && r !== me) names.push(r);
+    } else {
+      (leChatOnlineNames || []).forEach(function(n){
+        const nick = String(n||'').trim().normalize('NFC');
+        if (nick && nick !== me && names.indexOf(nick) === -1) names.push(nick);
+      });
+    }
+
+    // 단체방에서 온라인 목록만으로 부족한 경우, 이미 읽음 상태가 있는 사람도 대상에 포함
+    Object.keys(readers).forEach(function(n){
+      const nick = String(n||'').trim().normalize('NFC');
+      if (nick && nick !== me && names.indexOf(nick) === -1) names.push(nick);
+    });
+
+    if (!names.length) return 0;
+
+    let unread = 0;
+    names.forEach(function(nick){
+      const readAt = readers[nick] ? new Date(readers[nick]).getTime() : 0;
+      if (!readAt || isNaN(readAt) || readAt < msgTime) unread++;
+    });
+    return unread;
+  }
+
+  function leChatRenderMessage(msg, animate){
     const box = document.getElementById('leChatMessages');
     const mine = String(msg.sender||'').trim().normalize('NFC') === String(leChatNickname||'').trim().normalize('NFC');
     const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
     const div = document.createElement('div');
-    div.className = 'le-kakao-msg ' + (mine ? 'mine' : 'other');
+    div.className = 'le-kakao-msg ' + (mine ? 'mine' : 'other') + (animate ? ' le-msg-pop' : '');
     div.style.textAlign = mine ? 'right' : 'left';
     // id 컬럼이 있으면 그걸 쓰고, 없으면 (sender+created_at) 조합으로 대체 식별
     if (msg.id != null) {
@@ -2182,15 +2646,26 @@ const LE_CHAT_CONFIG = {
     const editBtnHtml = (mine && msg.content && !msg.file_url)
       ? '<span onclick="leChatStartEdit(this)" title="수정" style="cursor:pointer;color:#51667E;font-weight:800;margin-right:4px;">✏</span>'
       : '';
-    const deleteBtnHtml = mine
-      ? '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>'
-      : '';
+    const deleteBtnHtml = '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>';
     const senderNameHtml = '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(msg.sender) + '\')" style="cursor:pointer;display:inline-flex;align-items:center;">' + leChatAvatarThumbHtml(msg.sender, 16) + '<span style="text-decoration:underline dotted;">' + leChatEscape(msg.sender) + '</span></span>';
-    let readHtml = (mine && leChatIsReadByOther(msg)) ? '<div style="font-size:9.5px;color:#51667E;margin-top:1px;">읽음</div>' : '';
-    readHtml = readHtml ? readHtml.replace('<div style=\"font-size:9.5px;color:#51667E;margin-top:1px;\">', '<div class=\"le-kakao-read\" style=\"font-size:9.5px;color:#51667E;margin-top:1px;\">') : '';
+// 카카오톡식 수신 확인:
+    // 내가 보낸 메시지이고 상대방이 아직 읽지 않았으면 '1',
+    // 상대방이 읽으면 '1'이 사라진다.
+    // 내가 보낸 메시지에만 읽은 사람 수 표시
+    // 아직 아무도 읽지 않으면 1, 읽은 사람이 생기면 실제 인원 수 표시
+    // 카카오톡 방식: 내가 보낸 메시지에 '아직 읽지 않은 사람 수'를 표시
+    // 모두 읽으면 숫자를 숨긴다.
+    let readHtml = '';
+    if (mine) {
+      const unreadCount = leChatUnreadCountByOther(msg);
+      if (unreadCount > 0) {
+        readHtml = '<div class="le-kakao-read le-kakao-unread-count">' + unreadCount + '</div>';
+      }
+    }
+    const selectCbHtml = '<input type="checkbox" class="le-select-cb" onclick="leChatOnSelectCheckbox(this)">';
     div.innerHTML =
       (msg.pinned ? '<div style="font-size:10px;color:#7A6A3F;font-weight:700;margin-bottom:1px;">📌 고정된 메시지</div>' : '') +
-      '<div class="le-kakao-meta" style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
+      '<div class="le-kakao-meta" style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + selectCbHtml + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
       '<div class="le-kakao-bubble" style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;' + (mine ? '' : 'border:1px solid #E7EAED;') + (isDm ? 'border:1px dashed #B9C2CA;' : '') + (msg.pinned ? 'box-shadow:0 0 0 2px #E4C77A;' : '') + '">' + quoteHtml + bodyHtml + '</div>' +
       readHtml;
     box.appendChild(div);
@@ -2222,6 +2697,10 @@ const LE_CHAT_CONFIG = {
     const wrap = el.closest('[data-msg-id], [data-msg-created]');
     if (!wrap) return;
     const fileUrl = wrap.dataset.fileUrl || '';
+    const pw = prompt('관리자 비밀번호를 입력하세요.');
+    if (pw === null) return;
+    const pwHash = await window.jinjooSha256Hex(pw);
+    if (pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
     if (!confirm('이 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
     try {
       let error;
@@ -2244,6 +2723,89 @@ const LE_CHAT_CONFIG = {
     }
   };
 
+  // ── 메시지 여러 개 선택 후 한 번에 삭제 (일괄 삭제) ──
+  let leChatSelectMode = false;
+  const leChatSelectedIds = new Set(); // wrap 요소 자체를 저장 (msgId 없는 경우도 처리하기 위해)
+  window.leChatToggleSelectMode = function(){
+    leChatSelectMode = !leChatSelectMode;
+    const box = document.getElementById('leChatMessages');
+    const btn = document.getElementById('leChatSelectModeBtn');
+    if (box) box.classList.toggle('le-select-mode', leChatSelectMode);
+    if (btn) btn.style.color = leChatSelectMode ? '#ef4444' : '#51667E';
+    if (!leChatSelectMode) {
+      leChatSelectedIds.clear();
+      if (box) box.querySelectorAll('.le-select-cb').forEach(function(cb){ cb.checked = false; });
+      const allCb = document.getElementById('leChatSelectAllCb');
+      if (allCb) allCb.checked = false;
+    }
+    leChatUpdateSelectBar();
+  };
+  window.leChatToggleSelectAll = function(cb){
+    const box = document.getElementById('leChatMessages');
+    if (!box) return;
+    box.querySelectorAll('.le-select-cb').forEach(function(cbEl){
+      cbEl.checked = cb.checked;
+      const wrap = cbEl.closest('[data-msg-id], [data-msg-created]');
+      if (!wrap) return;
+      if (cb.checked) leChatSelectedIds.add(wrap);
+      else leChatSelectedIds.delete(wrap);
+    });
+    leChatUpdateSelectBar();
+  };
+  window.leChatOnSelectCheckbox = function(cb){
+    const wrap = cb.closest('[data-msg-id], [data-msg-created]');
+    if (!wrap) return;
+    if (cb.checked) leChatSelectedIds.add(wrap);
+    else leChatSelectedIds.delete(wrap);
+    leChatUpdateSelectBar();
+  };
+  function leChatUpdateSelectBar(){
+    const bar = document.getElementById('leChatSelectBar');
+    const countEl = document.getElementById('leChatSelectCount');
+    const n = leChatSelectedIds.size;
+    if (countEl) countEl.textContent = n + '개 선택됨';
+    if (bar) bar.classList.toggle('active', leChatSelectMode);
+    const allCb = document.getElementById('leChatSelectAllCb');
+    if (allCb) {
+      const box = document.getElementById('leChatMessages');
+      const visible = box ? Array.from(box.querySelectorAll('.le-select-cb')) : [];
+      allCb.checked = visible.length > 0 && visible.every(function(cbEl){ return cbEl.checked; });
+    }
+  }
+  window.leChatBulkDeleteSelected = async function(){
+    if (!supaClient) return;
+    const wraps = Array.from(leChatSelectedIds);
+    if (!wraps.length) return;
+    const pw = prompt('관리자 비밀번호를 입력하세요.');
+    if (pw === null) return;
+    const pwHash = await window.jinjooSha256Hex(pw);
+    if (pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
+    if (!confirm(wraps.length + '개의 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
+    let failCount = 0;
+    for (const wrap of wraps) {
+      const fileUrl = wrap.dataset.fileUrl || '';
+      try {
+        let error;
+        if (wrap.dataset.msgId) {
+          ({ error } = await supaClient.from('chat_messages').delete().eq('id', wrap.dataset.msgId));
+        } else {
+          ({ error } = await supaClient.from('chat_messages').delete()
+            .eq('sender', wrap.dataset.msgSender || '')
+            .eq('created_at', wrap.dataset.msgCreated || ''));
+        }
+        if (error) throw error;
+        wrap.remove();
+        const path = leChatExtractStoragePath(fileUrl);
+        if (path) { try { await supaClient.storage.from('chat-files').remove([path]); } catch(e){} }
+      } catch(e) {
+        failCount++;
+      }
+    }
+    leChatSelectedIds.clear();
+    leChatUpdateSelectBar();
+    if (failCount > 0) alert(failCount + '개 메시지 삭제에 실패했습니다.');
+  };
+
   window.leChatSend = async function(){
     const input = document.getElementById('leChatInput');
     const text = input.value.trim();
@@ -2256,6 +2818,7 @@ const LE_CHAT_CONFIG = {
     input.value = '';
     try {
       const receiver = leChatCurrentReceiver();
+      leChatMarkPendingOwnMessage(leChatNickname, receiver, text, '');
       const payload = { sender: leChatNickname, content: text, receiver: receiver };
       if (leChatReplyTarget) payload.reply_to = leChatReplyTarget.id;
       const { data: inserted, error } = await supaClient.from('chat_messages').insert(payload).select('*').single();
@@ -2264,7 +2827,7 @@ const LE_CHAT_CONFIG = {
       if (inserted && !leChatMsgCache.some(function(m){ return inserted.id != null && m.id != null && String(m.id) === String(inserted.id); })) {
         leChatMsgCache.push(inserted);
         if (leChatViewMode === 'thread' && leChatActiveConv === leChatConvKeyOf(inserted)) {
-          leChatRenderMessage(inserted);
+          leChatRenderMessage(inserted, true);
           const box = document.getElementById('leChatMessages');
           if (box) box.scrollTop = box.scrollHeight;
         }
@@ -2497,12 +3060,14 @@ const LE_CHAT_CONFIG = {
       const { error: upErr } = await supaClient.storage.from('chat-files').upload(path, file);
       if (upErr) throw upErr;
       const { data: pub } = supaClient.storage.from('chat-files').getPublicUrl(path);
+      const fileReceiver = leChatCurrentReceiver();
+      leChatMarkPendingOwnMessage(leChatNickname, fileReceiver, '', file.name);
       const { error: insErr } = await supaClient.from('chat_messages').insert({
         sender: leChatNickname,
         content: '',
         file_url: pub.publicUrl,
         file_name: file.name,
-        receiver: leChatCurrentReceiver()
+        receiver: fileReceiver
       });
       if (insErr) throw insErr;
     } catch(e) {
@@ -3091,56 +3656,123 @@ const LE_CHAT_CONFIG = {
     leChatRecIndicatorEl = null;
   }
 
-  // ── 창 드래그 이동 ──
+  // ── 창 드래그 이동 (마우스 + 터치 안정화) ──
   (function enableDrag(){
     const win = document.getElementById('leChatWindow');
     const header = document.getElementById('leChatHeader');
-    let dragging=false, startX=0, startY=0, startRight=0, startBottom=0;
-    header.addEventListener('mousedown', function(e){
-      dragging = true;
-      startX = e.clientX; startY = e.clientY;
+    if (!win || !header) return;
+
+    let dragging = false;
+    let startX = 0, startY = 0;
+    let startLeft = 0, startTop = 0;
+
+    header.style.cursor = 'move';
+    header.style.touchAction = 'none';
+
+    function begin(e){
+      // 헤더 안의 버튼/입력/링크를 누른 경우에는 창 이동하지 않음
+      if (e.target.closest('button,input,textarea,select,a,[data-no-drag]')) return;
+      const point = e.touches ? e.touches[0] : e;
       const rect = win.getBoundingClientRect();
-      startRight = window.innerWidth - rect.right;
-      startBottom = window.innerHeight - rect.bottom;
+      dragging = true;
+      startX = point.clientX;
+      startY = point.clientY;
+      startLeft = rect.left;
+      startTop = rect.top;
+      win.style.left = startLeft + 'px';
+      win.style.top = startTop + 'px';
+      win.style.right = 'auto';
+      win.style.bottom = 'auto';
+      if (e.pointerId != null && header.setPointerCapture) {
+        try { header.setPointerCapture(e.pointerId); } catch(_){}
+      }
       e.preventDefault();
-    });
-    document.addEventListener('mousemove', function(e){
+    }
+
+    function move(e){
       if (!dragging) return;
-      const dx = e.clientX - startX, dy = e.clientY - startY;
-      win.style.right = Math.max(0, startRight - dx) + 'px';
-      win.style.bottom = Math.max(0, startBottom - dy) + 'px';
-    });
-    document.addEventListener('mouseup', function(){
-      if (dragging) { dragging = false; leChatSavePos(); }
-    });
+      const point = e.touches ? e.touches[0] : e;
+      const dx = point.clientX - startX;
+      const dy = point.clientY - startY;
+      const maxLeft = Math.max(0, window.innerWidth - win.offsetWidth);
+      const maxTop = Math.max(0, window.innerHeight - win.offsetHeight);
+      win.style.left = Math.min(maxLeft, Math.max(0, startLeft + dx)) + 'px';
+      win.style.top = Math.min(maxTop, Math.max(0, startTop + dy)) + 'px';
+      e.preventDefault();
+    }
+
+    function end(){
+      if (!dragging) return;
+      dragging = false;
+      leChatSavePos();
+    }
+
+    header.addEventListener('pointerdown', begin, {passive:false});
+    document.addEventListener('pointermove', move, {passive:false});
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
   })();
 
-  // ── 창 크기 조절 ──
+  // ── 창 크기 조절 (마우스/터치 안정화) ──
   (function enableResize(){
     const win = document.getElementById('leChatWindow');
     const handle = document.getElementById('leChatResizeHandle');
-    let resizing=false, startX=0, startY=0, startW=0, startH=0;
-    handle.addEventListener('mousedown', function(e){
+    if (!win || !handle) return;
+
+    let resizing = false;
+    let startX = 0, startY = 0, startW = 0, startH = 0;
+
+    function begin(e){
+      const point = e.touches ? e.touches[0] : e;
       resizing = true;
-      startX = e.clientX; startY = e.clientY;
-      startW = win.offsetWidth; startH = win.offsetHeight;
-      e.preventDefault(); e.stopPropagation();
-    });
-    document.addEventListener('mousemove', function(e){
+      startX = point.clientX;
+      startY = point.clientY;
+      const rect = win.getBoundingClientRect();
+      startW = rect.width;
+      startH = rect.height;
+      e.preventDefault();
+      e.stopPropagation();
+      if (e.pointerId != null && handle.setPointerCapture) {
+        try { handle.setPointerCapture(e.pointerId); } catch(_) {}
+      }
+    }
+
+    function move(e){
       if (!resizing) return;
-      const dw = e.clientX - startX, dh = e.clientY - startY;
-      win.style.width  = Math.max(280, startW + dw) + 'px';
-      win.style.height = Math.max(300, startH + dh) + 'px';
-    });
-    document.addEventListener('mouseup', function(){
-      if (resizing) { resizing = false; leChatSavePos(); }
-    });
+      const point = e.touches ? e.touches[0] : e;
+      const minW = 320;
+      const minH = 400;
+      const maxW = Math.max(minW, window.innerWidth - 12);
+      const maxH = Math.max(minH, window.innerHeight - 12);
+
+      const newW = Math.max(minW, Math.min(maxW, startW + point.clientX - startX));
+      const newH = Math.max(minH, Math.min(maxH, startH + point.clientY - startY));
+
+      /* CSS !important로 고정하지 않았기 때문에 여기서 실제 크기가 변경됨 */
+      win.style.width = Math.round(newW) + 'px';
+      win.style.height = Math.round(newH) + 'px';
+
+      e.preventDefault();
+      e.stopPropagation();
+    }
+
+    function end(){
+      if (!resizing) return;
+      resizing = false;
+      leChatSavePos();
+    }
+
+    handle.addEventListener('pointerdown', begin, {passive:false});
+    document.addEventListener('pointermove', move, {passive:false});
+    document.addEventListener('pointerup', end);
+    document.addEventListener('pointercancel', end);
   })();
 
   function leChatSavePos(){
     const win = document.getElementById('leChatWindow');
     try {
       localStorage.setItem('leChatPos', JSON.stringify({
+        left: win.style.left, top: win.style.top,
         right: win.style.right, bottom: win.style.bottom,
         width: win.style.width, height: win.style.height
       }));
@@ -3151,8 +3783,10 @@ const LE_CHAT_CONFIG = {
       const p = JSON.parse(localStorage.getItem('leChatPos'));
       if (!p) return;
       const win = document.getElementById('leChatWindow');
-      if (p.right)  win.style.right  = p.right;
-      if (p.bottom) win.style.bottom = p.bottom;
+      if (p.left) win.style.left = p.left;
+      if (p.top) win.style.top = p.top;
+      if (!p.left && p.right) win.style.right = p.right;
+      if (!p.top && p.bottom) win.style.bottom = p.bottom;
       if (p.width)  win.style.width  = p.width;
       if (p.height) win.style.height = p.height;
     } catch(e){}
@@ -7077,12 +7711,11 @@ var o=[];var l=Array.isArray(e);for(f=n.s.c;f<=n.e.c;++f)s[f]=ya(f);for(var c=n.
 const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
   const BOARD_KEY='sb_publishable_s-xgGybt-6N5RLqn_8r6Bw_nRF5yIHG';
   const BOARD_BUCKET='board-files';
-  let bc=null, posts=[], selected=null, pendingFiles=[];
+  let bc=null, posts=[], selected=null;
   const $=id=>document.getElementById(id);
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const fmt=v=>{try{return new Date(v).toLocaleString('ko-KR')}catch(e){return ''}};
   const sizeFmt=n=>{n=Number(n)||0;if(n<1024)return n+' B';if(n<1024*1024)return (n/1024).toFixed(1)+' KB';if(n<1024*1024*1024)return (n/1024/1024).toFixed(1)+' MB';return (n/1024/1024/1024).toFixed(1)+' GB'};
-  const isImg=f=>/^image\/(jpeg|png|gif|webp|bmp|svg\+xml)$/i.test(f?.type||'');
   function makeClient(){if(bc)return bc;if(!window.supabase?.createClient)return null;bc=window.supabase.createClient(BOARD_URL,BOARD_KEY);return bc;}
   async function ensureSupabase(){
     if(window.supabase)return true;
@@ -7101,27 +7734,9 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
   function openWrite(){
     $('boardWriteModal').classList.remove('hidden');$('boardWriteModal').style.display='flex';
     $('boardAuthor').value=localStorage.getItem('board_author')||'';$('boardPostTitle').value='';$('boardPostBody').value='';
-    $('boardWriteError').style.display='none';pendingFiles=[];renderPendingFiles();setTimeout(()=>$('boardPostTitle')?.focus(),50);
+    $('boardWriteError').style.display='none';setTimeout(()=>$('boardPostTitle')?.focus(),50);
   }
-  function closeWrite(){ $('boardWriteModal').style.display='none';$('boardWriteModal').classList.add('hidden');pendingFiles=[]; }
-  function renderPendingFiles(){
-    const box=$('boardPendingFiles');if(!box)return;
-    if(!pendingFiles.length){box.innerHTML='<div style="font-size:10px;color:#94a3b8">첨부된 파일이 없습니다.</div>';return;}
-    box.innerHTML=pendingFiles.map((f,i)=>`<div class="board-attach-row"><span style="font-size:18px">${isImg(f)?'🖼️':'📎'}</span><span style="flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(f.name)}</span><span style="color:#94a3b8">${sizeFmt(f.size)}</span><button type="button" data-rm="${i}" style="border:0;background:none;color:#dc2626;cursor:pointer;font-size:16px">×</button></div>`).join('');
-    box.querySelectorAll('[data-rm]').forEach(b=>b.onclick=()=>{pendingFiles.splice(Number(b.dataset.rm),1);renderPendingFiles();});
-  }
-  function pickFiles(fileList){
-    const maxCount=5,maxEach=20*1024*1024;
-    const incoming=Array.from(fileList||[]);
-    for(const f of incoming){
-      if(pendingFiles.length>=maxCount){alert('첨부파일은 게시글당 최대 5개입니다.');break;}
-      if(f.size>maxEach){alert(f.name+' 파일이 20MB를 초과합니다.');continue;}
-      if(pendingFiles.some(x=>x.name===f.name&&x.size===f.size))continue;
-      pendingFiles.push(f);
-    }
-    renderPendingFiles();
-    const input=$('boardFileInput');if(input)input.value='';
-  }
+  function closeWrite(){ $('boardWriteModal').style.display='none';$('boardWriteModal').classList.add('hidden'); }
   async function loadPosts(){
     if(!(await ensureSupabase())){$('boardStatus').textContent='Supabase 로딩 실패';return;}
     const c=makeClient();if(!c)return;
@@ -7134,44 +7749,69 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
     const filtered=posts.filter(p=>!q||String((p.title||'')+' '+(p.content||'')+' '+(p.author||'')).toLowerCase().includes(q));
     $('boardCount').textContent=q?`검색 결과 ${filtered.length}건 / 전체 ${posts.length}건`:`전체 ${posts.length}건`;
     if(!filtered.length){box.innerHTML=q?'<div style="padding:42px 20px;text-align:center;color:#94a3b8;font-size:12px">🔎 검색 결과가 없습니다.<br><span style="font-size:11px">검색어를 지우면 전체 게시글이 표시됩니다.</span></div>':'<div style="padding:42px 20px;text-align:center;color:#94a3b8;font-size:12px">게시글이 없습니다.<br>첫 글을 작성해 보세요.</div>';selected=null;$('boardEmpty').style.display='flex';$('boardDetail').style.display='none';return;}
-    box.innerHTML=filtered.map(p=>`<div data-board-id="${p.id}" style="padding:12px 10px;border-bottom:1px solid #eef2f7;cursor:pointer;background:${selected==p.id?'#ecfeff':'#fff'}"><div style="display:flex;align-items:center;gap:5px"><span style="font-weight:800;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.title)}</span>${Number(p.views||0)>0?`<span style="font-size:9px;color:#94a3b8">👁 ${Number(p.views||0)}</span>`:''}</div><div style="font-size:10px;color:#94a3b8;margin-top:5px">${esc(p.author)} · ${fmt(p.created_at)}</div></div>`).join('');
+    box.innerHTML=filtered.map(p=>`<div data-board-id="${p.id}" style="padding:12px 10px;border-bottom:1px solid #eef2f7;cursor:pointer;background:${selected==p.id?'#ecfeff':'#fff'}"><div style="display:flex;align-items:center;gap:5px"><input type="checkbox" class="board-select-cb" onclick="event.stopPropagation()" onchange="boardOnCheckbox(this,${p.id})" ${boardSelectedIds.has(p.id)?'checked':''}><span style="font-weight:800;font-size:13px;flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${esc(p.title)}</span>${Number(p.views||0)>0?`<span style="font-size:9px;color:#94a3b8">👁 ${Number(p.views||0)}</span>`:''}</div><div style="font-size:10px;color:#94a3b8;margin-top:5px">${esc(p.author)} · ${fmt(p.created_at)}</div></div>`).join('');
     box.querySelectorAll('[data-board-id]').forEach(e=>e.onclick=()=>openPost(Number(e.dataset.boardId)));
+    boardUpdateBulkBar();
   }
-  async function getAttachments(postId){
-    const r=await makeClient().from('board_attachments').select('*').eq('post_id',postId).order('created_at',{ascending:true});
-    return r.error?{error:r.error,data:[]}: {error:null,data:r.data||[]};
+  // ── 게시글 여러 개 선택 후 한 번에 삭제 (일괄 삭제) ──
+  const boardSelectedIds = new Set();
+  function boardOnCheckbox(cb, id){
+    if(cb.checked) boardSelectedIds.add(id); else boardSelectedIds.delete(id);
+    boardUpdateBulkBar();
+  }
+  function boardUpdateBulkBar(){
+    const bar=$('boardBulkBar'),countEl=$('boardBulkCount');
+    const n=boardSelectedIds.size;
+    if(countEl) countEl.textContent=n+'개 선택됨';
+    if(bar) bar.classList.toggle('active', n>0);
+    const allCb=$('boardSelectAllCb');
+    if(allCb){ const visible=Array.from(document.querySelectorAll('#boardList .board-select-cb')); allCb.checked = visible.length>0 && visible.every(cb=>cb.checked); }
+  }
+  function boardToggleSelectAll(cb){
+    document.querySelectorAll('#boardList [data-board-id]').forEach(row=>{
+      const id=Number(row.dataset.boardId);
+      const box=row.querySelector('.board-select-cb');
+      if(box) box.checked=cb.checked;
+      if(cb.checked) boardSelectedIds.add(id); else boardSelectedIds.delete(id);
+    });
+    boardUpdateBulkBar();
+  }
+  function boardClearSelection(){
+    boardSelectedIds.clear();
+    document.querySelectorAll('#boardList .board-select-cb').forEach(cb=>cb.checked=false);
+    if($('boardSelectAllCb')) $('boardSelectAllCb').checked=false;
+    boardUpdateBulkBar();
+  }
+  async function boardDeleteSelected(){
+    const ids=Array.from(boardSelectedIds);
+    if(!ids.length)return;
+    const pw=prompt('관리자 비밀번호를 입력하세요.');if(pw===null)return;
+    const pwHash=await window.jinjooSha256Hex(pw);
+    if(pwHash!==window.jinjooAdminPwHash){alert('비밀번호가 일치하지 않습니다.');return;}
+    if(!confirm(ids.length+'개의 게시글을 삭제하시겠습니까?\n댓글도 함께 정리합니다.'))return;
+    const c=makeClient();
+    const r=await c.from('board_posts').delete().in('id', ids);
+    if(r.error){alert('삭제 실패: '+r.error.message);return;}
+    boardSelectedIds.clear();
+    selected=null;
+    $('boardEmpty').style.display='flex';$('boardDetail').style.display='none';
+    await loadPosts();
   }
   async function openPost(id){
     selected=id;renderList();const p=posts.find(x=>Number(x.id)===id);if(!p)return;
     $('boardEmpty').style.display='none';$('boardDetail').style.display='block';
-    $('boardDetail').innerHTML=`<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><h2 style="margin:0;font-size:20px;word-break:break-word">${esc(p.title)}</h2><div id="boardMeta" style="font-size:11px;color:#94a3b8;margin-top:6px">작성자: ${esc(p.author)} · ${fmt(p.created_at)} · 조회 ${Number(p.views||0)}</div></div><button id="boardDeleteBtn" style="border:1px solid #fecaca;background:#fff;color:#dc2626;border-radius:6px;padding:6px 9px;font-size:11px;cursor:pointer">삭제</button></div><div style="white-space:pre-wrap;line-height:1.8;margin-top:20px;padding-bottom:18px;border-bottom:1px solid #e5e7eb;word-break:break-word">${esc(p.content)}</div><div id="boardAttachments" class="board-attach-list"><span style="color:#94a3b8;font-size:11px">첨부파일 불러오는 중...</span></div><h3 style="font-size:13px;margin:16px 0 8px">💬 댓글</h3><div id="boardComments">불러오는 중...</div><div style="display:flex;gap:6px;margin-top:10px"><input id="bcAuthor" placeholder="이름" maxlength="30" style="width:80px;padding:7px;border:1px solid #cbd5e1;border-radius:6px"><input id="bcBody" placeholder="댓글" maxlength="2000" style="flex:1;padding:7px;border:1px solid #cbd5e1;border-radius:6px"><button id="bcSend" style="background:#0891b2;color:#fff;border:0;border-radius:6px;padding:0 12px">등록</button></div>`;
+    $('boardDetail').innerHTML=`<div style="display:flex;gap:8px;align-items:flex-start"><div style="flex:1"><h2 style="margin:0;font-size:20px;word-break:break-word">${esc(p.title)}</h2><div id="boardMeta" style="font-size:11px;color:#94a3b8;margin-top:6px">작성자: ${esc(p.author)} · ${fmt(p.created_at)} · 조회 ${Number(p.views||0)}</div></div><button id="boardDeleteBtn" style="border:1px solid #fecaca;background:#fff;color:#dc2626;border-radius:6px;padding:6px 9px;font-size:11px;cursor:pointer">삭제</button></div><div style="white-space:pre-wrap;line-height:1.8;margin-top:20px;padding-bottom:18px;border-bottom:1px solid #e5e7eb;word-break:break-word">${esc(p.content)}</div><h3 style="font-size:13px;margin:16px 0 8px">💬 댓글</h3><div id="boardComments">불러오는 중...</div><div style="display:flex;gap:6px;margin-top:10px"><input id="bcAuthor" placeholder="이름" maxlength="30" style="width:80px;padding:7px;border:1px solid #cbd5e1;border-radius:6px"><input id="bcBody" placeholder="댓글" maxlength="2000" style="flex:1;padding:7px;border:1px solid #cbd5e1;border-radius:6px"><button id="bcSend" style="background:#0891b2;color:#fff;border:0;border-radius:6px;padding:0 12px">등록</button></div>`;
     $('bcSend').onclick=addComment;$('boardDeleteBtn').onclick=()=>deletePost(p);
     const c=makeClient(),newViews=Number(p.views||0)+1;const vr=await c.from('board_posts').update({views:newViews}).eq('id',id);if(!vr.error){p.views=newViews;$('boardMeta').textContent=`작성자: ${p.author} · ${fmt(p.created_at)} · 조회 ${newViews}`;}
-    const ar=await getAttachments(id);renderAttachments(ar);
     const r=await c.from('board_comments').select('*').eq('post_id',id).order('created_at',{ascending:true});
     $('boardComments').innerHTML=r.error?'<span style="color:#dc2626">댓글 DB 오류: '+esc(r.error.message)+'</span>':((r.data||[]).map(x=>`<div style="padding:8px;border:1px solid #eef2f7;border-radius:7px;background:#fff;margin-bottom:6px"><b>${esc(x.author)}</b> <span style="font-size:9px;color:#94a3b8">${fmt(x.created_at)}</span><div style="white-space:pre-wrap;margin-top:4px;word-break:break-word">${esc(x.content)}</div></div>`).join('')||'<span style="color:#94a3b8;font-size:11px">첫 댓글을 남겨보세요.</span>');
   }
-  function renderAttachments(result){
-    const box=$('boardAttachments');if(!box)return;
-    if(result.error){box.innerHTML='<div style="padding:9px;border:1px solid #fecaca;border-radius:7px;color:#b91c1c;background:#fff7f7;font-size:11px">첨부파일 정보를 불러오지 못했습니다.<br>'+esc(result.error.message)+'</div>';return;}
-    if(!result.data.length){box.innerHTML='';return;}
-    box.innerHTML='<div style="font-weight:800;font-size:12px;margin-bottom:2px">📎 첨부파일 '+result.data.length+'개</div>'+result.data.map(a=>{const img=/^image\//i.test(a.mime_type||'');return `<div class="board-attach-card">${img?`<img src="${esc(a.public_url)}" alt="" onclick="window.open(this.src,'_blank')">`:'<div style="font-size:32px;width:70px;text-align:center">📄</div>'}<div class="meta"><div class="name">${esc(a.file_name)}</div><div class="size">${esc(a.mime_type||'파일')} · ${sizeFmt(a.file_size)}</div><a href="${esc(a.public_url)}" target="_blank" rel="noopener" style="display:inline-block;margin-top:6px;color:#0369a1;font-size:11px;font-weight:700">${img?'🖼️ 사진 보기':'📥 파일 열기/다운로드'}</a></div></div>`}).join('');
-  }
-  async function uploadAttachments(postId,files){
-    if(!files.length)return {ok:true,count:0};
-    const c=makeClient(),rows=[];
-    for(const f of files){
-      const safe=f.name.replace(/[^\w가-힣.()\- ]+/g,'_').slice(-160);const path=`board/${postId}/${crypto.randomUUID()}-${safe}`;
-      const up=await c.storage.from(BOARD_BUCKET).upload(path,f,{upsert:false,contentType:f.type||'application/octet-stream'});
-      if(up.error)return {ok:false,error:`${f.name}: ${up.error.message}`};
-      const pub=c.storage.from(BOARD_BUCKET).getPublicUrl(path);const url=pub?.data?.publicUrl||'';
-      rows.push({post_id:postId,file_name:f.name,file_path:path,file_size:f.size,mime_type:f.type||'application/octet-stream',public_url:url});
-    }
-    const ir=await c.from('board_attachments').insert(rows);if(ir.error)return {ok:false,error:ir.error.message};return {ok:true,count:rows.length};
-  }
   async function deletePost(p){
-    const name=prompt('게시글 작성자 이름을 입력하세요.\n(게시글 작성자: '+p.author+')');if(name===null)return;if(name.trim()!==String(p.author||'')){alert('작성자 이름이 일치하지 않습니다.');return;}if(!confirm('이 게시글을 삭제하시겠습니까?\n댓글과 첨부파일도 함께 정리합니다.'))return;
-    const c=makeClient();const ar=await c.from('board_attachments').select('file_path').eq('post_id',p.id);if(!ar.error&&ar.data?.length){await c.storage.from(BOARD_BUCKET).remove(ar.data.map(x=>x.file_path));await c.from('board_attachments').delete().eq('post_id',p.id);}
+    const pw=prompt('관리자 비밀번호를 입력하세요.');if(pw===null)return;
+    const pwHash=await window.jinjooSha256Hex(pw);
+    if(pwHash!==window.jinjooAdminPwHash){alert('비밀번호가 일치하지 않습니다.');return;}
+    if(!confirm('이 게시글을 삭제하시겠습니까?\n댓글도 함께 정리합니다.'))return;
+    const c=makeClient();
     const r=await c.from('board_posts').delete().eq('id',p.id);if(r.error){alert('삭제 실패: '+r.error.message);return;}selected=null;await loadPosts();
   }
   async function savePost(){
@@ -7180,14 +7820,19 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
     if(!(await ensureSupabase())){$('boardWriteError').textContent='DB 연결에 실패했습니다.';$('boardWriteError').style.display='block';return;}
     const c=makeClient();const r=await c.from('board_posts').insert({author,title,content,views:0}).select().single();
     if(r.error){$('boardWriteError').textContent='게시글 저장 실패: '+r.error.message;$('boardWriteError').style.display='block';return;}
-    let warning='';if(pendingFiles.length){const ur=await uploadAttachments(r.data.id,pendingFiles);if(!ur.ok)warning='\n게시글은 저장됐지만 첨부파일 업로드에 실패했습니다: '+ur.error;}
-    localStorage.setItem('board_author',author);closeWrite();await loadPosts();if(warning)alert(warning);if(r.data)openPost(r.data.id);
+    localStorage.setItem('board_author',author);closeWrite();await loadPosts();if(typeof leChatLoadBoardLive==='function') leChatLoadBoardLive();if(r.data)openPost(r.data.id);
   }
   async function addComment(){const a=$('bcAuthor').value.trim(),b=$('bcBody').value.trim();if(!a||!b){alert('이름과 댓글을 입력하세요.');return;}const r=await makeClient().from('board_comments').insert({post_id:selected,author:a,content:b});if(r.error){alert('댓글 등록 실패: '+r.error.message);return;}openPost(selected);}
   function clearSearch(){if($('boardSearch')){$('boardSearch').value='';renderList();$('boardSearch').focus();}}
   function init(){
     if(!$('bulletinBoardBtn'))return;
-    $('bulletinBoardBtn').onclick=openModal;window.openBulletinBoard=openModal;$('boardCloseBtn').onclick=closeModal;$('boardWriteBtn').onclick=openWrite;$('boardWriteCloseBtn').onclick=closeWrite;$('boardWriteCancelBtn').onclick=closeWrite;$('boardSaveBtn').onclick=savePost;$('boardSearch').oninput=renderList;$('boardSearchClear').onclick=clearSearch;$('boardFileInput').addEventListener('change',e=>pickFiles(e.target.files));$('boardAttachBtn').onclick=()=>$('boardFileInput').click();$('boardSearch').addEventListener('keydown',e=>{if(e.key==='Escape')clearSearch();});
+    $('bulletinBoardBtn').onclick=openModal;window.openBulletinBoard=openModal;$('boardCloseBtn').onclick=closeModal;$('boardWriteBtn').onclick=openWrite;$('boardWriteCloseBtn').onclick=closeWrite;$('boardWriteCancelBtn').onclick=closeWrite;$('boardSaveBtn').onclick=savePost;$('boardSearch').oninput=renderList;$('boardSearchClear').onclick=clearSearch;$('boardSearch').addEventListener('keydown',e=>{if(e.key==='Escape')clearSearch();});
+    // 전체선택 체크박스와 게시글 목록의 개별 체크박스는 HTML 문자열의 inline onclick/onchange로 호출되므로,
+    // IIFE 스코프 안의 함수가 아니라 전역(window)에서 찾을 수 있어야 동작합니다. (전체선택 안 되던 버그 수정)
+    window.boardToggleSelectAll=boardToggleSelectAll;
+    window.boardOnCheckbox=boardOnCheckbox;
+    window.boardClearSelection=boardClearSelection;
+    window.boardDeleteSelected=boardDeleteSelected;
   }
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',init);else init();
 })();
