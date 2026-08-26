@@ -646,7 +646,26 @@
 })();
 </script>
 
-
+<!-- 외부인 초대 링크 접속 시: 견적서/프로그램 전체를 숨기고 채팅창만 표시 -->
+<style id="leGuestChatOnlyStyle">
+  body.le-guest-chat-only{padding:0!important;margin:0!important;background:#b2c7d9!important;overflow:hidden!important;}
+  body.le-guest-chat-only > *{display:none!important;}
+  body.le-guest-chat-only > #leChatWindow{display:flex!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;z-index:2147483646!important;}
+  body.le-guest-chat-only > #leChatWindow #leChatHeader{display:flex!important;}
+  body.le-guest-chat-only > #leChatWindow #leChatGuestLoading{display:flex!important;}
+  body.le-guest-chat-only #leChatWindow #leChatBody{flex:1 1 auto!important;min-height:0!important;}
+</style>
+<script>
+(function(){
+  try {
+    var token = new URLSearchParams(window.location.search).get('chatGuest');
+    if (token) {
+      document.body.classList.add('le-guest-chat-only');
+      window.__leGuestChatOnly = true;
+    }
+  } catch(e) {}
+})();
+</script>
 
 <!-- 공용 게시판 UI -->
 <div id="bulletinBoardModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99997;display:none;align-items:center;justify-content:center;padding:14px;">
@@ -674,6 +693,11 @@
 </div>
 
 <div id="leChatWindow" style="display:none;position:fixed;right:20px;bottom:88px;width:340px;height:440px;min-width:280px;min-height:300px;background:#FDFCFB;border-radius:12px;box-shadow:0 4px 20px rgba(20,30,40,.12);z-index:99991;flex-direction:column;overflow:hidden;border:1px solid #eceeef;">
+  <div id="leChatGuestLoading" style="display:none;position:absolute;inset:58px 0 0 0;z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#b2c7d9;color:#334155;font-size:14px;font-weight:700;">
+    <div style="font-size:34px;">💬</div>
+    <div>외부인 채팅에 연결 중입니다...</div>
+    <div id="leChatGuestLoadingMsg" style="font-size:11px;color:#64748b;font-weight:400;">잠시만 기다려 주세요.</div>
+  </div>
   <div id="leChatHeader" style="background:#fff;color:#1e293b;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;border-bottom:1px solid #eceeef;">
     <div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;">💬 <span id="leChatConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;margin-left:4px;"></span>
       <span id="leChatGuestBadge" style="display:none;background:#F2F4F5;color:#51667E;border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:800;">🔓 게스트</span>
@@ -1866,7 +1890,23 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
 
   // 견적서(페이지)를 열면 채팅창이 자동으로 열리도록 처리
   function leChatAutoOpen(){
-    if (!leChatOpen) leChatToggle();
+    if (window.__leGuestChatOnly) {
+      var gw = document.getElementById('leChatWindow');
+      if (gw) gw.style.display = 'flex';
+      leChatOpen = true;
+      var gb = document.getElementById('leChatToggleBtn');
+      if (gb) gb.style.display = 'none';
+      return;
+    }
+    if (!leChatOpen) {
+      if (window.__leGuestChatOnly) {
+        var w=document.getElementById('leChatWindow'); if(w) w.style.display='flex';
+        leChatOpen=true;
+        leChatInit();
+      } else {
+        leChatToggle();
+      }
+    }
   }
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(leChatAutoOpen, 300);
@@ -1874,10 +1914,29 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     document.addEventListener('DOMContentLoaded', function(){ setTimeout(leChatAutoOpen, 300); });
   }
 
+  function leGuestLoading(show, msg){
+    var el = document.getElementById('leChatGuestLoading');
+    var m = document.getElementById('leChatGuestLoadingMsg');
+    if (m && msg) m.textContent = msg;
+    if (el) el.style.display = show ? 'flex' : 'none';
+  }
+
+  function leGuestError(msg){
+    var el = document.getElementById('leChatGuestLoading');
+    if (!el) return;
+    el.style.display='flex';
+    el.innerHTML='<div style="font-size:34px;">⚠️</div><div>외부인 채팅을 열 수 없습니다.</div><div style="font-size:11px;color:#64748b;font-weight:400;text-align:center;padding:0 20px;line-height:1.6;">'+leChatEscape(String(msg||'연결 오류'))+'</div>';
+  }
+
   function leChatInit(){
+    if (window.__leGuestChatOnly) {
+      var gw=document.getElementById('leChatWindow'); if(gw) gw.style.display='flex';
+      leGuestLoading(true);
+    }
     if (!leChatConfigured()) {
       document.getElementById('leChatLockScreen').innerHTML =
         '<div style="font-size:12px;color:#b45309;text-align:center;line-height:1.7;">⚠️ 채팅 서버가 아직 연결되지 않았습니다.<br>Supabase 설정 후 다시 열어주세요.</div>';
+      if (window.__leGuestChatOnly) leGuestError('채팅 서버 설정이 확인되지 않았습니다. 배포된 파일이 최신 버전인지 확인해 주세요.');
       return;
     }
     leChatRestoreSaveFolder();
@@ -2102,7 +2161,15 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
             return;
           }
           if (enterOnSuccess) {
+            leGuestLoading(false);
             document.getElementById('leChatLockScreen').style.display = 'none';
+            if (window.__leGuestChatOnly) {
+              var gw = document.getElementById('leChatWindow');
+              if (gw) gw.style.display = 'flex';
+              leChatOpen = true;
+              var gb = document.getElementById('leChatToggleBtn');
+              if (gb) gb.style.display = 'none';
+            }
             leChatUnlocked = true;
             leChatNickname = leSafeGet(LE_GUEST_NICK_KEY) || '';
             if (!leChatNickname) {
@@ -2117,8 +2184,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
             }
           }
         })
-        .catch(function(){
-          // 조회 자체가 실패하면(네트워크 등) 일단 통과시키되, 다음 주기적 점검에서 다시 확인한다.
+        .catch(function(err){
+          if (window.__leGuestChatOnly) leGuestError((err && err.message) ? err.message : '초대 링크 확인에 실패했습니다.');
         });
     });
   }
