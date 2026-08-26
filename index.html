@@ -648,12 +648,29 @@
 
 <!-- 외부인 초대 링크 접속 시: 견적서/프로그램 전체를 숨기고 채팅창만 표시 -->
 <style id="leGuestChatOnlyStyle">
-  body.le-guest-chat-only{padding:0!important;margin:0!important;background:#b2c7d9!important;overflow:hidden!important;}
+  /* 외부인 접속: 전체 화면을 덮지 않고 카카오톡 PC처럼 독립된 작은 창으로 표시 */
+  body.le-guest-chat-only{padding:0!important;margin:0!important;background:#eef1f5!important;overflow:hidden!important;}
   body.le-guest-chat-only > *{display:none!important;}
-  body.le-guest-chat-only > #leChatWindow{display:flex!important;position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;max-width:none!important;max-height:none!important;min-width:0!important;min-height:0!important;margin:0!important;border:0!important;border-radius:0!important;box-shadow:none!important;z-index:2147483646!important;}
-  body.le-guest-chat-only > #leChatWindow #leChatHeader{display:flex!important;}
-  body.le-guest-chat-only > #leChatWindow #leChatGuestLoading{display:flex!important;}
+  body.le-guest-chat-only > #leChatWindow{
+    display:flex!important;position:fixed!important;
+    left:50%!important;top:50%!important;right:auto!important;bottom:auto!important;
+    transform:translate(-50%,-50%)!important;
+    width:min(490px,calc(100vw - 24px));
+    height:min(670px,calc(100vh - 24px));
+    max-width:calc(100vw - 24px)!important;max-height:calc(100vh - 24px)!important;
+    min-width:280px!important;min-height:360px!important;margin:0!important;
+    border:1px solid #d9d9d9!important;border-radius:14px!important;
+    box-shadow:0 18px 50px rgba(0,0,0,.28)!important;z-index:2147483646!important;
+  }
   body.le-guest-chat-only #leChatWindow #leChatBody{flex:1 1 auto!important;min-height:0!important;}
+  @media(max-width:520px){
+    body.le-guest-chat-only > #leChatWindow{width:calc(100vw - 12px);height:calc(100vh - 12px);border-radius:10px!important;}
+  }
+
+  /* PC 카카오톡처럼: 헤더 드래그 이동 + 우하단 손잡이로 자유롭게 크기 조절 */
+  body.le-guest-chat-only > #leChatWindow{resize:none!important;min-width:320px!important;min-height:400px!important;}
+  body.le-guest-chat-only #leChatHeader{cursor:move!important;user-select:none!important;}
+  body.le-guest-chat-only #leChatResizeHandle{display:flex!important;width:28px!important;height:28px!important;right:0!important;bottom:0!important;opacity:.85!important;z-index:2147483647!important;}
 </style>
 <script>
 (function(){
@@ -693,11 +710,6 @@
 </div>
 
 <div id="leChatWindow" style="display:none;position:fixed;right:20px;bottom:88px;width:340px;height:440px;min-width:280px;min-height:300px;background:#FDFCFB;border-radius:12px;box-shadow:0 4px 20px rgba(20,30,40,.12);z-index:99991;flex-direction:column;overflow:hidden;border:1px solid #eceeef;">
-  <div id="leChatGuestLoading" style="display:none;position:absolute;inset:58px 0 0 0;z-index:999;align-items:center;justify-content:center;flex-direction:column;gap:10px;background:#b2c7d9;color:#334155;font-size:14px;font-weight:700;">
-    <div style="font-size:34px;">💬</div>
-    <div>외부인 채팅에 연결 중입니다...</div>
-    <div id="leChatGuestLoadingMsg" style="font-size:11px;color:#64748b;font-weight:400;">잠시만 기다려 주세요.</div>
-  </div>
   <div id="leChatHeader" style="background:#fff;color:#1e293b;padding:10px 12px;display:flex;align-items:center;justify-content:space-between;cursor:move;user-select:none;flex-shrink:0;border-bottom:1px solid #eceeef;">
     <div style="font-weight:800;font-size:13px;display:flex;align-items:center;gap:6px;">💬 <span id="leChatConnDot" style="display:inline-block;width:7px;height:7px;border-radius:50%;background:#94a3b8;margin-left:4px;"></span>
       <span id="leChatGuestBadge" style="display:none;background:#F2F4F5;color:#51667E;border-radius:9999px;padding:2px 8px;font-size:10px;font-weight:800;">🔓 게스트</span>
@@ -1583,7 +1595,9 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           token: token, guest_name: label, created_by: leChatNickname, active: true
         });
         if (error) { leChatInviteErr('생성 실패: ' + (error.message||'') + ' (Supabase에 chat_guests 테이블이 있는지 확인해주세요)'); return; }
-        const url = window.location.origin + window.location.pathname + '?chatGuest=' + token;
+        // 외부인 초대 링크는 로컬 file:/// 주소가 아니라 실제 GitHub Pages 주소로 생성
+const guestBaseUrl = 'https://fb01042731972.github.io/01042731972/';
+const url = guestBaseUrl + '?chatGuest=' + encodeURIComponent(token);
         const box = document.getElementById('leChatInviteNewLinkBox');
         box.style.display = 'block';
         box.innerHTML = '✅ 링크가 생성되었습니다. 아래 링크를 외부인에게 전달하세요:<br><b style="user-select:all;">' + leChatEscape(url) + '</b>' +
@@ -1896,17 +1910,12 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       leChatOpen = true;
       var gb = document.getElementById('leChatToggleBtn');
       if (gb) gb.style.display = 'none';
+      /* 기존 코드의 문제: 게스트 자동 접속 시 leChatInit()이 실행되지 않아
+         잠금화면/입력창 상태가 초기화되지 않는 경우가 있었음 */
+      leChatInit();
       return;
     }
-    if (!leChatOpen) {
-      if (window.__leGuestChatOnly) {
-        var w=document.getElementById('leChatWindow'); if(w) w.style.display='flex';
-        leChatOpen=true;
-        leChatInit();
-      } else {
-        leChatToggle();
-      }
-    }
+    if (!leChatOpen) leChatToggle();
   }
   if (document.readyState === 'complete' || document.readyState === 'interactive') {
     setTimeout(leChatAutoOpen, 300);
@@ -1914,29 +1923,10 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     document.addEventListener('DOMContentLoaded', function(){ setTimeout(leChatAutoOpen, 300); });
   }
 
-  function leGuestLoading(show, msg){
-    var el = document.getElementById('leChatGuestLoading');
-    var m = document.getElementById('leChatGuestLoadingMsg');
-    if (m && msg) m.textContent = msg;
-    if (el) el.style.display = show ? 'flex' : 'none';
-  }
-
-  function leGuestError(msg){
-    var el = document.getElementById('leChatGuestLoading');
-    if (!el) return;
-    el.style.display='flex';
-    el.innerHTML='<div style="font-size:34px;">⚠️</div><div>외부인 채팅을 열 수 없습니다.</div><div style="font-size:11px;color:#64748b;font-weight:400;text-align:center;padding:0 20px;line-height:1.6;">'+leChatEscape(String(msg||'연결 오류'))+'</div>';
-  }
-
   function leChatInit(){
-    if (window.__leGuestChatOnly) {
-      var gw=document.getElementById('leChatWindow'); if(gw) gw.style.display='flex';
-      leGuestLoading(true);
-    }
     if (!leChatConfigured()) {
       document.getElementById('leChatLockScreen').innerHTML =
         '<div style="font-size:12px;color:#b45309;text-align:center;line-height:1.7;">⚠️ 채팅 서버가 아직 연결되지 않았습니다.<br>Supabase 설정 후 다시 열어주세요.</div>';
-      if (window.__leGuestChatOnly) leGuestError('채팅 서버 설정이 확인되지 않았습니다. 배포된 파일이 최신 버전인지 확인해 주세요.');
       return;
     }
     leChatRestoreSaveFolder();
@@ -2161,7 +2151,6 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
             return;
           }
           if (enterOnSuccess) {
-            leGuestLoading(false);
             document.getElementById('leChatLockScreen').style.display = 'none';
             if (window.__leGuestChatOnly) {
               var gw = document.getElementById('leChatWindow');
@@ -2184,8 +2173,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
             }
           }
         })
-        .catch(function(err){
-          if (window.__leGuestChatOnly) leGuestError((err && err.message) ? err.message : '초대 링크 확인에 실패했습니다.');
+        .catch(function(){
+          // 조회 자체가 실패하면(네트워크 등) 일단 통과시키되, 다음 주기적 점검에서 다시 확인한다.
         });
     });
   }
@@ -3953,6 +3942,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       win.style.top = startTop + 'px';
       win.style.right = 'auto';
       win.style.bottom = 'auto';
+      // 처음 중앙 정렬(transform) 상태에서 드래그를 시작하면 정확한 마우스 위치로 전환
+      win.style.transform = 'none';
       if (e.pointerId != null && header.setPointerCapture) {
         try { header.setPointerCapture(e.pointerId); } catch(_){}
       }
@@ -3998,6 +3989,12 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       startX = point.clientX;
       startY = point.clientY;
       const rect = win.getBoundingClientRect();
+      // 중앙 정렬 상태여도 크기 조절 시 실제 픽셀 위치로 고정
+      win.style.left = rect.left + 'px';
+      win.style.top = rect.top + 'px';
+      win.style.right = 'auto';
+      win.style.bottom = 'auto';
+      win.style.transform = 'none';
       startW = rect.width;
       startH = rect.height;
       e.preventDefault();
