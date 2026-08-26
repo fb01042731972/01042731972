@@ -36071,5 +36071,74 @@ document.addEventListener('keydown',function(e){
 </script>
 
 
+
+<style>
+/* 카카오톡식 자유 이동/크기조절 */
+#leChatWindow{box-sizing:border-box!important;}
+#leChatHeader{touch-action:none!important;}
+.leChatResizeHandle{position:absolute;z-index:1000;background:transparent;}
+.leChatResizeHandle.e,.leChatResizeHandle.w{top:8px;bottom:8px;width:8px;cursor:ew-resize;}
+.leChatResizeHandle.n,.leChatResizeHandle.s{left:8px;right:8px;height:8px;cursor:ns-resize;}
+.leChatResizeHandle.e{right:-4px}.leChatResizeHandle.w{left:-4px}.leChatResizeHandle.n{top:-4px}.leChatResizeHandle.s{bottom:-4px}
+.leChatResizeHandle.ne,.leChatResizeHandle.nw,.leChatResizeHandle.se,.leChatResizeHandle.sw{width:16px;height:16px;z-index:1001;}
+.leChatResizeHandle.ne{right:-5px;top:-5px;cursor:nesw-resize}.leChatResizeHandle.nw{left:-5px;top:-5px;cursor:nwse-resize}.leChatResizeHandle.se{right:-5px;bottom:-5px;cursor:nwse-resize}.leChatResizeHandle.sw{left:-5px;bottom:-5px;cursor:nesw-resize}
+#leChatWindow.leChatDragging{user-select:none!important;}
+</style>
+<script>
+/* 실제 마우스 드래그 이동 + 8방향 크기 조절 */
+(function(){
+  const KEY='LE_CHAT_WINDOW_GEOMETRY_V2';
+  function ready(){
+    const win=document.getElementById('leChatWindow');
+    const head=document.getElementById('leChatHeader');
+    if(!win||!head||win.dataset.kakaoReady==='1') return;
+    win.dataset.kakaoReady='1';
+    const minW=300,minH=320,margin=6;
+    try{ const g=JSON.parse(localStorage.getItem(KEY)||'null'); if(g&&g.w&&g.h){ win.style.right='auto';win.style.bottom='auto';win.style.left=Math.max(margin,Math.min(g.x,innerWidth-margin-minW))+'px';win.style.top=Math.max(margin,Math.min(g.y,innerHeight-margin-minH))+'px';win.style.width=Math.min(g.w,innerWidth-margin*2)+'px';win.style.height=Math.min(g.h,innerHeight-margin*2)+'px'; }}catch(e){}
+    function save(){ const r=win.getBoundingClientRect(); try{localStorage.setItem(KEY,JSON.stringify({x:Math.round(r.left),y:Math.round(r.top),w:Math.round(r.width),h:Math.round(r.height)}));}catch(e){} }
+    function bring(){win.style.zIndex='999991';}
+    win.addEventListener('mousedown',bring);
+    const dirs=['n','s','e','w','ne','nw','se','sw'];
+    dirs.forEach(d=>{const h=document.createElement('div');h.className='leChatResizeHandle '+d;h.dataset.dir=d;win.appendChild(h);h.addEventListener('mousedown',startResize);});
+    let mode=null,startX=0,startY=0,startRect=null,dir='';
+    function startMove(e){
+      if(e.button!==0) return;
+      if(e.target.closest('button,input,textarea,select,a')) return;
+      mode='move';startX=e.clientX;startY=e.clientY;startRect=win.getBoundingClientRect();
+      win.style.left=startRect.left+'px';win.style.top=startRect.top+'px';win.style.right='auto';win.style.bottom='auto';
+      win.classList.add('leChatDragging');bring();e.preventDefault();
+    }
+    function startResize(e){
+      if(e.button!==0) return;
+      mode='resize';dir=e.currentTarget.dataset.dir;startX=e.clientX;startY=e.clientY;startRect=win.getBoundingClientRect();
+      win.style.left=startRect.left+'px';win.style.top=startRect.top+'px';win.style.right='auto';win.style.bottom='auto';
+      win.classList.add('leChatDragging');bring();e.preventDefault();e.stopPropagation();
+    }
+    head.addEventListener('mousedown',startMove);
+    document.addEventListener('mousemove',function(e){
+      if(!mode||!startRect) return;
+      const dx=e.clientX-startX,dy=e.clientY-startY;
+      if(mode==='move'){
+        let x=Math.max(margin,Math.min(startRect.left+dx,innerWidth-startRect.width-margin));
+        let y=Math.max(margin,Math.min(startRect.top+dy,innerHeight-startRect.height-margin));
+        win.style.left=x+'px';win.style.top=y+'px';return;
+      }
+      let x=startRect.left,y=startRect.top,w=startRect.width,h=startRect.height;
+      if(dir.includes('e')) w=startRect.width+dx;
+      if(dir.includes('s')) h=startRect.height+dy;
+      if(dir.includes('w')){w=startRect.width-dx;x=startRect.left+dx;}
+      if(dir.includes('n')){h=startRect.height-dy;y=startRect.top+dy;}
+      if(w<minW){ if(dir.includes('w')) x=startRect.right-minW; w=minW; }
+      if(h<minH){ if(dir.includes('n')) y=startRect.bottom-minH; h=minH; }
+      x=Math.max(margin,x);y=Math.max(margin,y);
+      w=Math.min(w,innerWidth-x-margin);h=Math.min(h,innerHeight-y-margin);
+      win.style.left=x+'px';win.style.top=y+'px';win.style.width=w+'px';win.style.height=h+'px';
+    });
+    document.addEventListener('mouseup',function(){if(mode){mode=null;startRect=null;win.classList.remove('leChatDragging');save();}});
+    window.addEventListener('resize',function(){const r=win.getBoundingClientRect();let x=Math.max(margin,Math.min(r.left,innerWidth-minW-margin)),y=Math.max(margin,Math.min(r.top,innerHeight-minH-margin));win.style.left=x+'px';win.style.top=y+'px';win.style.width=Math.min(r.width,innerWidth-x-margin)+'px';win.style.height=Math.min(r.height,innerHeight-y-margin)+'px';save();});
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',ready); else ready();
+})();
+</script>
 </body>
 </html>
