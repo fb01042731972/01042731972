@@ -2546,6 +2546,10 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       })
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'chat_messages' }, function(payload){
         if (!leChatIsVisibleToMe(payload.new)) return; // 나와 무관한 1:1 비밀 대화는 무시
+        // 이미 낙관적 반영(leChatSend)으로 캐시에 들어가 있는 메시지면 중복 추가/렌더 방지
+        if (payload.new && payload.new.id != null && leChatMsgCache.some(function(m){ return m.id != null && String(m.id) === String(payload.new.id); })) {
+          return;
+        }
         leChatMsgCache.push(payload.new);
         leChatAppendMessageToFile(payload.new); // 폴더가 지정되어 있으면 실시간으로 파일에도 자동 저장
         const convKey = leChatConvKeyOf(payload.new);
