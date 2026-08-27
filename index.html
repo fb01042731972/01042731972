@@ -219,6 +219,9 @@
 #leChatUnreadBadge{background:#ff3b30!important;color:#fff!important;border:2px solid #fff!important;}
 #leChatSearchInput{border-radius:18px!important;background:#f5f5f5!important;border:0!important;padding:9px 13px!important;font-size:13px!important;}
 #leChatOnlineList{border-radius:10px!important;box-shadow:0 8px 24px rgba(0,0,0,.16)!important;}
+#leChatTabBar{height:42px!important;}
+.le-chat-tab-active{box-shadow:inset 0 -2px 0 0 #222!important;}
+#leChatFriendSearchInput:focus{border-color:#d4d4d4!important;}
 @media(max-width:520px){#leChatWindow{right:0;bottom:0;width:100vw;height:100vh;max-height:100vh;border-radius:0!important;}#leChatToggleBtn{right:14px!important;bottom:14px!important;}}
 </style>
 
@@ -802,14 +805,31 @@
 
     <!-- 채팅 목록 화면: 직원별 개별 채팅방 목록 (카카오톡 채팅탭 스타일) -->
     <div id="leChatListScreen" style="display:flex;flex-direction:column;flex:1;min-height:0;">
-      <div id="leChatListItems" style="flex:1;overflow-y:auto;background:#fff;"></div>
-      <!-- 게시판 실시간 미리보기: 채팅 목록 하단에 항상 표시 -->
-      <div id="leChatBoardLive" style="flex:0 0 112px;background:#fff;border-top:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;">
-        <div style="height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #f0f0f0;background:#fafafa;">
-          <button type="button" onclick="openBulletinBoard()" style="border:0;background:none;padding:0;cursor:pointer;font-size:12px;font-weight:800;color:#334155;">📋 게시판</button>
-          <span id="leChatBoardLiveStatus" style="font-size:9px;color:#94a3b8;">실시간</span>
+      <!-- 상단 탭: 채팅 / 친구 -->
+      <div id="leChatTabBar" style="display:flex;flex-shrink:0;background:#fff;border-bottom:1px solid #e5e7eb;">
+        <button type="button" id="leChatTabChatBtn" onclick="leChatSwitchTab('chat')" class="le-chat-tab le-chat-tab-active" style="flex:1;background:none;border:none;padding:11px 0 9px;font-size:13.5px;font-weight:800;color:#222;cursor:pointer;position:relative;">채팅</button>
+        <button type="button" id="leChatTabFriendBtn" onclick="leChatSwitchTab('friend')" class="le-chat-tab" style="flex:1;background:none;border:none;padding:11px 0 9px;font-size:13.5px;font-weight:800;color:#9aa1ab;cursor:pointer;position:relative;">친구</button>
+      </div>
+
+      <!-- 채팅 목록 -->
+      <div id="leChatListContent" style="display:flex;flex-direction:column;flex:1;min-height:0;">
+        <div id="leChatListItems" style="flex:1;overflow-y:auto;background:#fff;"></div>
+        <!-- 게시판 실시간 미리보기: 채팅 목록 하단에 항상 표시 -->
+        <div id="leChatBoardLive" style="flex:0 0 112px;background:#fff;border-top:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;">
+          <div style="height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #f0f0f0;background:#fafafa;">
+            <button type="button" onclick="openBulletinBoard()" style="border:0;background:none;padding:0;cursor:pointer;font-size:12px;font-weight:800;color:#334155;">📋 게시판</button>
+            <span id="leChatBoardLiveStatus" style="font-size:9px;color:#94a3b8;">실시간</span>
+          </div>
+          <div id="leChatBoardLiveItems" style="flex:1;min-height:0;overflow:hidden;"></div>
         </div>
-        <div id="leChatBoardLiveItems" style="flex:1;min-height:0;overflow:hidden;"></div>
+      </div>
+
+      <!-- 친구 목록 (카카오톡 친구탭 스타일): 대화한 적 있거나 현재 접속중인 사람들을 모아서 보여줌 -->
+      <div id="leChatFriendContent" style="display:none;flex-direction:column;flex:1;min-height:0;background:#fff;">
+        <div style="padding:9px 12px;border-bottom:1px solid #f1f5f9;flex-shrink:0;">
+          <input id="leChatFriendSearchInput" type="text" placeholder="🔍 이름으로 검색" oninput="leChatRenderFriendList()" style="width:100%;border:1px solid #e2e8f0;border-radius:9999px;padding:7px 12px;font-size:12px;box-sizing:border-box;background:#f5f5f5;outline:none;">
+        </div>
+        <div id="leChatFriendItems" style="flex:1;overflow-y:auto;background:#fff;"></div>
       </div>
     </div>
 
@@ -2382,6 +2402,75 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
   }
 
   // ── 채팅 목록 화면: 대화(전체 + 직원별 1:1)별로 묶어서 최근 메시지 미리보기와 안읽음 표시 ──
+  // ── 채팅 목록 화면 상단 탭 전환: '채팅' ↔ '친구' ──
+  let leChatCurrentTab = 'chat';
+  window.leChatSwitchTab = function(tab){
+    leChatCurrentTab = tab;
+    const chatBtn = document.getElementById('leChatTabChatBtn');
+    const friendBtn = document.getElementById('leChatTabFriendBtn');
+    const chatContent = document.getElementById('leChatListContent');
+    const friendContent = document.getElementById('leChatFriendContent');
+    if (!chatBtn || !friendBtn || !chatContent || !friendContent) return;
+    if (tab === 'friend') {
+      chatBtn.style.color = '#9aa1ab'; chatBtn.classList.remove('le-chat-tab-active');
+      friendBtn.style.color = '#222'; friendBtn.classList.add('le-chat-tab-active');
+      chatContent.style.display = 'none';
+      friendContent.style.display = 'flex';
+      leChatRenderFriendList();
+    } else {
+      friendBtn.style.color = '#9aa1ab'; friendBtn.classList.remove('le-chat-tab-active');
+      chatBtn.style.color = '#222'; chatBtn.classList.add('le-chat-tab-active');
+      friendContent.style.display = 'none';
+      chatContent.style.display = 'flex';
+    }
+  };
+
+  // ── 친구 목록: 대화 기록이 있거나 현재 접속중인 사람들을 모아 이름순으로 보여줌 ──
+  function leChatRenderFriendList(){
+    const box = document.getElementById('leChatFriendItems');
+    if (!box) return;
+    const myNorm = String(leChatNickname||'').trim().normalize('NFC');
+    const names = new Set();
+    leChatMsgCache.forEach(function(msg){
+      const s = String(msg.sender||'').trim().normalize('NFC');
+      if (s && s !== myNorm) names.add(s);
+      const r = String(msg.receiver||'').trim().normalize('NFC');
+      if (r && r !== myNorm) names.add(r);
+    });
+    (leChatOnlineNames||[]).forEach(function(n){
+      const nn = String(n||'').trim().normalize('NFC');
+      if (!nn || nn === myNorm) return;
+      if (leChatIsGuest && leChatOnlineRoles[nn] === 'guest') return;
+      names.add(nn);
+    });
+    const q = (document.getElementById('leChatFriendSearchInput')?.value || '').trim().normalize('NFC').toLowerCase();
+    let list = Array.from(names);
+    if (q) list = list.filter(function(n){ return n.toLowerCase().includes(q); });
+    list.sort(function(a,b){ return a.localeCompare(b, 'ko'); });
+
+    const countEl = document.getElementById('leChatTabFriendBtn');
+    if (countEl) countEl.textContent = '친구' + (names.size ? ' ' + names.size : '');
+
+    if (list.length === 0) {
+      box.innerHTML = '<div style="padding:30px 16px;text-align:center;font-size:12px;color:#94a3b8;">' + (q ? '검색 결과가 없습니다.' : '아직 친구가 없습니다.<br>대화를 시작하면 여기에 표시됩니다.') + '</div>';
+      return;
+    }
+    box.innerHTML = list.map(function(n){
+      const isOnline = (leChatOnlineNames||[]).some(function(x){ return String(x||'').trim().normalize('NFC') === n; });
+      return (
+        '<div class="le-kakao-list-row" onclick="leChatOpenConv(\'' + leChatAttrEscape(n) + '\')" style="display:flex;align-items:center;gap:10px;cursor:pointer;">' +
+          '<div style="position:relative;flex-shrink:0;">' + leChatAvatarThumbHtml(n, 40) +
+            (isOnline ? '<span style="position:absolute;right:-1px;bottom:-1px;width:10px;height:10px;border-radius:50%;background:#22c55e;border:2px solid #fff;"></span>' : '') +
+          '</div>' +
+          '<div style="flex:1;min-width:0;">' +
+            '<div style="font-size:13.5px;font-weight:700;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + leChatEscape(n) + '</div>' +
+            '<div style="font-size:11px;color:#94a3b8;margin-top:1px;">' + (isOnline ? '🟢 접속중' : '오프라인') + '</div>' +
+          '</div>' +
+        '</div>'
+      );
+    }).join('');
+  }
+
   function leChatRenderConvList(){
     const listBox = document.getElementById('leChatListItems');
     if (!listBox) return;
@@ -2455,6 +2544,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
         '</div>'
       );
     }).join('');
+    leChatRenderFriendList();
   }
 
   // ── 목록에서 대화 하나를 선택해 개별 채팅방(스레드)으로 진입 ──
