@@ -5837,9 +5837,9 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           </div>
         </div>
         <div class="flex gap-2 mb-2 no-print">
-          <button onclick="checkAllQuoteRows(true)" class="add-btn" style="margin-top:0">☑ 전체 선택</button>
-          <button onclick="checkAllQuoteRows(false)" class="add-btn" style="margin-top:0">☐ 전체 해제</button>
-          <button onclick="deleteCheckedQuoteRows()" class="add-btn" style="margin-top:0;color:#ef4444;border-color:#fecaca">🗑 선택 삭제</button>
+          <button type="button" onclick="checkAllQuoteRows(true)" class="add-btn" style="margin-top:0">☑ 전체 선택</button>
+          <button type="button" onclick="checkAllQuoteRows(false)" class="add-btn" style="margin-top:0">☐ 전체 해제</button>
+          <button type="button" onclick="deleteCheckedQuoteRows()" class="add-btn" style="margin-top:0;color:#ef4444;border-color:#fecaca">🗑 선택 삭제</button>
           <button onclick="toggleDocPasteImport('quote')" class="add-btn" style="margin-top:0;color:#7c3aed;border-color:#ddd6fe">📋 표 붙여넣기로 가져오기</button>
           <button onclick="exportDocItemsXLSX('quote')" class="add-btn" style="margin-top:0;color:#16a34a;border-color:#bbf7d0">⬇️ 엑셀로 내보내기</button>
           <button onclick="document.getElementById('q_docXlsxInput').click()" class="add-btn" style="margin-top:0;color:#16a34a;border-color:#bbf7d0">⬆️ 엑셀에서 가져오기</button>
@@ -6179,9 +6179,9 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           </div>
         </div>
         <div class="flex gap-2 mb-2 no-print">
-          <button onclick="checkAllOrderRows(true)" class="add-btn" style="margin-top:0">☑ 전체 선택</button>
-          <button onclick="checkAllOrderRows(false)" class="add-btn" style="margin-top:0">☐ 전체 해제</button>
-          <button onclick="deleteCheckedOrderRows()" class="add-btn" style="margin-top:0;color:#ef4444;border-color:#fecaca">🗑 선택 삭제</button>
+          <button type="button" onclick="checkAllOrderRows(true)" class="add-btn" style="margin-top:0">☑ 전체 선택</button>
+          <button type="button" onclick="checkAllOrderRows(false)" class="add-btn" style="margin-top:0">☐ 전체 해제</button>
+          <button type="button" onclick="deleteCheckedOrderRows()" class="add-btn" style="margin-top:0;color:#ef4444;border-color:#fecaca">🗑 선택 삭제</button>
           <button onclick="toggleDocPasteImport('order')" class="add-btn" style="margin-top:0;color:#7c3aed;border-color:#ddd6fe">📋 표 붙여넣기로 가져오기</button>
           <button onclick="exportDocItemsXLSX('order')" class="add-btn" style="margin-top:0;color:#16a34a;border-color:#bbf7d0">⬇️ 엑셀로 내보내기</button>
           <button onclick="document.getElementById('o_docXlsxInput').click()" class="add-btn" style="margin-top:0;color:#16a34a;border-color:#bbf7d0">⬆️ 엑셀에서 가져오기</button>
@@ -6434,9 +6434,9 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           </div>
         </div>
         <div class="flex gap-2 mb-2 no-print">
-          <button onclick="checkAllStatementRows(true)" class="add-btn" style="margin-top:0">☑ 전체 선택</button>
-          <button onclick="checkAllStatementRows(false)" class="add-btn" style="margin-top:0">☐ 전체 해제</button>
-          <button onclick="deleteCheckedStatementRows()" class="add-btn" style="margin-top:0;color:#ef4444;border-color:#fecaca">🗑 선택 삭제</button>
+          <button type="button" onclick="checkAllStatementRows(true)" class="add-btn" style="margin-top:0">☑ 전체 선택</button>
+          <button type="button" onclick="checkAllStatementRows(false)" class="add-btn" style="margin-top:0">☐ 전체 해제</button>
+          <button type="button" onclick="deleteCheckedStatementRows()" class="add-btn" style="margin-top:0;color:#ef4444;border-color:#fecaca">🗑 선택 삭제</button>
           <button onclick="toggleDocPasteImport('statement')" class="add-btn" style="margin-top:0;color:#7c3aed;border-color:#ddd6fe">📋 표 붙여넣기로 가져오기</button>
           <button onclick="exportDocItemsXLSX('statement')" class="add-btn" style="margin-top:0;color:#16a34a;border-color:#bbf7d0">⬇️ 엑셀로 내보내기</button>
           <button onclick="document.getElementById('s_docXlsxInput').click()" class="add-btn" style="margin-top:0;color:#16a34a;border-color:#bbf7d0">⬆️ 엑셀에서 가져오기</button>
@@ -21898,6 +21898,7 @@ function addQuoteRow(item={}) {
   renderQuoteTable();
 }
 function delQuoteRow(i) {
+  if (!confirm('이 품목만 삭제하시겠습니까?')) return;
   quoteRows.splice(i,1);
   renderQuoteTable();
 }
@@ -21936,9 +21937,9 @@ function renderQuoteTable() {
       <td class="td-num font-semibold" id="q_amt_${i}">${amount.toLocaleString()}</td>
       <td><input class="qinp-td" placeholder="비고" value="${escQ(r.note)}" oninput="quoteRows[${i}].note=this.value"></td>
       <td class="td-center no-print">
-        <button class="del-btn" style="color:#64748b;font-size:11px" onclick="moveQuoteRow(${i},-1)" ${i===0?'disabled':''} title="위로">▲</button>
-        <button class="del-btn" style="color:#64748b;font-size:11px" onclick="moveQuoteRow(${i},1)" ${i===quoteRows.length-1?'disabled':''} title="아래로">▼</button>
-        <button class="del-btn" onclick="delQuoteRow(${i})">✕</button>
+        <button type="button" class="del-btn" style="color:#64748b;font-size:11px" onclick="moveQuoteRow(${i},-1)" ${i===0?'disabled':''} title="위로">▲</button>
+        <button type="button" class="del-btn" style="color:#64748b;font-size:11px" onclick="moveQuoteRow(${i},1)" ${i===quoteRows.length-1?'disabled':''} title="아래로">▼</button>
+        <button type="button" class="del-btn" onclick="delQuoteRow(${i})">✕</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -22113,6 +22114,7 @@ function addOrderRow(item={}) {
   renderOrderTable();
 }
 function delOrderRow(i) {
+  if (!confirm('이 품목만 삭제하시겠습니까?')) return;
   orderRows.splice(i,1);
   renderOrderTable();
 }
@@ -22151,9 +22153,9 @@ function renderOrderTable() {
       <td class="td-num font-semibold" id="o_amt_${i}">${amount.toLocaleString()}</td>
       <td><input class="qinp-td" placeholder="비고" value="${escQ(r.note)}" oninput="orderRows[${i}].note=this.value"></td>
       <td class="td-center no-print">
-        <button class="del-btn" style="color:#64748b;font-size:11px" onclick="moveOrderRow(${i},-1)" ${i===0?'disabled':''} title="위로">▲</button>
-        <button class="del-btn" style="color:#64748b;font-size:11px" onclick="moveOrderRow(${i},1)" ${i===orderRows.length-1?'disabled':''} title="아래로">▼</button>
-        <button class="del-btn" onclick="delOrderRow(${i})">✕</button>
+        <button type="button" class="del-btn" style="color:#64748b;font-size:11px" onclick="moveOrderRow(${i},-1)" ${i===0?'disabled':''} title="위로">▲</button>
+        <button type="button" class="del-btn" style="color:#64748b;font-size:11px" onclick="moveOrderRow(${i},1)" ${i===orderRows.length-1?'disabled':''} title="아래로">▼</button>
+        <button type="button" class="del-btn" onclick="delOrderRow(${i})">✕</button>
       </td>
     `;
     tbody.appendChild(tr);
@@ -22195,6 +22197,7 @@ function addStatementRow(item={}) {
   renderStatementTable();
 }
 function delStatementRow(i) {
+  if (!confirm('이 품목만 삭제하시겠습니까?')) return;
   statementRows.splice(i,1);
   renderStatementTable();
 }
@@ -22236,9 +22239,9 @@ function renderStatementTable() {
       <td class="td-num" id="s_vat_${i}">${vat.toLocaleString()}</td>
       <td><input class="qinp-td" placeholder="비고" value="${escQ(r.note||'')}" oninput="statementRows[${i}].note=this.value"></td>
       <td class="td-center no-print">
-        <button class="del-btn" style="color:#64748b;font-size:11px" onclick="moveStatementRow(${i},-1)" ${i===0?'disabled':''} title="위로">▲</button>
-        <button class="del-btn" style="color:#64748b;font-size:11px" onclick="moveStatementRow(${i},1)" ${i===statementRows.length-1?'disabled':''} title="아래로">▼</button>
-        <button class="del-btn" onclick="delStatementRow(${i})">✕</button>
+        <button type="button" class="del-btn" style="color:#64748b;font-size:11px" onclick="moveStatementRow(${i},-1)" ${i===0?'disabled':''} title="위로">▲</button>
+        <button type="button" class="del-btn" style="color:#64748b;font-size:11px" onclick="moveStatementRow(${i},1)" ${i===statementRows.length-1?'disabled':''} title="아래로">▼</button>
+        <button type="button" class="del-btn" onclick="delStatementRow(${i})">✕</button>
       </td>
     `;
     tbody.appendChild(tr);
