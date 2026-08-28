@@ -883,6 +883,9 @@
         <button onclick="leChatPlusMenuAction('file')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
           <span style="font-size:16px;width:20px;text-align:center;">📎</span>파일 첨부
         </button>
+        <button onclick="leChatPlusMenuAction('camera')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
+          <span style="font-size:16px;width:20px;text-align:center;">📸</span>사진 촬영
+        </button>
         <button onclick="leChatPlusMenuAction('location')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
           <span style="font-size:16px;width:20px;text-align:center;">📍</span>위치 보내기
         </button>
@@ -911,6 +914,7 @@
       </div>
 
       <input id="leChatFileInput" type="file" style="display:none;" onchange="leChatFileSelected(this)">
+      <input id="leChatCameraInput" type="file" accept="image/*" capture="environment" style="display:none;" onchange="leChatFileSelected(this)">
       <button id="leChatPlusBtn" onclick="leChatTogglePlusMenu(event)" title="더보기" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1;">＋</button>
       <input id="leChatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
       <button onclick="leChatSend()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
@@ -960,6 +964,18 @@
   <img id="leChatProfilePhotoLightboxImg" src="" style="max-width:100%;max-height:100%;object-fit:contain;border-radius:8px;box-shadow:0 10px 40px rgba(0,0,0,.5);">
 </div>
 
+<!-- 📷 앱 내 카메라 촬영 모달 — OS/브라우저별 파일선택 동작 차이 없이 항상 실제 카메라를 켭니다 -->
+<div id="leChatCameraModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:99999;align-items:center;justify-content:center;flex-direction:column;padding:16px;">
+  <video id="leChatCameraVideo" autoplay playsinline muted style="max-width:100%;max-height:70vh;border-radius:10px;background:#000;"></video>
+  <canvas id="leChatCameraCanvas" style="display:none;"></canvas>
+  <div id="leChatCameraError" style="display:none;color:#fecaca;font-size:13px;margin-top:12px;text-align:center;max-width:320px;"></div>
+  <div style="display:flex;gap:12px;margin-top:16px;">
+    <button onclick="leChatCloseCameraModal()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:24px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;">✕ 취소</button>
+    <button onclick="leChatCameraShot()" style="background:#146C8E;color:#fff;border:none;border-radius:24px;padding:10px 26px;font-size:13px;font-weight:700;cursor:pointer;">📸 촬영</button>
+    <button onclick="leChatCameraSwitch()" style="background:rgba(255,255,255,.15);color:#fff;border:none;border-radius:24px;padding:10px 18px;font-size:13px;font-weight:700;cursor:pointer;">🔄 전환</button>
+  </div>
+</div>
+
 <!-- 🖼️ 채팅에 올라온 사진 크게 보기 (확대/축소 가능한 라이트박스) -->
 <div id="leChatImgLightbox" class="hidden no-print" style="position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:99999;align-items:center;justify-content:center;padding:20px;overflow:hidden;">
   <button onclick="leChatCloseImgLightbox()" title="닫기" style="position:absolute;top:14px;right:16px;border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:16px;line-height:1;z-index:2;">✕</button>
@@ -968,6 +984,7 @@
     <button onclick="leChatImgZoom(-0.25)" title="축소" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:17px;line-height:1;">－</button>
     <button onclick="leChatImgZoomReset()" title="원래 크기로" style="border:none;background:rgba(255,255,255,.15);color:#fff;height:32px;border-radius:16px;cursor:pointer;font-size:11px;font-weight:700;padding:0 10px;">100%</button>
     <a id="leChatImgLightboxOpenNew" href="" target="_blank" title="새 창에서 원본 열기" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:14px;display:flex;align-items:center;justify-content:center;text-decoration:none;">↗</a>
+    <button onclick="leChatDownloadCurrentLightboxImage()" title="원본 파일명으로 저장" style="border:none;background:rgba(255,255,255,.15);color:#fff;width:32px;height:32px;border-radius:50%;cursor:pointer;font-size:15px;line-height:1;">⬇</button>
   </div>
   <div id="leChatImgLightboxWrap" onclick="leChatCloseImgLightbox()" style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;overflow:auto;cursor:zoom-out;">
     <img id="leChatImgLightboxImg" src="" onclick="event.stopPropagation()" style="max-width:90%;max-height:90%;transform:scale(1);transition:transform .12s ease;box-shadow:0 10px 40px rgba(0,0,0,.5);border-radius:4px;cursor:default;">
@@ -1843,7 +1860,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
 
   // ── 채팅에 올라온 사진: 클릭하면 확대/축소 가능한 큰 화면으로 보기 ──
   let leChatImgLightboxScale = 1;
-  window.leChatOpenImageLightbox = function(ev, url){
+  window.leChatOpenImageLightbox = function(ev, url, fileName){
     if (ev) { ev.preventDefault(); ev.stopPropagation(); }
     const modal = document.getElementById('leChatImgLightbox');
     const img = document.getElementById('leChatImgLightboxImg');
@@ -1851,10 +1868,40 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (!modal || !img || !url) return;
     img.src = url;
     if (openNew) openNew.href = url;
+    window._leChatLightboxUrl = url;
+    window._leChatLightboxFileName = fileName || '';
     leChatImgLightboxScale = 1;
     img.style.transform = 'scale(1)';
     modal.classList.remove('hidden');
     modal.style.display = 'flex';
+  };
+  // 파일 이름을 원본 그대로 저장하기 위한 다운로드 헬퍼.
+  // 채팅 첨부파일은 Supabase Storage(다른 도메인)에 저장되어 있어, <a download="..."> 속성이
+  // 브라우저에서 무시되고 저장 시 임의로 생성된 저장소 경로 이름이 붙는 문제가 있었습니다.
+  // 실제 파일을 fetch로 받아 Blob으로 만든 뒤 다운로드하면 원래 파일명이 그대로 적용됩니다.
+  window.leChatDownloadFile = async function(url, fileName){
+    if (!url) return;
+    const safeName = fileName && fileName.trim() ? fileName : ('첨부파일_' + Date.now());
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error('다운로드 실패: ' + res.status);
+      const blob = await res.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = blobUrl;
+      a.download = safeName;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      setTimeout(() => URL.revokeObjectURL(blobUrl), 10000);
+    } catch (e) {
+      console.error('파일 다운로드 실패', e);
+      // 실패 시(예: CORS 제한) 최소한 원본을 새 창에서 볼 수 있도록 폴백
+      window.open(url, '_blank');
+    }
+  };
+  window.leChatDownloadCurrentLightboxImage = function(){
+    leChatDownloadFile(window._leChatLightboxUrl, window._leChatLightboxFileName);
   };
   window.leChatCloseImgLightbox = function(){
     const modal = document.getElementById('leChatImgLightbox');
@@ -1874,6 +1921,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (e.key === 'Escape') {
       const modal = document.getElementById('leChatImgLightbox');
       if (modal && modal.style.display === 'flex') leChatCloseImgLightbox();
+      const camModal = document.getElementById('leChatCameraModal');
+      if (camModal && camModal.style.display === 'flex') leChatCloseCameraModal();
     }
   });
   document.addEventListener('wheel', function(e){
@@ -2579,6 +2628,13 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     const box = document.getElementById('leChatMessages');
     if (!box) return;
     box.innerHTML = '';
+    // 카카오톡식 날짜 구분선 / 연속 메시지 묶음 추적값 초기화 (방을 새로 그릴 때마다)
+    box.dataset.leLastDate = '';
+    box.dataset.leLastSender = '';
+    box.dataset.leLastMinute = '';
+    box.dataset.leLastIsDm = '';
+    box.dataset.leLastReceiver = '';
+    leChatLastMsgRowEl = null;
     // 방을 옮기면 이전 선택 상태는 초기화 (DOM이 새로 그려지므로)
     if (typeof leChatSelectedIds !== 'undefined') leChatSelectedIds.clear();
     if (typeof leChatUpdateSelectBar === 'function') leChatUpdateSelectBar();
@@ -2867,13 +2923,53 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     return unread;
   }
 
+  // 카카오톡식 날짜 구분선 라벨 ("오늘" / "어제" / "2026년 8월 28일 금요일")
+  function leChatDateSepLabel(dateObj){
+    const today = new Date(); today.setHours(0,0,0,0);
+    const yest = new Date(today); yest.setDate(yest.getDate()-1);
+    const d = new Date(dateObj); d.setHours(0,0,0,0);
+    if (d.getTime() === today.getTime()) return '오늘';
+    if (d.getTime() === yest.getTime()) return '어제';
+    const days = ['일','월','화','수','목','금','토'];
+    return d.getFullYear() + '년 ' + (d.getMonth()+1) + '월 ' + d.getDate() + '일 ' + days[d.getDay()] + '요일';
+  }
+  // 직전에 그려진 메시지 DOM(연속 메시지 판단 + 시간 숨김 처리용)
+  var leChatLastMsgRowEl = null;
+
   function leChatRenderMessage(msg, animate){
     const box = document.getElementById('leChatMessages');
     const mine = String(msg.sender||'').trim().normalize('NFC') === String(leChatNickname||'').trim().normalize('NFC');
-    const time = new Date(msg.created_at).toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+    const createdDate = new Date(msg.created_at);
+    const time = createdDate.toLocaleTimeString('ko-KR', {hour:'2-digit', minute:'2-digit'});
+
+    // 날짜가 바뀌면 날짜 구분선을 먼저 삽입 (카카오톡 스타일)
+    const dateKey = createdDate.getFullYear() + '-' + (createdDate.getMonth()+1) + '-' + createdDate.getDate();
+    if (box.dataset.leLastDate !== dateKey) {
+      const sep = document.createElement('div');
+      sep.className = 'le-kakao-date-sep';
+      sep.style.cssText = 'text-align:center;margin:16px 0 12px;';
+      sep.innerHTML = '<span style="display:inline-block;background:rgba(0,0,0,.32);color:#fff;font-size:11.5px;font-weight:600;padding:4px 13px;border-radius:14px;">' + leChatDateSepLabel(createdDate) + '</span>';
+      box.appendChild(sep);
+      box.dataset.leLastDate = dateKey;
+      box.dataset.leLastSender = '';
+      box.dataset.leLastMinute = '';
+      box.dataset.leLastIsDm = '';
+      box.dataset.leLastReceiver = '';
+      leChatLastMsgRowEl = null;
+    }
+
+    const senderKey = String(msg.sender||'').trim().normalize('NFC');
+    const isDm = !!msg.receiver;
+    const minuteKey = createdDate.getFullYear() + '-' + createdDate.getMonth() + '-' + createdDate.getDate() + '-' + createdDate.getHours() + '-' + createdDate.getMinutes();
+    // 연속 메시지: 같은 사람이 같은 분(1분) 안에 같은 대화 맥락으로 보낸 경우 → 이름/아바타/시간 생략해서 묶어 보이기
+    const consecutive = !!leChatLastMsgRowEl
+      && box.dataset.leLastSender === senderKey
+      && box.dataset.leLastMinute === minuteKey
+      && box.dataset.leLastIsDm === (isDm ? '1' : '0')
+      && box.dataset.leLastReceiver === (msg.receiver || '');
+
     const div = document.createElement('div');
-    div.className = 'le-kakao-msg ' + (mine ? 'mine' : 'other') + (animate ? ' le-msg-pop' : '');
-    div.style.textAlign = mine ? 'right' : 'left';
+    div.className = 'le-kakao-msg ' + (mine ? 'mine' : 'other') + (animate ? ' le-msg-pop' : '') + (consecutive ? ' le-kakao-consecutive' : '');
     // id 컬럼이 있으면 그걸 쓰고, 없으면 (sender+created_at) 조합으로 대체 식별
     if (msg.id != null) {
       div.dataset.msgId = String(msg.id);
@@ -2884,11 +2980,11 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (msg.file_url) div.dataset.fileUrl = msg.file_url;
     if (msg.content != null) div.dataset.msgContent = msg.content;
     div.dataset.msgSenderName = msg.sender || '';
-    const isDm = !!msg.receiver;
-    const bubbleBg = mine ? '#51667E' : '#FFFFFF';
-    const bubbleColor = mine ? '#fff' : '#1e293b';
+    // 카카오톡 말풍선 색상: 내 메시지=노랑, 상대 메시지=흰색
+    const bubbleBg = mine ? '#FEE500' : '#FFFFFF';
+    const bubbleColor = '#191919';
     const dmLabel = isDm
-      ? ('<span style="color:#51667E;font-weight:700;">🔒 ' + (mine ? ('→ ' + leChatEscape(msg.receiver) + ' 귓속말') : '나에게만 온 귓속말') + '</span> · ')
+      ? ('<span style="color:#B45309;font-weight:700;">🔒 ' + (mine ? ('→ ' + leChatEscape(msg.receiver) + ' 귓속말') : '나에게만 온 귓속말') + '</span> · ')
       : '';
     // 답장 대상이 있으면 인용 미리보기를 말풍선 위에 붙임
     let quoteHtml = '';
@@ -2897,7 +2993,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       const origText = orig ? (orig.content || (orig.file_name ? ('📎 ' + orig.file_name) : '(메시지)')) : '(삭제된 메시지)';
       const origSender = orig ? orig.sender : '';
       quoteHtml =
-        '<div onclick="leChatJumpToMessage(\'' + leChatAttrEscape(String(msg.reply_to)) + '\')" style="cursor:pointer;border-left:3px solid ' + (mine ? 'rgba(255,255,255,.6)' : '#94a3b8') + ';padding:3px 6px;margin-bottom:4px;font-size:11px;opacity:.85;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;">' +
+        '<div onclick="leChatJumpToMessage(\'' + leChatAttrEscape(String(msg.reply_to)) + '\')" style="cursor:pointer;border-left:3px solid ' + (mine ? 'rgba(0,0,0,.25)' : '#94a3b8') + ';padding:3px 6px;margin-bottom:4px;font-size:11px;opacity:.8;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:220px;">' +
           (origSender ? '<b>' + leChatEscape(origSender) + '</b> ' : '') + leChatEscape(origText) +
         '</div>';
     }
@@ -2906,20 +3002,21 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       const isImage = /\.(png|jpe?g|gif|webp|bmp)$/i.test(msg.file_name || msg.file_url);
       const isPdf = /\.pdf$/i.test(msg.file_name || msg.file_url);
       if (isImage) {
+        // 카카오톡처럼 이미지 크기를 키우고, 가로/세로 어느 쪽이든 비율을 유지한 채 꽉 차게 표시
         bodyHtml =
-          '<span onclick="leChatOpenImageLightbox(event,\'' + leChatAttrEscape(msg.file_url) + '\')" style="display:inline-block;cursor:zoom-in;" title="클릭하면 크게 보기">' +
-            '<img src="' + leChatEscape(msg.file_url) + '" style="max-width:160px;max-height:160px;border-radius:8px;display:block;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
+          '<span onclick="leChatOpenImageLightbox(event,\'' + leChatAttrEscape(msg.file_url) + '\',\'' + leChatAttrEscape(msg.file_name || '') + '\')" style="display:inline-block;cursor:zoom-in;max-width:100%;" title="클릭하면 크게 보기">' +
+            '<img src="' + leChatEscape(msg.file_url) + '" style="display:block;width:auto;height:auto;max-width:240px;max-height:320px;min-width:80px;border-radius:14px;margin-bottom:' + (msg.content ? '4px' : '0') + ';object-fit:contain;">' +
           '</span>';
       } else if (isPdf) {
         bodyHtml =
-          '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" style="display:block;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
-            '<div style="width:160px;height:110px;border-radius:8px;background:#fff;border:1px solid ' + (mine?'rgba(255,255,255,.5)':'#cbd5e1') + ';display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">' +
+          '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" onclick="leChatDownloadFile(\'' + leChatAttrEscape(msg.file_url) + '\',\'' + leChatAttrEscape(msg.file_name || '') + '\'); return false;" style="display:block;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
+            '<div style="width:160px;height:110px;border-radius:8px;background:#fff;border:1px solid #cbd5e1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">' +
               '<span style="font-size:26px;">📄</span><span style="font-size:10px;color:' + bubbleColor + ';padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">' + leChatEscape(msg.file_name||'PDF') + '</span>' +
             '</div>' +
           '</a>';
       } else {
         bodyHtml =
-          '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" download="' + leChatEscape(msg.file_name||'') + '" ' +
+          '<a href="' + leChatEscape(msg.file_url) + '" target="_blank" onclick="leChatDownloadFile(\'' + leChatAttrEscape(msg.file_url) + '\',\'' + leChatAttrEscape(msg.file_name || '') + '\'); return false;" ' +
           'style="display:flex;align-items:center;gap:6px;color:' + bubbleColor + ';text-decoration:underline;margin-bottom:' + (msg.content ? '4px' : '0') + ';">' +
             '📎 ' + leChatEscape(msg.file_name || '파일') +
           '</a>';
@@ -2929,16 +3026,29 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       bodyHtml += '<div style="white-space:pre-wrap;">' + leChatLinkify(leChatEscape(msg.content)) + '</div>';
     }
     if (msg.edited_at) {
-      bodyHtml += '<span style="font-size:9.5px;opacity:.7;margin-left:2px;">(수정됨)</span>';
+      bodyHtml += '<span style="font-size:9.5px;opacity:.6;margin-left:2px;">(수정됨)</span>';
     }
-    const replyBtnHtml = '<span onclick="leChatStartReply(this)" title="답장" style="cursor:pointer;color:#51667E;font-weight:800;margin-right:4px;">↩</span>';
-    const pinBtnHtml = '<span onclick="leChatTogglePin(this)" title="공지로 고정/해제" style="cursor:pointer;color:' + (msg.pinned ? '#51667E' : '#94a3b8') + ';font-weight:800;margin-right:4px;">📌</span>';
+    const replyBtnHtml = '<span onclick="leChatStartReply(this)" title="답장" style="cursor:pointer;color:#8b95a1;font-weight:800;margin-right:4px;">↩</span>';
+    const pinBtnHtml = '<span onclick="leChatTogglePin(this)" title="공지로 고정/해제" style="cursor:pointer;color:' + (msg.pinned ? '#B45309' : '#c2c8cf') + ';font-weight:800;margin-right:4px;">📌</span>';
     const editBtnHtml = (mine && msg.content && !msg.file_url)
-      ? '<span onclick="leChatStartEdit(this)" title="수정" style="cursor:pointer;color:#51667E;font-weight:800;margin-right:4px;">✏</span>'
+      ? '<span onclick="leChatStartEdit(this)" title="수정" style="cursor:pointer;color:#8b95a1;font-weight:800;margin-right:4px;">✏</span>'
       : '';
     const deleteBtnHtml = '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>';
-    const senderNameHtml = '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(msg.sender) + '\')" style="cursor:pointer;display:inline-flex;align-items:center;">' + leChatAvatarThumbHtml(msg.sender, 16) + '<span style="text-decoration:underline dotted;">' + leChatEscape(msg.sender) + '</span></span>';
-// 카카오톡식 수신 확인:
+    const selectCbHtml = '<input type="checkbox" class="le-select-cb" onclick="leChatOnSelectCheckbox(this)">';
+    const toolsHtml = selectCbHtml + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml;
+
+    // 이름/아바타는 상대방 메시지의 "묶음 첫 메시지"에서만 표시 (카카오톡 방식)
+    const showNameAvatar = !mine && !consecutive;
+    const senderNameHtml = '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(msg.sender) + '\')" style="cursor:pointer;font-weight:700;color:#3d4a5c;">' + leChatEscape(msg.sender) + '</span>';
+
+    let nameRowHtml = '';
+    if (showNameAvatar) {
+      nameRowHtml = '<div style="font-size:11.5px;margin-bottom:3px;">' + dmLabel + senderNameHtml + '</div>';
+    } else if (mine && isDm) {
+      nameRowHtml = '<div style="font-size:11px;margin-bottom:3px;">' + dmLabel + '</div>';
+    }
+
+    // 카카오톡식 수신 확인:
     // 내가 보낸 메시지이고 상대방이 아직 읽지 않았으면 '1',
     // 상대방이 읽으면 '1'이 사라진다.
     // 내가 보낸 메시지에만 읽은 사람 수 표시
@@ -2952,13 +3062,60 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
         readHtml = '<div class="le-kakao-read le-kakao-unread-count">' + unreadCount + '</div>';
       }
     }
-    const selectCbHtml = '<input type="checkbox" class="le-select-cb" onclick="leChatOnSelectCheckbox(this)">';
+
+    const bubbleHtml =
+      (msg.pinned ? '<div style="font-size:10px;color:#B45309;font-weight:700;margin-bottom:2px;">📌 고정된 메시지</div>' : '') +
+      '<div class="le-kakao-bubble" style="display:inline-block;max-width:100%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:8px 11px;border-radius:' + (mine ? '15px 4px 15px 15px' : '4px 15px 15px 15px') + ';text-align:left;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08);' + (isDm ? 'border:1px dashed #C9A227;' : '') + '">' + quoteHtml + bodyHtml + '</div>';
+
+    const timeColHtml =
+      '<div style="display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') + ';gap:2px;flex-shrink:0;">' +
+        readHtml +
+        '<span class="le-kakao-time" style="font-size:10.5px;color:#8b95a1;white-space:nowrap;">' + time + '</span>' +
+      '</div>';
+
+    const bubbleRowHtml =
+      '<div style="display:flex;align-items:flex-end;gap:5px;flex-direction:' + (mine ? 'row-reverse' : 'row') + ';">' +
+        bubbleHtml + timeColHtml +
+      '</div>';
+
+    // 왼쪽 프로필 사진: 상대방 메시지의 묶음 첫 메시지에서만 실제 아바타, 나머지는 자리만 유지해서 정렬을 맞춤
+    let avatarHtml = '';
+    if (!mine) {
+      if (showNameAvatar) {
+        const avatarInner = leChatAvatarThumbHtml(msg.sender, 36) ||
+          ('<div style="width:36px;height:36px;border-radius:50%;background:#B5BFC9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;">' + leChatEscape((msg.sender||'?').trim().charAt(0)) + '</div>');
+        avatarHtml = '<div onclick="leChatOpenProfile(\'' + leChatAttrEscape(msg.sender) + '\')" style="cursor:pointer;flex-shrink:0;width:36px;">' + avatarInner + '</div>';
+      } else {
+        avatarHtml = '<div style="flex-shrink:0;width:36px;"></div>';
+      }
+    }
+
+    const colHtml =
+      '<div style="display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') + ';max-width:78%;min-width:0;">' +
+        nameRowHtml +
+        '<div class="le-kakao-meta" style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + toolsHtml + '</div>' +
+        bubbleRowHtml +
+      '</div>';
+
     div.innerHTML =
-      (msg.pinned ? '<div style="font-size:10px;color:#7A6A3F;font-weight:700;margin-bottom:1px;">📌 고정된 메시지</div>' : '') +
-      '<div class="le-kakao-meta" style="font-size:10.5px;color:#94a3b8;margin-bottom:2px;">' + selectCbHtml + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml + dmLabel + senderNameHtml + ' · ' + time + '</div>' +
-      '<div class="le-kakao-bubble" style="display:inline-block;max-width:80%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:6px 10px;border-radius:10px;text-align:left;word-break:break-word;' + (mine ? '' : 'border:1px solid #E7EAED;') + (isDm ? 'border:1px dashed #B9C2CA;' : '') + (msg.pinned ? 'box-shadow:0 0 0 2px #E4C77A;' : '') + '">' + quoteHtml + bodyHtml + '</div>' +
-      readHtml;
+      '<div style="display:flex;align-items:flex-end;gap:8px;justify-content:' + (mine ? 'flex-end' : 'flex-start') + ';">' +
+        avatarHtml + colHtml +
+      '</div>';
+
     box.appendChild(div);
+
+    // 연속 메시지면 방금 그린 이 말풍선이 최신이므로, 직전 메시지의 시간 표시는 감춰서
+    // "묶음의 마지막 메시지에만 시간이 보이는" 카카오톡 방식으로 만든다.
+    if (consecutive && leChatLastMsgRowEl) {
+      const prevTime = leChatLastMsgRowEl.querySelector('.le-kakao-time');
+      if (prevTime) prevTime.style.visibility = 'hidden';
+    }
+
+    box.dataset.leLastSender = senderKey;
+    box.dataset.leLastMinute = minuteKey;
+    box.dataset.leLastIsDm = isDm ? '1' : '0';
+    box.dataset.leLastReceiver = msg.receiver || '';
+    leChatLastMsgRowEl = div;
   }
   function leChatEscape(s){
     return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
@@ -3340,9 +3497,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   };
 
-  window.leChatFileSelected = async function(inputEl){
-    const file = inputEl.files && inputEl.files[0];
-    inputEl.value = '';
+  // 실제 업로드 로직 — 파일 선택(leChatFileSelected)과 앱 내 카메라 촬영(leChatCameraShot) 양쪽에서 공용으로 사용
+  window.leChatUploadFile = async function(file){
     if (!file || !supaClient) return;
     if (file.size > 50 * 1024 * 1024) {
       alert('파일 크기는 50MB 이하만 가능합니다.');
@@ -3372,6 +3528,83 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     } finally {
       progressEl.style.display = 'none';
     }
+  };
+  window.leChatFileSelected = async function(inputEl){
+    const file = inputEl.files && inputEl.files[0];
+    inputEl.value = '';
+    if (!file) return;
+    await leChatUploadFile(file);
+  };
+
+  // ────────────────────────────────────────────────────────────
+  // 📷 앱 내 카메라 촬영 — OS 파일탐색기가 아니라 getUserMedia로 실제 카메라 스트림을 직접 켭니다.
+  // capture 속성만 쓰던 방식은 브라우저/OS에 따라 파일탐색기가 뜨는 경우가 있어, 항상 동일하게
+  // 동작하도록 앱 내에서 카메라를 켜고 사진을 찍는 방식으로 바꿨습니다.
+  // ────────────────────────────────────────────────────────────
+  let leChatCameraStream = null;
+  let leChatCameraFacing = 'environment';
+
+  function leChatStopCameraStream(){
+    if (leChatCameraStream) {
+      leChatCameraStream.getTracks().forEach(t => t.stop());
+      leChatCameraStream = null;
+    }
+  }
+
+  window.leChatOpenCamera = async function(){
+    const errEl = document.getElementById('leChatCameraError');
+    if (errEl) errEl.style.display = 'none';
+    if (!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia)) {
+      // 이 브라우저는 카메라 스트림 API를 지원하지 않음 → 기존 파일선택(카메라 옵션 포함)으로 폴백
+      const input = document.getElementById('leChatCameraInput');
+      if (input) input.click();
+      else alert('이 브라우저에서는 카메라 기능을 사용할 수 없습니다.');
+      return;
+    }
+    const modal = document.getElementById('leChatCameraModal');
+    const video = document.getElementById('leChatCameraVideo');
+    if (modal) { modal.style.display = 'flex'; modal.classList.remove('hidden'); }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: leChatCameraFacing }, audio: false });
+      leChatCameraStream = stream;
+      if (video) video.srcObject = stream;
+    } catch (e) {
+      console.error('카메라 접근 실패', e);
+      if (errEl) {
+        errEl.textContent = '카메라를 열 수 없습니다. 브라우저의 카메라 권한을 허용했는지 확인해 주세요.';
+        errEl.style.display = 'block';
+      } else {
+        alert('카메라를 열 수 없습니다. 카메라 권한을 확인해 주세요.');
+      }
+    }
+  };
+
+  window.leChatCameraSwitch = async function(){
+    leChatCameraFacing = (leChatCameraFacing === 'environment') ? 'user' : 'environment';
+    leChatStopCameraStream();
+    await leChatOpenCamera();
+  };
+
+  window.leChatCloseCameraModal = function(){
+    leChatStopCameraStream();
+    const modal = document.getElementById('leChatCameraModal');
+    if (modal) { modal.style.display = 'none'; modal.classList.add('hidden'); }
+  };
+
+  window.leChatCameraShot = function(){
+    const video = document.getElementById('leChatCameraVideo');
+    const canvas = document.getElementById('leChatCameraCanvas');
+    if (!video || !canvas || !video.videoWidth) return;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+    canvas.toBlob(async function(blob){
+      if (!blob) return;
+      const file = new File([blob], '카메라_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+      leChatCloseCameraModal();
+      await leChatUploadFile(file);
+    }, 'image/jpeg', 0.92);
   };
 
   // ════════════════════════════════════════════════════════════
@@ -4138,6 +4371,9 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     switch(action){
       case 'file':
         document.getElementById('leChatFileInput').click();
+        break;
+      case 'camera':
+        leChatOpenCamera();
         break;
       case 'location':
         leChatSendLocation();
