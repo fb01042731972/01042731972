@@ -25989,14 +25989,18 @@ function computeCeoAdjacentPos(prefix) {
     let yTop = (wRect.top + wRect.height/2) - cRect.top;
     x = Math.max(3, Math.min(97, x));
     yTop = Math.max(0, yTop);
-    return { x, yTop, anchor: 'top', size: STAMP_POS_DEFAULT.size };
+    return { x, yTop, anchor: 'top', size: STAMP_POS_DEFAULT.size, containerH: cRect.height };
   } catch(e) { return null; }
 }
-function saveStampPos(prefix, x, yFromEdge, size, anchor) {
+function saveStampPos(prefix, x, yFromEdge, size, anchor, containerH) {
   const all = loadStampPosAll();
   const prev = all[prefix] || {};
   const entry = { x, anchor: anchor || 'bottom', size: size !== undefined ? size : (prev.size || STAMP_POS_DEFAULT.size) };
   if(entry.anchor === 'top') entry.yTop = yFromEdge; else entry.yBottom = yFromEdge;
+  // 🆕 이 위치를 저장할 당시 화면에 보이던 문서 컨테이너의 실제 높이(px)도 함께 기억해 둡니다.
+  // 인쇄/PDF저장 화면은 글꼴·여백·표 스타일이 달라 문서 전체 높이가 화면과 다르므로,
+  // 저장 당시 높이 대비 인쇄 문서의 실제 높이 비율만큼 위치를 보정해서 화면과 같은 자리에 찍히게 합니다.
+  entry.containerH = (containerH !== undefined) ? containerH : (prev.containerH || undefined);
   all[prefix] = entry;
   localStorage.setItem(K_STAMP_POS, JSON.stringify(all));
 }
@@ -26068,14 +26072,17 @@ function stampDragMove(e) {
 }
 function stampDragEnd() {
   if(!_stampDrag) return;
-  const { prefix, layer } = _stampDrag;
+  const { prefix, layer, container } = _stampDrag;
   layer.classList.remove('dragging');
   const x = parseFloat(layer.style.left) || STAMP_POS_DEFAULT.x;
   const anchor = (layer.style.bottom === 'auto') ? 'top' : 'bottom';
   const yFromEdge = anchor === 'top'
     ? (parseFloat(layer.style.top) || 0)
     : (parseFloat(layer.style.bottom) || STAMP_POS_DEFAULT.yBottom);
-  saveStampPos(prefix, x, yFromEdge, undefined, anchor);
+  // 🆕 지금 이 순간 화면에 보이는 문서 컨테이너의 실제 높이를 함께 저장 —
+  // 인쇄/PDF저장 시 이 높이 대비 비율로 위치를 보정하는 데 사용됩니다.
+  const containerH = container ? container.getBoundingClientRect().height : undefined;
+  saveStampPos(prefix, x, yFromEdge, undefined, anchor, containerH);
   document.removeEventListener('mousemove', stampDragMove);
   document.removeEventListener('mouseup', stampDragEnd);
   document.removeEventListener('touchmove', stampDragMove);
@@ -26120,7 +26127,7 @@ function stampResizeEnd() {
   const x = parseFloat(layer.style.left) || cur.x;
   const anchor = cur.anchor === 'top' ? 'top' : 'bottom';
   const yFromEdge = anchor === 'top' ? cur.yTop : cur.yBottom;
-  saveStampPos(prefix, x, yFromEdge, size, anchor);
+  saveStampPos(prefix, x, yFromEdge, size, anchor, cur.containerH);
   document.removeEventListener('mousemove', stampResizeMove);
   document.removeEventListener('mouseup', stampResizeEnd);
   document.removeEventListener('touchmove', stampResizeMove);
@@ -27564,7 +27571,14 @@ function buildClassicDocHTML(type) {
     const stampPosStyle = (sp.anchor === 'top')
       ? ('top:' + sp.yTop + 'px;bottom:auto;transform:translate(-50%,-50%)')
       : ('top:auto;bottom:' + sp.yBottom + 'px;transform:translate(-50%,50%)');
-    stampOverlayHtml = '<img src="' + stampImgSrc + '" style="position:absolute;left:' + sp.x + '%;' + stampPosStyle + ';width:' + sp.size + 'px;height:' + sp.size + 'px;object-fit:contain">';
+    // 🆕 data-* 속성에 "화면에서 이 위치를 저장할 당시의 문서 높이"와 원본 좌표를 함께 실어 보냅니다.
+    // 인쇄창은 화면과 글꼴·여백·표 스타일이 달라 문서 전체 높이가 다르므로, 이 정보를 이용해
+    // 인쇄창 자신의 실제 렌더링 높이를 측정한 뒤 그 비율만큼 도장 위치를 다시 계산합니다(아래 stampFixScript).
+    stampOverlayHtml = '<img id="printStampImg" src="' + stampImgSrc + '" '
+      + 'data-anchor="' + sp.anchor + '" '
+      + 'data-y="' + (sp.anchor === 'top' ? sp.yTop : sp.yBottom) + '" '
+      + 'data-container-h="' + (sp.containerH || 0) + '" '
+      + 'style="position:absolute;left:' + sp.x + '%;' + stampPosStyle + ';width:' + sp.size + 'px;height:' + sp.size + 'px;object-fit:contain">';
   }
 
   return ''
@@ -27661,14 +27675,42 @@ function printDoc(type) {
       '<span style="color:#cbd5e1;font-size:12px">버튼을 누른 뒤, 인쇄 대화상자의 "대상/프린터"에서 <b style="color:#fff">PDF로 저장</b>을 선택하세요.</span>' +
     '</div>';
 
+  // 🆕 도장 위치 보정 스크립트 — 화면(quote-wrap)과 인쇄 문서(classic-doc)는 글꼴·여백·표 스타일이
+  // 달라서 문서 전체 높이가 서로 다릅니다. 화면에서 도장을 놓았을 당시의 문서 높이(data-container-h)와
+  // 지금 이 인쇄창에 실제로 렌더링된 문서 높이를 비교해, 그 비율만큼 도장의 top/bottom 값을 다시 계산해서
+  // 화면에서 본 것과 같은 자리(예: 서명란 부근)에 도장이 찍히도록 맞춥니다.
+  const stampFixScript = ''
+    + '<script>'
+    + 'window.addEventListener("load",function(){'
+    + '  try{'
+    + '    var img = document.getElementById("printStampImg");'
+    + '    var doc = document.querySelector(".classic-doc");'
+    + '    if(img && doc){'
+    + '      var savedH = parseFloat(img.getAttribute("data-container-h"))||0;'
+    + '      var y = parseFloat(img.getAttribute("data-y"))||0;'
+    + '      var anchor = img.getAttribute("data-anchor");'
+    + '      var curH = doc.getBoundingClientRect().height;'
+    + '      if(savedH>0 && curH>0){'
+    + '        var scale = curH/savedH;'
+    + '        scale = Math.max(0.3, Math.min(3, scale));'
+    + '        var y2 = Math.round(y*scale);'
+    + '        if(anchor==="top"){ img.style.top = y2+"px"; img.style.bottom="auto"; }'
+    + '        else { img.style.bottom = y2+"px"; img.style.top="auto"; }'
+    + '      }'
+    + '    }'
+    + '  }catch(e){}'
+    + '});'
+    + '<\/script>';
+
   // 인쇄창 스스로가 로드되자마자 인쇄 대화상자를 띄우도록 함(창을 연 원래 페이지가 아니라
   // 창 자기 자신이 호출해야, 브라우저가 "사용자와 직접 연결된 동작"으로 더 안정적으로 인식함).
+  // 도장 위치 보정(stampFixScript)이 먼저 반영된 뒤에 인쇄 대화상자가 뜨도록 지연시간을 살짝 더 둡니다.
   const autoPrintScript =
-    '<script>window.addEventListener("load",function(){ setTimeout(function(){ try{ window.print(); }catch(e){} }, 250); });<\/script>';
+    '<script>window.addEventListener("load",function(){ setTimeout(function(){ try{ window.print(); }catch(e){} }, 300); });<\/script>';
 
   const bodyWrap = '<div style="padding:16px 0">' + docHtml + '</div>';
   const printFileName = getDocPrintFileName(type);
-  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>' + escQ(printFileName) + '</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyWrap + autoPrintScript + shareBar.script + '</body></html>';
+  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>' + escQ(printFileName) + '</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyWrap + stampFixScript + autoPrintScript + shareBar.script + '</body></html>';
   const blob = new Blob([fullHTML], {type:'text/html;charset=utf-8'});
   const url  = URL.createObjectURL(blob);
   const win  = window.open(url, '_blank');
