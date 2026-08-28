@@ -112,6 +112,11 @@
   .td-num{text-align:right}
   .td-center{text-align:center}
   .qtable tfoot td{font-weight:700;padding:9px 8px}
+  .row-drag-handle{cursor:grab;touch-action:none;user-select:none;display:inline-block;padding:2px 4px;margin-right:2px;color:#94a3b8;font-size:13px;letter-spacing:-1px;border-radius:4px}
+  .row-drag-handle:hover{color:var(--user-accent);background:var(--user-accent-tint)}
+  .row-drag-handle:active{cursor:grabbing}
+  .qtable tbody tr.row-dragging{position:relative;z-index:20;box-shadow:0 8px 18px rgba(15,40,50,.22)}
+  .qtable tbody tr.row-dragging td{background:var(--user-accent-tint) !important}
   .qinp-td{border:none;border-bottom:1px solid #ddd;background:transparent;width:100%;font-family:'Malgun Gothic',sans-serif;font-size:12px;color:#1e293b;padding:1px 2px}
   .quote-total-box{background:#0F3A4D;color:#fff;border-radius:9px;padding:15px 20px;display:flex;justify-content:space-between;align-items:center}
   .quote-validity{font-size:11px;color:#78716c;background:#FEFBEA;border:1px solid #fde68a;border-radius:8px;padding:9px 13px}
@@ -22253,7 +22258,7 @@ function renderQuoteTable() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="td-center no-print"><input type="checkbox" ${r.checked?'checked':''} onchange="quoteRows[${i}].checked=this.checked"></td>
-      <td class="td-center text-gray-400">${i+1}</td>
+      <td class="td-center text-gray-400"><span class="row-drag-handle no-print" title="눌러서 위/아래로 끌면 순서가 바뀝니다">⠿</span>${i+1}</td>
       <td><input class="qinp-td" placeholder="품목명" value="${escQ(r.name)}" autocomplete="off" oninput="quoteRows[${i}].name=this.value;onItemNameInput(this,quoteRows,${i},renderQuoteTable)" onfocus="onItemNameInput(this,quoteRows,${i},renderQuoteTable)" onblur="setTimeout(hideAutocomplete,150)"></td>
       <td><input class="qinp-td td-center" placeholder="규격" value="${escQ(r.spec||'')}" oninput="quoteRows[${i}].spec=this.value"></td>
       <td><input class="qinp-td td-center" placeholder="재질" value="${escQ(r.mat)}" oninput="quoteRows[${i}].mat=this.value"></td>
@@ -22269,6 +22274,7 @@ function renderQuoteTable() {
       </td>
     `;
     tbody.appendChild(tr);
+    initRowDragHandle(tr.querySelector('.row-drag-handle'), 'q');
   });
   updateQuoteTotals();
   if (typeof renderStampDragLayer === 'function') renderStampDragLayer('q');
@@ -22470,7 +22476,7 @@ function renderOrderTable() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="td-center no-print"><input type="checkbox" ${r.checked?'checked':''} onchange="orderRows[${i}].checked=this.checked"></td>
-      <td class="td-center text-gray-400">${i+1}</td>
+      <td class="td-center text-gray-400"><span class="row-drag-handle no-print" title="눌러서 위/아래로 끌면 순서가 바뀝니다">⠿</span>${i+1}</td>
       <td><input class="qinp-td" placeholder="품목명" value="${escQ(r.name)}" autocomplete="off" oninput="orderRows[${i}].name=this.value;onItemNameInput(this,orderRows,${i},renderOrderTable)" onfocus="onItemNameInput(this,orderRows,${i},renderOrderTable)" onblur="setTimeout(hideAutocomplete,150)"></td>
       <td><input class="qinp-td td-center" placeholder="규격" value="${escQ(r.spec||'')}" oninput="orderRows[${i}].spec=this.value"></td>
       <td><input class="qinp-td td-center" type="number" min="1" value="${r.qty}" oninput="qtyTooltipShow(this);orderRows[${i}].qty=Math.max(1,parseFloat(this.value)||1);updateOrderAmount(${i})" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
@@ -22485,6 +22491,7 @@ function renderOrderTable() {
       </td>
     `;
     tbody.appendChild(tr);
+    initRowDragHandle(tr.querySelector('.row-drag-handle'), 'o');
   });
   updateOrderTotals();
   if (typeof renderStampDragLayer === 'function') renderStampDragLayer('o');
@@ -22556,7 +22563,7 @@ function renderStatementTable() {
     const tr = document.createElement('tr');
     tr.innerHTML = `
       <td class="td-center no-print"><input type="checkbox" ${r.checked?'checked':''} onchange="statementRows[${i}].checked=this.checked"></td>
-      <td class="td-center text-gray-400">${i+1}</td>
+      <td class="td-center text-gray-400"><span class="row-drag-handle no-print" title="눌러서 위/아래로 끌면 순서가 바뀝니다">⠿</span>${i+1}</td>
       <td><input class="qinp-td" placeholder="품목명" value="${escQ(r.name)}" autocomplete="off" oninput="statementRows[${i}].name=this.value;onItemNameInput(this,statementRows,${i},renderStatementTable)" onfocus="onItemNameInput(this,statementRows,${i},renderStatementTable)" onblur="setTimeout(hideAutocomplete,150)"></td>
       <td><input class="qinp-td td-center" placeholder="규격" value="${escQ(r.spec||'')}" oninput="statementRows[${i}].spec=this.value"></td>
       <td><input class="qinp-td td-center" type="number" min="0" value="${r.qty}" oninput="qtyTooltipShow(this);statementRows[${i}].qty=parseFloat(this.value)||0;updateStatementRowAmount(${i})" onfocus="qtyTooltipShow(this)" onblur="priceTooltipHide()" onmouseenter="qtyTooltipShow(this)" onmouseleave="priceTooltipHideIfNotFocused(this)"></td>
@@ -22571,6 +22578,7 @@ function renderStatementTable() {
       </td>
     `;
     tbody.appendChild(tr);
+    initRowDragHandle(tr.querySelector('.row-drag-handle'), 's');
   });
   updateStatementTotals();
   if (typeof renderStampDragLayer === 'function') renderStampDragLayer('s');
@@ -22612,6 +22620,97 @@ function updateStatementTotals() {
   setT('s_subSupply', supply.toLocaleString()+' 원');
   setT('s_subVat', vatSum.toLocaleString()+' 원');
   setT('s_totalQty', totalQty.toLocaleString());
+}
+
+// ════════════════════════════════════════
+// 품목 행 순서 변경 — 번호 칸의 ⠿ 손잡이를 마우스로 누르거나 손가락으로 눌러
+// 위·아래로 끌면 그 자리에 순서가 바뀝니다. (▲▼ 버튼 대신 한 번에 원하는 위치로 이동 가능)
+// 마우스와 터치(모바일) 모두 동작하도록 Pointer Events를 사용합니다.
+// ════════════════════════════════════════
+const __rowDragTables = {
+  q: { arr: () => quoteRows, render: () => renderQuoteTable(), bodyId: 'quoteTableBody' },
+  o: { arr: () => orderRows, render: () => renderOrderTable(), bodyId: 'orderTableBody' },
+  s: { arr: () => statementRows, render: () => renderStatementTable(), bodyId: 'statementTableBody' }
+};
+let __rowDragState = null;
+
+// 렌더 함수에서 각 행의 손잡이(span.row-drag-handle)에 대해 호출해서 드래그 기능을 붙입니다.
+function initRowDragHandle(handleEl, tableKey) {
+  if (!handleEl || handleEl.__dragBound) return;
+  handleEl.__dragBound = true;
+  handleEl.addEventListener('pointerdown', function(e) {
+    if (e.button !== undefined && e.button !== 0) return; // 마우스는 왼쪽 버튼만
+    const meta = __rowDragTables[tableKey];
+    const tbody = document.getElementById(meta.bodyId);
+    const tr = handleEl.closest('tr');
+    if (!tbody || !tr) return;
+    e.preventDefault();
+    const rows = Array.from(tbody.children);
+    const fromIndex = rows.indexOf(tr);
+    if (fromIndex < 0) return;
+    __rowDragState = {
+      tableKey, fromIndex, tr, rows,
+      startY: e.clientY,
+      lastClientY: e.clientY
+    };
+    tr.classList.add('row-dragging');
+    document.body.style.userSelect = 'none';
+    try { handleEl.setPointerCapture(e.pointerId); } catch (err) {}
+    window.addEventListener('pointermove', onRowDragMove);
+    window.addEventListener('pointerup', onRowDragEnd);
+    window.addEventListener('pointercancel', onRowDragEnd);
+  });
+}
+
+function onRowDragMove(e) {
+  const st = __rowDragState;
+  if (!st) return;
+  st.lastClientY = e.clientY;
+  const dy = e.clientY - st.startY;
+  st.tr.style.transform = 'translateY(' + dy + 'px)';
+}
+
+function onRowDragEnd(e) {
+  const st = __rowDragState;
+  window.removeEventListener('pointermove', onRowDragMove);
+  window.removeEventListener('pointerup', onRowDragEnd);
+  window.removeEventListener('pointercancel', onRowDragEnd);
+  document.body.style.userSelect = '';
+  if (!st) return;
+  __rowDragState = null;
+  st.tr.classList.remove('row-dragging');
+  st.tr.style.transform = '';
+
+  const clientY = (e && e.clientY !== undefined) ? e.clientY : st.lastClientY;
+  // 드래그 중이던 행을 뺀 나머지 행들 중, 놓은 위치보다 아래에 있는 첫 행을 찾아
+  // "그 행 앞자리로 이동"으로 목표 위치를 계산합니다.
+  let insertBeforeOriginalIndex = null;
+  for (let k = 0; k < st.rows.length; k++) {
+    const row = st.rows[k];
+    if (row === st.tr) continue;
+    const rect = row.getBoundingClientRect();
+    const mid = rect.top + rect.height / 2;
+    if (clientY < mid) { insertBeforeOriginalIndex = k; break; }
+  }
+
+  const meta = __rowDragTables[st.tableKey];
+  const arr = meta.arr();
+  const from = st.fromIndex;
+  if (from < 0 || from >= arr.length) return;
+  const [moved] = arr.splice(from, 1);
+  let insertAt;
+  if (insertBeforeOriginalIndex === null) {
+    insertAt = arr.length; // 맨 아래로 이동
+  } else if (insertBeforeOriginalIndex > from) {
+    insertAt = insertBeforeOriginalIndex - 1;
+  } else {
+    insertAt = insertBeforeOriginalIndex;
+  }
+  arr.splice(insertAt, 0, moved);
+  if (insertAt !== from) {
+    meta.render();
+    if (typeof scheduleDraftSave === 'function') scheduleDraftSave();
+  }
 }
 
 // ════════════════════════════════════════
