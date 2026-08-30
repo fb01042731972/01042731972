@@ -5565,6 +5565,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
         <button type="button" onclick="backupToGithubNow(true)" class="text-xs font-bold px-3 py-2 rounded" style="background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe;cursor:pointer;flex:1">☁️ 지금 백업</button>
       </div>
       <button type="button" onclick="openGithubRestorePasswordModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#fff7ed;color:#9a3412;border:1px solid #fed7aa;cursor:pointer;width:100%">🔐 GitHub에서 불러오기 (비밀번호 필요)</button>
+      <button type="button" onclick="openGithubRestorePasswordModal('deletedHistory')" class="text-xs font-bold px-3 py-2 rounded" style="background:#fef2f2;color:#b91c1c;border:1px solid #fecaca;cursor:pointer;width:100%;margin-top:6px">🗑️ 지워진 거래내역 확인/복구</button>
+      <p class="text-gray-400" style="font-size:9px;margin-top:6px;line-height:1.5">한 번이라도 GitHub에 백업된 거래내역(견적서/발주서/거래명세표)은 화면에서 지워도 1년간 GitHub 백업 파일에 보존됩니다(1년 경과분은 자동 정리). 여기서 지워진 기록만 골라 다시 불러올 수 있습니다.</p>
     </div>
 
     <div class="flex gap-2 mt-2">
@@ -5595,6 +5597,18 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     <div id="ghRestorePickList" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#334155">불러오는 중…</div>
     <div class="flex gap-2" style="margin-top:14px">
       <button type="button" onclick="closeGithubRestorePickModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════════════════ 🗑️ 지워진 거래내역 확인/복구 모달 ════════════════════════ -->
+<div id="ghDeletedHistoryModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.55);z-index:99999;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeGithubDeletedHistoryModal()">
+  <div style="background:#fff;border-radius:14px;max-width:480px;width:100%;max-height:82vh;overflow-y:auto;box-shadow:0 24px 60px rgba(0,0,0,.3);padding:22px">
+    <div style="font-size:15px;font-weight:900;color:#0F3A4D;margin-bottom:4px">🗑️ 지워진 거래내역 확인/복구</div>
+    <p style="font-size:11px;color:#64748b;line-height:1.6;margin:0 0 12px">GitHub 백업엔 있지만 지금 화면(로컬)엔 없는 거래내역입니다. 실수로 지워졌거나 다른 곳에서 삭제된 기록일 수 있어요. "복구" 를 누르면 지금 화면의 거래내역에 다시 추가됩니다.</p>
+    <div id="ghDeletedHistoryList" style="display:flex;flex-direction:column;gap:6px;font-size:12px;color:#334155">불러오는 중…</div>
+    <div class="flex gap-2" style="margin-top:14px">
+      <button type="button" onclick="closeGithubDeletedHistoryModal()" class="text-xs font-bold px-3 py-2 rounded" style="background:#f1f5f9;color:#475569;border:none;cursor:pointer;flex:1">닫기</button>
     </div>
   </div>
 </div>
@@ -5731,6 +5745,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();openBackupSettingsModal()">⚙️ 자동 복구 / 백업 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();backupToGithubNow(true)" title="설정해 둔 GitHub 저장소에 지금 바로 백업 파일을 올립니다">🐙 GitHub에 지금 백업</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();openGithubRestorePasswordModal()" title="GitHub 저장소에 올려둔 백업을 비밀번호 확인 후 불러옵니다">🔐 GitHub에서 불러오기</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();openGithubRestorePasswordModal('deletedHistory')" title="화면에서 지워졌지만 GitHub 백업엔 보존된 거래내역을 확인하고 선택적으로 복구합니다">🗑️ 지워진 거래내역 확인/복구</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();document.getElementById('backupFileInput').click()">⬆️ 백업파일 불러오기</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9;color:#dc2626" onclick="closeDataMenu();restorePreRestoreSafetyBackup()" title="방금 실행한 복원이 실수였을 때, 복원을 실행하기 바로 직전 상태로 되돌립니다.">⏪ 복원 직전 상태로 되돌리기</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeDataMenu();exportSingleDoc()">📄 현재 문서만 파일로 저장</div>
@@ -34396,6 +34411,72 @@ function simpleContentHash(str) {
   return h.toString(36) + '_' + str.length;
 }
 
+// 🛡 GitHub 백업 — "삭제 방지(보존)" 병합
+// ────────────────────────────────────────────────────────────────
+// 지금까지는 GitHub 백업이 "지금 이 순간의 상태"로 단순 덮어쓰기였습니다.
+// 그래서 실수든 고의든 견적서/거래내역 등을 지운 뒤 자동 백업이 한 번 더 돌면,
+// GitHub에 있던 예전 기록까지 함께 사라지는 문제가 있었습니다.
+//
+// 이제 GitHub에 업로드하기 직전에, "지금 로컬 상태"와 "지금 GitHub에 이미 있는 이전 백업"을
+// id 기준으로 합칩니다:
+//   - 로컬에도 있고 GitHub에도 있는 항목 → 로컬(최신 수정 내용)을 사용
+//   - 로컬에만 있는(새로 작성된) 항목 → 그대로 포함
+//   - 로컬에서 지워졌지만 GitHub 백업엔 남아있던 항목 → 곧바로 지우지 않고 1년간 보존
+//     (_archivedDeletedLocally: true 로 표시해서, 실수/고의 삭제와 구분해 확인·복구할 수 있게 함.
+//      지워진 지 1년이 지나면 그 다음 백업부터는 완전히 제외되어 영구 삭제됩니다.)
+// 즉 한 번이라도 GitHub에 백업된 기록은, 화면(로컬)에서 지워도 최소 1년간은 GitHub 백업
+// 파일에서 사라지지 않습니다. (1년 경과분은 자동으로 정리되어 백업 파일이 무한정 커지지 않습니다.)
+const GH_ARCHIVE_PROTECTED_KEYS = ['history', 'workboard', 'ledgerManual', 'inventory', 'contacts'];
+// 🗓 보존 기간: 로컬에서 지워진 뒤 GitHub 백업에 "삭제 방지"로 보존되는 기간은 1년입니다.
+// 처음 지워진 게 확인된 시점(_archivedAt)부터 1년이 지나면, 다음 백업 때 이번엔 진짜로
+// 완전히 제외되어(영구 삭제) 더 이상 GitHub 백업 파일에도 남지 않습니다.
+const GH_ARCHIVE_RETENTION_MS = 365 * 24 * 60 * 60 * 1000;
+
+function _mergePreserveDeleted(localArr, remoteArr) {
+  if (!Array.isArray(remoteArr) || remoteArr.length === 0) return localArr;
+  if (!Array.isArray(localArr)) localArr = [];
+  const localIds = new Set(localArr.filter(x => x && x.id != null).map(x => x.id));
+  const now = Date.now();
+  const preserved = remoteArr
+    .filter(x => x && x.id != null && !localIds.has(x.id))
+    .map(x => Object.assign({}, x, { _archivedDeletedLocally: true, _archivedAt: x._archivedAt || new Date().toISOString() }))
+    // 보존 기간(1년)이 지난 항목은 이번 백업부터 완전히 제외 — 영구 삭제
+    .filter(x => (now - new Date(x._archivedAt).getTime()) <= GH_ARCHIVE_RETENTION_MS);
+  return localArr.concat(preserved);
+}
+
+// 지정한 GitHub 백업 파일의 현재 내용을 그대로 읽어옵니다(없으면 null).
+async function fetchGithubBackupJson(owner, repo, path, branch, token) {
+  try {
+    const url = `https://api.github.com/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}?ref=${encodeURIComponent(branch)}`;
+    const res = await fetch(url, { headers: githubApiHeaders(token) });
+    if (res.status !== 200) return null;
+    const data = await res.json();
+    const jsonStr = decodeURIComponent(escape(atob(data.content.replace(/\n/g, ''))));
+    const parsed = JSON.parse(jsonStr);
+    return (parsed && parsed._type === 'quote-app-backup') ? parsed : null;
+  } catch (e) {
+    console.error('GitHub 기존 백업 조회 실패(병합 없이 진행):', e);
+    return null;
+  }
+}
+
+// GitHub에 실제로 올릴 백업 객체 — buildBackupObject() 결과에 위 "삭제 방지" 병합을 적용
+async function buildBackupObjectForGithubUpload(owner, repo, path, branch, token) {
+  const local = buildBackupObject();
+  const remote = await fetchGithubBackupJson(owner, repo, path, branch, token);
+  if (!remote) return local; // GitHub에 기존 백업이 아직 없으면 병합할 게 없음
+  GH_ARCHIVE_PROTECTED_KEYS.forEach(key => {
+    let localArr, remoteArr;
+    try { localArr = JSON.parse(local[key]); } catch (e) { localArr = []; }
+    try { remoteArr = JSON.parse(remote[key]); } catch (e) { remoteArr = null; }
+    if (!Array.isArray(localArr)) localArr = [];
+    if (!Array.isArray(remoteArr)) return; // 원격 값이 배열이 아니면 그대로 둠
+    local[key] = JSON.stringify(_mergePreserveDeleted(localArr, remoteArr));
+  });
+  return local;
+}
+
 function githubApiHeaders(token) {
   return {
     'Authorization': 'Bearer ' + token,
@@ -34564,7 +34645,7 @@ async function backupToGithubNow(showAlert) {
 
   try {
     if (showAlert) setGithubStatus('GitHub에 백업하는 중…', false);
-    const backup = buildBackupObject();
+    const backup = await buildBackupObjectForGithubUpload(settings.owner, settings.repo, settings.path, settings.branch, token);
     const jsonStr = JSON.stringify(backup, null, 2);
 
     const sha = await getGithubFileSha(settings.owner, settings.repo, settings.path, settings.branch, token);
@@ -34680,15 +34761,17 @@ async function _verifyGithubRestorePassword(inputPw) {
   }
 }
 
-function openGithubRestorePasswordModal() {
+function openGithubRestorePasswordModal(action) {
   const gh = loadGithubBackupSettings();
   if (!gh.owner || !gh.repo) { alert('먼저 "⚙️ 자동 복구 / 백업 설정"에서 GitHub 소유자·저장소를 지정해 주세요.'); return; }
+  _ghAfterPwVerifyAction = action || 'restore';
   document.getElementById('ghRestorePwInput').value = '';
   document.getElementById('ghRestorePwError').textContent = '';
   const m = document.getElementById('ghRestorePwModal');
   m.classList.remove('hidden'); m.style.display = 'flex';
   setTimeout(() => document.getElementById('ghRestorePwInput').focus(), 50);
 }
+let _ghAfterPwVerifyAction = 'restore';
 function closeGithubRestorePasswordModal() {
   const m = document.getElementById('ghRestorePwModal');
   m.classList.add('hidden'); m.style.display = 'none';
@@ -34704,7 +34787,8 @@ async function submitGithubRestorePassword() {
   pwInput.value = ''; // 확인 즉시 입력값 지움 — 화면/메모리에 남기지 않음
   if (!ok) { errEl.textContent = '⚠️ 비밀번호가 올바르지 않습니다.'; return; }
   closeGithubRestorePasswordModal();
-  await openGithubRestorePickModal();
+  if (_ghAfterPwVerifyAction === 'deletedHistory') await openGithubDeletedHistoryModal();
+  else await openGithubRestorePickModal();
 }
 
 // 비밀번호 확인 통과 후 — 저장소의 백업 파일 목록(덮어쓰기용 1개 + 시간별_백업 폴더)을 불러와 선택하게 함
@@ -34776,6 +34860,75 @@ async function restoreFromGithubPath(path) {
     console.error('GitHub 백업 불러오기 실패:', err);
     alert('GitHub 백업을 불러오지 못했습니다: ' + err.message);
   }
+}
+
+// 🗑️ 지워진 거래내역 확인/복구
+// GitHub 최신 백업의 history 배열 중, 지금 화면(로컬)엔 없는 항목만 골라서 보여줍니다.
+// (buildBackupObjectForGithubUpload의 "삭제 방지" 병합 덕분에, 한 번이라도 GitHub에 백업된
+//  기록은 로컬에서 지워져도 이 목록에서 확인·복구할 수 있습니다.)
+async function openGithubDeletedHistoryModal() {
+  const listEl = document.getElementById('ghDeletedHistoryList');
+  listEl.innerHTML = '불러오는 중…';
+  const m = document.getElementById('ghDeletedHistoryModal');
+  m.classList.remove('hidden'); m.style.display = 'flex';
+
+  const settings = loadGithubBackupSettings();
+  const token = loadGithubToken();
+  if (!token) { listEl.innerHTML = '<div style="color:#dc2626">⚠️ Fine-grained 토큰이 설정되어 있지 않습니다.</div>'; return; }
+
+  try {
+    const remote = await fetchGithubBackupJson(settings.owner, settings.repo, settings.path, settings.branch, token);
+    if (!remote) { listEl.innerHTML = '<div style="color:#64748b">GitHub에서 백업 파일을 찾을 수 없습니다.</div>'; return; }
+    let remoteHistory = [];
+    try { remoteHistory = JSON.parse(remote.history) || []; } catch (e) { remoteHistory = []; }
+    const localHistory = loadHistory();
+    const localIds = new Set(localHistory.filter(x => x && x.id != null).map(x => x.id));
+    const missing = remoteHistory.filter(x => x && x.id != null && !localIds.has(x.id))
+      .sort((a, b) => new Date(b.savedAt || b.updatedAt || 0) - new Date(a.savedAt || a.updatedAt || 0));
+
+    if (missing.length === 0) { listEl.innerHTML = '<div style="color:#64748b">지워진 거래내역이 없습니다. (로컬과 GitHub 백업이 일치합니다)</div>'; return; }
+
+    listEl.innerHTML = '';
+    missing.forEach(rec => {
+      const label = docLabelOf(rec.type) || '문서';
+      const party = rec.partyName || rec.supplierName || '(거래처 미상)';
+      const key = rec.key || '';
+      const when = rec._archivedAt ? formatDateTime(rec._archivedAt) : '';
+      let daysLeftText = '';
+      if (rec._archivedAt) {
+        const daysLeft = Math.max(0, Math.ceil((GH_ARCHIVE_RETENTION_MS - (Date.now() - new Date(rec._archivedAt).getTime())) / (24*60*60*1000)));
+        daysLeftText = ` · ${daysLeft}일 후 완전 삭제`;
+      }
+      const row = document.createElement('div');
+      row.style.cssText = 'padding:9px 12px;border:1px solid #e2e8f0;border-radius:8px;display:flex;justify-content:space-between;align-items:center;gap:8px';
+      row.innerHTML = `<div style="min-width:0"><div style="font-weight:700">${escapeHtml(label)} · ${escapeHtml(party)}</div><div style="font-size:10px;color:#94a3b8">${escapeHtml(key)}${when ? ' · 삭제 확인: ' + when : ''}${daysLeftText}</div></div>`;
+      const btn = document.createElement('button');
+      btn.textContent = '↩️ 복구';
+      btn.style.cssText = 'flex-shrink:0;background:#146C8E;color:#fff;border:none;border-radius:6px;padding:6px 10px;font-size:11px;font-weight:700;cursor:pointer';
+      btn.onclick = () => restoreDeletedHistoryRecord(rec);
+      row.appendChild(btn);
+      listEl.appendChild(row);
+    });
+  } catch (err) {
+    console.error('지워진 거래내역 조회 실패:', err);
+    listEl.innerHTML = '<div style="color:#dc2626">⚠️ 조회하지 못했습니다: ' + err.message + '</div>';
+  }
+}
+function closeGithubDeletedHistoryModal() {
+  const m = document.getElementById('ghDeletedHistoryModal');
+  m.classList.add('hidden'); m.style.display = 'none';
+}
+// 선택한 지워진 거래내역 1건을 지금 화면(로컬)의 거래내역에 다시 추가합니다.
+function restoreDeletedHistoryRecord(rec) {
+  const list = loadHistory();
+  if (list.some(h => h.id === rec.id)) { showToast('이미 거래내역에 있습니다.'); return; }
+  const clean = Object.assign({}, rec);
+  delete clean._archivedDeletedLocally;
+  delete clean._archivedAt;
+  list.push(clean);
+  saveHistoryListToStorage(list);
+  showToast('↩️ 거래내역에 복구했습니다: ' + (clean.partyName || clean.supplierName || clean.key || ''));
+  openGithubDeletedHistoryModal(); // 목록 갱신
 }
 
 function openBackupSettingsModal() {
