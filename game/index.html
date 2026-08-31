@@ -7,12 +7,15 @@
 <style>
   html,body{
     margin:0; padding:0;
+    width:100%;
     height:100%;
     height:calc(var(--vh, 1vh) * 100);
     background:#07140d;
     font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
     overflow:hidden;
     overscroll-behavior:none;
+    position:fixed;
+    inset:0;
   }
   #wrap{
     position:relative; width:100%;
@@ -51,8 +54,11 @@
   #player-container{
     width:100%; height:100%;
     display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
   }
-  ruffle-player{ width:100%; height:100%; }
+  ruffle-player{
+    display:block;
+  }
 
   #loading{
     position:absolute; inset:0; display:flex; flex-direction:column;
@@ -127,13 +133,34 @@
       const container = document.getElementById("player-container");
       container.appendChild(player);
 
+      // 모바일 브라우저에서 %(퍼센트) 크기 계산이 어긋나 게임 화면이
+      // 실제 화면보다 크게 렌더링되는 문제를 막기 위해, 실제 픽셀 크기를
+      // 직접 계산해서 player 엘리먼트에 강제로 지정해준다.
+      function sizePlayerToContainer(){
+        const rect = container.getBoundingClientRect();
+        const w = Math.floor(rect.width);
+        const h = Math.floor(rect.height);
+        if (w > 0 && h > 0) {
+          player.style.width = w + 'px';
+          player.style.height = h + 'px';
+        }
+      }
+      sizePlayerToContainer();
+      window.addEventListener('resize', sizePlayerToContainer);
+      window.addEventListener('orientationchange', () => setTimeout(sizePlayerToContainer, 250));
+
       player.addEventListener("loaderror", showError);
 
       player.ruffle().load({
         url: "worldcup-matgo.swf",
         letterbox: "on",
+        scale: "showAll",
+        fitContainer: true,
       }).then(() => {
         document.getElementById('loading').style.display = 'none';
+        // 로드 직후 실제 레이아웃이 확정된 뒤 한 번 더 사이즈 재계산
+        requestAnimationFrame(sizePlayerToContainer);
+        setTimeout(sizePlayerToContainer, 300);
       }).catch(showError);
     } catch (e) {
       console.error(e);
