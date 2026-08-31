@@ -1093,9 +1093,30 @@
   <div id="leCallDragHandle" style="display:flex;align-items:center;justify-content:space-between;padding:8px 10px;background:#1e293b;cursor:move;touch-action:none;">
     <span id="leCallStatusText" style="font-size:11.5px;color:#e2e8f0;font-weight:700;">연결 중...</span>
     <span style="display:flex;align-items:center;gap:2px;">
+      <button id="leCallVideoBtn" onclick="leCallVideoBtnClick()" title="영상 재생(방송)" style="background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:2px 5px;">🎬</button>
       <button id="leCallExpandBtn" onclick="leCallToggleExpand()" title="화면 크게 보기" style="background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:2px 5px;">⤢</button>
       <button onclick="leCallMinimize()" title="최소화" style="background:none;border:none;color:#94a3b8;font-size:13px;cursor:pointer;padding:2px 5px;">—</button>
     </span>
+  </div>
+  <input type="file" id="leCallVideoFileInput" accept="video/*" class="hidden" onchange="leCallVideoFileSelected(this)">
+  <div id="leCallVideoStage" style="display:none;position:relative;background:#000;">
+    <video id="leCallVideoEl" playsinline style="width:100%;display:block;max-height:220px;background:#000;"></video>
+    <div id="leCallVideoHostBadge" style="position:absolute;top:6px;left:6px;background:rgba(0,0,0,.6);color:#e2e8f0;font-size:10px;padding:2px 7px;border-radius:10px;"></div>
+    <div id="leCallVideoControls" style="display:none;padding:6px 8px;background:#0b1220;">
+      <div id="leCallVideoProgress" onclick="leCallVideoSeek(event)" style="height:5px;background:#334155;border-radius:3px;cursor:pointer;margin-bottom:6px;">
+        <div id="leCallVideoProgressFill" style="height:100%;width:0%;background:#8b5cf6;border-radius:3px;"></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;">
+        <span style="display:flex;gap:8px;align-items:center;">
+          <button id="leCallVideoPlayBtn" onclick="leCallVideoPlayToggle()" style="background:none;border:none;color:#fff;font-size:14px;cursor:pointer;">▶</button>
+          <span id="leCallVideoTimeLabel" style="font-size:10px;color:#94a3b8;">00:00 / 00:00</span>
+        </span>
+        <button onclick="leCallVideoStop()" style="background:none;border:none;color:#f87171;font-size:10.5px;cursor:pointer;font-weight:700;">✕ 방송종료</button>
+      </div>
+    </div>
+    <div id="leCallVideoGuestNote" style="display:none;padding:4px 8px;background:#0b1220;text-align:center;">
+      <button onclick="leCallVideoUnmute()" style="background:#334155;color:#fff;border:none;border-radius:6px;padding:4px 10px;font-size:10.5px;cursor:pointer;">🔇 소리 켜기(탭하여 재생)</button>
+    </div>
   </div>
   <div id="leCallGrid" style="display:grid;grid-template-columns:1fr 1fr;gap:2px;background:#000;max-height:360px;overflow-y:auto;"></div>
   <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:10px;background:#1e293b;">
@@ -1938,15 +1959,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     }
   }, {passive:false});
 
-  // 견적서(페이지)를 열면 채팅창이 자동으로 열리도록 처리
-  function leChatAutoOpen(){
-    if (!leChatOpen) leChatToggle();
-  }
-  if (document.readyState === 'complete' || document.readyState === 'interactive') {
-    setTimeout(leChatAutoOpen, 300);
-  } else {
-    document.addEventListener('DOMContentLoaded', function(){ setTimeout(leChatAutoOpen, 300); });
-  }
+  // 초기 접속 시 채팅창은 숨김 상태로 유지 — 채팅 버튼을 클릭했을 때만 열림
+  // (예전에는 페이지를 열면 채팅창이 자동으로 열렸으나, 요청에 따라 자동 열림을 제거함)
 
   function leChatInit(){
     if (!leChatConfigured()) {
@@ -4880,6 +4894,10 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
   let leCallCamOn = true;
   let leCallExpanded = false;
   let leCallFocusedTile = null;
+  // ── 영상 재생(방송) 상태 ── 호스트(방송자)가 영상을 올리면 통화 참가자 전원에게 재생상태가 동기화됨
+  let leCallVideoBroadcaster = '';   // 현재 방송중인 사람 닉네임 ('' 이면 방송 없음)
+  let leCallVideoIsHost = false;     // 내가 방송자인지 여부
+  let leCallVideoSyncTimer = null;   // 호스트가 주기적으로 재생위치를 재전송하는 타이머(드리프트 보정, 늦게 들어온 사람 동기화)
 
   function leCallSafeName(n){ return String(n||'').replace(/[^a-zA-Z0-9_-]/g, '_'); }
 
@@ -5038,6 +5056,32 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       leCallJoined.delete(p.from);
       if (typeof showToast === 'function') showToast(p.from + '님이 통화를 나갔습니다.');
       if (leCallJoined.size <= 1) leCallSetStatus('상대방이 나갔습니다.');
+      return;
+    }
+    if (p.type === 'video-load') {
+      leCallVideoBroadcaster = p.from;
+      leCallVideoIsHost = (leChatNorm(p.from) === leChatNorm(leChatNickname));
+      leCallVideoShowStage(p.url, p.from);
+      return;
+    }
+    if (p.type === 'video-play' || p.type === 'video-sync') {
+      if (leChatNorm(p.from) !== leChatNorm(leCallVideoBroadcaster||'')) return;
+      leCallVideoApplyRemoteState(p.time, true);
+      return;
+    }
+    if (p.type === 'video-pause') {
+      if (leChatNorm(p.from) !== leChatNorm(leCallVideoBroadcaster||'')) return;
+      leCallVideoApplyRemoteState(p.time, false);
+      return;
+    }
+    if (p.type === 'video-seek') {
+      if (leChatNorm(p.from) !== leChatNorm(leCallVideoBroadcaster||'')) return;
+      const v = document.getElementById('leCallVideoEl');
+      if (v) v.currentTime = p.time || 0;
+      return;
+    }
+    if (p.type === 'video-stop') {
+      leCallVideoHideStage();
       return;
     }
   }
@@ -5219,6 +5263,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     grid.style.gridTemplateColumns = '1fr 1fr';
     leCallFocusedTile = null;
     Object.keys(leCallVideoEls).forEach(function(k){ delete leCallVideoEls[k]; });
+    if (typeof leCallVideoHideStage === 'function') leCallVideoHideStage();
     leCallAddLocalTile();
   }
   // ── 화면 크게/작게 보기 ──
@@ -5312,6 +5357,149 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (el) el.textContent = text;
   }
 
+  // ════════════════════════════════════════════════════════════
+  // 🎬 영상 재생(방송) — 통화 참가자 중 한 명이 영상을 올리면 전원 화면에 동일하게 재생됨
+  // ════════════════════════════════════════════════════════════
+  function leCallFmtTime(s){
+    if (!isFinite(s) || s < 0) s = 0;
+    const m = Math.floor(s/60).toString().padStart(2,'0');
+    const ss = Math.floor(s%60).toString().padStart(2,'0');
+    return m+':'+ss;
+  }
+
+  window.leCallVideoBtnClick = function(){
+    if (!leCallId) return;
+    if (leCallVideoBroadcaster && !leCallVideoIsHost) {
+      alert(leCallVideoBroadcaster + '님이 이미 영상을 재생 중입니다.');
+      return;
+    }
+    document.getElementById('leCallVideoFileInput').click();
+  };
+
+  window.leCallVideoFileSelected = async function(input){
+    const file = input.files[0];
+    input.value = '';
+    if (!file || !leCallId) return;
+    if (!supaClient) { alert('아직 연결되지 않았습니다. 잠시 후 다시 시도해주세요.'); return; }
+    leCallSetStatus('영상 업로드 중...');
+    try {
+      const safeName = leCallSafeName(leChatNickname) + '_' + Date.now() + '_' + file.name.replace(/[^a-zA-Z0-9._-]/g,'_');
+      const path = 'call-video/' + safeName;
+      const { error: upErr } = await supaClient.storage.from('chat-files').upload(path, file, { upsert: true });
+      if (upErr) { alert('영상 업로드 실패: ' + upErr.message); leCallSetStatus('통화 중'); return; }
+      const { data: pub } = supaClient.storage.from('chat-files').getPublicUrl(path);
+      const url = pub && pub.publicUrl;
+      if (!url) { alert('영상 URL을 가져오지 못했습니다.'); leCallSetStatus('통화 중'); return; }
+      leCallVideoBroadcaster = leChatNickname;
+      leCallVideoIsHost = true;
+      leCallVideoShowStage(url, leChatNickname);
+      leCallSend({ type: 'video-load', callId: leCallId, from: leChatNickname, url: url });
+      leCallSetStatus('통화 중');
+    } catch(e) {
+      console.error(e);
+      alert('영상 업로드 중 오류가 발생했습니다.');
+      leCallSetStatus('통화 중');
+    }
+  };
+
+  function leCallVideoShowStage(url, hostName){
+    const stage = document.getElementById('leCallVideoStage');
+    const v = document.getElementById('leCallVideoEl');
+    const controls = document.getElementById('leCallVideoControls');
+    const guestNote = document.getElementById('leCallVideoGuestNote');
+    const badge = document.getElementById('leCallVideoHostBadge');
+    if (!stage || !v) return;
+    if (v.getAttribute('data-src') !== url) {
+      v.setAttribute('data-src', url);
+      v.src = url;
+      v.muted = !leCallVideoIsHost; // 호스트 외에는 자동재생 정책 때문에 처음엔 음소거 상태로 시작
+    }
+    stage.style.display = 'block';
+    badge.textContent = (leCallVideoIsHost ? '내가 방송 중' : hostName + '님이 영상을 재생 중');
+    controls.style.display = leCallVideoIsHost ? 'block' : 'none';
+    guestNote.style.display = (!leCallVideoIsHost) ? 'block' : 'none';
+
+    if (leCallVideoIsHost) {
+      v.onplay = function(){
+        document.getElementById('leCallVideoPlayBtn').textContent = '❚❚';
+        leCallSend({ type:'video-play', callId:leCallId, from:leChatNickname, time:v.currentTime });
+      };
+      v.onpause = function(){
+        document.getElementById('leCallVideoPlayBtn').textContent = '▶';
+        leCallSend({ type:'video-pause', callId:leCallId, from:leChatNickname, time:v.currentTime });
+      };
+      v.ontimeupdate = function(){
+        const fill = document.getElementById('leCallVideoProgressFill');
+        const lbl = document.getElementById('leCallVideoTimeLabel');
+        if (fill && v.duration) fill.style.width = (v.currentTime/v.duration*100)+'%';
+        if (lbl) lbl.textContent = leCallFmtTime(v.currentTime) + ' / ' + leCallFmtTime(v.duration||0);
+      };
+      if (leCallVideoSyncTimer) clearInterval(leCallVideoSyncTimer);
+      leCallVideoSyncTimer = setInterval(function(){
+        if (!leCallVideoIsHost || !leCallId) { clearInterval(leCallVideoSyncTimer); return; }
+        leCallSend({ type:'video-sync', callId:leCallId, from:leChatNickname, time:v.currentTime, playing: !v.paused });
+      }, 4000);
+      v.play().catch(function(){});
+    }
+  }
+
+  function leCallVideoApplyRemoteState(time, playing){
+    const v = document.getElementById('leCallVideoEl');
+    if (!v) return;
+    if (typeof time === 'number' && Math.abs((v.currentTime||0) - time) > 1.2) v.currentTime = time;
+    if (playing) {
+      v.play().catch(function(){
+        // 자동재생이 막히면 "소리 켜기(탭하여 재생)" 안내를 계속 노출해둔다
+      });
+    } else {
+      v.pause();
+    }
+    const fill = document.getElementById('leCallVideoProgressFill');
+    const lbl = document.getElementById('leCallVideoTimeLabel');
+    if (fill && v.duration) fill.style.width = (v.currentTime/v.duration*100)+'%';
+    if (lbl) lbl.textContent = leCallFmtTime(v.currentTime) + ' / ' + leCallFmtTime(v.duration||0);
+  }
+
+  window.leCallVideoPlayToggle = function(){
+    const v = document.getElementById('leCallVideoEl');
+    if (!v || !leCallVideoIsHost) return;
+    if (v.paused) v.play().catch(function(){}); else v.pause();
+  };
+
+  window.leCallVideoSeek = function(evt){
+    const v = document.getElementById('leCallVideoEl');
+    if (!v || !leCallVideoIsHost || !v.duration) return;
+    const rect = evt.currentTarget.getBoundingClientRect();
+    const ratio = Math.min(1, Math.max(0, (evt.clientX - rect.left) / rect.width));
+    v.currentTime = ratio * v.duration;
+    leCallSend({ type:'video-seek', callId:leCallId, from:leChatNickname, time:v.currentTime });
+  };
+
+  window.leCallVideoUnmute = function(){
+    const v = document.getElementById('leCallVideoEl');
+    if (!v) return;
+    v.muted = false;
+    v.play().catch(function(){});
+    const note = document.getElementById('leCallVideoGuestNote');
+    if (note) note.style.display = 'none';
+  };
+
+  window.leCallVideoStop = function(){
+    if (!leCallVideoIsHost) return;
+    leCallSend({ type:'video-stop', callId:leCallId, from:leChatNickname });
+    leCallVideoHideStage();
+  };
+
+  function leCallVideoHideStage(){
+    const stage = document.getElementById('leCallVideoStage');
+    const v = document.getElementById('leCallVideoEl');
+    if (leCallVideoSyncTimer) { clearInterval(leCallVideoSyncTimer); leCallVideoSyncTimer = null; }
+    if (v) { v.pause(); v.removeAttribute('src'); v.removeAttribute('data-src'); v.onplay=v.onpause=v.ontimeupdate=null; }
+    if (stage) stage.style.display = 'none';
+    leCallVideoBroadcaster = '';
+    leCallVideoIsHost = false;
+  }
+
   window.leCallToggleMic = function(){
     if (!leCallLocalStream) return;
     leCallMicOn = !leCallMicOn;
@@ -5346,6 +5534,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     }
     Object.keys(leCallPeers).forEach(leCallRemovePeer);
     if (leCallLocalStream) { leCallLocalStream.getTracks().forEach(function(t){ t.stop(); }); leCallLocalStream = null; }
+    if (typeof leCallVideoHideStage === 'function') leCallVideoHideStage();
     leCallId = null; leCallIsInitiator = false;
     leCallJoined.clear(); leCallPendingInvitees = new Set();
     document.getElementById('leCallWindow').style.display = 'none';
@@ -5761,6 +5950,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openThemeSettingsModal()">⚙️ 환경 설정 (메일·테마 색상)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openAdSettingsModal()" title="프로그램을 하루 중 처음 열었을 때 뜨는 광고 사진/문구를 설정합니다">📢 광고 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.leOpenVisitorAdmin&&window.leOpenVisitorAdmin()" title="지금 접속 중인 사람들의 IP를 보고, 영구 차단·차단 해제를 할 수 있습니다">🌐 접속자 / 차단 관리</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.open('game/index.html','worldcupMatgo','width=900,height=700,resizable=yes,scrollbars=no')" title="새 창으로 맞고 게임을 엽니다">🀄 맞고 게임</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeSettingsMenu();openHelpGuide()" title="처음 사용하시나요? 이 프로그램 사용법을 쉽게 안내해 드려요">❓ 도움말</div>
         </div>
       </div>

@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>월드컵맞고</title>
+<style>
+  html,body{
+    margin:0; padding:0;
+    height:100%;
+    height:calc(var(--vh, 1vh) * 100);
+    background:#07140d;
+    font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    overflow:hidden;
+    overscroll-behavior:none;
+  }
+  #wrap{
+    position:relative; width:100%;
+    height:100vh;
+    height:100dvh;
+    height:calc(var(--vh, 1vh) * 100);
+    display:flex; flex-direction:column;
+    background:
+      radial-gradient(ellipse at 50% 40%, #0d5c34 0%, #0a4b2a 70%);
+    padding-top:env(safe-area-inset-top);
+    padding-bottom:env(safe-area-inset-bottom);
+    padding-left:env(safe-area-inset-left);
+    padding-right:env(safe-area-inset-right);
+    box-sizing:border-box;
+  }
+  #topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 14px; flex:0 0 auto;
+    background:linear-gradient(180deg, rgba(0,0,0,0.4), transparent);
+    z-index:5;
+  }
+  #topbar .title{
+    color:#e8c15c; font-weight:700; font-size:14px; letter-spacing:1px;
+    text-shadow:0 1px 2px rgba(0,0,0,0.6);
+  }
+  #close-btn{
+    background:linear-gradient(180deg,#7a3b24,#5c2a1a);
+    border:1px solid #3a1c10; color:#f4e9d8;
+    padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer;
+  }
+  #close-btn:hover{ filter:brightness(1.15); }
+  #stage{
+    flex:1 1 auto; display:flex; align-items:center; justify-content:center;
+    min-height:0; position:relative;
+  }
+  #player-container{
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+  }
+  ruffle-player{ width:100%; height:100%; }
+
+  #loading{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; gap:14px; color:#e8dcc0;
+    z-index:10;
+  }
+  #loading .spinner{
+    width:40px; height:40px; border-radius:50%;
+    border:4px solid rgba(255,255,255,0.15); border-top-color:#e8c15c;
+    animation:spin 0.9s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+  #loading .txt{ font-size:13px; opacity:0.85; }
+
+  #error-box{
+    display:none; position:absolute; inset:0; align-items:center; justify-content:center;
+    z-index:20; padding:24px;
+  }
+  #error-box .card{
+    background:#fbf8f2; color:#333; border-radius:12px; padding:22px 24px;
+    max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  }
+  #error-box h2{ margin:0 0 8px; font-size:17px; color:#8a2020; }
+  #error-box p{ font-size:13px; line-height:1.6; color:#555; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <div id="topbar">
+    <div class="title">🀄 월드컵맞고</div>
+    <button id="close-btn" onclick="window.close()">닫기</button>
+  </div>
+  <div id="stage">
+    <div id="player-container"></div>
+    <div id="loading">
+      <div class="spinner"></div>
+      <div class="txt">게임을 불러오는 중입니다...</div>
+    </div>
+    <div id="error-box">
+      <div class="card">
+        <h2>게임을 불러올 수 없습니다</h2>
+        <p>이 페이지는 Ruffle(플래시 에뮬레이터)을 사용합니다.<br>
+        파일을 더블클릭해서 직접 열면 브라우저 보안 정책 때문에 로딩이 실패할 수 있습니다.<br>
+        웹 서버에 올리거나 로컬 서버(예: <code>npx serve</code>)로 열어보세요.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="ruffle.js"></script>
+<script>
+  // 모바일 브라우저(특히 주소창이 나타났다 사라졌다 하는 환경)에서
+  // 100vh가 실제 화면보다 크게 잡혀 아래쪽이 잘리는 문제를 막기 위한 보정
+  function setRealViewportHeight(){
+    document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
+  }
+  setRealViewportHeight();
+  window.addEventListener('resize', setRealViewportHeight);
+  window.addEventListener('orientationchange', () => setTimeout(setRealViewportHeight, 200));
+
+  window.RufflePlayer = window.RufflePlayer || {};
+
+  function showError(){
+    document.getElementById('loading').style.display = 'none';
+    document.getElementById('error-box').style.display = 'flex';
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    try {
+      const ruffle = window.RufflePlayer.newest();
+      const player = ruffle.createPlayer();
+      const container = document.getElementById("player-container");
+      container.appendChild(player);
+
+      player.addEventListener("loaderror", showError);
+
+      player.ruffle().load({
+        url: "worldcup-matgo.swf",
+        letterbox: "on",
+      }).then(() => {
+        document.getElementById('loading').style.display = 'none';
+      }).catch(showError);
+    } catch (e) {
+      console.error(e);
+      showError();
+    }
+  });
+</script>
+</body>
+</html>
