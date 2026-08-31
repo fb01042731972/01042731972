@@ -5950,6 +5950,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openThemeSettingsModal()">⚙️ 환경 설정 (메일·테마 색상)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openAdSettingsModal()" title="프로그램을 하루 중 처음 열었을 때 뜨는 광고 사진/문구를 설정합니다">📢 광고 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.leOpenVisitorAdmin&&window.leOpenVisitorAdmin()" title="지금 접속 중인 사람들의 IP를 보고, 영구 차단·차단 해제를 할 수 있습니다">🌐 접속자 / 차단 관리</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-top:1px solid #f1f5f9" onclick="closeSettingsMenu();openGodoriGame()" title="직원들끼리 방을 만들어 실시간으로 맞고를 즐길 수 있어요">🀄 맞고 게임 (직원 대전)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeSettingsMenu();openHelpGuide()" title="처음 사용하시나요? 이 프로그램 사용법을 쉽게 안내해 드려요">❓ 도움말</div>
         </div>
       </div>
@@ -36985,6 +36986,629 @@ document.addEventListener('keydown',function(e){
     if(m && m.style.display==='flex') closeEmbeddedTool();
   }
 });
+</script>
+
+<!-- ════════════════════════ 🀄 맞고 게임 (직원 실시간 대전) ════════════════════════ -->
+<div id="godoriModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(8,20,15,.82);z-index:2000;align-items:center;justify-content:center;padding:10px" onclick="if(event.target===this) gdMinimize()">
+  <div style="max-width:760px;width:100%;max-height:95vh;overflow-y:auto;border-radius:14px;position:relative;background:linear-gradient(180deg,#123c2f,#0c2b21);border:1px solid rgba(212,175,55,.35);box-shadow:0 20px 60px rgba(0,0,0,.55)">
+    <button onclick="gdMinimize()" title="닫기(진행 중인 방은 유지됩니다)" style="position:absolute;top:10px;right:10px;z-index:5;background:rgba(0,0,0,.35);color:#f2ead2;border:1px solid rgba(212,175,55,.4);border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;line-height:1">✕</button>
+    <div id="godoriRoot" style="padding:20px 16px 26px"></div>
+  </div>
+</div>
+
+<style>
+#godoriModal, #godoriModal * { box-sizing:border-box; }
+#godoriModal { font-family:'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR',sans-serif; color:#f2ead2; }
+#godoriModal .gd-title { font-family:'Batang','Nanum Myeongjo',serif; letter-spacing:2px; }
+#godoriModal .gd-panel { background:linear-gradient(180deg,rgba(255,255,255,.06),rgba(255,255,255,.02)); border:1px solid rgba(212,175,55,.35); border-radius:12px; padding:16px; }
+#godoriModal .gd-input { background:rgba(0,0,0,.25); border:1px solid rgba(212,175,55,.4); color:#f2ead2; border-radius:8px; padding:9px 11px; font-size:14px; width:100%; outline:none; }
+#godoriModal .gd-input:focus { border-color:#d4af37; }
+#godoriModal .gd-btn { background:linear-gradient(180deg,#d4af37,#b8860b); color:#1b1b1b; font-weight:700; border:none; border-radius:8px; padding:10px 16px; cursor:pointer; font-size:14px; }
+#godoriModal .gd-btn:disabled { opacity:.5; cursor:not-allowed; }
+#godoriModal .gd-btn-ghost { background:transparent; color:#d4af37; border:1px solid rgba(212,175,55,.5); border-radius:8px; padding:8px 13px; cursor:pointer; font-size:13px; }
+#godoriModal .gd-card { border-radius:6px; border:1.5px solid; position:relative; box-shadow:0 2px 5px rgba(0,0,0,.4); display:flex; flex-direction:column; align-items:center; padding-top:4px; flex-shrink:0; }
+#godoriModal .gd-card-month { font-size:11px; font-weight:800; }
+#godoriModal .gd-card-name { font-size:10px; color:#333; margin-top:2px; text-align:center; padding:0 2px; font-weight:600; }
+#godoriModal .gd-card-badge { position:absolute; bottom:3px; left:3px; right:3px; color:#fff; font-size:9px; text-align:center; border-radius:3px; padding:1px 0; font-weight:700; }
+#godoriModal .gd-hand-card { cursor:pointer; transition:transform .12s ease; }
+#godoriModal .gd-hand-card:hover { transform:translateY(-6px); }
+#godoriModal .gd-hand-card.gd-disabled { cursor:not-allowed; filter:grayscale(.6) brightness(.7); }
+#godoriModal .gd-pill { display:inline-block; background:rgba(212,175,55,.18); border:1px solid rgba(212,175,55,.5); color:#f2ead2; border-radius:999px; padding:2px 10px; font-size:12px; }
+#godoriModal .gd-log { font-size:12px; color:#cfead9; opacity:.85; }
+#godoriModal .gd-modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,.6); display:flex; align-items:center; justify-content:center; z-index:2100; padding:16px; }
+#godoriModal .gd-modal { background:#123c2f; border:1px solid rgba(212,175,55,.5); border-radius:14px; padding:22px; max-width:380px; width:100%; box-shadow:0 10px 30px rgba(0,0,0,.5); }
+#godoriModal .gd-chat-fab { position:absolute; bottom:16px; right:16px; background:#d4af37; color:#1b1b1b; border-radius:999px; width:46px; height:46px; display:flex; align-items:center; justify-content:center; cursor:pointer; border:none; font-size:20px; box-shadow:0 6px 16px rgba(0,0,0,.4); z-index:20; }
+#godoriModal .gd-chat-panel { position:absolute; bottom:0; left:0; right:0; background:#0c2b21; border-top:1px solid rgba(212,175,55,.4); border-radius:14px 14px 0 0; z-index:30; display:flex; flex-direction:column; height:60%; }
+@keyframes gdspin { to { transform:rotate(360deg); } }
+</style>
+
+<script>
+/* ============================== 맞고(고스톱) 게임 엔진 + Supabase 실시간 방 동기화 ============================== */
+(function(){
+
+/* ---------- 화투 데이터 ---------- */
+const GD_MONTHS = {1:{name:'송학'},2:{name:'매화'},3:{name:'벚꽃'},4:{name:'흑싸리'},5:{name:'난초'},6:{name:'모란'},7:{name:'홍싸리'},8:{name:'공산'},9:{name:'국화'},10:{name:'단풍'},11:{name:'오동'},12:{name:'비'}};
+const GD_TTI_LABEL = {hong:'홍단',cheong:'청단',cho:'초단'};
+const GD_TTI_COLOR = {hong:'#b5342b',cheong:'#2f5d8a',cho:'#3a7d44'};
+
+function gdBuildDeck(){
+  const c=[]; let id=0;
+  const push=(month,type,extra)=>{ c.push(Object.assign({id:id++,month,type},extra||{})); };
+  push(1,'gwang'); push(1,'tti',{ttiColor:'hong'}); push(1,'pi',{piValue:1}); push(1,'pi',{piValue:1});
+  push(2,'yeol',{godori:true}); push(2,'tti',{ttiColor:'hong'}); push(2,'pi',{piValue:1}); push(2,'pi',{piValue:1});
+  push(3,'gwang'); push(3,'tti',{ttiColor:'hong'}); push(3,'pi',{piValue:1}); push(3,'pi',{piValue:1});
+  push(4,'yeol',{godori:true}); push(4,'tti',{ttiColor:'cho'}); push(4,'pi',{piValue:1}); push(4,'pi',{piValue:1});
+  push(5,'yeol'); push(5,'tti',{ttiColor:'cho'}); push(5,'pi',{piValue:1}); push(5,'pi',{piValue:1});
+  push(6,'yeol'); push(6,'tti',{ttiColor:'cheong'}); push(6,'pi',{piValue:1}); push(6,'pi',{piValue:1});
+  push(7,'yeol'); push(7,'tti',{ttiColor:'cho'}); push(7,'pi',{piValue:1}); push(7,'pi',{piValue:1});
+  push(8,'gwang'); push(8,'yeol',{godori:true}); push(8,'pi',{piValue:1}); push(8,'pi',{piValue:1});
+  push(9,'yeol'); push(9,'tti',{ttiColor:'cheong'}); push(9,'pi',{piValue:1}); push(9,'pi',{piValue:1});
+  push(10,'yeol'); push(10,'tti',{ttiColor:'cheong'}); push(10,'pi',{piValue:1}); push(10,'pi',{piValue:1});
+  push(11,'gwang'); push(11,'pi',{piValue:1}); push(11,'pi',{piValue:1}); push(11,'pi',{piValue:2});
+  push(12,'gwang',{rainBright:true}); push(12,'yeol'); push(12,'tti',{rainTti:true}); push(12,'pi',{piValue:2});
+  return c;
+}
+const GD_DECK = gdBuildDeck();
+const gdById = id => GD_DECK[id];
+function gdShuffledIds(){
+  const arr = GD_DECK.map(c=>c.id);
+  for(let i=arr.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [arr[i],arr[j]]=[arr[j],arr[i]]; }
+  return arr;
+}
+
+/* ---------- 점수 계산 ---------- */
+function gdComputeScore(cardIds){
+  const cards = cardIds.map(gdById);
+  const gwang = cards.filter(c=>c.type==='gwang');
+  const yeol  = cards.filter(c=>c.type==='yeol');
+  const tti   = cards.filter(c=>c.type==='tti');
+  const pi    = cards.filter(c=>c.type==='pi');
+  const piCount = pi.reduce((s,c)=>s+(c.piValue||1),0);
+  const godoriCount = yeol.filter(c=>c.godori).length;
+  const hasRain = gwang.some(c=>c.rainBright);
+
+  let gwangPts=0;
+  if(gwang.length===5) gwangPts=15;
+  else if(gwang.length===4) gwangPts=4;
+  else if(gwang.length===3) gwangPts = hasRain?2:3;
+
+  let yeolPts = yeol.length>=5 ? yeol.length-4 : 0;
+  const godoriPts = godoriCount===3 ? 5 : 0;
+
+  let ttiPts = tti.length>=5 ? tti.length-4 : 0;
+  const hong = tti.filter(c=>c.ttiColor==='hong').length;
+  const cheong = tti.filter(c=>c.ttiColor==='cheong').length;
+  const cho = tti.filter(c=>c.ttiColor==='cho').length;
+  const hongdanPts = hong===3?3:0, cheongdanPts = cheong===3?3:0, chodanPts = cho===3?3:0;
+
+  const piPts = piCount>=10 ? piCount-9 : 0;
+  const total = gwangPts+yeolPts+godoriPts+ttiPts+hongdanPts+cheongdanPts+chodanPts+piPts;
+
+  const lines=[];
+  if(gwangPts) lines.push('광 '+gwang.length+'장 '+gwangPts+'점');
+  if(godoriPts) lines.push('고도리 5점');
+  if(yeolPts) lines.push('열끗 '+yeol.length+'장 '+yeolPts+'점');
+  if(hongdanPts) lines.push('홍단 3점');
+  if(cheongdanPts) lines.push('청단 3점');
+  if(chodanPts) lines.push('초단 3점');
+  if(ttiPts) lines.push('띠 '+tti.length+'장 '+ttiPts+'점');
+  if(piPts) lines.push('피 '+piCount+'장 '+piPts+'점');
+
+  return { total, lines, counts:{gwang:gwang.length,yeol:yeol.length,tti:tti.length,pi:piCount,godori:godoriCount} };
+}
+
+/* ---------- 게임 로직(순수 함수) ---------- */
+function gdOther(r){ return r==='p1'?'p2':'p1'; }
+
+function gdDealNewGame(prev){
+  const ids = gdShuffledIds();
+  const hands = { p1: ids.slice(0,10), p2: ids.slice(10,20) };
+  const field = ids.slice(20,28);
+  const deck = ids.slice(28);
+  const startTurn = Math.random()<0.5 ? 'p1':'p2';
+  return Object.assign({}, prev, {
+    status:'playing', turn:startTurn, deck, field, hands,
+    captured:{p1:[],p2:[]}, goCount:{p1:0,p2:0}, shakeCount:{p1:0,p2:0}, bombCount:{p1:0,p2:0},
+    sweepBonus:{p1:0,p2:0}, handledTriple:{p1:[],p2:[]}, pendingGoStop:null,
+    winner:null, draw:false, finalScore:null,
+    log:[{msg:(startTurn==='p1'?prev.players.p1.name:prev.players.p2.name)+'님부터 시작합니다.', t:Date.now()}],
+    chat: prev.chat || []
+  });
+}
+function gdLog(state,msg){ const log=(state.log||[]).concat([{msg,t:Date.now()}]).slice(-40); return Object.assign({},state,{log}); }
+function gdSweepCheck(state, role, fieldBefore){
+  if(fieldBefore.length>0 && state.field.length===0){
+    const sweepBonus = Object.assign({}, state.sweepBonus||{p1:0,p2:0});
+    sweepBonus[role] = (sweepBonus[role]||0)+1;
+    state = Object.assign({},state,{sweepBonus});
+    state = gdLog(state, state.players[role].name+'님이 필드를 싹쓸이했습니다! (쓸 +1피)');
+  }
+  return state;
+}
+function gdDrawStep(state, role){
+  let deck = state.deck.slice();
+  let field = state.field.slice();
+  let captured = Object.assign({},state.captured,{[role]:state.captured[role].slice()});
+  if(deck.length===0) return Object.assign({},state,{deck,field,captured});
+  const drawn = deck.pop();
+  const drawnCard = gdById(drawn);
+  const fieldBefore = field;
+  const match = field.find(id=>gdById(id).month===drawnCard.month);
+  if(match){
+    field = field.filter(id=>id!==match);
+    captured[role].push(drawn, match);
+    state = gdLog(Object.assign({},state,{deck,field,captured}), state.players[role].name+'님이 뒤집은 '+drawnCard.month+'월 패로 짝을 잡았습니다.');
+  } else {
+    field = field.concat([drawn]);
+    state = gdLog(Object.assign({},state,{deck,field,captured}), state.players[role].name+'님이 뒤집은 패가 바닥에 놓였습니다.');
+  }
+  return gdSweepCheck(state, role, fieldBefore);
+}
+function gdFinishTurn(state, role){
+  const scored = gdComputeScore(state.captured[role]);
+  if(scored.total>=3){
+    state = Object.assign({},state,{status:'roundEnd', pendingGoStop:role});
+  } else {
+    state = Object.assign({},state,{turn:gdOther(role)});
+    if(state.deck.length===0 && state.hands.p1.length===0 && state.hands.p2.length===0){
+      state = Object.assign({},state,{status:'gameEnd', draw:true, winner:null, finalScore:null});
+      state = gdLog(state, '나가리! 두 분 모두 3점을 못 채우고 패가 다 떨어졌습니다.');
+    }
+  }
+  return state;
+}
+function gdPlayHandCard(state, role, cardId){
+  if(state.turn!==role || state.status!=='playing') return state;
+  const card = gdById(cardId);
+  let hands = Object.assign({},state.hands,{[role]:state.hands[role].filter(id=>id!==cardId)});
+  let field = state.field.slice();
+  let captured = Object.assign({},state.captured,{[role]:state.captured[role].slice()});
+  const fieldBefore = field;
+  const match = field.find(id=>gdById(id).month===card.month);
+  if(match){
+    field = field.filter(id=>id!==match);
+    captured[role].push(cardId, match);
+    state = gdLog(Object.assign({},state,{hands,field,captured}), state.players[role].name+'님이 '+card.month+'월 패로 짝을 잡았습니다.');
+  } else {
+    field = field.concat([cardId]);
+    state = gdLog(Object.assign({},state,{hands,field,captured}), state.players[role].name+'님이 '+card.month+'월 패를 냈습니다.');
+  }
+  state = gdSweepCheck(state, role, fieldBefore);
+  state = gdDrawStep(state, role);
+  state = gdFinishTurn(state, role);
+  return state;
+}
+function gdDrawOnlyTurn(state, role){
+  // 폭탄으로 손패를 먼저 소진한 경우, 낼 손패 없이 패 더미만 뒤집고 넘어간다.
+  if(state.turn!==role || state.status!=='playing') return state;
+  state = gdDrawStep(state, role);
+  state = gdFinishTurn(state, role);
+  return state;
+}
+function gdDeclareBomb(state, role, month){
+  if(state.turn!==role || state.status!=='playing') return state;
+  const handMonthCards = state.hands[role].filter(id=>gdById(id).month===month);
+  if(handMonthCards.length!==3) return state;
+  let hands = Object.assign({},state.hands,{[role]:state.hands[role].filter(id=>gdById(id).month!==month)});
+  let field = state.field.slice();
+  const oppRole = gdOther(role);
+  let captured = Object.assign({},state.captured,{[role]:state.captured[role].slice(),[oppRole]:state.captured[oppRole].slice()});
+  const fieldMatches = field.filter(id=>gdById(id).month===month);
+  field = field.filter(id=>gdById(id).month!==month);
+  captured[role] = captured[role].concat(handMonthCards, fieldMatches);
+  let stole=false;
+  for(let i=captured[oppRole].length-1;i>=0;i--){
+    if(gdById(captured[oppRole][i]).type==='pi'){ const st=captured[oppRole].splice(i,1)[0]; captured[role].push(st); stole=true; break; }
+  }
+  const handled = Object.assign({},state.handledTriple,{[role]:state.handledTriple[role].concat([month])});
+  const bombCount = Object.assign({},state.bombCount||{p1:0,p2:0}); bombCount[role]=(bombCount[role]||0)+1;
+  state = Object.assign({},state,{hands,field,captured,handledTriple:handled,bombCount});
+  state = gdLog(state, state.players[role].name+'님이 '+month+'월 폭탄을 냈습니다!'+(stole?' (상대 피 1장 획득)':''));
+  state = gdDrawStep(state, role);
+  state = gdFinishTurn(state, role);
+  return state;
+}
+function gdDeclareShake(state, role, month){
+  if(state.turn!==role || state.status!=='playing') return state;
+  const shakeCount = Object.assign({},state.shakeCount); shakeCount[role]=(shakeCount[role]||0)+1;
+  const handled = Object.assign({},state.handledTriple,{[role]:state.handledTriple[role].concat([month])});
+  state = Object.assign({},state,{shakeCount, handledTriple:handled});
+  state = gdLog(state, state.players[role].name+'님이 '+month+'월 흔들기를 선언했습니다! (점수 2배)');
+  return state;
+}
+function gdSkipTriple(state, role, month){
+  const handled = Object.assign({},state.handledTriple,{[role]:state.handledTriple[role].concat([month])});
+  return Object.assign({},state,{handledTriple:handled});
+}
+function gdPendingTriple(state, role){
+  if(!state || state.turn!==role || state.status!=='playing') return null;
+  const hand = state.hands[role];
+  const handled = (state.handledTriple && state.handledTriple[role]) || [];
+  const counts = {};
+  hand.forEach(id=>{ const m=gdById(id).month; counts[m]=(counts[m]||0)+1; });
+  const month = Object.keys(counts).find(m=>counts[m]===3 && handled.indexOf(Number(m))===-1);
+  return month ? Number(month) : null;
+}
+function gdComputeFinal(state, winnerRole){
+  const loserRole = gdOther(winnerRole);
+  const scored = gdComputeScore(state.captured[winnerRole]);
+  const sweepBonus = (state.sweepBonus && state.sweepBonus[winnerRole]) || 0;
+  const base = scored.total + sweepBonus;
+  const flags = []; let multiplier = 1;
+  const loserGwang = gdComputeScore(state.captured[loserRole]).counts.gwang;
+  const loserPi = gdComputeScore(state.captured[loserRole]).counts.pi;
+  if(loserGwang===0 && scored.counts.gwang>0){ multiplier*=2; flags.push('광박'); }
+  if(loserPi<5){ multiplier*=2; flags.push('피박'); }
+  if((state.goCount[loserRole]||0)>=1){ multiplier*=2; flags.push('고박'); }
+  const shakes = state.shakeCount[winnerRole]||0;
+  if(shakes>0){ multiplier*=Math.pow(2,shakes); flags.push('흔들기×'+shakes); }
+  const bombs = (state.bombCount && state.bombCount[winnerRole])||0;
+  if(bombs>0) flags.push('폭탄×'+bombs);
+  const g = state.goCount[winnerRole]||0;
+  let goBonus=0, goMult=1;
+  if(g===2){ goMult*=2; flags.push('2고'); }
+  else if(g>=3){ goBonus=3; goMult*=Math.pow(2,g-2); flags.push(g+'고'); }
+  const final = Math.max(1, Math.round((base+goBonus)*multiplier*goMult));
+  return { base, sweepBonus, goBonus, multiplier, goMult, final, flags, lines: scored.lines };
+}
+function gdResolveGoStop(state, role, choice){
+  if(state.pendingGoStop!==role) return state;
+  if(choice==='go'){
+    const goCount = Object.assign({},state.goCount); goCount[role]=state.goCount[role]+1;
+    state = Object.assign({},state,{goCount, status:'playing', pendingGoStop:null, turn:gdOther(role)});
+    state = gdLog(state, state.players[role].name+'님이 "고!"를 외쳤습니다. ('+goCount[role]+'고)');
+  } else {
+    const finalScore = gdComputeFinal(state, role);
+    state = Object.assign({},state,{status:'gameEnd', pendingGoStop:null, winner:role, finalScore, draw:false});
+    state = gdLog(state, state.players[role].name+'님이 "스톱!"을 외치고 게임을 마쳤습니다.');
+  }
+  return state;
+}
+
+/* ---------- UI 렌더 ---------- */
+function gdCardHTML(id, size){
+  const c = gdById(id);
+  const dims = size==='sm' ? {w:36,h:52} : size==='lg' ? {w:58,h:84} : {w:48,h:70};
+  let badge='', accent='#8a7a4f', bg='#f6efdd';
+  if(c.type==='gwang'){ badge='광'; accent='#b8860b'; bg='#fbf1d6'; }
+  else if(c.type==='yeol'){ badge=c.godori?'고도리':'열끗'; accent='#3a7d44'; }
+  else if(c.type==='tti'){ badge=c.rainTti?'띠':GD_TTI_LABEL[c.ttiColor]; accent=c.rainTti?'#6b6b6b':GD_TTI_COLOR[c.ttiColor]; }
+  else if(c.type==='pi'){ badge=c.piValue===2?'쌍피':'피'; accent='#5a5a5a'; }
+  return '<div class="gd-card" style="width:'+dims.w+'px;height:'+dims.h+'px;background:'+bg+';border-color:'+accent+'">'
+    + '<div class="gd-card-month" style="color:'+accent+'">'+c.month+'</div>'
+    + '<div class="gd-card-name">'+GD_MONTHS[c.month].name+'</div>'
+    + '<div class="gd-card-badge" style="background:'+accent+'">'+badge+'</div></div>';
+}
+function gdCapturedRowHTML(cardIds){
+  if(!cardIds.length) return '';
+  const groups = {gwang:[],yeol:[],tti:[],pi:[]};
+  cardIds.forEach(id=>groups[gdById(id).type].push(id));
+  let html = '<div style="display:flex;gap:10px;overflow-x:auto;padding:4px 2px">';
+  ['gwang','yeol','tti','pi'].forEach(t=>{
+    if(!groups[t].length) return;
+    html += '<div style="display:flex">';
+    groups[t].forEach((id,i)=>{ html += '<div style="margin-left:'+(i===0?0:-26)+'px">'+gdCardHTML(id,'sm')+'</div>'; });
+    html += '</div>';
+  });
+  html += '</div>';
+  return html;
+}
+
+/* ---------- 상태 ---------- */
+let gdView = 'lobby'; // lobby | waiting | game
+let gdRole = null, gdRoomCode = '', gdName = '', gdState = null;
+let gdPollTimer = null, gdChatOpen = false, gdBusy = false, gdError = '';
+let gdSupa = null, gdLastVersion = 0;
+
+const GD_URL = LE_CHAT_CONFIG.supabaseUrl;
+const GD_KEY = LE_CHAT_CONFIG.supabaseAnonKey;
+
+function gdLoadLib(cb){
+  if(window.supabase && window.supabase.createClient){ cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+  s.onload = cb;
+  s.onerror = function(){ alert('게임 서버 연결 스크립트를 불러오지 못했습니다. 인터넷 연결을 확인해주세요.'); };
+  document.head.appendChild(s);
+}
+function gdClient(cb){
+  if(gdSupa){ cb(gdSupa); return; }
+  gdLoadLib(function(){ gdSupa = window.supabase.createClient(GD_URL, GD_KEY); cb(gdSupa); });
+}
+function gdFetchRoom(code, cb){
+  gdClient(function(sb){
+    sb.from('godori_rooms').select('*').eq('id', code).maybeSingle().then(function(res){
+      if(res.error){ cb(null, res.error); return; }
+      cb(res.data ? res.data.state : null);
+    });
+  });
+}
+function gdWriteRoom(code, state, cb){
+  gdClient(function(sb){
+    sb.from('godori_rooms').upsert({ id: code, state: state, updated_at: new Date().toISOString() }).then(function(res){
+      if(cb) cb(res.error);
+    });
+  });
+}
+
+/* ---------- 화면 진입/종료 ---------- */
+window.openGodoriGame = function(){
+  document.getElementById('godoriModal').style.display = 'flex';
+  try {
+    const saved = JSON.parse(localStorage.getItem('godoriSession') || 'null');
+    if(saved && saved.roomCode && saved.role){
+      gdRoomCode = saved.roomCode; gdRole = saved.role; gdName = saved.name || '';
+      gdFetchRoom(gdRoomCode, function(room){
+        if(room){ gdState = room; gdLastVersion = room.version||0; gdView = room.status==='waiting' ? 'waiting':'game'; gdStartPoll(); }
+        gdRender();
+      });
+      return;
+    }
+  } catch(e){}
+  gdRender();
+};
+window.gdMinimize = function(){ document.getElementById('godoriModal').style.display='none'; };
+function gdSaveSession(){ try{ localStorage.setItem('godoriSession', JSON.stringify({roomCode:gdRoomCode, role:gdRole, name:gdName})); }catch(e){} }
+function gdClearSession(){ try{ localStorage.removeItem('godoriSession'); }catch(e){} }
+
+function gdStartPoll(){
+  clearInterval(gdPollTimer);
+  gdPollTimer = setInterval(function(){
+    if(!gdRoomCode) return;
+    gdFetchRoom(gdRoomCode, function(room){
+      if(!room) return;
+      if((room.version||0) !== gdLastVersion){
+        gdLastVersion = room.version||0;
+        gdState = room;
+        if(room.status!=='waiting' && gdView==='waiting') gdView='game';
+        gdRender();
+      }
+    });
+  }, 1500);
+}
+
+/* ---------- 액션 ---------- */
+window.gdCreateRoom = function(){
+  const nameEl = document.getElementById('gdNameInput');
+  const name = nameEl ? nameEl.value.trim() : '';
+  if(!name){ gdError='이름을 입력해주세요.'; gdRender(); return; }
+  gdError=''; gdBusy=true; gdRender();
+  const code = String(Math.floor(1000+Math.random()*9000));
+  const initial = { roomCode:code, status:'waiting', players:{p1:{name:name},p2:null}, chat:[],
+    log:[{msg:name+'님이 방을 만들었습니다.', t:Date.now()}], version:1, updatedAt:Date.now() };
+  gdWriteRoom(code, initial, function(err){
+    gdBusy=false;
+    if(err){ gdError='방 생성 중 오류가 발생했습니다. (데이터베이스 설정이 필요할 수 있어요)'; gdRender(); return; }
+    gdRoomCode=code; gdRole='p1'; gdName=name; gdState=initial; gdLastVersion=1; gdView='waiting';
+    gdSaveSession(); gdStartPoll(); gdRender();
+  });
+};
+window.gdJoinRoom = function(){
+  const nameEl = document.getElementById('gdJoinNameInput');
+  const codeEl = document.getElementById('gdJoinCodeInput');
+  const name = nameEl ? nameEl.value.trim() : '';
+  const code = codeEl ? codeEl.value.trim() : '';
+  if(!name){ gdError='이름을 입력해주세요.'; gdRender(); return; }
+  if(!/^\d{4}$/.test(code)){ gdError='방 코드 4자리를 입력해주세요.'; gdRender(); return; }
+  gdError=''; gdBusy=true; gdRender();
+  gdFetchRoom(code, function(room, err){
+    if(err){ gdBusy=false; gdError='접속 중 오류가 발생했습니다. (데이터베이스 설정이 필요할 수 있어요)'; gdRender(); return; }
+    if(!room){ gdBusy=false; gdError='존재하지 않는 방 코드입니다.'; gdRender(); return; }
+    if(room.status!=='waiting' || room.players.p2){ gdBusy=false; gdError='이미 시작되었거나 꽉 찬 방입니다.'; gdRender(); return; }
+    const merged = Object.assign({},room,{players:Object.assign({},room.players,{p2:{name:name}}), sweepBonus:{p1:0,p2:0}, bombCount:{p1:0,p2:0}});
+    const dealt = gdDealNewGame(merged);
+    dealt.version = (room.version||0)+1; dealt.updatedAt = Date.now();
+    gdWriteRoom(code, dealt, function(err2){
+      gdBusy=false;
+      if(err2){ gdError='입장 중 오류가 발생했습니다.'; gdRender(); return; }
+      gdRoomCode=code; gdRole='p2'; gdName=name; gdState=dealt; gdLastVersion=dealt.version; gdView='game';
+      gdSaveSession(); gdStartPoll(); gdRender();
+    });
+  });
+};
+function gdApply(transform){
+  gdFetchRoom(gdRoomCode, function(fresh){
+    const base = fresh || gdState;
+    let next = transform(base);
+    next.version = (base.version||0)+1; next.updatedAt = Date.now();
+    gdState = next; gdLastVersion = next.version; gdRender();
+    gdWriteRoom(gdRoomCode, next);
+  });
+}
+window.gdPlay = function(cardId){
+  if(!gdState || gdState.turn!==gdRole || gdState.status!=='playing') return;
+  gdApply(function(s){ return gdPlayHandCard(s, gdRole, cardId); });
+};
+window.gdGoStop = function(choice){ gdApply(function(s){ return gdResolveGoStop(s, gdRole, choice); }); };
+window.gdBomb = function(month){ gdApply(function(s){ return gdDeclareBomb(s, gdRole, month); }); };
+window.gdDrawOnly = function(){ gdApply(function(s){ return gdDrawOnlyTurn(s, gdRole); }); };
+window.gdShake = function(month){ gdApply(function(s){ return gdDeclareShake(s, gdRole, month); }); };
+window.gdSkipTriple = function(month){ gdApply(function(s){ return gdSkipTriple2(s, gdRole, month); }); };
+function gdSkipTriple2(s, role, month){ return gdSkipTriple(s, role, month); }
+window.gdNewGame = function(){
+  gdApply(function(s){ return gdDealNewGame(Object.assign({},s,{sweepBonus:{p1:0,p2:0}, bombCount:{p1:0,p2:0}})); });
+};
+window.gdLeaveRoom = function(){
+  clearInterval(gdPollTimer); gdClearSession();
+  gdView='lobby'; gdState=null; gdRole=null; gdRoomCode=''; gdName=''; gdError='';
+  gdRender();
+};
+window.gdCopyCode = function(){
+  try{ navigator.clipboard.writeText(gdRoomCode); }catch(e){}
+  const el = document.getElementById('gdCopyBtn'); if(el) el.innerText='✅ 복사됨';
+  setTimeout(function(){ const el2=document.getElementById('gdCopyBtn'); if(el2) el2.innerText='📋 코드 복사'; }, 1500);
+};
+window.gdToggleChat = function(){ gdChatOpen = !gdChatOpen; gdRender(); };
+window.gdSendChat = function(){
+  const input = document.getElementById('gdChatInput');
+  const msg = input ? input.value.trim() : '';
+  if(!msg) return;
+  if(input) input.value='';
+  gdFetchRoom(gdRoomCode, function(fresh){
+    const base = fresh || gdState;
+    const chat = (base.chat||[]).concat([{name:gdName, msg:msg, t:Date.now(), role:gdRole}]).slice(-80);
+    const next = Object.assign({},base,{chat, version:(base.version||0)+1, updatedAt:Date.now()});
+    gdState = next; gdLastVersion = next.version; gdRender();
+    gdWriteRoom(gdRoomCode, next);
+  });
+};
+window.gdChatKeydown = function(e){ if(e.key==='Enter') window.gdSendChat(); };
+
+/* ---------- 렌더링 ---------- */
+function gdRender(){
+  const root = document.getElementById('godoriRoot');
+  if(!root) return;
+  if(gdView==='lobby') root.innerHTML = gdRenderLobby();
+  else if(gdView==='waiting') root.innerHTML = gdRenderWaiting();
+  else if(gdView==='game' && gdState && gdState.players) root.innerHTML = gdRenderGame();
+}
+function gdRenderLobby(){
+  return '<h2 class="gd-title" style="font-size:24px;text-align:center;margin-bottom:4px">🀄 맞고 게임</h2>'
+    + '<p style="text-align:center;opacity:.75;font-size:12px;margin-bottom:20px">직원들끼리 방을 만들어 실시간으로 대전하세요</p>'
+    + '<div class="gd-panel" style="margin-bottom:14px">'
+      + '<div style="font-weight:700;margin-bottom:10px">방 만들기</div>'
+      + '<input id="gdNameInput" class="gd-input" placeholder="내 이름" style="margin-bottom:10px">'
+      + '<button class="gd-btn" style="width:100%" onclick="gdCreateRoom()" '+(gdBusy?'disabled':'')+'>방 만들고 코드 생성</button>'
+    + '</div>'
+    + '<div class="gd-panel">'
+      + '<div style="font-weight:700;margin-bottom:10px">방 코드로 입장하기</div>'
+      + '<input id="gdJoinNameInput" class="gd-input" placeholder="내 이름" style="margin-bottom:10px">'
+      + '<input id="gdJoinCodeInput" class="gd-input" placeholder="4자리 방 코드" maxlength="4" style="margin-bottom:10px">'
+      + '<button class="gd-btn" style="width:100%" onclick="gdJoinRoom()" '+(gdBusy?'disabled':'')+'>입장하기</button>'
+    + '</div>'
+    + (gdError ? '<p style="color:#ff8888;font-size:13px;margin-top:14px;text-align:center">'+gdError+'</p>' : '')
+    + '<p style="font-size:10.5px;opacity:.55;margin-top:18px;line-height:1.6">※ 뻑/따닥/쪽 등 일부 세부 규칙은 단순화했고, 고/피박 배수는 흔히 쓰이는 방식 기준입니다. 지역 하우스룰과 다를 수 있어요.</p>';
+}
+function gdRenderWaiting(){
+  return '<div style="max-width:340px;margin:20px auto;text-align:center">'
+    + '<div class="gd-panel">'
+      + '<p style="opacity:.8;margin-bottom:8px">친구에게 이 코드를 알려주세요</p>'
+      + '<div style="font-size:38px;font-weight:800;letter-spacing:8px;color:#d4af37;margin-bottom:14px">'+gdRoomCode+'</div>'
+      + '<button id="gdCopyBtn" class="gd-btn-ghost" onclick="gdCopyCode()" style="margin-bottom:18px">📋 코드 복사</button>'
+      + '<p style="font-size:13px;opacity:.7">상대가 입장하면 자동으로 시작됩니다...</p>'
+      + '<div style="margin:16px auto;width:26px;height:26px;border:3px solid rgba(212,175,55,.3);border-top-color:#d4af37;border-radius:50%;animation:gdspin 1s linear infinite"></div>'
+      + '<button class="gd-btn-ghost" onclick="gdLeaveRoom()">나가기</button>'
+    + '</div></div>';
+}
+function gdRenderGame(){
+  const s = gdState, me = gdRole, opp = gdOther(gdRole);
+  const myTurn = s.turn===me && s.status==='playing';
+  const meScore = gdComputeScore(s.captured[me]);
+  const oppScore = gdComputeScore(s.captured[opp]);
+  const triple = gdPendingTriple(s, me);
+
+  let html = '<div style="position:relative;max-width:640px;margin:0 auto">';
+
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:2px solid '+(s.turn===opp?'#d4af37':'transparent')+'">'
+    + '<div style="font-weight:700">'+(s.players[opp]?s.players[opp].name:'상대')+'</div>'
+    + '<div style="font-size:12px;opacity:.8">점수 '+oppScore.total+'점 · 손패 '+s.hands[opp].length+'장'+((s.goCount[opp]>0)?(' · '+s.goCount[opp]+'고'):'')+'</div></div>';
+  html += gdCapturedRowHTML(s.captured[opp]);
+
+  html += '<div class="gd-panel" style="margin:10px 0;min-height:90px">'
+    + '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center">'
+    + (s.field.length===0 ? '<div style="opacity:.5;font-size:13px;padding:18px 0">바닥이 비었습니다</div>' : s.field.map(id=>gdCardHTML(id)).join(''))
+    + '</div><div style="text-align:center;margin-top:8px;font-size:12px;opacity:.7">남은 패 더미: '+s.deck.length+'장</div></div>';
+
+  html += gdCapturedRowHTML(s.captured[me]);
+  html += '<div style="display:flex;justify-content:space-between;align-items:center;padding:6px 4px;border-bottom:2px solid '+(s.turn===me?'#d4af37':'transparent')+'">'
+    + '<div style="font-weight:700">'+(s.players[me]?s.players[me].name:'나')+' (나)</div>'
+    + '<div style="font-size:12px;opacity:.8">점수 '+meScore.total+'점 · 손패 '+s.hands[me].length+'장'+((s.goCount[me]>0)?(' · '+s.goCount[me]+'고'):'')+'</div></div>';
+
+  html += '<div style="display:flex;flex-wrap:wrap;gap:6px;justify-content:center;margin-top:8px;margin-bottom:12px;min-height:80px">';
+  s.hands[me].forEach(id=>{
+    html += '<div class="gd-hand-card'+(myTurn?'':' gd-disabled')+'" onclick="'+(myTurn?('gdPlay('+id+')'):'')+'">'+gdCardHTML(id)+'</div>';
+  });
+  html += '</div>';
+
+  html += '<div style="text-align:center;margin-bottom:10px">';
+  if(myTurn && s.hands[me].length===0){
+    html += '<button class="gd-btn" onclick="gdDrawOnly()">손에 낼 패가 없습니다 — 패 더미 뒤집기</button>';
+  } else if(myTurn){
+    html += '<span class="gd-pill" style="background:rgba(90,200,120,.25);border-color:#5ac878">내 차례입니다 — 카드를 선택하세요</span>';
+  } else {
+    html += '<span class="gd-pill">'+(s.players[opp]?s.players[opp].name:'상대')+'님 차례를 기다리는 중...</span>';
+  }
+  html += '</div>';
+
+  html += '<div class="gd-panel" style="max-height:100px;overflow-y:auto">';
+  (s.log||[]).slice(-6).reverse().forEach(l=>{ html += '<div class="gd-log">· '+gdEsc(l.msg)+'</div>'; });
+  html += '</div>';
+
+  html += '<div style="display:flex;gap:10px;justify-content:center;margin-top:12px">'
+    + '<button class="gd-btn-ghost" onclick="gdLeaveRoom()">나가기</button></div>';
+
+  // 채팅 FAB + 패널
+  html += '<button class="gd-chat-fab" onclick="gdToggleChat()">💬</button>';
+  if(gdChatOpen){
+    html += '<div class="gd-chat-panel">'
+      + '<div style="display:flex;justify-content:space-between;align-items:center;padding:10px 14px;border-bottom:1px solid rgba(212,175,55,.3)"><strong>채팅</strong><span style="cursor:pointer" onclick="gdToggleChat()">✕</span></div>'
+      + '<div style="flex:1;overflow-y:auto;padding:8px 14px" id="gdChatMessages">';
+    (s.chat||[]).forEach(m=>{
+      const mine = m.role===me;
+      html += '<div style="margin-bottom:7px;text-align:'+(mine?'right':'left')+'">'
+        + '<div style="font-size:10px;opacity:.6">'+gdEsc(m.name)+'</div>'
+        + '<div style="display:inline-block;background:'+(mine?'#d4af37':'rgba(255,255,255,.1)')+';color:'+(mine?'#1b1b1b':'#f2ead2')+';border-radius:10px;padding:5px 10px;font-size:13px;max-width:80%">'+gdEsc(m.msg)+'</div></div>';
+    });
+    html += '</div>'
+      + '<div style="display:flex;gap:8px;padding:10px;border-top:1px solid rgba(212,175,55,.3)">'
+      + '<input id="gdChatInput" class="gd-input" placeholder="메시지 입력..." onkeydown="gdChatKeydown(event)">'
+      + '<button class="gd-btn" onclick="gdSendChat()">전송</button></div></div>';
+  }
+
+  // 흔들기/폭탄 모달
+  if(triple && myTurn){
+    html += '<div class="gd-modal-overlay"><div class="gd-modal">'
+      + '<div style="font-weight:700;font-size:16px;margin-bottom:10px">'+triple+'월 '+GD_MONTHS[triple].name+' 3장 보유!</div>'
+      + '<p style="font-size:13px;opacity:.8;margin-bottom:14px">폭탄을 내거나, 흔들기를 선언하고 계속 들고 있을 수 있어요.</p>'
+      + '<button class="gd-btn" style="width:100%;margin-bottom:8px" onclick="gdBomb('+triple+')">🔥 폭탄 내기 (즉시 캡처 + 상대 피 1장 획득)</button>'
+      + '<button class="gd-btn" style="width:100%;margin-bottom:8px;background:linear-gradient(180deg,#8fd19e,#5ac878)" onclick="gdShake('+triple+')">✋ 흔들기 선언 (승리 시 점수 2배)</button>'
+      + '<button class="gd-btn-ghost" style="width:100%" onclick="gdSkipTriple('+triple+')">그냥 넘기기</button>'
+      + '</div></div>';
+  }
+
+  // 고/스톱 모달
+  if(s.status==='roundEnd'){
+    if(s.pendingGoStop===me){
+      html += '<div class="gd-modal-overlay"><div class="gd-modal" style="text-align:center">'
+        + '<div style="font-weight:700;font-size:18px;margin-bottom:6px">'+meScore.total+'점 달성!</div>'
+        + '<p style="font-size:13px;opacity:.8;margin-bottom:16px">계속해서 점수를 더 쌓을까요, 여기서 멈출까요?<br>(고 이후 지면 상대 점수가 2배가 돼요)</p>'
+        + '<div style="display:flex;gap:10px">'
+        + '<button class="gd-btn" style="flex:1" onclick="gdGoStop(\'go\')">고! (Go)</button>'
+        + '<button class="gd-btn" style="flex:1;background:linear-gradient(180deg,#e07b7b,#c0392b)" onclick="gdGoStop(\'stop\')">스톱! (Stop)</button>'
+        + '</div></div></div>';
+    } else {
+      html += '<div class="gd-modal-overlay"><div class="gd-modal" style="text-align:center">'
+        + '<p>'+(s.players[s.pendingGoStop]?s.players[s.pendingGoStop].name:'')+'님이 고/스톱을 결정하는 중입니다...</p></div></div>';
+    }
+  }
+
+  // 게임 종료 모달
+  if(s.status==='gameEnd'){
+    if(s.draw){
+      html += '<div class="gd-modal-overlay"><div class="gd-modal" style="text-align:center">'
+        + '<div style="font-size:20px;font-weight:800;margin-bottom:10px">나가리</div>'
+        + '<p style="font-size:13px;opacity:.8;margin-bottom:16px">아무도 3점을 채우지 못했습니다.</p>'
+        + '<button class="gd-btn" style="width:100%" onclick="gdNewGame()">🔄 새 게임 시작</button></div></div>';
+    } else {
+      const f = s.finalScore;
+      html += '<div class="gd-modal-overlay"><div class="gd-modal">'
+        + '<div style="text-align:center;font-size:20px;font-weight:800;margin-bottom:4px">🏆 '+(s.players[s.winner]?s.players[s.winner].name:'')+'님 승리!</div>'
+        + '<div style="text-align:center;font-size:32px;font-weight:900;color:#d4af37;margin:8px 0">'+f.final+'점</div>'
+        + '<div style="font-size:13px;line-height:1.8;background:rgba(0,0,0,.2);border-radius:8px;padding:10px 14px;margin-bottom:14px">'
+        + '<div>기본 점수: '+f.base+'점'+(f.lines.length?(' ('+f.lines.join(', ')+')'):'')+'</div>'
+        + (f.goBonus>0 ? '<div>쓰리고 이상 보너스: +'+f.goBonus+'점</div>' : '')
+        + (f.flags.length>0 ? '<div>배수 적용: '+f.flags.join(' · ')+'</div>' : '')
+        + '</div>'
+        + '<button class="gd-btn" style="width:100%" onclick="gdNewGame()">🔄 새 게임 시작</button></div></div>';
+    }
+  }
+
+  html += '</div>';
+  return html;
+}
+function gdEsc(s){ return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+})();
 </script>
 
 
