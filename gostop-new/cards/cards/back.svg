@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 103.2 168.2">
+  <rect x="0" y="0" width="103.2" height="168.2" rx="10" fill="#8a1c1c"/>
+  <rect x="7" y="7" width="89.2" height="154.2" rx="7" fill="none" stroke="#e8c15c" stroke-width="2"/>
+  <circle cx="51.6" cy="84.1" r="28" fill="none" stroke="#e8c15c" stroke-width="2"/>
+  <text x="51.6" y="92" font-size="22" fill="#e8c15c" text-anchor="middle" font-family="serif">花</text>
+</svg>

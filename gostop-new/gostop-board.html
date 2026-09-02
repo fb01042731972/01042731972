@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>맞고 테스트 (로컬 핫시트)</title>
+<style>
+  :root{
+    --felt:#0b5c33; --felt-dark:#073d21; --wood:#5c3a21; --gold:#e8c15c;
+    --card-w:64px; --card-h:104px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;height:100%;background:var(--felt-dark);font-family:"Malgun Gothic","Noto Sans KR",sans-serif;color:#f4e9d8;}
+  #app{display:flex;flex-direction:column;height:100vh;}
+  #setup{flex:1;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px;}
+  #setup h1{font-size:22px;color:var(--gold);letter-spacing:2px;}
+  #setup button{background:linear-gradient(180deg,var(--gold),#c9973a);color:#3a2a0e;border:none;border-radius:10px;padding:14px 28px;font-size:15px;font-weight:800;cursor:pointer;}
+  #setup .opts{display:flex;gap:10px;}
+  #setup .opt{border:2px solid var(--gold);border-radius:10px;padding:10px 18px;cursor:pointer;font-weight:700;}
+  #setup .opt.active{background:var(--gold);color:#3a2a0e;}
+
+  #board{display:none;flex:1;flex-direction:column;background:
+    radial-gradient(ellipse at 50% 35%, var(--felt) 0%, var(--felt-dark) 75%);
+    padding:10px;gap:8px;overflow:auto;}
+
+  .row{display:flex;gap:6px;flex-wrap:wrap;align-items:center;justify-content:center;}
+  .zone-label{font-size:11px;color:var(--gold);opacity:.8;text-align:center;margin-bottom:2px;}
+
+  .card{
+    width:var(--card-w);height:var(--card-h);border-radius:6px;overflow:hidden;
+    box-shadow:0 2px 5px rgba(0,0,0,.4);background:#fff;flex-shrink:0;cursor:pointer;
+    border:2px solid transparent;transition:transform .12s;position:relative;
+  }
+  .card img{width:100%;height:100%;object-fit:cover;pointer-events:none;}
+  .card:hover{transform:translateY(-6px);border-color:var(--gold);}
+  .card.disabled{cursor:default;opacity:.55;}
+  .card.disabled:hover{transform:none;border-color:transparent;}
+  .card .badge{position:absolute;top:2px;right:2px;background:#dc2626;color:#fff;font-size:9px;font-weight:800;border-radius:50%;width:15px;height:15px;display:flex;align-items:center;justify-content:center;}
+
+  #field{min-height:calc(var(--card-h) + 14px);background:rgba(0,0,0,.15);border-radius:12px;padding:8px;}
+  #hand{min-height:calc(var(--card-h) + 14px);}
+  #opponents{display:flex;justify-content:center;gap:24px;padding:4px 0;}
+  .opp-box{text-align:center;font-size:11px;color:#d9c9a0;}
+  .opp-cardback{width:34px;height:56px;background:#8a1c1c;border-radius:4px;display:inline-block;margin:0 -8px;box-shadow:0 1px 3px rgba(0,0,0,.5);}
+
+  #captured-panels{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;}
+  .cap-panel{background:rgba(0,0,0,.25);border-radius:10px;padding:6px 10px;min-width:160px;}
+  .cap-panel .name{font-size:12px;font-weight:800;color:var(--gold);margin-bottom:4px;}
+  .cap-mini-row{display:flex;gap:2px;flex-wrap:wrap;}
+  .cap-mini{width:20px;height:32px;border-radius:2px;overflow:hidden;}
+  .cap-mini img{width:100%;height:100%;object-fit:cover;}
+  .cap-score{font-size:11px;margin-top:4px;color:#d9c9a0;}
+
+  #controls{display:flex;gap:8px;justify-content:center;padding:6px 0;flex-wrap:wrap;}
+  #controls button{background:var(--wood);color:var(--gold);border:1px solid var(--gold);border-radius:8px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer;}
+  #controls button:disabled{opacity:.35;cursor:default;}
+
+  #turn-indicator{text-align:center;font-size:13px;font-weight:800;color:var(--gold);padding:4px;}
+
+  #toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#1B2A31;color:#fff;padding:10px 20px;border-radius:999px;font-size:13px;font-weight:700;opacity:0;transition:opacity .3s;pointer-events:none;z-index:99;}
+  #toast.show{opacity:1;}
+
+  #modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);align-items:center;justify-content:center;z-index:100;}
+  #modal .box{background:#fbf8f2;color:#333;border-radius:12px;padding:20px;text-align:center;max-width:320px;}
+  #modal .box h3{margin:0 0 10px;}
+  #modal .choices{display:flex;gap:10px;justify-content:center;margin:12px 0;}
+
+  #result{display:none;position:fixed;inset:0;background:rgba(0,0,0,.75);align-items:center;justify-content:center;z-index:110;}
+  #result .box{background:#fbf8f2;color:#333;border-radius:14px;padding:24px;max-width:360px;text-align:center;}
+  #result h2{margin:0 0 10px;color:#8a2020;}
+  #result .score{font-size:32px;font-weight:900;color:#146C8E;margin:10px 0;}
+  #result button{margin-top:14px;background:#146C8E;color:#fff;border:none;border-radius:8px;padding:10px 20px;font-weight:700;cursor:pointer;}
+
+  #source-note{position:fixed;bottom:4px;right:8px;font-size:9px;color:#a89264;opacity:.7;}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="setup">
+    <h1>🀄 맞고 테스트 (로컬)</h1>
+    <div class="opts" id="playerCountOpts">
+      <div class="opt active" data-n="2">2인용</div>
+      <div class="opt" data-n="3">3인용</div>
+    </div>
+    <button id="startBtn">게임 시작</button>
+    <div style="font-size:11px;color:#d9c9a0;max-width:280px;text-align:center;">
+      실시간 대전 전 단계입니다. 지금은 한 화면에서 순서대로 돌아가며 테스트하는 모드예요.
+    </div>
+  </div>
+
+  <div id="board">
+    <div id="opponents"></div>
+    <div id="turn-indicator"></div>
+    <div class="zone-label">바닥패</div>
+    <div class="row" id="field"></div>
+    <div id="captured-panels"></div>
+    <div id="controls"></div>
+    <div class="zone-label" id="hand-label">내 손패</div>
+    <div class="row" id="hand"></div>
+  </div>
+
+</div>
+
+<div id="toast"></div>
+
+<div id="modal">
+  <div class="box">
+    <h3>먹을 카드를 선택하세요</h3>
+    <div class="choices" id="modalChoices"></div>
+  </div>
+</div>
+
+<div id="result">
+  <div class="box">
+    <h2 id="resultTitle"></h2>
+    <div id="resultBreakdown" style="font-size:12px;color:#555;"></div>
+    <div class="score" id="resultScore"></div>
+    <button onclick="location.reload()">다시 시작</button>
+  </div>
+</div>
+
+<div id="source-note">화투 이미지: Wikimedia Commons, CC BY-SA 4.0</div>
+
+<script src="gostop-engine.js"></script>
+<script>
+const IMG = 'cards/';
+let game = null;
+let players = [];
+let myIndex = 0; // 핫시트에서 "지금 화면을 보고 있는 사람" 인덱스 (= 항상 currentPlayer)
+let pendingDoubleChoice = null;
+
+document.querySelectorAll('#playerCountOpts .opt').forEach(el => {
+  el.addEventListener('click', () => {
+    document.querySelectorAll('#playerCountOpts .opt').forEach(o => o.classList.remove('active'));
+    el.classList.add('active');
+  });
+});
+
+document.getElementById('startBtn').addEventListener('click', () => {
+  const n = Number(document.querySelector('#playerCountOpts .opt.active').dataset.n);
+  players = n === 2 ? ['플레이어1', '플레이어2'] : ['플레이어1', '플레이어2', '플레이어3'];
+  game = GoStopEngine.createGame(players);
+  document.getElementById('setup').style.display = 'none';
+  document.getElementById('board').style.display = 'flex';
+  render();
+});
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 1600);
+}
+
+function cardImgTag(card, extraClass=''){
+  return `<div class="card ${extraClass}" data-id="${card.id}"><img src="${IMG}${card.image}" alt=""></div>`;
+}
+
+function render(){
+  if (!game || game.finished) return;
+  const current = GoStopEngine.currentPlayer(game);
+
+  // 턴 표시
+  document.getElementById('turn-indicator').textContent = `▶ ${current} 차례`;
+  document.getElementById('hand-label').textContent = `${current}의 손패`;
+
+  // 상대방 카드 뒷면 표시 (핫시트라 인원수만 보여줌)
+  const oppBox = document.getElementById('opponents');
+  oppBox.innerHTML = players.filter(p => p !== current).map(p => {
+    const cnt = game.hands[p].length;
+    return `<div class="opp-box">${p}<br>${'<span class="opp-cardback"></span>'.repeat(cnt)}<br>${cnt}장</div>`;
+  }).join('');
+
+  // 바닥패
+  const field = document.getElementById('field');
+  field.innerHTML = game.field.map(c => cardImgTag(c)).join('') || '<div style="font-size:12px;opacity:.6;">바닥에 카드 없음</div>';
+
+  // 손패 (현재 차례인 사람만 조작 가능)
+  const hand = document.getElementById('hand');
+  hand.innerHTML = game.hands[current].map(c => cardImgTag(c)).join('');
+  hand.querySelectorAll('.card').forEach(el => {
+    el.addEventListener('click', () => onPlayCard(current, el.dataset.id));
+  });
+
+  // 획득 패 패널
+  const capPanels = document.getElementById('captured-panels');
+  capPanels.innerHTML = players.map(p => {
+    const cap = game.captured[p];
+    const score = GoStopEngine.calculateScore(cap);
+    const mini = cap.map(c => `<div class="cap-mini"><img src="${IMG}${c.image}"></div>`).join('');
+    return `<div class="cap-panel"><div class="name">${p} (${cap.length}장)</div>
+      <div class="cap-mini-row">${mini || '<span style="font-size:11px;opacity:.6;">없음</span>'}</div>
+      <div class="cap-score">현재 ${score.total}점</div></div>`;
+  }).join('');
+
+  renderControls(current);
+}
+
+function renderControls(current){
+  const controls = document.getElementById('controls');
+  const info = GoStopEngine.calculateScore(game.captured[current]);
+  const canGoStop = info.total >= 7;
+
+  const shakeMonths = [...new Set(game.hands[current].map(c => c.month))]
+    .filter(m => game.hands[current].filter(c => c.month === m).length >= 3);
+  const bombMonths = shakeMonths.filter(m => game.field.some(c => c.month === m));
+
+  let html = '';
+  shakeMonths.forEach(m => {
+    if (!bombMonths.includes(m)) html += `<button onclick="onShake('${current}',${m})">🌀 ${m}월 흔들기</button>`;
+  });
+  bombMonths.forEach(m => {
+    html += `<button onclick="onBomb('${current}',${m})">💣 ${m}월 폭탄</button>`;
+  });
+  if (canGoStop) {
+    html += `<button onclick="onGo('${current}')">GO!</button>`;
+    html += `<button onclick="onStop('${current}')">STOP (정산)</button>`;
+  }
+  controls.innerHTML = html;
+}
+
+function onPlayCard(playerId, cardId){
+  try {
+    const hand = game.hands[playerId];
+    const played = hand.find(c => c.id === cardId);
+    const matches = game.field.filter(c => c.month === played.month);
+
+    if (matches.length === 2) {
+      // 더블 매칭: 선택 모달
+      pendingDoubleChoice = { playerId, cardId, matches };
+      showDoubleModal(matches);
+      return;
+    }
+
+    const result = GoStopEngine.playCard(game, playerId, cardId);
+    describeResult(result);
+    checkDrawEnd();
+    render();
+  } catch (e) {
+    toast(e.message);
+  }
+}
+
+function showDoubleModal(matches){
+  document.getElementById('modal').style.display = 'flex';
+  const box = document.getElementById('modalChoices');
+  box.innerHTML = matches.map(c => `<div class="card" data-id="${c.id}"><img src="${IMG}${c.image}"></div>`).join('');
+  box.querySelectorAll('.card').forEach(el => {
+    el.addEventListener('click', () => {
+      const chosenId = el.dataset.id;
+      document.getElementById('modal').style.display = 'none';
+      const { playerId, cardId } = pendingDoubleChoice;
+      pendingDoubleChoice = null;
+      const result = GoStopEngine.playCard(game, playerId, cardId, chosenId);
+      describeResult(result);
+      checkDrawEnd();
+      render();
+    });
+  });
+}
+
+function describeResult(result){
+  if (result.ppeok) { toast('뻑! 이번엔 못 먹었어요'); return; }
+  if (result.ttak) { toast('따닥! 한번에 다 먹었어요'); return; }
+  if (result.jjok) { toast('쪽! 뽑은 카드로 먹었어요'); return; }
+  const total = result.capturedThisTurn.length + result.drawCaptured.length;
+  if (total > 0) toast(`${total / 2}장 짝 먹음`);
+}
+
+function onShake(playerId, month){
+  try { GoStopEngine.declareShake(game, playerId, month); toast(`${month}월 흔들기 선언!`); render(); }
+  catch (e) { toast(e.message); }
+}
+function onBomb(playerId, month){
+  try {
+    GoStopEngine.declareBomb(game, playerId, month);
+    toast(`${month}월 폭탄!`);
+    // 폭탄 페널티: 상대 전원에게 피 1장씩 받기
+    players.filter(p => p !== playerId).forEach(op => GoStopEngine.transferPi(game, op, playerId));
+    render();
+  } catch (e) { toast(e.message); }
+}
+function onGo(playerId){
+  GoStopEngine.declareGo(game, playerId);
+  toast(`${playerId} GO 선언! (${game.goCount[playerId]}고)`);
+  render();
+}
+function onStop(playerId){
+  const result = GoStopEngine.declareStop(game, playerId);
+  showResult(result);
+}
+
+function checkDrawEnd(){
+  // 더미가 다 떨어지면 자동 정산 (최고점자 승리 처리, 간단화)
+  if (game.drawPile.length === 0 && !game.finished) {
+    let best = null, bestScore = -1;
+    players.forEach(p => {
+      const s = GoStopEngine.calculateScore(game.captured[p]).total;
+      if (s > bestScore) { bestScore = s; best = p; }
+    });
+    const result = GoStopEngine.settleRound(game, best);
+    showResult(result);
+  }
+}
+
+function showResult(result){
+  document.getElementById('result').style.display = 'flex';
+  document.getElementById('resultTitle').textContent = `🏆 ${result.winnerId} 승리!`;
+  document.getElementById('resultScore').textContent = `${result.totalScore}점`;
+  const b = result.breakdown;
+  const lines = Object.entries(b).map(([k,v]) => `${k}: ${v}점`).join(' · ');
+  document.getElementById('resultBreakdown').textContent =
+    `기본점수 ${result.baseScore} (${lines}) · 흔들기/폭탄 배율 x${result.shakeBombMultiplier} · 고 ${result.goCount}회 · 페널티 배율 x${result.penaltyMultiplier}`;
+}
+</script>
+</body>
+</html>
