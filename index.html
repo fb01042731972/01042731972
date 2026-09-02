@@ -5950,7 +5950,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openThemeSettingsModal()">⚙️ 환경 설정 (메일·테마 색상)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openAdSettingsModal()" title="프로그램을 하루 중 처음 열었을 때 뜨는 광고 사진/문구를 설정합니다">📢 광고 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.leOpenVisitorAdmin&&window.leOpenVisitorAdmin()" title="지금 접속 중인 사람들의 IP를 보고, 영구 차단·차단 해제를 할 수 있습니다">🌐 접속자 / 차단 관리</div>
-          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.open('game/index.html','worldcupMatgo','width=900,height=700,resizable=yes,scrollbars=no')" title="새 창으로 맞고 게임을 엽니다">🀄 맞고 게임</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoEmployee()" title="직원 로그인 후 맞고 게임과 내 포인트를 확인합니다">🀄 맞고 게임 (직원)</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoAdmin()" title="직원 계정 등록, 이용시간 확인, 포인트 지급을 관리합니다">🏆 포인트 관리자</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeSettingsMenu();openHelpGuide()" title="처음 사용하시나요? 이 프로그램 사용법을 쉽게 안내해 드려요">❓ 도움말</div>
         </div>
       </div>
@@ -36986,6 +36987,405 @@ document.addEventListener('keydown',function(e){
     if(m && m.style.display==='flex') closeEmbeddedTool();
   }
 });
+</script>
+<!-- ════════════════════════ 🀄 사내 포인트 라운지 (직원 로그인 + 게임 + 관리자) ════════════════════════ -->
+<div id="matgoEmpModal" class="hidden no-print" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeMatgoEmployee()">
+  <div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:92vh;overflow-y:auto;position:relative">
+    <button onclick="closeMatgoEmployee()" style="position:absolute;top:12px;right:14px;border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
+
+    <div id="matgoLoginView">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div style="font-size:28px;">🀄</div>
+        <div style="font-size:15px;font-weight:800;color:#1B2A31;">사내 포인트 라운지</div>
+        <div style="font-size:11px;color:#94a3b8;">관리자가 등록한 계정으로 로그인하세요</div>
+      </div>
+      <label style="display:block;font-size:11px;color:#64748b;margin:10px 0 4px;">아이디</label>
+      <input id="matgoUsername" type="text" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+      <label style="display:block;font-size:11px;color:#64748b;margin:10px 0 4px;">비밀번호</label>
+      <input id="matgoPassword" type="password" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+      <div id="matgoLoginErr" style="color:#dc2626;font-size:11px;margin-top:8px;min-height:14px;"></div>
+      <button onclick="matgoDoLogin()" style="width:100%;padding:11px;border:none;border-radius:8px;background:#146C8E;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:8px;">입장하기</button>
+    </div>
+
+    <div id="matgoDashView" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div id="matgoHello" style="font-size:13px;font-weight:700;color:#1B2A31;"></div>
+        <button onclick="matgoLogout()" style="font-size:11px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;color:#64748b;">로그아웃</button>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;">
+        <div id="matgoMyPoints" style="font-size:26px;font-weight:800;color:#146C8E;">0P</div>
+        <div style="font-size:11px;color:#94a3b8;">내 누적 포인트</div>
+        <button onclick="matgoOpenGame()" style="margin-top:10px;width:100%;padding:10px;border:none;border-radius:8px;background:#e8c15c;color:#241a08;font-weight:700;font-size:13px;cursor:pointer;">🀄 게임 하러가기</button>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">전체 순위</div>
+      <div id="matgoRankList" style="max-height:150px;overflow-y:auto;margin-bottom:14px;"></div>
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">내 포인트 내역</div>
+      <div id="matgoHistList" style="max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+    <div id="matgoGameView" style="display:none;">
+      <button onclick="matgoBackToDash()" style="font-size:11px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;color:#64748b;margin-bottom:8px;">← 뒤로</button>
+      <div id="matgoGameErr" style="display:none;background:#fef2f2;color:#991b1b;font-size:12px;padding:10px;border-radius:8px;margin-bottom:8px;">게임을 불러오지 못했습니다. 이 페이지가 http(s) 주소로 열려 있는지 확인해주세요 (파일을 더블클릭해서 열면 브라우저 보안 정책으로 실패할 수 있어요).</div>
+      <div id="matgoPlayerContainer" style="width:100%;height:420px;background:#07140d;border-radius:10px;overflow:hidden;"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="matgoAdminModal" class="hidden no-print" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeMatgoAdmin()">
+  <div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:92vh;overflow-y:auto;position:relative">
+    <button onclick="closeMatgoAdmin()" style="position:absolute;top:12px;right:14px;border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
+    <div style="font-size:15px;font-weight:800;color:#1B2A31;margin-bottom:12px;">🏆 포인트 관리자</div>
+
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      <button id="matgoAdminBtn-employees" onclick="matgoAdminShowTab('employees')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#146C8E;color:#fff;">직원 관리</button>
+      <button id="matgoAdminBtn-grant" onclick="matgoAdminShowTab('grant')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">포인트 지급</button>
+      <button id="matgoAdminBtn-usage" onclick="matgoAdminShowTab('usage')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">이용시간</button>
+      <button id="matgoAdminBtn-log" onclick="matgoAdminShowTab('log')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">지급내역</button>
+    </div>
+
+    <div id="matgoAdminTab-employees">
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">새 직원 등록</div>
+      <input id="matgoNewUsername" type="text" placeholder="아이디" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
+      <input id="matgoNewName" type="text" placeholder="이름" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
+      <input id="matgoNewPassword" type="text" placeholder="초기 비밀번호" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
+      <div id="matgoAddEmpErr" style="color:#dc2626;font-size:11px;margin-bottom:6px;"></div>
+      <button onclick="matgoAddEmployee()" style="width:100%;padding:9px;border:none;border-radius:7px;background:#146C8E;color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:14px;">등록</button>
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">등록된 직원</div>
+      <div id="matgoEmpList"></div>
+    </div>
+
+    <div id="matgoAdminTab-grant" style="display:none;">
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">직원</label>
+      <select id="matgoGrantEmp" style="width:100%;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;"></select>
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">포인트 (음수 입력 시 차감)</label>
+      <input id="matgoGrantPoints" type="number" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;">
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">사유 (예: 이번주 6시간 이용)</label>
+      <input id="matgoGrantReason" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;">
+      <div id="matgoGrantErr" style="color:#dc2626;font-size:11px;margin-bottom:6px;"></div>
+      <button onclick="matgoGrantPoints()" style="width:100%;padding:10px;border:none;border-radius:7px;background:#146C8E;color:#fff;font-weight:700;font-size:13px;cursor:pointer;">지급하기</button>
+    </div>
+
+    <div id="matgoAdminTab-usage" style="display:none;">
+      <div id="matgoUsageList"></div>
+    </div>
+
+    <div id="matgoAdminTab-log" style="display:none;">
+      <div id="matgoLogList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  function getClient(cb){
+    if (window._matgoClient) { cb(window._matgoClient); return; }
+    loadSupabaseLib(function(){
+      window._matgoClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      cb(window._matgoClient);
+    });
+  }
+
+  let matgoEmp = null;
+  let matgoSessionId = null;
+  let matgoHeartbeatTimer = null;
+
+  function loadStoredEmp(){
+    try { const raw = localStorage.getItem('matgo_emp'); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+  }
+  function storeEmp(emp){ try { localStorage.setItem('matgo_emp', JSON.stringify(emp)); } catch(e){} }
+  function clearStoredEmp(){ try { localStorage.removeItem('matgo_emp'); } catch(e){} }
+  function matgoEsc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  window.openMatgoEmployee = function(){
+    document.getElementById('matgoEmpModal').style.display = 'flex';
+    matgoEmp = loadStoredEmp();
+    if (matgoEmp) { matgoShowDashboard(); } else { matgoShowLogin(); }
+  };
+  window.closeMatgoEmployee = function(){ document.getElementById('matgoEmpModal').style.display = 'none'; };
+
+  function matgoShowLogin(){
+    document.getElementById('matgoLoginView').style.display = 'block';
+    document.getElementById('matgoDashView').style.display = 'none';
+    document.getElementById('matgoGameView').style.display = 'none';
+    document.getElementById('matgoLoginErr').textContent = '';
+  }
+
+  window.matgoDoLogin = async function(){
+    const username = document.getElementById('matgoUsername').value.trim();
+    const password = document.getElementById('matgoPassword').value;
+    const errBox = document.getElementById('matgoLoginErr');
+    errBox.textContent = '';
+    if (!username || !password) { errBox.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
+    const hash = await window.jinjooSha256Hex(password);
+    getClient(async function(client){
+      const { data, error } = await client.from('matgo_employees')
+        .select('id, username, display_name, password_hash, active')
+        .eq('username', username).eq('active', true).maybeSingle();
+      if (error || !data || data.password_hash !== hash) {
+        errBox.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+        return;
+      }
+      matgoEmp = { id: data.id, username: data.username, display_name: data.display_name };
+      storeEmp(matgoEmp);
+      const ins = await client.from('matgo_sessions').insert({ employee_id: matgoEmp.id }).select('id').single();
+      matgoSessionId = ins.data ? ins.data.id : null;
+      matgoStartHeartbeat();
+      matgoShowDashboard();
+    });
+  };
+
+  function matgoStartHeartbeat(){
+    if (matgoHeartbeatTimer) clearInterval(matgoHeartbeatTimer);
+    matgoHeartbeatTimer = setInterval(function(){
+      if (!matgoSessionId) return;
+      getClient(function(client){
+        client.from('matgo_sessions').update({ last_seen_at: new Date().toISOString() }).eq('id', matgoSessionId).then(function(){});
+      });
+    }, 60000);
+  }
+
+  window.matgoLogout = function(){
+    clearStoredEmp();
+    matgoEmp = null;
+    if (matgoHeartbeatTimer) clearInterval(matgoHeartbeatTimer);
+    matgoShowLogin();
+  };
+
+  async function matgoShowDashboard(){
+    document.getElementById('matgoLoginView').style.display = 'none';
+    document.getElementById('matgoDashView').style.display = 'block';
+    document.getElementById('matgoGameView').style.display = 'none';
+    document.getElementById('matgoHello').textContent = matgoEmp.display_name + '님';
+    if (!matgoSessionId) {
+      getClient(async function(client){
+        const ins = await client.from('matgo_sessions').insert({ employee_id: matgoEmp.id }).select('id').single();
+        matgoSessionId = ins.data ? ins.data.id : null;
+        matgoStartHeartbeat();
+      });
+    }
+    matgoLoadPointsAndBoard();
+  }
+
+  async function matgoLoadPointsAndBoard(){
+    getClient(async function(client){
+      const myLogRes = await client.from('matgo_points_log').select('points, reason, granted_at').eq('employee_id', matgoEmp.id).order('granted_at', { ascending:false }).limit(50);
+      const myLog = myLogRes.data || [];
+      const total = myLog.reduce(function(s,r){ return s + r.points; }, 0);
+      document.getElementById('matgoMyPoints').textContent = total + 'P';
+      const histBox = document.getElementById('matgoHistList');
+      if (myLog.length===0) {
+        histBox.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:12px 0;">아직 지급된 포인트가 없어요</div>';
+      } else {
+        histBox.innerHTML = myLog.map(function(h){
+          return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #e2e8f0;font-size:12px;">' +
+            '<div><div>'+matgoEsc(h.reason||'포인트 지급')+'</div><div style="color:#94a3b8;font-size:10px;">'+matgoEsc(h.granted_at)+'</div></div>' +
+            '<div style="font-weight:700;color:'+(h.points>=0?'#16a34a':'#dc2626')+';white-space:nowrap;">'+(h.points>=0?'+':'')+h.points+'P</div></div>';
+        }).join('');
+      }
+
+      const empsRes = await client.from('matgo_employees').select('id, display_name').eq('active', true);
+      const allLogRes = await client.from('matgo_points_log').select('employee_id, points');
+      const emps = empsRes.data || [];
+      const allLog = allLogRes.data || [];
+      const totals = {};
+      emps.forEach(function(e){ totals[e.id] = { name: e.display_name, total: 0 }; });
+      allLog.forEach(function(r){ if (totals[r.employee_id]) totals[r.employee_id].total += r.points; });
+      const board = Object.keys(totals).map(function(id){ return { id: id, name: totals[id].name, total: totals[id].total }; })
+        .sort(function(a,b){ return b.total - a.total; });
+      const listBox = document.getElementById('matgoRankList');
+      if (board.length===0) {
+        listBox.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:12px 0;">등록된 직원이 없어요</div>';
+      } else {
+        listBox.innerHTML = board.map(function(row,i){
+          const isMe = String(row.id) === String(matgoEmp.id);
+          const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #f1f5f9;'+(isMe?'background:#fef9e7;border-radius:6px;':'')+'">' +
+            '<div style="width:24px;text-align:center;font-size:13px;">'+medal+'</div>' +
+            '<div style="flex:1;font-size:13px;">'+matgoEsc(row.name)+(isMe?' (나)':'')+'</div>' +
+            '<div style="font-weight:700;font-size:13px;color:#146C8E;">'+row.total+'P</div></div>';
+        }).join('');
+      }
+    });
+  }
+
+  window.matgoOpenGame = function(){
+    document.getElementById('matgoDashView').style.display = 'none';
+    document.getElementById('matgoGameView').style.display = 'block';
+    matgoInitPlayer();
+  };
+  window.matgoBackToDash = function(){
+    document.getElementById('matgoGameView').style.display = 'none';
+    document.getElementById('matgoDashView').style.display = 'block';
+  };
+
+  let matgoPlayerInited = false;
+  function matgoInitPlayer(){
+    if (matgoPlayerInited) return;
+    matgoPlayerInited = true;
+    const s = document.createElement('script');
+    s.src = 'ruffle.js';
+    s.onload = function(){
+      try {
+        window.RufflePlayer = window.RufflePlayer || {};
+        const ruffle = window.RufflePlayer.newest();
+        const player = ruffle.createPlayer();
+        const container = document.getElementById('matgoPlayerContainer');
+        container.appendChild(player);
+        player.style.width = '100%';
+        player.style.height = '100%';
+        player.ruffle().load({ url: 'worldcup-matgo.swf', letterbox: 'on', scale: 'showAll', fitContainer: true })
+          .catch(function(){ document.getElementById('matgoGameErr').style.display = 'block'; });
+      } catch(e){
+        document.getElementById('matgoGameErr').style.display = 'block';
+      }
+    };
+    s.onerror = function(){ document.getElementById('matgoGameErr').style.display = 'block'; };
+    document.head.appendChild(s);
+  }
+
+  // ---------------- 관리자 ----------------
+  window.openMatgoAdmin = async function(){
+    const pw = prompt('관리자 암호를 입력하세요.');
+    if (pw === null) return;
+    const hash = await window.jinjooSha256Hex(pw);
+    if (hash !== window.jinjooAdminPwHash) { alert('관리자 암호가 올바르지 않습니다.'); return; }
+    document.getElementById('matgoAdminModal').style.display = 'flex';
+    matgoAdminShowTab('employees');
+  };
+  window.closeMatgoAdmin = function(){ document.getElementById('matgoAdminModal').style.display = 'none'; };
+
+  window.matgoAdminShowTab = function(tab){
+    ['employees','grant','usage','log'].forEach(function(t){
+      document.getElementById('matgoAdminTab-'+t).style.display = (t===tab)?'block':'none';
+      document.getElementById('matgoAdminBtn-'+t).style.background = (t===tab)?'#146C8E':'#f1f5f9';
+      document.getElementById('matgoAdminBtn-'+t).style.color = (t===tab)?'#fff':'#475569';
+    });
+    if (tab==='employees') matgoAdminLoadEmployees();
+    if (tab==='grant') matgoAdminLoadEmployeesForSelect();
+    if (tab==='usage') matgoAdminLoadUsage();
+    if (tab==='log') matgoAdminLoadLog();
+  };
+
+  function matgoAdminLoadEmployees(){
+    getClient(async function(client){
+      const res = await client.from('matgo_employees').select('id, username, display_name, active, created_at').order('created_at', { ascending:false });
+      const data = res.data || [];
+      const box = document.getElementById('matgoEmpList');
+      if (data.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">등록된 직원이 없어요</div>'; return; }
+      box.innerHTML = data.map(function(r){
+        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #f1f5f9;font-size:12px;">' +
+          '<div style="flex:1;">'+matgoEsc(r.display_name)+' <span style="color:#94a3b8;">('+matgoEsc(r.username)+')</span></div>' +
+          '<button onclick="matgoResetPw('+r.id+',\''+matgoEsc(r.display_name)+'\')" style="font-size:11px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;">비번초기화</button>' +
+          (r.active ? '<button onclick="matgoDeactivate('+r.id+')" style="font-size:11px;padding:5px 8px;border:none;border-radius:6px;background:#dc2626;color:#fff;cursor:pointer;">비활성화</button>' : '<span style="color:#94a3b8;font-size:11px;">비활성</span>') +
+          '</div>';
+      }).join('');
+    });
+  }
+
+  window.matgoAddEmployee = async function(){
+    const username = document.getElementById('matgoNewUsername').value.trim();
+    const name = document.getElementById('matgoNewName').value.trim();
+    const pw = document.getElementById('matgoNewPassword').value;
+    const errBox = document.getElementById('matgoAddEmpErr');
+    errBox.textContent = '';
+    if (!username || !name || !pw) { errBox.textContent = '아이디, 이름, 비밀번호를 모두 입력하세요.'; return; }
+    const hash = await window.jinjooSha256Hex(pw);
+    getClient(async function(client){
+      const res = await client.from('matgo_employees').insert({ username: username, display_name: name, password_hash: hash });
+      if (res.error) { errBox.textContent = '이미 존재하는 아이디거나 오류가 발생했습니다.'; return; }
+      document.getElementById('matgoNewUsername').value = '';
+      document.getElementById('matgoNewName').value = '';
+      document.getElementById('matgoNewPassword').value = '';
+      matgoAdminLoadEmployees();
+    });
+  };
+
+  window.matgoResetPw = function(id, name){
+    const pw = prompt(name + ' 님의 새 비밀번호를 입력하세요');
+    if (!pw) return;
+    window.jinjooSha256Hex(pw).then(function(hash){
+      getClient(function(client){
+        client.from('matgo_employees').update({ password_hash: hash }).eq('id', id).then(function(){ alert('비밀번호가 변경되었습니다.'); });
+      });
+    });
+  };
+
+  window.matgoDeactivate = function(id){
+    if (!confirm('이 직원을 비활성화할까요?')) return;
+    getClient(function(client){
+      client.from('matgo_employees').update({ active: false }).eq('id', id).then(function(){ matgoAdminLoadEmployees(); });
+    });
+  };
+
+  function matgoAdminLoadEmployeesForSelect(){
+    getClient(async function(client){
+      const res = await client.from('matgo_employees').select('id, display_name').eq('active', true);
+      const sel = document.getElementById('matgoGrantEmp');
+      sel.innerHTML = (res.data||[]).map(function(r){ return '<option value="'+r.id+'">'+matgoEsc(r.display_name)+'</option>'; }).join('');
+    });
+  }
+
+  window.matgoGrantPoints = function(){
+    const empId = document.getElementById('matgoGrantEmp').value;
+    const points = parseInt(document.getElementById('matgoGrantPoints').value, 10);
+    const reason = document.getElementById('matgoGrantReason').value.trim();
+    const errBox = document.getElementById('matgoGrantErr');
+    errBox.textContent = '';
+    if (!empId || !points) { errBox.textContent = '직원과 포인트를 입력하세요.'; return; }
+    getClient(function(client){
+      client.from('matgo_points_log').insert({ employee_id: empId, points: points, reason: reason || null }).then(function(res){
+        if (res.error) { errBox.textContent = '지급 중 오류가 발생했습니다.'; return; }
+        document.getElementById('matgoGrantPoints').value = '';
+        document.getElementById('matgoGrantReason').value = '';
+        alert('포인트가 지급되었습니다.');
+      });
+    });
+  };
+
+  function matgoAdminLoadUsage(){
+    getClient(async function(client){
+      const empsRes = await client.from('matgo_employees').select('id, display_name').eq('active', true);
+      const sessRes = await client.from('matgo_sessions').select('employee_id, login_at, last_seen_at, logout_at');
+      const emps = empsRes.data || [];
+      const sess = sessRes.data || [];
+      const box = document.getElementById('matgoUsageList');
+      const stats = {};
+      emps.forEach(function(e){ stats[e.id] = { name: e.display_name, count:0, hours:0 }; });
+      sess.forEach(function(s){
+        if (!stats[s.employee_id]) return;
+        stats[s.employee_id].count += 1;
+        const end = s.logout_at || s.last_seen_at;
+        const hrs = (new Date(end) - new Date(s.login_at)) / 3600000;
+        stats[s.employee_id].hours += Math.max(0, hrs);
+      });
+      const rows = Object.keys(stats).map(function(id){ return stats[id]; }).sort(function(a,b){ return b.hours - a.hours; });
+      if (rows.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">데이터가 없어요</div>'; return; }
+      box.innerHTML = rows.map(function(r){
+        return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid #f1f5f9;font-size:12px;">' +
+          '<div>'+matgoEsc(r.name)+'</div><div>'+r.count+'회 · '+(Math.round(r.hours*10)/10)+'시간</div></div>';
+      }).join('');
+    });
+  }
+
+  function matgoAdminLoadLog(){
+    getClient(async function(client){
+      const empsRes = await client.from('matgo_employees').select('id, display_name');
+      const nameMap = {};
+      (empsRes.data||[]).forEach(function(e){ nameMap[e.id] = e.display_name; });
+      const logRes = await client.from('matgo_points_log').select('employee_id, points, reason, granted_at').order('granted_at', { ascending:false }).limit(200);
+      const data = logRes.data || [];
+      const box = document.getElementById('matgoLogList');
+      if (data.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">지급 내역이 없어요</div>'; return; }
+      box.innerHTML = data.map(function(r){
+        return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #e2e8f0;font-size:12px;">' +
+          '<div><b>'+matgoEsc(nameMap[r.employee_id]||'?')+'</b> — '+matgoEsc(r.reason||'포인트 지급')+'<div style="color:#94a3b8;font-size:10px;">'+matgoEsc(r.granted_at)+'</div></div>' +
+          '<div style="font-weight:700;color:'+(r.points>=0?'#16a34a':'#dc2626')+';white-space:nowrap;">'+(r.points>=0?'+':'')+r.points+'P</div></div>';
+      }).join('');
+    });
+  }
+})();
 </script>
 
 
