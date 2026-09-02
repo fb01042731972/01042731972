@@ -656,14 +656,14 @@
 
 
 
-<!-- 버그 신고 게시판 UI -->
+<!-- 공용 게시판 UI -->
 <div id="bulletinBoardModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99997;display:none;align-items:center;justify-content:center;padding:14px;">
   <div style="background:#fff;width:min(980px,96vw);height:min(760px,92vh);border-radius:14px;box-shadow:0 24px 70px rgba(0,0,0,.28);display:flex;flex-direction:column;overflow:hidden;">
-    <div style="background:linear-gradient(135deg,#0F3A4D,#0891b2);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px"><b style="flex:1">🐞 버그 신고 게시판</b><span id="boardStatus" style="font-size:10px;background:rgba(255,255,255,.14);padding:4px 7px;border-radius:12px">연결 중...</span><button id="boardCloseBtn" style="border:0;background:rgba(255,255,255,.16);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button></div>
-    <div style="display:flex;flex:1;min-height:0"><div style="width:42%;min-width:300px;border-right:1px solid #e5e7eb;display:flex;flex-direction:column"><div style="padding:10px;border-bottom:1px solid #e5e7eb"><div style="display:flex;gap:6px"><div style="position:relative;flex:1"><input id="boardSearch" placeholder="제목·내용·작성자 검색" style="width:100%;box-sizing:border-box;padding:8px 34px 8px 10px;border:1px solid #cbd5e1;border-radius:7px"><button id="boardSearchClear" title="검색 지우기" style="position:absolute;right:4px;top:3px;width:28px;height:28px;border:0;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer">×</button></div><button id="boardWriteBtn" style="border:0;background:#0891b2;color:#fff;border-radius:7px;padding:0 12px;font-weight:800;cursor:pointer;white-space:nowrap">🐞 버그 신고하기</button></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><div id="boardCount" style="font-size:10px;color:#94a3b8">전체 0건</div><label style="font-size:10px;color:#64748b;display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none"><input type="checkbox" id="boardSelectAllCb" onclick="boardToggleSelectAll(this)">전체선택</label></div></div><div id="boardBulkBar"><span id="boardBulkCount" style="flex:1;font-weight:700;">0개 선택됨</span><button type="button" class="board-bulk-cancel" onclick="boardClearSelection()">취소</button><button type="button" class="board-bulk-delete" onclick="boardDeleteSelected()">선택 삭제</button></div><div id="boardList" style="flex:1;overflow:auto;padding:6px"></div></div><div style="flex:1;overflow:auto;background:#fafafa"><div id="boardEmpty" style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8">신고 내용을 선택하세요.</div><div id="boardDetail" style="display:none;padding:18px"></div></div></div>
+    <div style="background:linear-gradient(135deg,#0F3A4D,#0891b2);color:#fff;padding:12px 16px;display:flex;align-items:center;gap:10px"><b style="flex:1">📋 공용 게시판</b><span id="boardStatus" style="font-size:10px;background:rgba(255,255,255,.14);padding:4px 7px;border-radius:12px">연결 중...</span><button id="boardCloseBtn" style="border:0;background:rgba(255,255,255,.16);color:#fff;width:30px;height:30px;border-radius:50%;cursor:pointer">✕</button></div>
+    <div style="display:flex;flex:1;min-height:0"><div style="width:42%;min-width:300px;border-right:1px solid #e5e7eb;display:flex;flex-direction:column"><div style="padding:10px;border-bottom:1px solid #e5e7eb"><div style="display:flex;gap:6px"><div style="position:relative;flex:1"><input id="boardSearch" placeholder="제목·내용·작성자 검색" style="width:100%;box-sizing:border-box;padding:8px 34px 8px 10px;border:1px solid #cbd5e1;border-radius:7px"><button id="boardSearchClear" title="검색 지우기" style="position:absolute;right:4px;top:3px;width:28px;height:28px;border:0;background:transparent;color:#94a3b8;font-size:16px;cursor:pointer">×</button></div><button id="boardWriteBtn" style="border:0;background:#0891b2;color:#fff;border-radius:7px;padding:0 12px;font-weight:800;cursor:pointer;white-space:nowrap">✏️ 글쓰기</button></div><div style="display:flex;align-items:center;justify-content:space-between;margin-top:6px"><div id="boardCount" style="font-size:10px;color:#94a3b8">전체 0건</div><label style="font-size:10px;color:#64748b;display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none"><input type="checkbox" id="boardSelectAllCb" onclick="boardToggleSelectAll(this)">전체선택</label></div></div><div id="boardBulkBar"><span id="boardBulkCount" style="flex:1;font-weight:700;">0개 선택됨</span><button type="button" class="board-bulk-cancel" onclick="boardClearSelection()">취소</button><button type="button" class="board-bulk-delete" onclick="boardDeleteSelected()">선택 삭제</button></div><div id="boardList" style="flex:1;overflow:auto;padding:6px"></div></div><div style="flex:1;overflow:auto;background:#fafafa"><div id="boardEmpty" style="height:100%;display:flex;align-items:center;justify-content:center;color:#94a3b8">게시글을 선택하세요.</div><div id="boardDetail" style="display:none;padding:18px"></div></div></div>
   </div>
 </div>
-<div id="boardWriteModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99998;display:none;align-items:center;justify-content:center;padding:14px"><div style="background:#fff;width:min(680px,94vw);max-height:92vh;border-radius:14px;overflow:auto"><div style="padding:12px 16px;background:#0F3A4D;color:#fff;display:flex;justify-content:space-between;position:sticky;top:0;z-index:2"><b>🐞 새 버그 신고 작성</b><button id="boardWriteCloseBtn" style="border:0;background:none;color:#fff;font-size:18px;cursor:pointer">✕</button></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><input id="boardAuthor" placeholder="작성자 이름" maxlength="30" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><input id="boardPostTitle" placeholder="버그 제목 (예: OO 화면에서 저장이 안 됨)" maxlength="120" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><textarea id="boardPostBody" rows="10" maxlength="10000" placeholder="어떤 상황에서 어떤 문제가 발생했는지, 재현 방법을 입력하세요" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px;resize:vertical"></textarea><div style="text-align:right"><button id="boardWriteCancelBtn" style="padding:8px 14px">취소</button><button id="boardSaveBtn" style="padding:8px 16px;background:#0891b2;color:#fff;border:0;border-radius:6px;font-weight:800">등록</button></div><div id="boardWriteError" style="display:none;color:#dc2626;font-size:11px"></div></div></div></div>
+<div id="boardWriteModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:99998;display:none;align-items:center;justify-content:center;padding:14px"><div style="background:#fff;width:min(680px,94vw);max-height:92vh;border-radius:14px;overflow:auto"><div style="padding:12px 16px;background:#0F3A4D;color:#fff;display:flex;justify-content:space-between;position:sticky;top:0;z-index:2"><b>✏️ 새 글 작성</b><button id="boardWriteCloseBtn" style="border:0;background:none;color:#fff;font-size:18px;cursor:pointer">✕</button></div><div style="padding:16px;display:flex;flex-direction:column;gap:10px"><input id="boardAuthor" placeholder="작성자 이름" maxlength="30" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><input id="boardPostTitle" placeholder="제목" maxlength="120" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px"><textarea id="boardPostBody" rows="10" maxlength="10000" placeholder="내용을 입력하세요" style="padding:9px;border:1px solid #cbd5e1;border-radius:7px;resize:vertical"></textarea><div style="text-align:right"><button id="boardWriteCancelBtn" style="padding:8px 14px">취소</button><button id="boardSaveBtn" style="padding:8px 16px;background:#0891b2;color:#fff;border:0;border-radius:6px;font-weight:800">등록</button></div><div id="boardWriteError" style="display:none;color:#dc2626;font-size:11px"></div></div></div></div>
 
 <!-- 💬 실시간 직원 채팅 (Supabase 기반, 무료) -->
 <style>
@@ -822,7 +822,7 @@
         <!-- 게시판 실시간 미리보기: 채팅 목록 하단에 항상 표시 -->
         <div id="leChatBoardLive" style="flex:0 0 112px;background:#fff;border-top:1px solid #e5e7eb;display:flex;flex-direction:column;overflow:hidden;">
           <div style="height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;padding:0 12px;border-bottom:1px solid #f0f0f0;background:#fafafa;">
-            <button type="button" onclick="openBulletinBoard()" style="border:0;background:none;padding:0;cursor:pointer;font-size:12px;font-weight:800;color:#334155;">🐞 버그 신고</button>
+            <button type="button" onclick="openBulletinBoard()" style="border:0;background:none;padding:0;cursor:pointer;font-size:12px;font-weight:800;color:#334155;">📋 게시판</button>
             <span id="leChatBoardLiveStatus" style="font-size:9px;color:#94a3b8;">실시간</span>
           </div>
           <div id="leChatBoardLiveItems" style="flex:1;min-height:0;overflow:hidden;"></div>
@@ -5911,7 +5911,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       <button onclick="openEmbeddedTool('laser')" title="레이저 가공 견적을 계산하고 현재 견적서로 바로 전송합니다" class="hdr-btn" style="background:#2563eb">⚙️ 레이저 견적</button>
       <button onclick="openEmbeddedTool('share')" title="큰 CAD/도면 파일을 서버 없이 다른 컴퓨터로 직접 전송합니다" class="hdr-btn" style="background:#7c3aed">🔗 파일 전송</button>
       <button onclick="openPersonalCalendar()" title="회사 모임, 거래처 방문 등 개인 일정을 달력으로 관리합니다" class="hdr-btn cal-btn" style="position:relative">📅 일정<span id="calTodayBadge" class="ship-badge" style="display:none">0</span></button>
-      <button id="bulletinBoardBtn" onclick="openBulletinBoard()" title="버그 신고 게시판" class="hdr-btn" style="background:#0891b2">🐞 버그 신고</button>
+      <button id="bulletinBoardBtn" onclick="openBulletinBoard()" title="공용 게시판" class="hdr-btn" style="background:#0891b2">📋 게시판</button>
       <button onclick="openStaffModal()" title="직원별 출근/휴무/연차 등 근무 상태를 달력에 기록하고 관리합니다" class="hdr-btn" style="background:#0f766e">👥 직원 근무</button>
       <button onclick="startNewDoc()" title="현재 내용은 거래내역에 저장한 뒤 화면을 비웁니다 (우리 회사 정보는 유지)" class="hdr-btn" style="background:#f97316" onmouseover="this.style.background='#fb923c'" onmouseout="this.style.background='#f97316'">🆕 새 문서</button>
       <div style="position:relative;display:inline-block">
@@ -5950,8 +5950,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openThemeSettingsModal()">⚙️ 환경 설정 (메일·테마 색상)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openAdSettingsModal()" title="프로그램을 하루 중 처음 열었을 때 뜨는 광고 사진/문구를 설정합니다">📢 광고 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.leOpenVisitorAdmin&&window.leOpenVisitorAdmin()" title="지금 접속 중인 사람들의 IP를 보고, 영구 차단·차단 해제를 할 수 있습니다">🌐 접속자 / 차단 관리</div>
-          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoEmployee()" title="직원 로그인 후 맞고 게임과 내 포인트를 확인합니다">🀄 맞고 게임 (직원)</div>
-          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoAdmin()" title="직원 계정 등록, 이용시간 확인, 포인트 지급을 관리합니다">🏆 포인트 관리자</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.open('game/index.html','worldcupMatgo','width=900,height=700,resizable=yes,scrollbars=no')" title="새 창으로 맞고 게임을 엽니다">🀄 맞고 게임</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeSettingsMenu();openHelpGuide()" title="처음 사용하시나요? 이 프로그램 사용법을 쉽게 안내해 드려요">❓ 도움말</div>
         </div>
       </div>
@@ -9153,8 +9152,8 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
     if(!(await ensureSupabase())){$('boardStatus').textContent='Supabase 로딩 실패';return;}
     const c=makeClient();if(!c)return;
     const r=await c.from('board_posts').select('*').order('created_at',{ascending:false});
-    if(r.error){$('boardStatus').textContent='DB 연결 오류';$('boardList').innerHTML='<div style="padding:30px;text-align:center;color:#dc2626;font-size:12px">버그 신고 게시판 DB 연결 오류<br><br>'+esc(r.error.message)+'</div>';return;}
-    posts=(r.data||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));$('boardStatus').textContent='온라인';renderList();
+    if(r.error){$('boardStatus').textContent='DB 연결 오류';$('boardList').innerHTML='<div style="padding:30px;text-align:center;color:#dc2626;font-size:12px">게시판 DB 연결 오류<br><br>'+esc(r.error.message)+'</div>';return;}
+    posts=(r.data||[]).sort((a,b)=>new Date(b.created_at)-new Date(a.created_at));$('boardStatus').textContent='온라인 게시판';renderList();
   }
   function renderList(){
     const box=$('boardList'),q=($('boardSearch')?.value||'').trim().toLowerCase();
@@ -36987,475 +36986,6 @@ document.addEventListener('keydown',function(e){
     if(m && m.style.display==='flex') closeEmbeddedTool();
   }
 });
-</script>
-<!-- ════════════════════════ 🀄 사내 포인트 라운지 (직원 로그인 + 게임 + 관리자) ════════════════════════ -->
-<div id="matgoEmpModal" class="hidden no-print" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeMatgoEmployee()">
-  <div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:92vh;overflow-y:auto;position:relative">
-    <button onclick="closeMatgoEmployee()" style="position:absolute;top:12px;right:14px;border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
-
-    <div id="matgoLoginView">
-      <div style="text-align:center;margin-bottom:14px;">
-        <div style="font-size:28px;">🀄</div>
-        <div style="font-size:15px;font-weight:800;color:#1B2A31;">사내 포인트 라운지</div>
-        <div style="font-size:11px;color:#94a3b8;">관리자가 등록한 계정으로 로그인하세요</div>
-      </div>
-      <label style="display:block;font-size:11px;color:#64748b;margin:10px 0 4px;">아이디</label>
-      <input id="matgoUsername" type="text" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
-      <label style="display:block;font-size:11px;color:#64748b;margin:10px 0 4px;">비밀번호</label>
-      <input id="matgoPassword" type="password" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
-      <div id="matgoLoginErr" style="color:#dc2626;font-size:11px;margin-top:8px;min-height:14px;"></div>
-      <button id="matgoLoginBtn" onclick="matgoDoLogin()" style="width:100%;padding:11px;border:none;border-radius:8px;background:#146C8E;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:8px;">입장하기</button>
-      <div style="display:flex;align-items:center;gap:8px;margin:14px 0;">
-        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
-        <span style="font-size:10px;color:#94a3b8;">또는</span>
-        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
-      </div>
-      <button onclick="matgoGuestPlay()" style="width:100%;padding:11px;border:1px solid #e8c15c;border-radius:8px;background:#fffbea;color:#8a6d1c;font-weight:700;font-size:13px;cursor:pointer;">🎮 포인트 없이 체험 플레이</button>
-      <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px;">계정 없이 바로 게임만 플레이합니다 (포인트 적립 안 됨)</div>
-    </div>
-
-    <div id="matgoDashView" style="display:none;">
-      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-        <div id="matgoHello" style="font-size:13px;font-weight:700;color:#1B2A31;"></div>
-        <button onclick="matgoLogout()" style="font-size:11px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;color:#64748b;">로그아웃</button>
-      </div>
-      <div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;">
-        <div id="matgoMyPoints" style="font-size:26px;font-weight:800;color:#146C8E;">0P</div>
-        <div style="font-size:11px;color:#94a3b8;">내 누적 포인트</div>
-        <button onclick="matgoOpenGame()" style="margin-top:10px;width:100%;padding:10px;border:none;border-radius:8px;background:#e8c15c;color:#241a08;font-weight:700;font-size:13px;cursor:pointer;">🀄 게임 하러가기</button>
-      </div>
-      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">전체 순위</div>
-      <div id="matgoRankList" style="max-height:150px;overflow-y:auto;margin-bottom:14px;"></div>
-      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">내 포인트 내역</div>
-      <div id="matgoHistList" style="max-height:150px;overflow-y:auto;"></div>
-    </div>
-
-    <div id="matgoGameView" style="display:none;">
-      <button onclick="matgoBackToDash()" style="font-size:11px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;color:#64748b;margin-bottom:8px;">← 뒤로</button>
-      <div id="matgoGameErr" style="display:none;background:#fef2f2;color:#991b1b;font-size:12px;padding:10px;border-radius:8px;margin-bottom:8px;">게임을 불러오지 못했습니다. 이 페이지가 http(s) 주소로 열려 있는지 확인해주세요 (파일을 더블클릭해서 열면 브라우저 보안 정책으로 실패할 수 있어요).</div>
-      <div id="matgoPlayerContainer" style="width:100%;height:420px;background:#07140d;border-radius:10px;overflow:hidden;"></div>
-    </div>
-
-  </div>
-</div>
-
-<div id="matgoAdminModal" class="hidden no-print" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeMatgoAdmin()">
-  <div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:92vh;overflow-y:auto;position:relative">
-    <button onclick="closeMatgoAdmin()" style="position:absolute;top:12px;right:14px;border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
-    <div style="font-size:15px;font-weight:800;color:#1B2A31;margin-bottom:12px;">🏆 포인트 관리자</div>
-
-    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
-      <button id="matgoAdminBtn-employees" onclick="matgoAdminShowTab('employees')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#146C8E;color:#fff;">직원 관리</button>
-      <button id="matgoAdminBtn-grant" onclick="matgoAdminShowTab('grant')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">포인트 지급</button>
-      <button id="matgoAdminBtn-usage" onclick="matgoAdminShowTab('usage')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">이용시간</button>
-      <button id="matgoAdminBtn-log" onclick="matgoAdminShowTab('log')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">지급내역</button>
-    </div>
-
-    <div id="matgoAdminTab-employees">
-      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">새 직원 등록</div>
-      <input id="matgoNewUsername" type="text" placeholder="아이디" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
-      <input id="matgoNewName" type="text" placeholder="이름" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
-      <input id="matgoNewPassword" type="text" placeholder="초기 비밀번호" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
-      <div id="matgoAddEmpErr" style="color:#dc2626;font-size:11px;margin-bottom:6px;"></div>
-      <button onclick="matgoAddEmployee()" style="width:100%;padding:9px;border:none;border-radius:7px;background:#146C8E;color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:14px;">등록</button>
-      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">등록된 직원</div>
-      <div id="matgoEmpList"></div>
-    </div>
-
-    <div id="matgoAdminTab-grant" style="display:none;">
-      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">직원</label>
-      <select id="matgoGrantEmp" style="width:100%;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;"></select>
-      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">포인트 (음수 입력 시 차감)</label>
-      <input id="matgoGrantPoints" type="number" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;">
-      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">사유 (예: 이번주 6시간 이용)</label>
-      <input id="matgoGrantReason" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;">
-      <div id="matgoGrantErr" style="color:#dc2626;font-size:11px;margin-bottom:6px;"></div>
-      <button onclick="matgoGrantPoints()" style="width:100%;padding:10px;border:none;border-radius:7px;background:#146C8E;color:#fff;font-weight:700;font-size:13px;cursor:pointer;">지급하기</button>
-    </div>
-
-    <div id="matgoAdminTab-usage" style="display:none;">
-      <div id="matgoUsageList"></div>
-    </div>
-
-    <div id="matgoAdminTab-log" style="display:none;">
-      <div id="matgoLogList"></div>
-    </div>
-
-  </div>
-</div>
-
-<script>
-(function(){
-  function getClient(cb){
-    if (window._matgoClient) { cb(window._matgoClient); return; }
-    loadSupabaseLib(function(){
-      window._matgoClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
-      cb(window._matgoClient);
-    });
-  }
-
-  let matgoEmp = null;
-  let matgoSessionId = null;
-  let matgoHeartbeatTimer = null;
-
-  function loadStoredEmp(){
-    try { const raw = localStorage.getItem('matgo_emp'); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
-  }
-  function storeEmp(emp){ try { localStorage.setItem('matgo_emp', JSON.stringify(emp)); } catch(e){} }
-  function clearStoredEmp(){ try { localStorage.removeItem('matgo_emp'); } catch(e){} }
-  function matgoEsc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
-
-  window.openMatgoEmployee = function(){
-    document.getElementById('matgoEmpModal').style.display = 'flex';
-    matgoEmp = loadStoredEmp();
-    if (matgoEmp) { matgoShowDashboard(); } else { matgoShowLogin(); }
-  };
-  window.closeMatgoEmployee = function(){ document.getElementById('matgoEmpModal').style.display = 'none'; };
-
-  function matgoShowLogin(){
-    document.getElementById('matgoLoginView').style.display = 'block';
-    document.getElementById('matgoDashView').style.display = 'none';
-    document.getElementById('matgoGameView').style.display = 'none';
-    document.getElementById('matgoLoginErr').textContent = '';
-  }
-
-  window.matgoDoLogin = async function(){
-    const username = document.getElementById('matgoUsername').value.trim();
-    const password = document.getElementById('matgoPassword').value;
-    const errBox = document.getElementById('matgoLoginErr');
-    const btn = document.getElementById('matgoLoginBtn');
-    errBox.textContent = '';
-    if (!username || !password) { errBox.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
-
-    // 버튼을 잠시 비활성화하고 "확인 중..." 표시 — 아무 반응이 없어 보이는 문제(먹통처럼 보이는 현상) 방지
-    const originalBtnText = btn ? btn.textContent : '';
-    if (btn) { btn.disabled = true; btn.textContent = '확인 중...'; btn.style.opacity = '0.7'; }
-    let finished = false;
-    const restoreBtn = function(){
-      finished = true;
-      if (btn) { btn.disabled = false; btn.textContent = originalBtnText; btn.style.opacity = '1'; }
-    };
-    // 네트워크가 막혀 있거나 응답이 없을 때도 10초 뒤엔 반드시 안내가 뜨도록 보장
-    setTimeout(function(){
-      if (!finished) {
-        restoreBtn();
-        errBox.textContent = '서버 응답이 없습니다. 인터넷 연결을 확인하거나 잠시 후 다시 시도해주세요. (F12 콘솔에서 자세한 오류를 확인할 수 있습니다)';
-      }
-    }, 10000);
-
-    try {
-      const hash = await window.jinjooSha256Hex(password);
-      getClient(async function(client){
-        try {
-          const { data, error } = await client.from('matgo_employees')
-            .select('id, username, display_name, password_hash, active')
-            .eq('username', username).eq('active', true).maybeSingle();
-          if (finished) return; // 타임아웃으로 이미 안내가 뜬 경우 중복 처리 방지
-          if (error) {
-            console.error('[맞고 로그인] matgo_employees 조회 오류:', error);
-            // 42P01 = 테이블 없음(PostgREST) — 관리자가 아직 기능을 설정하지 않은 경우 가장 흔한 원인
-            if (error.code === '42P01' || /relation .* does not exist/i.test(error.message||'')) {
-              errBox.textContent = '포인트 기능이 아직 설정되지 않았습니다. 관리자에게 문의해주세요.';
-            } else {
-              errBox.textContent = '서버 오류가 발생했습니다: ' + (error.message || '알 수 없는 오류') + ' (F12 콘솔 확인)';
-            }
-            restoreBtn();
-            return;
-          }
-          if (!data) {
-            errBox.textContent = '등록되지 않은 아이디이거나 비활성화된 계정입니다. 관리자에게 계정 등록을 요청하세요.';
-            restoreBtn();
-            return;
-          }
-          if (data.password_hash !== hash) {
-            errBox.textContent = '비밀번호가 올바르지 않습니다.';
-            restoreBtn();
-            return;
-          }
-          matgoEmp = { id: data.id, username: data.username, display_name: data.display_name };
-          storeEmp(matgoEmp);
-          const ins = await client.from('matgo_sessions').insert({ employee_id: matgoEmp.id }).select('id').single();
-          matgoSessionId = ins.data ? ins.data.id : null;
-          matgoStartHeartbeat();
-          restoreBtn();
-          matgoShowDashboard();
-        } catch(e2){
-          console.error('[맞고 로그인] 처리 중 예외:', e2);
-          if (!finished) { errBox.textContent = '로그인 처리 중 오류가 발생했습니다. (F12 콘솔 확인)'; restoreBtn(); }
-        }
-      });
-    } catch(e){
-      console.error('[맞고 로그인] 초기화 오류:', e);
-      if (!finished) { errBox.textContent = '로그인을 시작할 수 없습니다. (F12 콘솔 확인)'; restoreBtn(); }
-    }
-  };
-
-  function matgoStartHeartbeat(){
-    if (matgoHeartbeatTimer) clearInterval(matgoHeartbeatTimer);
-    matgoHeartbeatTimer = setInterval(function(){
-      if (!matgoSessionId) return;
-      getClient(function(client){
-        client.from('matgo_sessions').update({ last_seen_at: new Date().toISOString() }).eq('id', matgoSessionId).then(function(){});
-      });
-    }, 60000);
-  }
-
-  window.matgoLogout = function(){
-    clearStoredEmp();
-    matgoEmp = null;
-    if (matgoHeartbeatTimer) clearInterval(matgoHeartbeatTimer);
-    matgoShowLogin();
-  };
-
-  async function matgoShowDashboard(){
-    document.getElementById('matgoLoginView').style.display = 'none';
-    document.getElementById('matgoDashView').style.display = 'block';
-    document.getElementById('matgoGameView').style.display = 'none';
-    document.getElementById('matgoHello').textContent = matgoEmp.display_name + '님';
-    if (!matgoSessionId) {
-      getClient(async function(client){
-        const ins = await client.from('matgo_sessions').insert({ employee_id: matgoEmp.id }).select('id').single();
-        matgoSessionId = ins.data ? ins.data.id : null;
-        matgoStartHeartbeat();
-      });
-    }
-    matgoLoadPointsAndBoard();
-  }
-
-  async function matgoLoadPointsAndBoard(){
-    getClient(async function(client){
-      const myLogRes = await client.from('matgo_points_log').select('points, reason, granted_at').eq('employee_id', matgoEmp.id).order('granted_at', { ascending:false }).limit(50);
-      const myLog = myLogRes.data || [];
-      const total = myLog.reduce(function(s,r){ return s + r.points; }, 0);
-      document.getElementById('matgoMyPoints').textContent = total + 'P';
-      const histBox = document.getElementById('matgoHistList');
-      if (myLog.length===0) {
-        histBox.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:12px 0;">아직 지급된 포인트가 없어요</div>';
-      } else {
-        histBox.innerHTML = myLog.map(function(h){
-          return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #e2e8f0;font-size:12px;">' +
-            '<div><div>'+matgoEsc(h.reason||'포인트 지급')+'</div><div style="color:#94a3b8;font-size:10px;">'+matgoEsc(h.granted_at)+'</div></div>' +
-            '<div style="font-weight:700;color:'+(h.points>=0?'#16a34a':'#dc2626')+';white-space:nowrap;">'+(h.points>=0?'+':'')+h.points+'P</div></div>';
-        }).join('');
-      }
-
-      const empsRes = await client.from('matgo_employees').select('id, display_name').eq('active', true);
-      const allLogRes = await client.from('matgo_points_log').select('employee_id, points');
-      const emps = empsRes.data || [];
-      const allLog = allLogRes.data || [];
-      const totals = {};
-      emps.forEach(function(e){ totals[e.id] = { name: e.display_name, total: 0 }; });
-      allLog.forEach(function(r){ if (totals[r.employee_id]) totals[r.employee_id].total += r.points; });
-      const board = Object.keys(totals).map(function(id){ return { id: id, name: totals[id].name, total: totals[id].total }; })
-        .sort(function(a,b){ return b.total - a.total; });
-      const listBox = document.getElementById('matgoRankList');
-      if (board.length===0) {
-        listBox.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:12px 0;">등록된 직원이 없어요</div>';
-      } else {
-        listBox.innerHTML = board.map(function(row,i){
-          const isMe = String(row.id) === String(matgoEmp.id);
-          const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
-          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #f1f5f9;'+(isMe?'background:#fef9e7;border-radius:6px;':'')+'">' +
-            '<div style="width:24px;text-align:center;font-size:13px;">'+medal+'</div>' +
-            '<div style="flex:1;font-size:13px;">'+matgoEsc(row.name)+(isMe?' (나)':'')+'</div>' +
-            '<div style="font-weight:700;font-size:13px;color:#146C8E;">'+row.total+'P</div></div>';
-        }).join('');
-      }
-    });
-  }
-
-  window.matgoOpenGame = function(){
-    document.getElementById('matgoDashView').style.display = 'none';
-    document.getElementById('matgoGameView').style.display = 'block';
-    matgoInitPlayer();
-  };
-  window.matgoBackToDash = function(){
-    document.getElementById('matgoGameView').style.display = 'none';
-    if (matgoEmp && matgoEmp.isGuest) {
-      matgoEmp = null;
-      matgoShowLogin();
-    } else {
-      document.getElementById('matgoDashView').style.display = 'block';
-    }
-  };
-
-  // 로그인/포인트 없이 바로 게임만 플레이하는 게스트 모드
-  // - 직원 계정을 만들지 않고, matgo_employees/matgo_sessions/matgo_points_log 어느 테이블에도 기록을 남기지 않는다.
-  // - 개인별(직원별) 포인트 적립 로직은 그대로 유지되며, 게스트 모드는 그 위에 얹힌 별도의 "포인트 없는" 진입 경로일 뿐이다.
-  window.matgoGuestPlay = function(){
-    matgoEmp = { id: null, username: null, display_name: '게스트', isGuest: true };
-    document.getElementById('matgoLoginView').style.display = 'none';
-    document.getElementById('matgoDashView').style.display = 'none';
-    document.getElementById('matgoGameView').style.display = 'block';
-    matgoInitPlayer();
-  };
-
-  let matgoPlayerInited = false;
-  function matgoInitPlayer(){
-    if (matgoPlayerInited) return;
-    matgoPlayerInited = true;
-    const s = document.createElement('script');
-    s.src = 'ruffle.js';
-    s.onload = function(){
-      try {
-        window.RufflePlayer = window.RufflePlayer || {};
-        const ruffle = window.RufflePlayer.newest();
-        const player = ruffle.createPlayer();
-        const container = document.getElementById('matgoPlayerContainer');
-        container.appendChild(player);
-        player.style.width = '100%';
-        player.style.height = '100%';
-        player.ruffle().load({ url: 'worldcup-matgo.swf', letterbox: 'on', scale: 'showAll', fitContainer: true })
-          .catch(function(){ document.getElementById('matgoGameErr').style.display = 'block'; });
-      } catch(e){
-        document.getElementById('matgoGameErr').style.display = 'block';
-      }
-    };
-    s.onerror = function(){ document.getElementById('matgoGameErr').style.display = 'block'; };
-    document.head.appendChild(s);
-  }
-
-  // ---------------- 관리자 ----------------
-  window.openMatgoAdmin = async function(){
-    const pw = prompt('관리자 암호를 입력하세요.');
-    if (pw === null) return;
-    const hash = await window.jinjooSha256Hex(pw);
-    if (hash !== window.jinjooAdminPwHash) { alert('관리자 암호가 올바르지 않습니다.'); return; }
-    document.getElementById('matgoAdminModal').style.display = 'flex';
-    matgoAdminShowTab('employees');
-  };
-  window.closeMatgoAdmin = function(){ document.getElementById('matgoAdminModal').style.display = 'none'; };
-
-  window.matgoAdminShowTab = function(tab){
-    ['employees','grant','usage','log'].forEach(function(t){
-      document.getElementById('matgoAdminTab-'+t).style.display = (t===tab)?'block':'none';
-      document.getElementById('matgoAdminBtn-'+t).style.background = (t===tab)?'#146C8E':'#f1f5f9';
-      document.getElementById('matgoAdminBtn-'+t).style.color = (t===tab)?'#fff':'#475569';
-    });
-    if (tab==='employees') matgoAdminLoadEmployees();
-    if (tab==='grant') matgoAdminLoadEmployeesForSelect();
-    if (tab==='usage') matgoAdminLoadUsage();
-    if (tab==='log') matgoAdminLoadLog();
-  };
-
-  function matgoAdminLoadEmployees(){
-    getClient(async function(client){
-      const res = await client.from('matgo_employees').select('id, username, display_name, active, created_at').order('created_at', { ascending:false });
-      const data = res.data || [];
-      const box = document.getElementById('matgoEmpList');
-      if (data.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">등록된 직원이 없어요</div>'; return; }
-      box.innerHTML = data.map(function(r){
-        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #f1f5f9;font-size:12px;">' +
-          '<div style="flex:1;">'+matgoEsc(r.display_name)+' <span style="color:#94a3b8;">('+matgoEsc(r.username)+')</span></div>' +
-          '<button onclick="matgoResetPw('+r.id+',\''+matgoEsc(r.display_name)+'\')" style="font-size:11px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;">비번초기화</button>' +
-          (r.active ? '<button onclick="matgoDeactivate('+r.id+')" style="font-size:11px;padding:5px 8px;border:none;border-radius:6px;background:#dc2626;color:#fff;cursor:pointer;">비활성화</button>' : '<span style="color:#94a3b8;font-size:11px;">비활성</span>') +
-          '</div>';
-      }).join('');
-    });
-  }
-
-  window.matgoAddEmployee = async function(){
-    const username = document.getElementById('matgoNewUsername').value.trim();
-    const name = document.getElementById('matgoNewName').value.trim();
-    const pw = document.getElementById('matgoNewPassword').value;
-    const errBox = document.getElementById('matgoAddEmpErr');
-    errBox.textContent = '';
-    if (!username || !name || !pw) { errBox.textContent = '아이디, 이름, 비밀번호를 모두 입력하세요.'; return; }
-    const hash = await window.jinjooSha256Hex(pw);
-    getClient(async function(client){
-      const res = await client.from('matgo_employees').insert({ username: username, display_name: name, password_hash: hash });
-      if (res.error) { errBox.textContent = '이미 존재하는 아이디거나 오류가 발생했습니다.'; return; }
-      document.getElementById('matgoNewUsername').value = '';
-      document.getElementById('matgoNewName').value = '';
-      document.getElementById('matgoNewPassword').value = '';
-      matgoAdminLoadEmployees();
-    });
-  };
-
-  window.matgoResetPw = function(id, name){
-    const pw = prompt(name + ' 님의 새 비밀번호를 입력하세요');
-    if (!pw) return;
-    window.jinjooSha256Hex(pw).then(function(hash){
-      getClient(function(client){
-        client.from('matgo_employees').update({ password_hash: hash }).eq('id', id).then(function(){ alert('비밀번호가 변경되었습니다.'); });
-      });
-    });
-  };
-
-  window.matgoDeactivate = function(id){
-    if (!confirm('이 직원을 비활성화할까요?')) return;
-    getClient(function(client){
-      client.from('matgo_employees').update({ active: false }).eq('id', id).then(function(){ matgoAdminLoadEmployees(); });
-    });
-  };
-
-  function matgoAdminLoadEmployeesForSelect(){
-    getClient(async function(client){
-      const res = await client.from('matgo_employees').select('id, display_name').eq('active', true);
-      const sel = document.getElementById('matgoGrantEmp');
-      sel.innerHTML = (res.data||[]).map(function(r){ return '<option value="'+r.id+'">'+matgoEsc(r.display_name)+'</option>'; }).join('');
-    });
-  }
-
-  window.matgoGrantPoints = function(){
-    const empId = document.getElementById('matgoGrantEmp').value;
-    const points = parseInt(document.getElementById('matgoGrantPoints').value, 10);
-    const reason = document.getElementById('matgoGrantReason').value.trim();
-    const errBox = document.getElementById('matgoGrantErr');
-    errBox.textContent = '';
-    if (!empId || !points) { errBox.textContent = '직원과 포인트를 입력하세요.'; return; }
-    getClient(function(client){
-      client.from('matgo_points_log').insert({ employee_id: empId, points: points, reason: reason || null }).then(function(res){
-        if (res.error) { errBox.textContent = '지급 중 오류가 발생했습니다.'; return; }
-        document.getElementById('matgoGrantPoints').value = '';
-        document.getElementById('matgoGrantReason').value = '';
-        alert('포인트가 지급되었습니다.');
-      });
-    });
-  };
-
-  function matgoAdminLoadUsage(){
-    getClient(async function(client){
-      const empsRes = await client.from('matgo_employees').select('id, display_name').eq('active', true);
-      const sessRes = await client.from('matgo_sessions').select('employee_id, login_at, last_seen_at, logout_at');
-      const emps = empsRes.data || [];
-      const sess = sessRes.data || [];
-      const box = document.getElementById('matgoUsageList');
-      const stats = {};
-      emps.forEach(function(e){ stats[e.id] = { name: e.display_name, count:0, hours:0 }; });
-      sess.forEach(function(s){
-        if (!stats[s.employee_id]) return;
-        stats[s.employee_id].count += 1;
-        const end = s.logout_at || s.last_seen_at;
-        const hrs = (new Date(end) - new Date(s.login_at)) / 3600000;
-        stats[s.employee_id].hours += Math.max(0, hrs);
-      });
-      const rows = Object.keys(stats).map(function(id){ return stats[id]; }).sort(function(a,b){ return b.hours - a.hours; });
-      if (rows.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">데이터가 없어요</div>'; return; }
-      box.innerHTML = rows.map(function(r){
-        return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid #f1f5f9;font-size:12px;">' +
-          '<div>'+matgoEsc(r.name)+'</div><div>'+r.count+'회 · '+(Math.round(r.hours*10)/10)+'시간</div></div>';
-      }).join('');
-    });
-  }
-
-  function matgoAdminLoadLog(){
-    getClient(async function(client){
-      const empsRes = await client.from('matgo_employees').select('id, display_name');
-      const nameMap = {};
-      (empsRes.data||[]).forEach(function(e){ nameMap[e.id] = e.display_name; });
-      const logRes = await client.from('matgo_points_log').select('employee_id, points, reason, granted_at').order('granted_at', { ascending:false }).limit(200);
-      const data = logRes.data || [];
-      const box = document.getElementById('matgoLogList');
-      if (data.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">지급 내역이 없어요</div>'; return; }
-      box.innerHTML = data.map(function(r){
-        return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #e2e8f0;font-size:12px;">' +
-          '<div><b>'+matgoEsc(nameMap[r.employee_id]||'?')+'</b> — '+matgoEsc(r.reason||'포인트 지급')+'<div style="color:#94a3b8;font-size:10px;">'+matgoEsc(r.granted_at)+'</div></div>' +
-          '<div style="font-weight:700;color:'+(r.points>=0?'#16a34a':'#dc2626')+';white-space:nowrap;">'+(r.points>=0?'+':'')+r.points+'P</div></div>';
-      }).join('');
-    });
-  }
-})();
 </script>
 
 
