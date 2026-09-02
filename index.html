@@ -37005,6 +37005,13 @@ document.addEventListener('keydown',function(e){
       <input id="matgoPassword" type="password" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
       <div id="matgoLoginErr" style="color:#dc2626;font-size:11px;margin-top:8px;min-height:14px;"></div>
       <button onclick="matgoDoLogin()" style="width:100%;padding:11px;border:none;border-radius:8px;background:#146C8E;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:8px;">입장하기</button>
+      <div style="display:flex;align-items:center;gap:8px;margin:14px 0;">
+        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+        <span style="font-size:10px;color:#94a3b8;">또는</span>
+        <div style="flex:1;height:1px;background:#e2e8f0;"></div>
+      </div>
+      <button onclick="matgoGuestPlay()" style="width:100%;padding:11px;border:1px solid #e8c15c;border-radius:8px;background:#fffbea;color:#8a6d1c;font-weight:700;font-size:13px;cursor:pointer;">🎮 포인트 없이 체험 플레이</button>
+      <div style="font-size:10px;color:#94a3b8;text-align:center;margin-top:6px;">계정 없이 바로 게임만 플레이합니다 (포인트 적립 안 됨)</div>
     </div>
 
     <div id="matgoDashView" style="display:none;">
@@ -37217,7 +37224,23 @@ document.addEventListener('keydown',function(e){
   };
   window.matgoBackToDash = function(){
     document.getElementById('matgoGameView').style.display = 'none';
-    document.getElementById('matgoDashView').style.display = 'block';
+    if (matgoEmp && matgoEmp.isGuest) {
+      matgoEmp = null;
+      matgoShowLogin();
+    } else {
+      document.getElementById('matgoDashView').style.display = 'block';
+    }
+  };
+
+  // 로그인/포인트 없이 바로 게임만 플레이하는 게스트 모드
+  // - 직원 계정을 만들지 않고, matgo_employees/matgo_sessions/matgo_points_log 어느 테이블에도 기록을 남기지 않는다.
+  // - 개인별(직원별) 포인트 적립 로직은 그대로 유지되며, 게스트 모드는 그 위에 얹힌 별도의 "포인트 없는" 진입 경로일 뿐이다.
+  window.matgoGuestPlay = function(){
+    matgoEmp = { id: null, username: null, display_name: '게스트', isGuest: true };
+    document.getElementById('matgoLoginView').style.display = 'none';
+    document.getElementById('matgoDashView').style.display = 'none';
+    document.getElementById('matgoGameView').style.display = 'block';
+    matgoInitPlayer();
   };
 
   let matgoPlayerInited = false;
