@@ -83,32 +83,6 @@
   }
   #error-box h2{ margin:0 0 8px; font-size:17px; color:#8a2020; }
   #error-box p{ font-size:13px; line-height:1.6; color:#555; }
-
-  #wallet-hud{
-    position:absolute; top:8px; right:12px; z-index:15;
-    display:flex; gap:8px; font-size:11px; color:#f4e9d8;
-  }
-  #wallet-hud .chip{
-    background:rgba(0,0,0,0.45); border:1px solid rgba(232,193,92,0.4);
-    border-radius:999px; padding:4px 10px; font-weight:700;
-  }
-  #wallet-hud .chip.time-low{ color:#ff8a8a; border-color:#ff8a8a; animation:blinkChip 1s infinite; }
-  @keyframes blinkChip{ 50%{ opacity:0.4; } }
-
-  #no-balance-box{
-    display:none; position:absolute; inset:0; align-items:center; justify-content:center;
-    z-index:25; padding:24px;
-  }
-  #no-balance-box .card{
-    background:#fbf8f2; color:#333; border-radius:12px; padding:22px 24px;
-    max-width:360px; text-align:center; box-shadow:0 10px 30px rgba(0,0,0,0.5);
-  }
-  #no-balance-box h2{ margin:0 0 8px; font-size:17px; color:#8a2020; }
-  #no-balance-box p{ font-size:13px; line-height:1.6; color:#555; margin-bottom:14px; }
-  #no-balance-box button{
-    background:linear-gradient(180deg,#146C8E,#0F3A4D); color:#fff; border:none;
-    border-radius:8px; padding:10px 18px; font-size:13px; font-weight:700; cursor:pointer;
-  }
 </style>
 </head>
 <body>
@@ -118,10 +92,6 @@
     <button id="close-btn" onclick="window.close()">닫기</button>
   </div>
   <div id="stage">
-    <div id="wallet-hud">
-      <span class="chip" id="hud-money">💰 -</span>
-      <span class="chip" id="hud-time">⏱ -분</span>
-    </div>
     <div id="player-container"></div>
     <div id="loading">
       <div class="spinner"></div>
@@ -135,22 +105,11 @@
         웹 서버에 올리거나 로컬 서버(예: <code>npx serve</code>)로 열어보세요.</p>
       </div>
     </div>
-    <div id="no-balance-box">
-      <div class="card">
-        <h2 id="nb-title">이용 가능한 시간이 없습니다</h2>
-        <p id="nb-text">관리자에게 문의하시거나 잠시 후 다시 시도해주세요.</p>
-        <button onclick="window.close()">닫기</button>
-      </div>
-    </div>
   </div>
 </div>
 
-<script src="game-wallet.js"></script>
-
 <script src="ruffle.js"></script>
 <script>
-  // 모바일 브라우저(특히 주소창이 나타났다 사라졌다 하는 환경)에서
-  // 100vh가 실제 화면보다 크게 잡혀 아래쪽이 잘리는 문제를 막기 위한 보정
   function setRealViewportHeight(){
     document.documentElement.style.setProperty('--vh', (window.innerHeight * 0.01) + 'px');
   }
@@ -165,54 +124,13 @@
     document.getElementById('error-box').style.display = 'flex';
   }
 
-  function showNoBalance(title, text){
-    document.getElementById('loading').style.display = 'none';
-    document.getElementById('nb-title').textContent = title;
-    document.getElementById('nb-text').textContent = text;
-    document.getElementById('no-balance-box').style.display = 'flex';
-  }
-
-  // URL 파라미터로 사용자 ID/이름을 전달받는다.
-  // 예: game/index.html?user=hong01&name=%ED%99%8D%EA%B8%B8%EB%8F%99
-  const params = new URLSearchParams(window.location.search);
-  const userId = params.get('user') || 'guest';
-  const userName = params.get('name') || userId;
-
-  let timeTickInterval = null;
-  let currentWallet = null;
-
-  function updateHud(wallet){
-    document.getElementById('hud-money').textContent = '💰 ' + Number(wallet.money).toLocaleString() + '원';
-    const timeChip = document.getElementById('hud-time');
-    timeChip.textContent = '⏱ ' + wallet.minutes_left + '분';
-    timeChip.classList.toggle('time-low', wallet.minutes_left <= 5);
-  }
-
-  // 1분마다 이용시간 1분씩 차감. 0이 되면 게임을 정지시키고 안내.
-  function startTimeCountdown(){
-    timeTickInterval = setInterval(async () => {
-      if (!currentWallet) return;
-      const result = await window.GameWallet.deductTime(userId, 1);
-      currentWallet.minutes_left = result.minutes_left;
-      updateHud(currentWallet);
-      if (result.minutes_left <= 0) {
-        clearInterval(timeTickInterval);
-        showNoBalance('이용 시간이 종료되었습니다', '관리자에게 추가 이용시간을 요청해주세요.');
-        document.getElementById('player-container').style.display = 'none';
-      }
-    }, 60 * 1000);
-  }
-
-  async function startGame(){
+  window.addEventListener("DOMContentLoaded", () => {
     try {
       const ruffle = window.RufflePlayer.newest();
       const player = ruffle.createPlayer();
       const container = document.getElementById("player-container");
       container.appendChild(player);
 
-      // 모바일 브라우저에서 %(퍼센트) 크기 계산이 어긋나 게임 화면이
-      // 실제 화면보다 크게 렌더링되는 문제를 막기 위해, 실제 픽셀 크기를
-      // 직접 계산해서 player 엘리먼트에 강제로 지정해준다.
       function sizePlayerToContainer(){
         const rect = container.getBoundingClientRect();
         const w = Math.floor(rect.width);
@@ -228,64 +146,19 @@
 
       player.addEventListener("loaderror", showError);
 
-      // 게임이 끝나거나 나갈 때 SWF가 최종 보유금액을 알려주면
-      // Supabase 지갑에 그대로 정산 반영한다.
-      window.exitGame = function(finalMoney){
-        window.GameWallet.settleGameMoney(userId, finalMoney).then((result) => {
-          currentWallet = { ...currentWallet, money: result.money };
-          updateHud(currentWallet);
-        }).catch((e) => console.error('정산 실패', e));
-      };
-
       player.ruffle().load({
         url: "worldcup-matgo.swf",
         letterbox: "on",
         scale: "showAll",
         fitContainer: true,
-        parameters: {
-          // SWF가 FlashVars로 초기 보유금액을 읽어들이는 경우를 대비해 전달.
-          // (SWF가 이 값을 실제로 사용하는지는 별도 확인이 필요합니다)
-          MONEY: String(currentWallet ? currentWallet.money : 0),
-          USER_ID: userId,
-        },
       }).then(() => {
         document.getElementById('loading').style.display = 'none';
         requestAnimationFrame(sizePlayerToContainer);
         setTimeout(sizePlayerToContainer, 300);
-        startTimeCountdown();
       }).catch(showError);
     } catch (e) {
       console.error(e);
       showError();
-    }
-  }
-
-  window.addEventListener("DOMContentLoaded", async () => {
-    try {
-      currentWallet = await window.GameWallet.ensureWallet(userId, userName);
-
-      // 보유금액이 0 이하이면 무료 충전 시도
-      if (Number(currentWallet.money) <= 0) {
-        const rechargeResult = await window.GameWallet.tryFreeRecharge(userId);
-        if (rechargeResult.recharged) {
-          currentWallet.money = rechargeResult.money;
-        }
-      }
-
-      updateHud(currentWallet);
-
-      if (Number(currentWallet.minutes_left) <= 0) {
-        showNoBalance('이용 가능한 시간이 없습니다', '관리자에게 이용시간 배분을 요청해주세요.');
-        return;
-      }
-
-      startGame();
-    } catch (e) {
-      console.error('지갑 확인 실패', e);
-      // 지갑 서버 통신이 실패해도 게임 자체는 열리도록 최소한의 안전장치
-      currentWallet = { money: 0, minutes_left: 9999 };
-      updateHud(currentWallet);
-      startGame();
     }
   });
 </script>

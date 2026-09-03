@@ -5950,7 +5950,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openThemeSettingsModal()">⚙️ 환경 설정 (메일·테마 색상)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openAdSettingsModal()" title="프로그램을 하루 중 처음 열었을 때 뜨는 광고 사진/문구를 설정합니다">📢 광고 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.leOpenVisitorAdmin&&window.leOpenVisitorAdmin()" title="지금 접속 중인 사람들의 IP를 보고, 영구 차단·차단 해제를 할 수 있습니다">🌐 접속자 / 차단 관리</div>
-          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoEmployee()" title="직원 로그인 후 맞고 게임과 내 포인트를 확인합니다">🀄 맞고 게임 (직원)</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.open('game/index.html','worldcupMatgo','width=900,height=700,resizable=yes,scrollbars=no')" title="로그인 없이 바로 게임을 즐깁니다 (포인트와는 무관)">🀄 맞고 게임</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoEmployee()" title="직원 로그인 후 내 포인트와 전체 순위를 확인합니다 (게임 승패와 무관)">🎖️ 내 포인트</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoAdmin()" title="직원 계정 등록, 이용시간 확인, 포인트 지급을 관리합니다">🏆 포인트 관리자</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeSettingsMenu();openHelpGuide()" title="처음 사용하시나요? 이 프로그램 사용법을 쉽게 안내해 드려요">❓ 도움말</div>
         </div>
@@ -37015,18 +37016,12 @@ document.addEventListener('keydown',function(e){
       <div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;">
         <div id="matgoMyPoints" style="font-size:26px;font-weight:800;color:#146C8E;">0P</div>
         <div style="font-size:11px;color:#94a3b8;">내 누적 포인트</div>
-        <button onclick="matgoOpenGame()" style="margin-top:10px;width:100%;padding:10px;border:none;border-radius:8px;background:#e8c15c;color:#241a08;font-weight:700;font-size:13px;cursor:pointer;">🀄 게임 하러가기</button>
+        <div style="margin-top:10px;font-size:11px;color:#94a3b8;">게임은 "⚙️ 설정 → 🀄 맞고 게임" 메뉴에서 로그인 없이 바로 즐기실 수 있어요.</div>
       </div>
       <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">전체 순위</div>
       <div id="matgoRankList" style="max-height:150px;overflow-y:auto;margin-bottom:14px;"></div>
       <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">내 포인트 내역</div>
       <div id="matgoHistList" style="max-height:150px;overflow-y:auto;"></div>
-    </div>
-
-    <div id="matgoGameView" style="display:none;">
-      <button onclick="matgoBackToDash()" style="font-size:11px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;color:#64748b;margin-bottom:8px;">← 뒤로</button>
-      <div id="matgoGameErr" style="display:none;background:#fef2f2;color:#991b1b;font-size:12px;padding:10px;border-radius:8px;margin-bottom:8px;">게임을 불러오지 못했습니다. 이 페이지가 http(s) 주소로 열려 있는지 확인해주세요 (파일을 더블클릭해서 열면 브라우저 보안 정책으로 실패할 수 있어요).</div>
-      <div id="matgoPlayerContainer" style="width:100%;height:420px;background:#07140d;border-radius:10px;overflow:hidden;"></div>
     </div>
 
   </div>
@@ -37108,7 +37103,6 @@ document.addEventListener('keydown',function(e){
   function matgoShowLogin(){
     document.getElementById('matgoLoginView').style.display = 'block';
     document.getElementById('matgoDashView').style.display = 'none';
-    document.getElementById('matgoGameView').style.display = 'none';
     document.getElementById('matgoLoginErr').textContent = '';
   }
 
@@ -37156,7 +37150,6 @@ document.addEventListener('keydown',function(e){
   async function matgoShowDashboard(){
     document.getElementById('matgoLoginView').style.display = 'none';
     document.getElementById('matgoDashView').style.display = 'block';
-    document.getElementById('matgoGameView').style.display = 'none';
     document.getElementById('matgoHello').textContent = matgoEmp.display_name + '님';
     if (!matgoSessionId) {
       getClient(async function(client){
@@ -37208,41 +37201,6 @@ document.addEventListener('keydown',function(e){
         }).join('');
       }
     });
-  }
-
-  window.matgoOpenGame = function(){
-    document.getElementById('matgoDashView').style.display = 'none';
-    document.getElementById('matgoGameView').style.display = 'block';
-    matgoInitPlayer();
-  };
-  window.matgoBackToDash = function(){
-    document.getElementById('matgoGameView').style.display = 'none';
-    document.getElementById('matgoDashView').style.display = 'block';
-  };
-
-  let matgoPlayerInited = false;
-  function matgoInitPlayer(){
-    if (matgoPlayerInited) return;
-    matgoPlayerInited = true;
-    const s = document.createElement('script');
-    s.src = 'ruffle.js';
-    s.onload = function(){
-      try {
-        window.RufflePlayer = window.RufflePlayer || {};
-        const ruffle = window.RufflePlayer.newest();
-        const player = ruffle.createPlayer();
-        const container = document.getElementById('matgoPlayerContainer');
-        container.appendChild(player);
-        player.style.width = '100%';
-        player.style.height = '100%';
-        player.ruffle().load({ url: 'worldcup-matgo.swf', letterbox: 'on', scale: 'showAll', fitContainer: true })
-          .catch(function(){ document.getElementById('matgoGameErr').style.display = 'block'; });
-      } catch(e){
-        document.getElementById('matgoGameErr').style.display = 'block';
-      }
-    };
-    s.onerror = function(){ document.getElementById('matgoGameErr').style.display = 'block'; };
-    document.head.appendChild(s);
   }
 
   // ---------------- 관리자 ----------------
