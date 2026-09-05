@@ -203,6 +203,8 @@
 #leChatThreadHeader{padding:0 10px!important;}
 #leChatThreadTitle{font-size:15px!important;font-weight:600!important;color:#222!important;}
 #leChatThreadScreen,#leChatMessages{background:#b2c7d9!important;}
+#leChatWindow.le-chat-dragover{outline:3px dashed #2563eb!important;outline-offset:-3px;}
+#leChatWindow.le-chat-dragover::after{content:'📎 여기에 파일을 놓으세요';position:absolute;inset:0;background:rgba(37,99,235,.12);color:#1d4ed8;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;z-index:99999;pointer-events:none;}
 #leChatMessages{padding:16px 13px 20px!important;scroll-behavior:smooth!important;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",Arial,sans-serif!important;}
 .le-kakao-msg{margin-bottom:11px!important;position:relative!important;}
 .le-kakao-msg .le-kakao-meta{font-size:10px!important;color:#687481!important;margin-bottom:3px!important;line-height:1.35!important;}
@@ -918,7 +920,7 @@
         </button>
       </div>
 
-      <input id="leChatFileInput" type="file" style="display:none;" onchange="leChatFileSelected(this)">
+      <input id="leChatFileInput" type="file" multiple style="display:none;" onchange="leChatFileSelected(this)">
       <input id="leChatCameraInput" type="file" accept="image/*" capture="environment" style="display:none;" onchange="leChatFileSelected(this)">
       <button id="leChatPlusBtn" onclick="leChatTogglePlusMenu(event)" title="더보기" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1;">＋</button>
       <input id="leChatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
@@ -3020,7 +3022,15 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (msg.file_url) {
       const isImage = /\.(png|jpe?g|gif|webp|bmp)$/i.test(msg.file_name || msg.file_url);
       const isPdf = /\.pdf$/i.test(msg.file_name || msg.file_url);
-      if (isImage) {
+      if (leChatIsLocked(msg)) {
+        // 비밀번호로 잠긴 파일 — 실제 내용 대신 잠금 안내를 보여주고, 맞는 비밀번호를 입력해야 열람 가능
+        bodyHtml =
+          '<div onclick="leChatUnlockFile(this)" data-file-url="' + leChatAttrEscape(msg.file_url) + '" data-file-name="' + leChatAttrEscape(msg.file_name || '') + '" data-lock-hash="' + leChatAttrEscape(leChatLockHash(msg)) + '" data-is-image="' + (isImage?'1':'0') + '" data-is-pdf="' + (isPdf?'1':'0') + '" ' +
+          'style="cursor:pointer;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.06);border-radius:10px;padding:8px 10px;color:' + bubbleColor + ';">' +
+            '<span style="font-size:20px;">🔒</span>' +
+            '<span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;">' + leChatEscape(msg.file_name || '보호된 파일') + '</span>' +
+          '</div>';
+      } else if (isImage) {
         // 카카오톡처럼 이미지 크기를 키우고, 가로/세로 어느 쪽이든 비율을 유지한 채 꽉 차게 표시
         bodyHtml =
           '<span onclick="leChatOpenImageLightbox(event,\'' + leChatAttrEscape(msg.file_url) + '\',\'' + leChatAttrEscape(msg.file_name || '') + '\')" style="display:inline-block;cursor:zoom-in;max-width:100%;" title="클릭하면 크게 보기">' +
@@ -3041,7 +3051,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           '</a>';
       }
     }
-    if (msg.content) {
+    if (msg.content && !leChatIsLocked(msg)) {
       bodyHtml += '<div style="white-space:pre-wrap;">' + leChatLinkify(leChatEscape(msg.content)) + '</div>';
     }
     if (msg.edited_at) {
@@ -3516,11 +3526,67 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   };
 
+  // 파일 잠금(비밀번호) 관련 유틸 — content 필드에 "🔒LOCK:<sha256해시>" 형태로 저장해 별도 DB 컬럼 없이 구현
+  const LE_CHAT_LOCK_PREFIX = '🔒LOCK:';
+  window.leChatHashPassword = async function(pw){
+    const enc = new TextEncoder().encode(pw);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  };
+  window.leChatIsLocked = function(msg){
+    return !!(msg && msg.file_url && typeof msg.content === 'string' && msg.content.indexOf(LE_CHAT_LOCK_PREFIX) === 0);
+  };
+  window.leChatLockHash = function(msg){
+    return leChatIsLocked(msg) ? msg.content.slice(LE_CHAT_LOCK_PREFIX.length) : '';
+  };
+  // 화면 미리보기/내보내기 등에서 content를 그대로 보여줘야 하는 곳에서 잠금 메시지는 원문 대신 안내문구로 대체
+  window.leChatDisplayContent = function(msg){
+    return leChatIsLocked(msg) ? '🔒 비밀번호로 보호된 파일' : (msg.content || '');
+  };
+  // 🔒 잠긴 파일을 클릭했을 때: 비밀번호를 물어보고, 맞으면 그 자리에서 원래 파일(이미지/PDF/기타)
+  // 표시 방식으로 바꿔서 바로 보거나 다운로드할 수 있게 함
+  window.leChatUnlockFile = async function(el){
+    if (!el) return;
+    const fileUrl = el.dataset.fileUrl || '';
+    const fileName = el.dataset.fileName || '';
+    const lockHash = el.dataset.lockHash || '';
+    const isImage = el.dataset.isImage === '1';
+    const isPdf = el.dataset.isPdf === '1';
+    if (!fileUrl) return;
+    const pw = window.prompt('이 파일은 비밀번호로 보호되어 있습니다.\n비밀번호를 입력하세요');
+    if (pw === null) return; // 취소
+    let hash = '';
+    try { hash = await leChatHashPassword(pw.trim()); } catch(e){}
+    if (!lockHash || hash !== lockHash) {
+      alert('비밀번호가 올바르지 않습니다.');
+      return;
+    }
+    if (isImage) {
+      el.outerHTML =
+        '<span onclick="leChatOpenImageLightbox(event,\'' + leChatAttrEscape(fileUrl) + '\',\'' + leChatAttrEscape(fileName) + '\')" style="display:inline-block;cursor:zoom-in;max-width:100%;" title="클릭하면 크게 보기">' +
+          '<img src="' + leChatEscape(fileUrl) + '" style="display:block;width:auto;height:auto;max-width:240px;max-height:320px;min-width:80px;border-radius:14px;object-fit:contain;">' +
+        '</span>';
+    } else if (isPdf) {
+      el.outerHTML =
+        '<a href="' + leChatEscape(fileUrl) + '" target="_blank" onclick="leChatDownloadFile(\'' + leChatAttrEscape(fileUrl) + '\',\'' + leChatAttrEscape(fileName) + '\'); return false;" style="display:block;">' +
+          '<div style="width:160px;height:110px;border-radius:8px;background:#fff;border:1px solid #cbd5e1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">' +
+            '<span style="font-size:26px;">📄</span><span style="font-size:10px;padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">' + leChatEscape(fileName || 'PDF') + '</span>' +
+          '</div>' +
+        '</a>';
+    } else {
+      el.outerHTML =
+        '<a href="' + leChatEscape(fileUrl) + '" target="_blank" onclick="leChatDownloadFile(\'' + leChatAttrEscape(fileUrl) + '\',\'' + leChatAttrEscape(fileName) + '\'); return false;" ' +
+        'style="display:flex;align-items:center;gap:6px;text-decoration:underline;">' +
+          '📎 ' + leChatEscape(fileName || '파일') +
+        '</a>';
+    }
+  };
+
   // 실제 업로드 로직 — 파일 선택(leChatFileSelected)과 앱 내 카메라 촬영(leChatCameraShot) 양쪽에서 공용으로 사용
-  window.leChatUploadFile = async function(file){
+  window.leChatUploadFile = async function(file, lockHash){
     if (!file || !supaClient) return;
     if (file.size > 50 * 1024 * 1024) {
-      alert('파일 크기는 50MB 이하만 가능합니다.');
+      alert('파일 크기는 50MB 이하만 가능합니다. (' + file.name + ')');
       return;
     }
     const progressEl = document.getElementById('leChatUploadProgress');
@@ -3536,7 +3602,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       leChatMarkPendingOwnMessage(leChatNickname, fileReceiver, '', file.name);
       const { error: insErr } = await supaClient.from('chat_messages').insert({
         sender: leChatNickname,
-        content: '',
+        content: lockHash ? (LE_CHAT_LOCK_PREFIX + lockHash) : '',
         file_url: pub.publicUrl,
         file_name: file.name,
         receiver: fileReceiver
@@ -3548,12 +3614,66 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       progressEl.style.display = 'none';
     }
   };
-  window.leChatFileSelected = async function(inputEl){
-    const file = inputEl.files && inputEl.files[0];
-    inputEl.value = '';
-    if (!file) return;
-    await leChatUploadFile(file);
+  // 여러 파일을 순서대로 업로드 (선택적으로 전체에 같은 비밀번호 부여)
+  window.leChatUploadFiles = async function(fileList){
+    const files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    let lockHash = '';
+    const wantLock = confirm((files.length > 1 ? (files.length + '개 파일에') : '이 파일에') + ' 비밀번호를 설정하시겠습니까?\n(취소를 누르면 비밀번호 없이 전송됩니다)');
+    if (wantLock) {
+      const pw = window.prompt('설정할 비밀번호를 입력하세요');
+      if (pw && pw.trim()) {
+        lockHash = await leChatHashPassword(pw.trim());
+      }
+    }
+    for (const file of files) {
+      await leChatUploadFile(file, lockHash);
+    }
   };
+  window.leChatFileSelected = async function(inputEl){
+    const files = inputEl.files;
+    const fileList = files ? Array.prototype.slice.call(files) : [];
+    inputEl.value = '';
+    if (!fileList.length) return;
+    await leChatUploadFiles(fileList);
+  };
+  // 채팅창 어디에든 파일을 마우스로 끌어다 놓으면 업로드되도록 지원
+  (function setupLeChatDragDrop(){
+    const dropTarget = document.getElementById('leChatWindow');
+    if (!dropTarget) return;
+    function hasFiles(e){
+      try {
+        if (!e.dataTransfer) return false;
+        var t = e.dataTransfer.types;
+        if (!t) return true; // 타입 정보를 못 읽는 환경이면 일단 허용
+        for (var i = 0; i < t.length; i++) { if (t[i] === 'Files') return true; }
+        return false;
+      } catch(err) { return true; }
+    }
+    let dragCounter = 0;
+    dropTarget.addEventListener('dragenter', function(e){
+      e.preventDefault();
+      if (!hasFiles(e)) return;
+      dragCounter++;
+      dropTarget.classList.add('le-chat-dragover');
+    });
+    dropTarget.addEventListener('dragover', function(e){
+      e.preventDefault();
+      if (e.dataTransfer) { try { e.dataTransfer.dropEffect = 'copy'; } catch(err){} }
+    });
+    dropTarget.addEventListener('dragleave', function(e){
+      dragCounter = Math.max(0, dragCounter - 1);
+      if (dragCounter === 0) dropTarget.classList.remove('le-chat-dragover');
+    });
+    dropTarget.addEventListener('drop', function(e){
+      e.preventDefault();
+      dragCounter = 0;
+      dropTarget.classList.remove('le-chat-dragover');
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (!files || !files.length) return;
+      leChatUploadFiles(files);
+    });
+  })();
 
   // ────────────────────────────────────────────────────────────
   // 📷 앱 내 카메라 촬영 — OS 파일탐색기가 아니라 getUserMedia로 실제 카메라 스트림을 직접 켭니다.
