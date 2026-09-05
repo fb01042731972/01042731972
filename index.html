@@ -893,11 +893,8 @@
         <button onclick="leChatPlusMenuAction('camera')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
           <span style="font-size:16px;width:20px;text-align:center;">📸</span>사진 촬영
         </button>
-        <button onclick="leChatPlusMenuAction('location')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
+        <button onclick="leChatPlusMenuAction('location')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
           <span style="font-size:16px;width:20px;text-align:center;">📍</span>위치 보내기
-        </button>
-        <button onclick="leChatPlusMenuAction('emoji')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
-          <span style="font-size:16px;width:20px;text-align:center;">😊</span>이모티콘
         </button>
       </div>
 
@@ -923,7 +920,8 @@
       <input id="leChatFileInput" type="file" multiple style="display:none;" onchange="leChatFileSelected(this)">
       <input id="leChatCameraInput" type="file" accept="image/*" capture="environment" style="display:none;" onchange="leChatFileSelected(this)">
       <button id="leChatPlusBtn" onclick="leChatTogglePlusMenu(event)" title="더보기" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1;">＋</button>
-      <input id="leChatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
+      <button id="leChatEmojiBtn" onclick="leChatToggleEmojiPicker(event)" title="이모티콘" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 9px;font-size:16px;cursor:pointer;flex-shrink:0;line-height:1;">😊</button>
+      <input id="leChatInput" type="text" placeholder="메시지 입력... (😊 눌러 이모티콘 추가)" style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
       <button onclick="leChatSend()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
       </div>
     </div>
@@ -4516,9 +4514,6 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
         break;
       case 'location':
         leChatSendLocation();
-        break;
-      case 'emoji':
-        leChatToggleEmojiPicker();
         break;
       case 'schedule':
         leChatOpenScheduleModal();
