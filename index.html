@@ -5892,7 +5892,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       <h1 class="text-lg font-bold text-gray-800" style="margin:0;flex:none;">📄 이진주방산업</h1>
     </div>
     <!-- 버튼 영역: 회사명과 별도 영역이라 버튼을 옮겨도 회사명에 영향 없음 -->
-    <div class="flex gap-1 flex-wrap justify-end">
+    <div id="hdrBtnBar" class="flex gap-1 flex-wrap justify-end">
       <div style="position:relative;display:inline-block">
         <button id="customerMenuBtn" onclick="toggleCustomerMenu()" class="hdr-btn" style="background:#16a34a" onmouseover="this.style.background='#22c55e'" onmouseout="this.style.background='#16a34a'">고객용 ▾</button>
         <div id="customerMenu" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:60;min-width:260px;overflow:hidden">
@@ -5909,6 +5909,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       </div>
       <button onclick="openEmbeddedTool('cad')" title="DXF 도면을 열어 확인·수정·주석·네스팅합니다" class="hdr-btn" style="background:#ea580c">📐 CAD 뷰어</button>
       <button onclick="openEmbeddedTool('laser')" title="레이저 가공 견적을 계산하고 현재 견적서로 바로 전송합니다" class="hdr-btn" style="background:#2563eb">⚙️ 레이저 견적</button>
+      <button onclick="openEmbeddedTool('share')" title="큰 CAD/도면 파일을 서버 없이 다른 컴퓨터로 직접 전송합니다" class="hdr-btn" style="background:#7c3aed">🔗 파일 전송</button>
       <button onclick="openPersonalCalendar()" title="회사 모임, 거래처 방문 등 개인 일정을 달력으로 관리합니다" class="hdr-btn cal-btn" style="position:relative">📅 일정<span id="calTodayBadge" class="ship-badge" style="display:none">0</span></button>
       <button id="bulletinBoardBtn" onclick="openBulletinBoard()" title="공용 게시판" class="hdr-btn" style="background:#0891b2">📋 게시판</button>
       <button onclick="openStaffModal()" title="직원별 출근/휴무/연차 등 근무 상태를 달력에 기록하고 관리합니다" class="hdr-btn" style="background:#0f766e">👥 직원 근무</button>
@@ -6013,7 +6014,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       onkeydown="if(event.key==='Escape'){closeGlobalSearch();}">
     <div id="globalSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:100;max-height:440px;overflow-y:auto"></div>
   </div>
-  <div class="flex gap-1 flex-wrap">
+  <div id="docTabBar" class="flex gap-1 flex-wrap">
     <button id="docTabQuote" onclick="switchDocType('quote')" title="고객에게 보낼 견적서를 작성합니다" class="doc-tab active px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📘 견적서</button>
 
     <button id="docTabOrder" onclick="switchDocType('order')" title="우리 회사가 발주(주문)할 때 쓰는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📙 발주서</button>
@@ -36919,6 +36920,7 @@ window.onload = function() {
       <div style="display:flex;gap:6px;align-items:center">
         <button onclick="openEmbeddedTool('cad')" style="border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700">📐 CAD</button>
         <button onclick="openEmbeddedTool('laser')" style="border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700">⚙️ 레이저</button>
+        <button onclick="openEmbeddedTool('share')" style="border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.1);color:#fff;border-radius:6px;padding:6px 10px;cursor:pointer;font-weight:700">🔗 파일전송</button>
         <button onclick="closeEmbeddedTool()" style="border:none;background:#ef4444;color:#fff;border-radius:6px;padding:6px 11px;cursor:pointer;font-weight:800">✕ 닫기</button>
       </div>
     </div>
@@ -37344,6 +37346,297 @@ document.addEventListener('keydown',function(e){
 })();
 </script>
 
+
+<script>
+/* ===================== 버튼/탭 배치 편집 기능 (여러 바에 공용 적용, 좌/우 측벽 공유) ===================== */
+(function(){
+  "use strict";
+
+  // ---------- 공통 스타일 ----------
+  var style = document.createElement('style');
+  style.textContent =
+    '.hdrbtn-cell{position:relative;display:inline-block;}' +
+    '.hdrbtn-cell.hdrbtn-editing{outline:2px dashed #9333ea;outline-offset:3px;border-radius:8px;cursor:grab;}' +
+    '.hdrbtn-cell.hdrbtn-editing:active{cursor:grabbing;}' +
+    '.hdrbtn-cell.hdrbtn-dragover{outline:2px solid #dc2626 !important;}' +
+    '.hdrbtn-ctrl{display:none;position:absolute;top:-11px;right:-8px;z-index:80;gap:2px;flex-wrap:nowrap;}' +
+    '.hdrbtn-editing .hdrbtn-ctrl{display:flex;}' +
+    '.hdrbtn-mini{width:20px;height:20px;line-height:18px;padding:0;border-radius:50%;border:1px solid #cbd5e1;background:#fff;font-size:10px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25);flex:none;}' +
+    '.hdrbtn-mini:hover{background:#f1f5f9;}' +
+    '.hdrbtn-mini.hdrbtn-mini-on{background:#9333ea;color:#fff;border-color:#9333ea;}' +
+    '.hdrbtn-cell.hdrbtn-hidden-mode{opacity:.35;}' +
+    '.hdrbtn-more-menu .hdrbtn-cell{display:block !important;width:100%;margin-bottom:4px;}' +
+    '.hdrbtn-more-menu .hdrbtn-cell > button{width:100%;text-align:left;}' +
+    '.hdrbtn-rail{position:fixed;top:50%;transform:translateY(-50%);z-index:150;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:10px 6px;border-radius:12px;min-width:64px;min-height:24px;transition:min-height .15s;}' +
+    '.hdrbtn-rail.hdrbtn-rail-left{left:10px;}' +
+    '.hdrbtn-rail.hdrbtn-rail-right{right:10px;}' +
+    '.hdrbtn-rail.hdrbtn-rail-editing{background:rgba(147,51,234,.10);outline:2px dashed #9333ea;box-shadow:0 4px 16px rgba(0,0,0,.12);}' +
+    '.hdrbtn-rail.hdrbtn-rail-editing.hdrbtn-rail-empty{min-height:140px;justify-content:center;align-items:center;}' +
+    '.hdrbtn-rail-empty-label{display:none;font-size:11px;color:#7c3aed;font-weight:700;text-align:center;line-height:1.5;pointer-events:none;white-space:pre-line;}' +
+    '.hdrbtn-rail.hdrbtn-rail-editing.hdrbtn-rail-empty .hdrbtn-rail-empty-label{display:block;}' +
+    '.hdrbtn-rail .hdrbtn-cell{display:block;}' +
+    '.hdrbtn-rail .hdrbtn-cell > button, .hdrbtn-rail .hdrbtn-cell > div > button{width:100%;white-space:nowrap;font-size:11px;padding:6px 8px;}';
+  document.head.appendChild(style);
+
+  // ---------- 좌/우 측벽: 여러 바가 공유하는 전역 요소 ----------
+  var leftRail = document.createElement('div');
+  leftRail.id = 'hdrBtnLeftRail';
+  leftRail.className = 'hdrbtn-rail hdrbtn-rail-left no-print';
+  leftRail.innerHTML = '<div class="hdrbtn-rail-empty-label">◀\n여기로\n드래그</div>';
+  document.body.appendChild(leftRail);
+
+  var rightRail = document.createElement('div');
+  rightRail.id = 'hdrBtnRightRail';
+  rightRail.className = 'hdrbtn-rail hdrbtn-rail-right no-print';
+  rightRail.innerHTML = '<div class="hdrbtn-rail-empty-label">▶\n여기로\n드래그</div>';
+  document.body.appendChild(rightRail);
+
+  var globalEditFlags = {}; // { storageKey: true/false } - 여러 바 중 하나라도 편집중이면 측벽을 강조 표시
+  function anyEditMode(){
+    for(var k in globalEditFlags){ if(globalEditFlags[k]) return true; }
+    return false;
+  }
+  function refreshRailVisibility(){
+    var editing = anyEditMode();
+    var leftCount = leftRail.querySelectorAll(':scope > .hdrbtn-cell').length;
+    var rightCount = rightRail.querySelectorAll(':scope > .hdrbtn-cell').length;
+    leftRail.style.display = (leftCount > 0 || editing) ? 'flex' : 'none';
+    rightRail.style.display = (rightCount > 0 || editing) ? 'flex' : 'none';
+    leftRail.classList.toggle('hdrbtn-rail-editing', editing);
+    rightRail.classList.toggle('hdrbtn-rail-editing', editing);
+    leftRail.classList.toggle('hdrbtn-rail-empty', leftCount === 0);
+    rightRail.classList.toggle('hdrbtn-rail-empty', rightCount === 0);
+  }
+
+  // ---------- 바 하나(헤더 버튼 줄 / 문서 탭 줄)에 편집 기능을 붙이는 함수 ----------
+  function setupToolbarEditor(barId, storageKey, moreBtnLabel, editBtnLabel){
+    var bar = document.getElementById(barId);
+    if(!bar) return;
+
+    var originalChildren = Array.prototype.slice.call(bar.children);
+    var itemsMap = {};
+    var originalText = {};
+    var allKeys = [];
+    originalChildren.forEach(function(el, i){
+      var key = barId + '_b' + i;
+      allKeys.push(key);
+      var cell = document.createElement('div');
+      cell.className = 'hdrbtn-cell';
+      cell.dataset.btnKey = key;
+      el.parentNode.insertBefore(cell, el);
+      cell.appendChild(el);
+      itemsMap[key] = cell;
+      var labelEl = cell.querySelector('button') || cell;
+      originalText[key] = labelEl.textContent;
+
+      var ctrl = document.createElement('div');
+      ctrl.className = 'hdrbtn-ctrl';
+      ctrl.innerHTML =
+        '<button type="button" class="hdrbtn-mini" data-act="hide" title="숨기기/보이기">👁</button>' +
+        '<button type="button" class="hdrbtn-mini" data-act="left" title="왼쪽 측벽으로/복귀">◀</button>' +
+        '<button type="button" class="hdrbtn-mini" data-act="right" title="오른쪽 측벽으로/복귀">▶</button>' +
+        '<button type="button" class="hdrbtn-mini" data-act="more" title="더보기로 이동/복귀">▤</button>' +
+        '<button type="button" class="hdrbtn-mini" data-act="rename" title="이름 바꾸기">✏️</button>';
+      cell.appendChild(ctrl);
+    });
+
+    // 이 바 전용 "더보기" 드롭다운
+    var moreWrap = document.createElement('div');
+    moreWrap.className = 'hdrbtn-cell';
+    moreWrap.style.display = 'none';
+    moreWrap.innerHTML =
+      '<button type="button" class="hdr-btn hdrbtn-more-btn" style="background:#64748b">⋯ ' + moreBtnLabel + ' ▾</button>' +
+      '<div class="hdrbtn-more-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:70;min-width:200px;padding:8px;overflow:hidden"></div>';
+    bar.appendChild(moreWrap);
+    var moreMenu = moreWrap.querySelector('.hdrbtn-more-menu');
+    moreWrap.querySelector('.hdrbtn-more-btn').addEventListener('click', function(e){
+      e.stopPropagation();
+      moreMenu.style.display = (moreMenu.style.display === 'none') ? 'block' : 'none';
+    });
+    document.addEventListener('click', function(e){
+      if(moreMenu.style.display !== 'none' && !moreWrap.contains(e.target)){
+        moreMenu.style.display = 'none';
+      }
+    });
+
+    // 편집 모드 토글 버튼
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'hdr-btn';
+    editBtn.style.background = '#9333ea';
+    editBtn.textContent = '🛠 ' + editBtnLabel;
+    editBtn.title = '드래그로 순서를 바꾸거나, 좌우 측벽으로 보내거나, 숨기거나, 이름을 바꿀 수 있습니다';
+    bar.appendChild(editBtn);
+
+    // 설정 불러오기
+    var cfg = null;
+    try { cfg = JSON.parse(localStorage.getItem(storageKey) || 'null'); } catch(e){ cfg = null; }
+    if(!cfg) cfg = {};
+    if(!Array.isArray(cfg.order)) cfg.order = allKeys.slice();
+    else {
+      cfg.order = cfg.order.filter(function(k){ return allKeys.indexOf(k) !== -1; });
+      allKeys.forEach(function(k){ if(cfg.order.indexOf(k) === -1) cfg.order.push(k); });
+    }
+    if(!Array.isArray(cfg.hidden)) cfg.hidden = [];
+    if(typeof cfg.zone !== 'object' || !cfg.zone) cfg.zone = {}; // 'bar' | 'left' | 'right' | 'more'
+    if(typeof cfg.names !== 'object' || !cfg.names) cfg.names = {};
+
+    function saveCfg(){
+      try { localStorage.setItem(storageKey, JSON.stringify(cfg)); } catch(e){}
+    }
+    function zoneOf(key){ return cfg.zone[key] || 'bar'; }
+
+    var editMode = false;
+    var dragKey = null;
+
+    function applyName(cell, key){
+      var labelEl = cell.querySelector('button') || cell;
+      labelEl.textContent = cfg.names[key] || originalText[key];
+    }
+
+    function render(){
+      cfg.order.forEach(function(key){
+        var cell = itemsMap[key];
+        if(!cell) return;
+        applyName(cell, key);
+
+        var isHidden = cfg.hidden.indexOf(key) !== -1;
+        var zone = zoneOf(key);
+
+        if(zone === 'more'){
+          moreMenu.appendChild(cell);
+        } else if(zone === 'left'){
+          leftRail.appendChild(cell);
+        } else if(zone === 'right'){
+          rightRail.appendChild(cell);
+        } else {
+          bar.insertBefore(cell, moreWrap);
+        }
+
+        if(isHidden && !editMode){
+          cell.style.display = 'none';
+        } else {
+          cell.style.display = (zone === 'more') ? 'block' : '';
+          cell.classList.toggle('hdrbtn-hidden-mode', isHidden && editMode);
+        }
+
+        cell.classList.toggle('hdrbtn-editing', editMode);
+        cell.draggable = editMode;
+
+        var ctrl = cell.querySelector('.hdrbtn-ctrl');
+        if(ctrl){
+          var leftBtn = ctrl.querySelector('[data-act="left"]');
+          var rightBtn = ctrl.querySelector('[data-act="right"]');
+          var moreBtn = ctrl.querySelector('[data-act="more"]');
+          if(leftBtn) leftBtn.classList.toggle('hdrbtn-mini-on', zone === 'left');
+          if(rightBtn) rightBtn.classList.toggle('hdrbtn-mini-on', zone === 'right');
+          if(moreBtn) moreBtn.classList.toggle('hdrbtn-mini-on', zone === 'more');
+        }
+      });
+
+      moreWrap.style.display = cfg.order.some(function(k){ return zoneOf(k) === 'more'; }) ? '' : 'none';
+      refreshRailVisibility();
+    }
+
+    function findCellFromEvent(e){
+      return e.target.closest && e.target.closest('.hdrbtn-cell');
+    }
+    function zoneContainerToZone(container){
+      if(container === leftRail) return 'left';
+      if(container === rightRail) return 'right';
+      return 'bar';
+    }
+    [bar, leftRail, rightRail].forEach(function(container){
+      container.addEventListener('dragstart', function(e){
+        var cell = findCellFromEvent(e);
+        if(!editMode || !cell || !cell.dataset.btnKey || !itemsMap[cell.dataset.btnKey]) return;
+        dragKey = cell.dataset.btnKey;
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      container.addEventListener('dragover', function(e){
+        if(!editMode || !dragKey) return;
+        e.preventDefault();
+        var cell = findCellFromEvent(e);
+        if(cell) cell.classList.add('hdrbtn-dragover');
+      });
+      container.addEventListener('dragleave', function(e){
+        var cell = findCellFromEvent(e);
+        if(cell) cell.classList.remove('hdrbtn-dragover');
+      });
+      container.addEventListener('drop', function(e){
+        if(!editMode || !dragKey) return;
+        e.preventDefault();
+        var cell = findCellFromEvent(e);
+        if(cell) cell.classList.remove('hdrbtn-dragover');
+        var newZone = zoneContainerToZone(container);
+        if(newZone === 'bar') delete cfg.zone[dragKey]; else cfg.zone[dragKey] = newZone;
+
+        var targetKey = cell && cell.dataset.btnKey;
+        if(targetKey && targetKey !== dragKey && itemsMap[targetKey]){
+          var from = cfg.order.indexOf(dragKey);
+          var to = cfg.order.indexOf(targetKey);
+          if(from !== -1 && to !== -1){
+            cfg.order.splice(from, 1);
+            cfg.order.splice(to, 0, dragKey);
+          }
+        }
+        dragKey = null;
+        saveCfg();
+        render();
+      });
+    });
+
+    function attachControlHandler(container){
+      container.addEventListener('click', function(e){
+        var mini = e.target.closest && e.target.closest('.hdrbtn-mini');
+        if(!mini) return;
+        var cell = mini.closest('.hdrbtn-cell');
+        var key = cell && cell.dataset.btnKey;
+        if(!key || !itemsMap[key]) return; // 이 바 소속이 아니면 무시
+        e.preventDefault();
+        e.stopPropagation();
+        var act = mini.dataset.act;
+        if(act === 'hide'){
+          var hi = cfg.hidden.indexOf(key);
+          if(hi === -1) cfg.hidden.push(key); else cfg.hidden.splice(hi, 1);
+        } else if(act === 'left'){
+          cfg.zone[key] = (zoneOf(key) === 'left') ? 'bar' : 'left';
+        } else if(act === 'right'){
+          cfg.zone[key] = (zoneOf(key) === 'right') ? 'bar' : 'right';
+        } else if(act === 'more'){
+          cfg.zone[key] = (zoneOf(key) === 'more') ? 'bar' : 'more';
+        } else if(act === 'rename'){
+          var cur = cfg.names[key] || originalText[key];
+          var next = window.prompt('이름을 입력하세요 (비워두면 원래 이름으로 되돌아갑니다)', cur);
+          if(next !== null){
+            next = next.trim();
+            if(next) cfg.names[key] = next; else delete cfg.names[key];
+          }
+        }
+        saveCfg();
+        render();
+      });
+    }
+    attachControlHandler(bar);
+    attachControlHandler(leftRail);
+    attachControlHandler(rightRail);
+
+    editBtn.addEventListener('click', function(){
+      editMode = !editMode;
+      editBtn.textContent = editMode ? '✅ 편집 완료' : ('🛠 ' + editBtnLabel);
+      editBtn.style.background = editMode ? '#16a34a' : '#9333ea';
+      globalEditFlags[storageKey] = editMode;
+      if(editMode) moreMenu.style.display = 'block';
+      render();
+    });
+
+    render();
+  }
+
+  setupToolbarEditor('hdrBtnBar', 'LE_HDRBTN_CFG_V3', '더보기', '배치 편집');
+  setupToolbarEditor('docTabBar', 'LE_DOCTAB_CFG_V1', '더보기', '탭 배치 편집');
+})();
+</script>
 
 </body>
 </html>
