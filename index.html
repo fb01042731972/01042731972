@@ -874,7 +874,7 @@
         <button type="button" class="le-select-delete" onclick="leChatBulkDeleteSelected()">선택 삭제</button>
       </div>
       <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
-      <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 14px rgba(20,30,40,.12);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
+      <div id="leChatEmojiPicker" style="display:none;flex-direction:column;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:220px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 14px rgba(20,30,40,.12);z-index:5;overflow:hidden;"></div>
 
       <!-- '+' 눌렀을 때 뜨는 팝업 메뉴 -->
       <div id="leChatPlusMenu" style="display:none;position:absolute;bottom:100%;left:0;margin-bottom:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 16px rgba(20,30,40,.12);min-width:168px;overflow:hidden;z-index:6;">
@@ -919,6 +919,7 @@
 
       <input id="leChatFileInput" type="file" multiple style="display:none;" onchange="leChatFileSelected(this)">
       <input id="leChatCameraInput" type="file" accept="image/*" capture="environment" style="display:none;" onchange="leChatFileSelected(this)">
+      <input id="leChatStickerInput" type="file" accept="image/*" multiple style="display:none;" onchange="leChatStickerFilesSelected(this)">
       <button id="leChatPlusBtn" onclick="leChatTogglePlusMenu(event)" title="더보기" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1;">＋</button>
       <button id="leChatEmojiBtn" onclick="leChatToggleEmojiPicker(event)" title="이모티콘" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 9px;font-size:16px;cursor:pointer;flex-shrink:0;line-height:1;">😊</button>
       <input id="leChatInput" type="text" placeholder="메시지 입력... (😊 눌러 이모티콘 추가)" style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
@@ -3090,9 +3091,16 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       }
     }
 
-    const bubbleHtml =
-      (msg.pinned ? '<div style="font-size:10px;color:#B45309;font-weight:700;margin-bottom:2px;">📌 고정된 메시지</div>' : '') +
-      '<div class="le-kakao-bubble" style="display:inline-block;max-width:100%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:8px 11px;border-radius:' + (mine ? '15px 4px 15px 15px' : '4px 15px 15px 15px') + ';text-align:left;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08);' + (isDm ? 'border:1px dashed #C9A227;' : '') + '">' + quoteHtml + bodyHtml + '</div>';
+    // 이미지(스티커 등)만 있고 텍스트·인용·귓속말 표시가 없는 경우엔, 카카오톡처럼
+    // 말풍선 배경(노란 테두리) 없이 이미지만 그대로 보여준다.
+    const isBareImageMsg = !!msg.file_url && !leChatIsLocked(msg) && /\.(png|jpe?g|gif|webp|bmp)$/i.test(msg.file_name || msg.file_url)
+      && !msg.content && !quoteHtml && !isDm && !msg.pinned;
+    const bubbleHtml = isBareImageMsg
+      ? bodyHtml
+      : (
+        (msg.pinned ? '<div style="font-size:10px;color:#B45309;font-weight:700;margin-bottom:2px;">📌 고정된 메시지</div>' : '') +
+        '<div class="le-kakao-bubble" style="display:inline-block;max-width:100%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:8px 11px;border-radius:' + (mine ? '15px 4px 15px 15px' : '4px 15px 15px 15px') + ';text-align:left;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08);' + (isDm ? 'border:1px dashed #C9A227;' : '') + '">' + quoteHtml + bodyHtml + '</div>'
+      );
 
     const timeColHtml =
       '<div style="display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') + ';gap:2px;flex-shrink:0;">' +
@@ -4471,14 +4479,176 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     '😊','😅','☕','🍚','🚗','⏰','✅','❌','❓','❗'
   ];
   let leChatEmojiPickerBuilt = false;
+  const LE_CHAT_CUSTOM_EMOJI_KEY = 'LE_CHAT_CUSTOM_EMOJIS_V1';
+  const LE_CHAT_CUSTOM_STICKER_KEY = 'LE_CHAT_CUSTOM_STICKERS_V1';
+
+  function leChatLoadCustomEmojis(){
+    try {
+      const raw = localStorage.getItem(LE_CHAT_CUSTOM_EMOJI_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function leChatSaveCustomEmojis(arr){
+    try { localStorage.setItem(LE_CHAT_CUSTOM_EMOJI_KEY, JSON.stringify(arr)); } catch(e){}
+  }
+
+  // ── 움직이는 이모티콘(GIF/WEBP 등 이미지 스티커) — 다운로드 폴더에서 직접 업로드해서 등록 ──
+  function leChatLoadCustomStickers(){
+    try {
+      const raw = localStorage.getItem(LE_CHAT_CUSTOM_STICKER_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function leChatSaveCustomStickers(arr){
+    try { localStorage.setItem(LE_CHAT_CUSTOM_STICKER_KEY, JSON.stringify(arr)); } catch(e){}
+  }
+
+  window.leChatOpenStickerUpload = function(e){
+    if (e) e.stopPropagation();
+    const input = document.getElementById('leChatStickerInput');
+    if (input) input.click();
+  };
+
+  // 스티커 파일(GIF 등)을 Supabase Storage에 올리고, 내 개인 스티커 목록(이 브라우저 저장)에 등록만 한다
+  // (바로 전송하지 않음 — 카카오톡처럼 등록해두고 나중에 눌러서 보내는 방식)
+  window.leChatStickerFilesSelected = async function(inputEl){
+    const files = inputEl.files ? Array.prototype.slice.call(inputEl.files) : [];
+    inputEl.value = '';
+    if (!files.length) return;
+    if (!supaClient) { alert('스티커 업로드에는 서버 연결(Supabase)이 필요합니다.'); return; }
+    for (const file of files) {
+      if (!/^image\//.test(file.type)) continue;
+      if (file.size > 15 * 1024 * 1024) { alert('스티커 하나당 15MB 이하만 가능합니다. (' + file.name + ')'); continue; }
+      try {
+        const extMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
+        const ext = extMatch ? extMatch[0] : '';
+        const path = 'stickers/' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + ext;
+        const { error: upErr } = await supaClient.storage.from('chat-files').upload(path, file);
+        if (upErr) throw upErr;
+        const { data: pub } = supaClient.storage.from('chat-files').getPublicUrl(path);
+        const list = leChatLoadCustomStickers();
+        list.unshift({ url: pub.publicUrl, name: file.name });
+        leChatSaveCustomStickers(list);
+      } catch(err) {
+        alert('스티커 업로드 실패: ' + (err.message || '') + '\n(Supabase Storage에 chat-files 버킷이 있는지 확인하세요)');
+      }
+    }
+    leChatEmojiPickerBuilt = false;
+    leChatBuildEmojiPicker();
+  };
+
+  window.leChatRemoveCustomSticker = function(url, e){
+    if (e) e.stopPropagation();
+    const list = leChatLoadCustomStickers().filter(function(s){ return s.url !== url; });
+    leChatSaveCustomStickers(list);
+    leChatEmojiPickerBuilt = false;
+    leChatBuildEmojiPicker();
+  };
+
+  // 스티커를 누르면 바로 이 대화에 이미지 메시지로 전송 (움직이는 GIF/WEBP도 그대로 전송됨)
+  window.leChatSendSticker = async function(url, name){
+    if (!supaClient) return;
+    try {
+      const receiver = leChatCurrentReceiver();
+      leChatMarkPendingOwnMessage(leChatNickname, receiver, '', name || '스티커');
+      const { error: insErr } = await supaClient.from('chat_messages').insert({
+        sender: leChatNickname,
+        content: '',
+        file_url: url,
+        file_name: name || '스티커',
+        receiver: receiver
+      });
+      if (insErr) throw insErr;
+    } catch(e) {
+      alert('스티커 전송 실패: ' + (e.message || ''));
+    }
+    const p = document.getElementById('leChatEmojiPicker');
+    if (p) p.style.display = 'none';
+  };
+
+  window.leChatAddCustomEmoji = function(){
+    const input = document.getElementById('leChatCustomEmojiInput');
+    if (!input) return;
+    const val = input.value.trim();
+    if (!val) { input.focus(); return; }
+    // 이모티콘(또는 문자) 하나만 등록 — 너무 긴 텍스트가 실수로 들어가는 것 방지
+    const em = Array.from(val)[0];
+    const list = leChatLoadCustomEmojis();
+    if (!list.includes(em)) {
+      list.unshift(em);
+      leChatSaveCustomEmojis(list);
+    }
+    input.value = '';
+    leChatEmojiPickerBuilt = false;
+    leChatBuildEmojiPicker();
+    input.focus();
+  };
+
+  window.leChatRemoveCustomEmoji = function(em, e){
+    if (e) e.stopPropagation();
+    const list = leChatLoadCustomEmojis().filter(function(x){ return x !== em; });
+    leChatSaveCustomEmojis(list);
+    leChatEmojiPickerBuilt = false;
+    leChatBuildEmojiPicker();
+  };
+
+  function leChatEmojiCellHtml(em, removable){
+    const delBtn = removable
+      ? '<span onclick="leChatRemoveCustomEmoji(\'' + em.replace(/'/g,"\\'") + '\',event)" title="삭제" ' +
+        'style="position:absolute;top:-3px;right:-3px;width:13px;height:13px;line-height:13px;text-align:center;' +
+        'font-size:9px;background:#ef4444;color:#fff;border-radius:50%;cursor:pointer;">×</span>'
+      : '';
+    return '<span style="position:relative;display:inline-flex;">' +
+      '<span onclick="leChatInsertEmoji(\'' + em.replace(/'/g,"\\'") + '\')" style="display:flex;align-items:center;justify-content:center;font-size:19px;padding:3px;border-radius:5px;cursor:pointer;line-height:1;" ' +
+      'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'transparent\'">' + em + '</span>' +
+      delBtn + '</span>';
+  }
+
+  function leChatStickerCellHtml(sticker){
+    const url = leChatAttrEscape(sticker.url);
+    const name = leChatAttrEscape(sticker.name || '스티커');
+    return '<span style="position:relative;display:inline-flex;">' +
+      '<img src="' + leChatEscape(sticker.url) + '" onclick="leChatSendSticker(\'' + url + '\',\'' + name + '\')" title="눌러서 전송" ' +
+      'style="width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:6px;cursor:pointer;background:#f8fafc;border:1px solid #f1f5f9;">' +
+      '<span onclick="leChatRemoveCustomSticker(\'' + url + '\',event)" title="목록에서 삭제" ' +
+      'style="position:absolute;top:-4px;right:-4px;width:15px;height:15px;line-height:15px;text-align:center;' +
+      'font-size:10px;background:#ef4444;color:#fff;border-radius:50%;cursor:pointer;">×</span></span>';
+  }
 
   function leChatBuildEmojiPicker(){
     if (leChatEmojiPickerBuilt) return;
     const box = document.getElementById('leChatEmojiPicker');
-    box.innerHTML = LE_CHAT_EMOJIS.map(function(em){
-      return '<span onclick="leChatInsertEmoji(\'' + em + '\')" style="display:flex;align-items:center;justify-content:center;font-size:19px;padding:3px;border-radius:5px;cursor:pointer;line-height:1;" ' +
-        'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'transparent\'">' + em + '</span>';
-    }).join('');
+    if (!box) return;
+    const customList = leChatLoadCustomEmojis();
+    const stickerList = leChatLoadCustomStickers();
+
+    let html = '';
+    html += '<div style="display:flex;gap:4px;padding:7px 8px;border-bottom:1px solid #e2e8f0;flex-shrink:0;">' +
+      '<input id="leChatCustomEmojiInput" type="text" placeholder="원하는 이모티콘을 붙여넣고 추가" ' +
+      'style="flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:5px;padding:5px 7px;font-size:12px;" ' +
+      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();leChatAddCustomEmoji();}">' +
+      '<button onclick="leChatAddCustomEmoji()" style="background:#51667E;color:#fff;border:none;border-radius:5px;padding:0 10px;font-size:11.5px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;">추가</button>' +
+      '<button onclick="leChatOpenStickerUpload(event)" title="다운받은 폴더에서 움직이는 이모티콘(GIF/WEBP) 파일을 선택해 등록합니다" style="background:#fee500;color:#222;border:none;border-radius:5px;padding:0 9px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;">🎞️ GIF올리기</button>' +
+      '</div>';
+
+    html += '<div style="overflow-y:auto;max-height:170px;padding:8px;">';
+    if (stickerList.length){
+      html += '<div style="font-size:10px;color:#94a3b8;font-weight:700;margin-bottom:3px;">🎬 내가 올린 움직이는 이모티콘 (눌러서 바로 전송)</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:8px;">' +
+        stickerList.map(leChatStickerCellHtml).join('') + '</div>';
+    }
+    if (customList.length){
+      html += '<div style="font-size:10px;color:#94a3b8;font-weight:700;margin-bottom:3px;">⭐ 내가 추가한 이모티콘</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:2px;margin-bottom:8px;">' +
+        customList.map(function(em){ return leChatEmojiCellHtml(em, true); }).join('') + '</div>';
+    }
+    html += '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:2px;">' +
+      LE_CHAT_EMOJIS.map(function(em){ return leChatEmojiCellHtml(em, false); }).join('') + '</div>';
+    html += '</div>';
+
+    box.innerHTML = html;
     leChatEmojiPickerBuilt = true;
   }
 
@@ -4486,8 +4656,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (e) e.stopPropagation();
     leChatBuildEmojiPicker();
     const p = document.getElementById('leChatEmojiPicker');
-    const isOpen = p.style.display === 'grid';
-    p.style.display = isOpen ? 'none' : 'grid';
+    const isOpen = p.style.display === 'flex';
+    p.style.display = isOpen ? 'none' : 'flex';
   };
 
   // ➕ 팝업 메뉴 (카톡 스타일: 캡처 / 파일첨부 / 위치 / 이모티콘)
