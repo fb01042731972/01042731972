@@ -203,6 +203,8 @@
 #leChatThreadHeader{padding:0 10px!important;}
 #leChatThreadTitle{font-size:15px!important;font-weight:600!important;color:#222!important;}
 #leChatThreadScreen,#leChatMessages{background:#b2c7d9!important;}
+#leChatWindow.le-chat-dragover{outline:3px dashed #2563eb!important;outline-offset:-3px;}
+#leChatWindow.le-chat-dragover::after{content:'📎 여기에 파일을 놓으세요';position:absolute;inset:0;background:rgba(37,99,235,.12);color:#1d4ed8;font-weight:800;font-size:15px;display:flex;align-items:center;justify-content:center;z-index:99999;pointer-events:none;}
 #leChatMessages{padding:16px 13px 20px!important;scroll-behavior:smooth!important;font-family:"Pretendard","Noto Sans KR","Malgun Gothic",Arial,sans-serif!important;}
 .le-kakao-msg{margin-bottom:11px!important;position:relative!important;}
 .le-kakao-msg .le-kakao-meta{font-size:10px!important;color:#687481!important;margin-bottom:3px!important;line-height:1.35!important;}
@@ -872,7 +874,7 @@
         <button type="button" class="le-select-delete" onclick="leChatBulkDeleteSelected()">선택 삭제</button>
       </div>
       <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
-      <div id="leChatEmojiPicker" style="display:none;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:180px;overflow-y:auto;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 14px rgba(20,30,40,.12);padding:8px;grid-template-columns:repeat(8,1fr);gap:2px;z-index:5;"></div>
+      <div id="leChatEmojiPicker" style="display:none;flex-direction:column;position:absolute;bottom:100%;left:0;right:0;margin-bottom:6px;max-height:220px;background:#fff;border:1px solid #cbd5e1;border-radius:8px;box-shadow:0 4px 14px rgba(20,30,40,.12);z-index:5;overflow:hidden;"></div>
 
       <!-- '+' 눌렀을 때 뜨는 팝업 메뉴 -->
       <div id="leChatPlusMenu" style="display:none;position:absolute;bottom:100%;left:0;margin-bottom:6px;background:#fff;border:1px solid #e2e8f0;border-radius:10px;box-shadow:0 4px 16px rgba(20,30,40,.12);min-width:168px;overflow:hidden;z-index:6;">
@@ -891,11 +893,8 @@
         <button onclick="leChatPlusMenuAction('camera')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
           <span style="font-size:16px;width:20px;text-align:center;">📸</span>사진 촬영
         </button>
-        <button onclick="leChatPlusMenuAction('location')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;border-bottom:1px solid #f1f5f9;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
+        <button onclick="leChatPlusMenuAction('location')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
           <span style="font-size:16px;width:20px;text-align:center;">📍</span>위치 보내기
-        </button>
-        <button onclick="leChatPlusMenuAction('emoji')" style="display:flex;align-items:center;gap:10px;width:100%;padding:10px 14px;background:#fff;border:none;cursor:pointer;text-align:left;font-size:12.5px;color:#334155;font-weight:600;">
-          <span style="font-size:16px;width:20px;text-align:center;">😊</span>이모티콘
         </button>
       </div>
 
@@ -918,10 +917,12 @@
         </button>
       </div>
 
-      <input id="leChatFileInput" type="file" style="display:none;" onchange="leChatFileSelected(this)">
+      <input id="leChatFileInput" type="file" multiple style="display:none;" onchange="leChatFileSelected(this)">
       <input id="leChatCameraInput" type="file" accept="image/*" capture="environment" style="display:none;" onchange="leChatFileSelected(this)">
+      <input id="leChatStickerInput" type="file" accept="image/*" multiple style="display:none;" onchange="leChatStickerFilesSelected(this)">
       <button id="leChatPlusBtn" onclick="leChatTogglePlusMenu(event)" title="더보기" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 10px;font-size:18px;font-weight:800;cursor:pointer;flex-shrink:0;line-height:1;">＋</button>
-      <input id="leChatInput" type="text" placeholder="메시지 입력..." style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
+      <button id="leChatEmojiBtn" onclick="leChatToggleEmojiPicker(event)" title="이모티콘" style="background:#f1f5f9;color:#51667E;border:1px solid #cbd5e1;border-radius:6px;padding:0 9px;font-size:16px;cursor:pointer;flex-shrink:0;line-height:1;">😊</button>
+      <input id="leChatInput" type="text" placeholder="메시지 입력... (😊 눌러 이모티콘 추가)" style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
       <button onclick="leChatSend()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
       </div>
     </div>
@@ -3020,7 +3021,15 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (msg.file_url) {
       const isImage = /\.(png|jpe?g|gif|webp|bmp)$/i.test(msg.file_name || msg.file_url);
       const isPdf = /\.pdf$/i.test(msg.file_name || msg.file_url);
-      if (isImage) {
+      if (leChatIsLocked(msg)) {
+        // 비밀번호로 잠긴 파일 — 실제 내용 대신 잠금 안내를 보여주고, 맞는 비밀번호를 입력해야 열람 가능
+        bodyHtml =
+          '<div onclick="leChatUnlockFile(this)" data-file-url="' + leChatAttrEscape(msg.file_url) + '" data-file-name="' + leChatAttrEscape(msg.file_name || '') + '" data-lock-hash="' + leChatAttrEscape(leChatLockHash(msg)) + '" data-is-image="' + (isImage?'1':'0') + '" data-is-pdf="' + (isPdf?'1':'0') + '" ' +
+          'style="cursor:pointer;display:flex;align-items:center;gap:6px;background:rgba(0,0,0,.06);border-radius:10px;padding:8px 10px;color:' + bubbleColor + ';">' +
+            '<span style="font-size:20px;">🔒</span>' +
+            '<span style="font-size:12px;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:150px;">' + leChatEscape(msg.file_name || '보호된 파일') + '</span>' +
+          '</div>';
+      } else if (isImage) {
         // 카카오톡처럼 이미지 크기를 키우고, 가로/세로 어느 쪽이든 비율을 유지한 채 꽉 차게 표시
         bodyHtml =
           '<span onclick="leChatOpenImageLightbox(event,\'' + leChatAttrEscape(msg.file_url) + '\',\'' + leChatAttrEscape(msg.file_name || '') + '\')" style="display:inline-block;cursor:zoom-in;max-width:100%;" title="클릭하면 크게 보기">' +
@@ -3041,7 +3050,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           '</a>';
       }
     }
-    if (msg.content) {
+    if (msg.content && !leChatIsLocked(msg)) {
       bodyHtml += '<div style="white-space:pre-wrap;">' + leChatLinkify(leChatEscape(msg.content)) + '</div>';
     }
     if (msg.edited_at) {
@@ -3082,9 +3091,16 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       }
     }
 
-    const bubbleHtml =
-      (msg.pinned ? '<div style="font-size:10px;color:#B45309;font-weight:700;margin-bottom:2px;">📌 고정된 메시지</div>' : '') +
-      '<div class="le-kakao-bubble" style="display:inline-block;max-width:100%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:8px 11px;border-radius:' + (mine ? '15px 4px 15px 15px' : '4px 15px 15px 15px') + ';text-align:left;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08);' + (isDm ? 'border:1px dashed #C9A227;' : '') + '">' + quoteHtml + bodyHtml + '</div>';
+    // 이미지(스티커 등)만 있고 텍스트·인용·귓속말 표시가 없는 경우엔, 카카오톡처럼
+    // 말풍선 배경(노란 테두리) 없이 이미지만 그대로 보여준다.
+    const isBareImageMsg = !!msg.file_url && !leChatIsLocked(msg) && /\.(png|jpe?g|gif|webp|bmp)$/i.test(msg.file_name || msg.file_url)
+      && !msg.content && !quoteHtml && !isDm && !msg.pinned;
+    const bubbleHtml = isBareImageMsg
+      ? bodyHtml
+      : (
+        (msg.pinned ? '<div style="font-size:10px;color:#B45309;font-weight:700;margin-bottom:2px;">📌 고정된 메시지</div>' : '') +
+        '<div class="le-kakao-bubble" style="display:inline-block;max-width:100%;background:' + bubbleBg + ';color:' + bubbleColor + ';padding:8px 11px;border-radius:' + (mine ? '15px 4px 15px 15px' : '4px 15px 15px 15px') + ';text-align:left;word-break:break-word;box-shadow:0 1px 2px rgba(0,0,0,.08);' + (isDm ? 'border:1px dashed #C9A227;' : '') + '">' + quoteHtml + bodyHtml + '</div>'
+      );
 
     const timeColHtml =
       '<div style="display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') + ';gap:2px;flex-shrink:0;">' +
@@ -3516,11 +3532,67 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     }, { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 });
   };
 
+  // 파일 잠금(비밀번호) 관련 유틸 — content 필드에 "🔒LOCK:<sha256해시>" 형태로 저장해 별도 DB 컬럼 없이 구현
+  const LE_CHAT_LOCK_PREFIX = '🔒LOCK:';
+  window.leChatHashPassword = async function(pw){
+    const enc = new TextEncoder().encode(pw);
+    const buf = await crypto.subtle.digest('SHA-256', enc);
+    return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2,'0')).join('');
+  };
+  window.leChatIsLocked = function(msg){
+    return !!(msg && msg.file_url && typeof msg.content === 'string' && msg.content.indexOf(LE_CHAT_LOCK_PREFIX) === 0);
+  };
+  window.leChatLockHash = function(msg){
+    return leChatIsLocked(msg) ? msg.content.slice(LE_CHAT_LOCK_PREFIX.length) : '';
+  };
+  // 화면 미리보기/내보내기 등에서 content를 그대로 보여줘야 하는 곳에서 잠금 메시지는 원문 대신 안내문구로 대체
+  window.leChatDisplayContent = function(msg){
+    return leChatIsLocked(msg) ? '🔒 비밀번호로 보호된 파일' : (msg.content || '');
+  };
+  // 🔒 잠긴 파일을 클릭했을 때: 비밀번호를 물어보고, 맞으면 그 자리에서 원래 파일(이미지/PDF/기타)
+  // 표시 방식으로 바꿔서 바로 보거나 다운로드할 수 있게 함
+  window.leChatUnlockFile = async function(el){
+    if (!el) return;
+    const fileUrl = el.dataset.fileUrl || '';
+    const fileName = el.dataset.fileName || '';
+    const lockHash = el.dataset.lockHash || '';
+    const isImage = el.dataset.isImage === '1';
+    const isPdf = el.dataset.isPdf === '1';
+    if (!fileUrl) return;
+    const pw = window.prompt('이 파일은 비밀번호로 보호되어 있습니다.\n비밀번호를 입력하세요');
+    if (pw === null) return; // 취소
+    let hash = '';
+    try { hash = await leChatHashPassword(pw.trim()); } catch(e){}
+    if (!lockHash || hash !== lockHash) {
+      alert('비밀번호가 올바르지 않습니다.');
+      return;
+    }
+    if (isImage) {
+      el.outerHTML =
+        '<span onclick="leChatOpenImageLightbox(event,\'' + leChatAttrEscape(fileUrl) + '\',\'' + leChatAttrEscape(fileName) + '\')" style="display:inline-block;cursor:zoom-in;max-width:100%;" title="클릭하면 크게 보기">' +
+          '<img src="' + leChatEscape(fileUrl) + '" style="display:block;width:auto;height:auto;max-width:240px;max-height:320px;min-width:80px;border-radius:14px;object-fit:contain;">' +
+        '</span>';
+    } else if (isPdf) {
+      el.outerHTML =
+        '<a href="' + leChatEscape(fileUrl) + '" target="_blank" onclick="leChatDownloadFile(\'' + leChatAttrEscape(fileUrl) + '\',\'' + leChatAttrEscape(fileName) + '\'); return false;" style="display:block;">' +
+          '<div style="width:160px;height:110px;border-radius:8px;background:#fff;border:1px solid #cbd5e1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">' +
+            '<span style="font-size:26px;">📄</span><span style="font-size:10px;padding:0 6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:140px;">' + leChatEscape(fileName || 'PDF') + '</span>' +
+          '</div>' +
+        '</a>';
+    } else {
+      el.outerHTML =
+        '<a href="' + leChatEscape(fileUrl) + '" target="_blank" onclick="leChatDownloadFile(\'' + leChatAttrEscape(fileUrl) + '\',\'' + leChatAttrEscape(fileName) + '\'); return false;" ' +
+        'style="display:flex;align-items:center;gap:6px;text-decoration:underline;">' +
+          '📎 ' + leChatEscape(fileName || '파일') +
+        '</a>';
+    }
+  };
+
   // 실제 업로드 로직 — 파일 선택(leChatFileSelected)과 앱 내 카메라 촬영(leChatCameraShot) 양쪽에서 공용으로 사용
-  window.leChatUploadFile = async function(file){
+  window.leChatUploadFile = async function(file, lockHash){
     if (!file || !supaClient) return;
     if (file.size > 50 * 1024 * 1024) {
-      alert('파일 크기는 50MB 이하만 가능합니다.');
+      alert('파일 크기는 50MB 이하만 가능합니다. (' + file.name + ')');
       return;
     }
     const progressEl = document.getElementById('leChatUploadProgress');
@@ -3536,7 +3608,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       leChatMarkPendingOwnMessage(leChatNickname, fileReceiver, '', file.name);
       const { error: insErr } = await supaClient.from('chat_messages').insert({
         sender: leChatNickname,
-        content: '',
+        content: lockHash ? (LE_CHAT_LOCK_PREFIX + lockHash) : '',
         file_url: pub.publicUrl,
         file_name: file.name,
         receiver: fileReceiver
@@ -3548,12 +3620,66 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       progressEl.style.display = 'none';
     }
   };
-  window.leChatFileSelected = async function(inputEl){
-    const file = inputEl.files && inputEl.files[0];
-    inputEl.value = '';
-    if (!file) return;
-    await leChatUploadFile(file);
+  // 여러 파일을 순서대로 업로드 (선택적으로 전체에 같은 비밀번호 부여)
+  window.leChatUploadFiles = async function(fileList){
+    const files = Array.prototype.slice.call(fileList || []);
+    if (!files.length) return;
+    let lockHash = '';
+    const wantLock = confirm((files.length > 1 ? (files.length + '개 파일에') : '이 파일에') + ' 비밀번호를 설정하시겠습니까?\n(취소를 누르면 비밀번호 없이 전송됩니다)');
+    if (wantLock) {
+      const pw = window.prompt('설정할 비밀번호를 입력하세요');
+      if (pw && pw.trim()) {
+        lockHash = await leChatHashPassword(pw.trim());
+      }
+    }
+    for (const file of files) {
+      await leChatUploadFile(file, lockHash);
+    }
   };
+  window.leChatFileSelected = async function(inputEl){
+    const files = inputEl.files;
+    const fileList = files ? Array.prototype.slice.call(files) : [];
+    inputEl.value = '';
+    if (!fileList.length) return;
+    await leChatUploadFiles(fileList);
+  };
+  // 채팅창 어디에든 파일을 마우스로 끌어다 놓으면 업로드되도록 지원
+  (function setupLeChatDragDrop(){
+    const dropTarget = document.getElementById('leChatWindow');
+    if (!dropTarget) return;
+    function hasFiles(e){
+      try {
+        if (!e.dataTransfer) return false;
+        var t = e.dataTransfer.types;
+        if (!t) return true; // 타입 정보를 못 읽는 환경이면 일단 허용
+        for (var i = 0; i < t.length; i++) { if (t[i] === 'Files') return true; }
+        return false;
+      } catch(err) { return true; }
+    }
+    let dragCounter = 0;
+    dropTarget.addEventListener('dragenter', function(e){
+      e.preventDefault();
+      if (!hasFiles(e)) return;
+      dragCounter++;
+      dropTarget.classList.add('le-chat-dragover');
+    });
+    dropTarget.addEventListener('dragover', function(e){
+      e.preventDefault();
+      if (e.dataTransfer) { try { e.dataTransfer.dropEffect = 'copy'; } catch(err){} }
+    });
+    dropTarget.addEventListener('dragleave', function(e){
+      dragCounter = Math.max(0, dragCounter - 1);
+      if (dragCounter === 0) dropTarget.classList.remove('le-chat-dragover');
+    });
+    dropTarget.addEventListener('drop', function(e){
+      e.preventDefault();
+      dragCounter = 0;
+      dropTarget.classList.remove('le-chat-dragover');
+      const files = e.dataTransfer && e.dataTransfer.files;
+      if (!files || !files.length) return;
+      leChatUploadFiles(files);
+    });
+  })();
 
   // ────────────────────────────────────────────────────────────
   // 📷 앱 내 카메라 촬영 — OS 파일탐색기가 아니라 getUserMedia로 실제 카메라 스트림을 직접 켭니다.
@@ -4353,14 +4479,176 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     '😊','😅','☕','🍚','🚗','⏰','✅','❌','❓','❗'
   ];
   let leChatEmojiPickerBuilt = false;
+  const LE_CHAT_CUSTOM_EMOJI_KEY = 'LE_CHAT_CUSTOM_EMOJIS_V1';
+  const LE_CHAT_CUSTOM_STICKER_KEY = 'LE_CHAT_CUSTOM_STICKERS_V1';
+
+  function leChatLoadCustomEmojis(){
+    try {
+      const raw = localStorage.getItem(LE_CHAT_CUSTOM_EMOJI_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function leChatSaveCustomEmojis(arr){
+    try { localStorage.setItem(LE_CHAT_CUSTOM_EMOJI_KEY, JSON.stringify(arr)); } catch(e){}
+  }
+
+  // ── 움직이는 이모티콘(GIF/WEBP 등 이미지 스티커) — 다운로드 폴더에서 직접 업로드해서 등록 ──
+  function leChatLoadCustomStickers(){
+    try {
+      const raw = localStorage.getItem(LE_CHAT_CUSTOM_STICKER_KEY);
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    } catch(e){ return []; }
+  }
+  function leChatSaveCustomStickers(arr){
+    try { localStorage.setItem(LE_CHAT_CUSTOM_STICKER_KEY, JSON.stringify(arr)); } catch(e){}
+  }
+
+  window.leChatOpenStickerUpload = function(e){
+    if (e) e.stopPropagation();
+    const input = document.getElementById('leChatStickerInput');
+    if (input) input.click();
+  };
+
+  // 스티커 파일(GIF 등)을 Supabase Storage에 올리고, 내 개인 스티커 목록(이 브라우저 저장)에 등록만 한다
+  // (바로 전송하지 않음 — 카카오톡처럼 등록해두고 나중에 눌러서 보내는 방식)
+  window.leChatStickerFilesSelected = async function(inputEl){
+    const files = inputEl.files ? Array.prototype.slice.call(inputEl.files) : [];
+    inputEl.value = '';
+    if (!files.length) return;
+    if (!supaClient) { alert('스티커 업로드에는 서버 연결(Supabase)이 필요합니다.'); return; }
+    for (const file of files) {
+      if (!/^image\//.test(file.type)) continue;
+      if (file.size > 15 * 1024 * 1024) { alert('스티커 하나당 15MB 이하만 가능합니다. (' + file.name + ')'); continue; }
+      try {
+        const extMatch = file.name.match(/\.[a-zA-Z0-9]+$/);
+        const ext = extMatch ? extMatch[0] : '';
+        const path = 'stickers/' + Date.now() + '_' + Math.random().toString(36).slice(2,8) + ext;
+        const { error: upErr } = await supaClient.storage.from('chat-files').upload(path, file);
+        if (upErr) throw upErr;
+        const { data: pub } = supaClient.storage.from('chat-files').getPublicUrl(path);
+        const list = leChatLoadCustomStickers();
+        list.unshift({ url: pub.publicUrl, name: file.name });
+        leChatSaveCustomStickers(list);
+      } catch(err) {
+        alert('스티커 업로드 실패: ' + (err.message || '') + '\n(Supabase Storage에 chat-files 버킷이 있는지 확인하세요)');
+      }
+    }
+    leChatEmojiPickerBuilt = false;
+    leChatBuildEmojiPicker();
+  };
+
+  window.leChatRemoveCustomSticker = function(url, e){
+    if (e) e.stopPropagation();
+    const list = leChatLoadCustomStickers().filter(function(s){ return s.url !== url; });
+    leChatSaveCustomStickers(list);
+    leChatEmojiPickerBuilt = false;
+    leChatBuildEmojiPicker();
+  };
+
+  // 스티커를 누르면 바로 이 대화에 이미지 메시지로 전송 (움직이는 GIF/WEBP도 그대로 전송됨)
+  window.leChatSendSticker = async function(url, name){
+    if (!supaClient) return;
+    try {
+      const receiver = leChatCurrentReceiver();
+      leChatMarkPendingOwnMessage(leChatNickname, receiver, '', name || '스티커');
+      const { error: insErr } = await supaClient.from('chat_messages').insert({
+        sender: leChatNickname,
+        content: '',
+        file_url: url,
+        file_name: name || '스티커',
+        receiver: receiver
+      });
+      if (insErr) throw insErr;
+    } catch(e) {
+      alert('스티커 전송 실패: ' + (e.message || ''));
+    }
+    const p = document.getElementById('leChatEmojiPicker');
+    if (p) p.style.display = 'none';
+  };
+
+  window.leChatAddCustomEmoji = function(){
+    const input = document.getElementById('leChatCustomEmojiInput');
+    if (!input) return;
+    const val = input.value.trim();
+    if (!val) { input.focus(); return; }
+    // 이모티콘(또는 문자) 하나만 등록 — 너무 긴 텍스트가 실수로 들어가는 것 방지
+    const em = Array.from(val)[0];
+    const list = leChatLoadCustomEmojis();
+    if (!list.includes(em)) {
+      list.unshift(em);
+      leChatSaveCustomEmojis(list);
+    }
+    input.value = '';
+    leChatEmojiPickerBuilt = false;
+    leChatBuildEmojiPicker();
+    input.focus();
+  };
+
+  window.leChatRemoveCustomEmoji = function(em, e){
+    if (e) e.stopPropagation();
+    const list = leChatLoadCustomEmojis().filter(function(x){ return x !== em; });
+    leChatSaveCustomEmojis(list);
+    leChatEmojiPickerBuilt = false;
+    leChatBuildEmojiPicker();
+  };
+
+  function leChatEmojiCellHtml(em, removable){
+    const delBtn = removable
+      ? '<span onclick="leChatRemoveCustomEmoji(\'' + em.replace(/'/g,"\\'") + '\',event)" title="삭제" ' +
+        'style="position:absolute;top:-3px;right:-3px;width:13px;height:13px;line-height:13px;text-align:center;' +
+        'font-size:9px;background:#ef4444;color:#fff;border-radius:50%;cursor:pointer;">×</span>'
+      : '';
+    return '<span style="position:relative;display:inline-flex;">' +
+      '<span onclick="leChatInsertEmoji(\'' + em.replace(/'/g,"\\'") + '\')" style="display:flex;align-items:center;justify-content:center;font-size:19px;padding:3px;border-radius:5px;cursor:pointer;line-height:1;" ' +
+      'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'transparent\'">' + em + '</span>' +
+      delBtn + '</span>';
+  }
+
+  function leChatStickerCellHtml(sticker){
+    const url = leChatAttrEscape(sticker.url);
+    const name = leChatAttrEscape(sticker.name || '스티커');
+    return '<span style="position:relative;display:inline-flex;">' +
+      '<img src="' + leChatEscape(sticker.url) + '" onclick="leChatSendSticker(\'' + url + '\',\'' + name + '\')" title="눌러서 전송" ' +
+      'style="width:100%;aspect-ratio:1/1;object-fit:contain;border-radius:6px;cursor:pointer;background:#f8fafc;border:1px solid #f1f5f9;">' +
+      '<span onclick="leChatRemoveCustomSticker(\'' + url + '\',event)" title="목록에서 삭제" ' +
+      'style="position:absolute;top:-4px;right:-4px;width:15px;height:15px;line-height:15px;text-align:center;' +
+      'font-size:10px;background:#ef4444;color:#fff;border-radius:50%;cursor:pointer;">×</span></span>';
+  }
 
   function leChatBuildEmojiPicker(){
     if (leChatEmojiPickerBuilt) return;
     const box = document.getElementById('leChatEmojiPicker');
-    box.innerHTML = LE_CHAT_EMOJIS.map(function(em){
-      return '<span onclick="leChatInsertEmoji(\'' + em + '\')" style="display:flex;align-items:center;justify-content:center;font-size:19px;padding:3px;border-radius:5px;cursor:pointer;line-height:1;" ' +
-        'onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'transparent\'">' + em + '</span>';
-    }).join('');
+    if (!box) return;
+    const customList = leChatLoadCustomEmojis();
+    const stickerList = leChatLoadCustomStickers();
+
+    let html = '';
+    html += '<div style="display:flex;gap:4px;padding:7px 8px;border-bottom:1px solid #e2e8f0;flex-shrink:0;">' +
+      '<input id="leChatCustomEmojiInput" type="text" placeholder="원하는 이모티콘을 붙여넣고 추가" ' +
+      'style="flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:5px;padding:5px 7px;font-size:12px;" ' +
+      'onkeydown="if(event.key===\'Enter\'){event.preventDefault();leChatAddCustomEmoji();}">' +
+      '<button onclick="leChatAddCustomEmoji()" style="background:#51667E;color:#fff;border:none;border-radius:5px;padding:0 10px;font-size:11.5px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;">추가</button>' +
+      '<button onclick="leChatOpenStickerUpload(event)" title="다운받은 폴더에서 움직이는 이모티콘(GIF/WEBP) 파일을 선택해 등록합니다" style="background:#fee500;color:#222;border:none;border-radius:5px;padding:0 9px;font-size:12px;font-weight:700;cursor:pointer;flex-shrink:0;white-space:nowrap;">🎞️ GIF올리기</button>' +
+      '</div>';
+
+    html += '<div style="overflow-y:auto;max-height:170px;padding:8px;">';
+    if (stickerList.length){
+      html += '<div style="font-size:10px;color:#94a3b8;font-weight:700;margin-bottom:3px;">🎬 내가 올린 움직이는 이모티콘 (눌러서 바로 전송)</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(5,1fr);gap:5px;margin-bottom:8px;">' +
+        stickerList.map(leChatStickerCellHtml).join('') + '</div>';
+    }
+    if (customList.length){
+      html += '<div style="font-size:10px;color:#94a3b8;font-weight:700;margin-bottom:3px;">⭐ 내가 추가한 이모티콘</div>';
+      html += '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:2px;margin-bottom:8px;">' +
+        customList.map(function(em){ return leChatEmojiCellHtml(em, true); }).join('') + '</div>';
+    }
+    html += '<div style="display:grid;grid-template-columns:repeat(8,1fr);gap:2px;">' +
+      LE_CHAT_EMOJIS.map(function(em){ return leChatEmojiCellHtml(em, false); }).join('') + '</div>';
+    html += '</div>';
+
+    box.innerHTML = html;
     leChatEmojiPickerBuilt = true;
   }
 
@@ -4368,8 +4656,8 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (e) e.stopPropagation();
     leChatBuildEmojiPicker();
     const p = document.getElementById('leChatEmojiPicker');
-    const isOpen = p.style.display === 'grid';
-    p.style.display = isOpen ? 'none' : 'grid';
+    const isOpen = p.style.display === 'flex';
+    p.style.display = isOpen ? 'none' : 'flex';
   };
 
   // ➕ 팝업 메뉴 (카톡 스타일: 캡처 / 파일첨부 / 위치 / 이모티콘)
@@ -4396,9 +4684,6 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
         break;
       case 'location':
         leChatSendLocation();
-        break;
-      case 'emoji':
-        leChatToggleEmojiPicker();
         break;
       case 'schedule':
         leChatOpenScheduleModal();
@@ -5892,7 +6177,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       <h1 class="text-lg font-bold text-gray-800" style="margin:0;flex:none;">📄 이진주방산업</h1>
     </div>
     <!-- 버튼 영역: 회사명과 별도 영역이라 버튼을 옮겨도 회사명에 영향 없음 -->
-    <div class="flex gap-1 flex-wrap justify-end">
+    <div id="hdrBtnBar" class="flex gap-1 flex-wrap justify-end">
       <div style="position:relative;display:inline-block">
         <button id="customerMenuBtn" onclick="toggleCustomerMenu()" class="hdr-btn" style="background:#16a34a" onmouseover="this.style.background='#22c55e'" onmouseout="this.style.background='#16a34a'">고객용 ▾</button>
         <div id="customerMenu" style="display:none;position:absolute;top:100%;left:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:60;min-width:260px;overflow:hidden">
@@ -5950,7 +6235,9 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openThemeSettingsModal()">⚙️ 환경 설정 (메일·테마 색상)</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openAdSettingsModal()" title="프로그램을 하루 중 처음 열었을 때 뜨는 광고 사진/문구를 설정합니다">📢 광고 설정</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.leOpenVisitorAdmin&&window.leOpenVisitorAdmin()" title="지금 접속 중인 사람들의 IP를 보고, 영구 차단·차단 해제를 할 수 있습니다">🌐 접속자 / 차단 관리</div>
-          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.open('game/index.html','worldcupMatgo','width=900,height=700,resizable=yes,scrollbars=no')" title="새 창으로 맞고 게임을 엽니다">🀄 맞고 게임</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();window.open('game/index.html','worldcupMatgo','width=900,height=700,resizable=yes,scrollbars=no')" title="로그인 없이 바로 게임을 즐깁니다 (포인트와는 무관)">🀄 맞고 게임</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoEmployee()" title="직원 로그인 후 내 포인트와 전체 순위를 확인합니다 (게임 승패와 무관)">🎖️ 내 포인트</div>
+          <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-bottom:1px solid #f1f5f9" onclick="closeSettingsMenu();openMatgoAdmin()" title="직원 계정 등록, 이용시간 확인, 포인트 지급을 관리합니다">🏆 포인트 관리자</div>
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px" onclick="closeSettingsMenu();openHelpGuide()" title="처음 사용하시나요? 이 프로그램 사용법을 쉽게 안내해 드려요">❓ 도움말</div>
         </div>
       </div>
@@ -6012,7 +6299,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
       onkeydown="if(event.key==='Escape'){closeGlobalSearch();}">
     <div id="globalSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:100;max-height:440px;overflow-y:auto"></div>
   </div>
-  <div class="flex gap-1 flex-wrap">
+  <div id="docTabBar" class="flex gap-1 flex-wrap">
     <button id="docTabQuote" onclick="switchDocType('quote')" title="고객에게 보낼 견적서를 작성합니다" class="doc-tab active px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📘 견적서</button>
 
     <button id="docTabOrder" onclick="switchDocType('order')" title="우리 회사가 발주(주문)할 때 쓰는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📙 발주서</button>
@@ -36987,7 +37274,654 @@ document.addEventListener('keydown',function(e){
   }
 });
 </script>
+<!-- ════════════════════════ 🀄 사내 포인트 라운지 (직원 로그인 + 게임 + 관리자) ════════════════════════ -->
+<div id="matgoEmpModal" class="hidden no-print" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeMatgoEmployee()">
+  <div style="background:#fff;border-radius:14px;max-width:380px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:92vh;overflow-y:auto;position:relative">
+    <button onclick="closeMatgoEmployee()" style="position:absolute;top:12px;right:14px;border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
 
+    <div id="matgoLoginView">
+      <div style="text-align:center;margin-bottom:14px;">
+        <div style="font-size:28px;">🀄</div>
+        <div style="font-size:15px;font-weight:800;color:#1B2A31;">사내 포인트 라운지</div>
+        <div style="font-size:11px;color:#94a3b8;">관리자가 등록한 계정으로 로그인하세요</div>
+      </div>
+      <label style="display:block;font-size:11px;color:#64748b;margin:10px 0 4px;">아이디</label>
+      <input id="matgoUsername" type="text" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+      <label style="display:block;font-size:11px;color:#64748b;margin:10px 0 4px;">비밀번호</label>
+      <input id="matgoPassword" type="password" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #cbd5e1;border-radius:8px;font-size:14px;">
+      <div id="matgoLoginErr" style="color:#dc2626;font-size:11px;margin-top:8px;min-height:14px;"></div>
+      <button onclick="matgoDoLogin()" style="width:100%;padding:11px;border:none;border-radius:8px;background:#146C8E;color:#fff;font-weight:700;font-size:14px;cursor:pointer;margin-top:8px;">입장하기</button>
+    </div>
+
+    <div id="matgoDashView" style="display:none;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <div id="matgoHello" style="font-size:13px;font-weight:700;color:#1B2A31;"></div>
+        <button onclick="matgoLogout()" style="font-size:11px;padding:5px 10px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;color:#64748b;">로그아웃</button>
+      </div>
+      <div style="background:#f8fafc;border-radius:10px;padding:14px;text-align:center;margin-bottom:14px;">
+        <div id="matgoMyPoints" style="font-size:26px;font-weight:800;color:#146C8E;">0P</div>
+        <div style="font-size:11px;color:#94a3b8;">내 누적 포인트</div>
+        <div style="margin-top:10px;font-size:11px;color:#94a3b8;">게임은 "⚙️ 설정 → 🀄 맞고 게임" 메뉴에서 로그인 없이 바로 즐기실 수 있어요.</div>
+      </div>
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">전체 순위</div>
+      <div id="matgoRankList" style="max-height:150px;overflow-y:auto;margin-bottom:14px;"></div>
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">내 포인트 내역</div>
+      <div id="matgoHistList" style="max-height:150px;overflow-y:auto;"></div>
+    </div>
+
+  </div>
+</div>
+
+<div id="matgoAdminModal" class="hidden no-print" style="display:none;position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:99998;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closeMatgoAdmin()">
+  <div style="background:#fff;border-radius:14px;max-width:460px;width:100%;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.3);max-height:92vh;overflow-y:auto;position:relative">
+    <button onclick="closeMatgoAdmin()" style="position:absolute;top:12px;right:14px;border:none;background:none;font-size:16px;color:#94a3b8;cursor:pointer">✕</button>
+    <div style="font-size:15px;font-weight:800;color:#1B2A31;margin-bottom:12px;">🏆 포인트 관리자</div>
+
+    <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap;">
+      <button id="matgoAdminBtn-employees" onclick="matgoAdminShowTab('employees')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#146C8E;color:#fff;">직원 관리</button>
+      <button id="matgoAdminBtn-grant" onclick="matgoAdminShowTab('grant')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">포인트 지급</button>
+      <button id="matgoAdminBtn-usage" onclick="matgoAdminShowTab('usage')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">이용시간</button>
+      <button id="matgoAdminBtn-log" onclick="matgoAdminShowTab('log')" style="flex:1;padding:8px 6px;border:none;border-radius:7px;font-size:11px;cursor:pointer;background:#f1f5f9;color:#475569;">지급내역</button>
+    </div>
+
+    <div id="matgoAdminTab-employees">
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">새 직원 등록</div>
+      <input id="matgoNewUsername" type="text" placeholder="아이디" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
+      <input id="matgoNewName" type="text" placeholder="이름" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
+      <input id="matgoNewPassword" type="text" placeholder="초기 비밀번호" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:6px;">
+      <div id="matgoAddEmpErr" style="color:#dc2626;font-size:11px;margin-bottom:6px;"></div>
+      <button onclick="matgoAddEmployee()" style="width:100%;padding:9px;border:none;border-radius:7px;background:#146C8E;color:#fff;font-weight:700;font-size:13px;cursor:pointer;margin-bottom:14px;">등록</button>
+      <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">등록된 직원</div>
+      <div id="matgoEmpList"></div>
+    </div>
+
+    <div id="matgoAdminTab-grant" style="display:none;">
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">직원</label>
+      <select id="matgoGrantEmp" style="width:100%;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;"></select>
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">포인트 (음수 입력 시 차감)</label>
+      <input id="matgoGrantPoints" type="number" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;">
+      <label style="display:block;font-size:11px;color:#64748b;margin-bottom:4px;">사유 (예: 이번주 6시간 이용)</label>
+      <input id="matgoGrantReason" type="text" style="width:100%;box-sizing:border-box;padding:9px 10px;border:1px solid #cbd5e1;border-radius:7px;font-size:13px;margin-bottom:8px;">
+      <div id="matgoGrantErr" style="color:#dc2626;font-size:11px;margin-bottom:6px;"></div>
+      <button onclick="matgoGrantPoints()" style="width:100%;padding:10px;border:none;border-radius:7px;background:#146C8E;color:#fff;font-weight:700;font-size:13px;cursor:pointer;">지급하기</button>
+    </div>
+
+    <div id="matgoAdminTab-usage" style="display:none;">
+      <div id="matgoUsageList"></div>
+    </div>
+
+    <div id="matgoAdminTab-log" style="display:none;">
+      <div id="matgoLogList"></div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+(function(){
+  function getClient(cb){
+    if (window._matgoClient) { cb(window._matgoClient); return; }
+    loadSupabaseLib(function(){
+      window._matgoClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      cb(window._matgoClient);
+    });
+  }
+
+  let matgoEmp = null;
+  let matgoSessionId = null;
+  let matgoHeartbeatTimer = null;
+
+  function loadStoredEmp(){
+    try { const raw = localStorage.getItem('matgo_emp'); return raw ? JSON.parse(raw) : null; } catch(e){ return null; }
+  }
+  function storeEmp(emp){ try { localStorage.setItem('matgo_emp', JSON.stringify(emp)); } catch(e){} }
+  function clearStoredEmp(){ try { localStorage.removeItem('matgo_emp'); } catch(e){} }
+  function matgoEsc(s){ return String(s).replace(/[&<>"']/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]; }); }
+
+  window.openMatgoEmployee = function(){
+    document.getElementById('matgoEmpModal').style.display = 'flex';
+    matgoEmp = loadStoredEmp();
+    if (matgoEmp) { matgoShowDashboard(); } else { matgoShowLogin(); }
+  };
+  window.closeMatgoEmployee = function(){ document.getElementById('matgoEmpModal').style.display = 'none'; };
+
+  function matgoShowLogin(){
+    document.getElementById('matgoLoginView').style.display = 'block';
+    document.getElementById('matgoDashView').style.display = 'none';
+    document.getElementById('matgoLoginErr').textContent = '';
+  }
+
+  window.matgoDoLogin = async function(){
+    const username = document.getElementById('matgoUsername').value.trim();
+    const password = document.getElementById('matgoPassword').value;
+    const errBox = document.getElementById('matgoLoginErr');
+    errBox.textContent = '';
+    if (!username || !password) { errBox.textContent = '아이디와 비밀번호를 입력하세요.'; return; }
+    const hash = await window.jinjooSha256Hex(password);
+    getClient(async function(client){
+      const { data, error } = await client.from('matgo_employees')
+        .select('id, username, display_name, password_hash, active')
+        .eq('username', username).eq('active', true).maybeSingle();
+      if (error || !data || data.password_hash !== hash) {
+        errBox.textContent = '아이디 또는 비밀번호가 올바르지 않습니다.';
+        return;
+      }
+      matgoEmp = { id: data.id, username: data.username, display_name: data.display_name };
+      storeEmp(matgoEmp);
+      const ins = await client.from('matgo_sessions').insert({ employee_id: matgoEmp.id }).select('id').single();
+      matgoSessionId = ins.data ? ins.data.id : null;
+      matgoStartHeartbeat();
+      matgoShowDashboard();
+    });
+  };
+
+  function matgoStartHeartbeat(){
+    if (matgoHeartbeatTimer) clearInterval(matgoHeartbeatTimer);
+    matgoHeartbeatTimer = setInterval(function(){
+      if (!matgoSessionId) return;
+      getClient(function(client){
+        client.from('matgo_sessions').update({ last_seen_at: new Date().toISOString() }).eq('id', matgoSessionId).then(function(){});
+      });
+    }, 60000);
+  }
+
+  window.matgoLogout = function(){
+    clearStoredEmp();
+    matgoEmp = null;
+    if (matgoHeartbeatTimer) clearInterval(matgoHeartbeatTimer);
+    matgoShowLogin();
+  };
+
+  async function matgoShowDashboard(){
+    document.getElementById('matgoLoginView').style.display = 'none';
+    document.getElementById('matgoDashView').style.display = 'block';
+    document.getElementById('matgoHello').textContent = matgoEmp.display_name + '님';
+    if (!matgoSessionId) {
+      getClient(async function(client){
+        const ins = await client.from('matgo_sessions').insert({ employee_id: matgoEmp.id }).select('id').single();
+        matgoSessionId = ins.data ? ins.data.id : null;
+        matgoStartHeartbeat();
+      });
+    }
+    matgoLoadPointsAndBoard();
+  }
+
+  async function matgoLoadPointsAndBoard(){
+    getClient(async function(client){
+      const myLogRes = await client.from('matgo_points_log').select('points, reason, granted_at').eq('employee_id', matgoEmp.id).order('granted_at', { ascending:false }).limit(50);
+      const myLog = myLogRes.data || [];
+      const total = myLog.reduce(function(s,r){ return s + r.points; }, 0);
+      document.getElementById('matgoMyPoints').textContent = total + 'P';
+      const histBox = document.getElementById('matgoHistList');
+      if (myLog.length===0) {
+        histBox.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:12px 0;">아직 지급된 포인트가 없어요</div>';
+      } else {
+        histBox.innerHTML = myLog.map(function(h){
+          return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #e2e8f0;font-size:12px;">' +
+            '<div><div>'+matgoEsc(h.reason||'포인트 지급')+'</div><div style="color:#94a3b8;font-size:10px;">'+matgoEsc(h.granted_at)+'</div></div>' +
+            '<div style="font-weight:700;color:'+(h.points>=0?'#16a34a':'#dc2626')+';white-space:nowrap;">'+(h.points>=0?'+':'')+h.points+'P</div></div>';
+        }).join('');
+      }
+
+      const empsRes = await client.from('matgo_employees').select('id, display_name').eq('active', true);
+      const allLogRes = await client.from('matgo_points_log').select('employee_id, points');
+      const emps = empsRes.data || [];
+      const allLog = allLogRes.data || [];
+      const totals = {};
+      emps.forEach(function(e){ totals[e.id] = { name: e.display_name, total: 0 }; });
+      allLog.forEach(function(r){ if (totals[r.employee_id]) totals[r.employee_id].total += r.points; });
+      const board = Object.keys(totals).map(function(id){ return { id: id, name: totals[id].name, total: totals[id].total }; })
+        .sort(function(a,b){ return b.total - a.total; });
+      const listBox = document.getElementById('matgoRankList');
+      if (board.length===0) {
+        listBox.innerHTML = '<div style="text-align:center;color:#94a3b8;font-size:12px;padding:12px 0;">등록된 직원이 없어요</div>';
+      } else {
+        listBox.innerHTML = board.map(function(row,i){
+          const isMe = String(row.id) === String(matgoEmp.id);
+          const medal = i===0?'🥇':i===1?'🥈':i===2?'🥉':(i+1);
+          return '<div style="display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #f1f5f9;'+(isMe?'background:#fef9e7;border-radius:6px;':'')+'">' +
+            '<div style="width:24px;text-align:center;font-size:13px;">'+medal+'</div>' +
+            '<div style="flex:1;font-size:13px;">'+matgoEsc(row.name)+(isMe?' (나)':'')+'</div>' +
+            '<div style="font-weight:700;font-size:13px;color:#146C8E;">'+row.total+'P</div></div>';
+        }).join('');
+      }
+    });
+  }
+
+  // ---------------- 관리자 ----------------
+  window.openMatgoAdmin = async function(){
+    const pw = prompt('관리자 암호를 입력하세요.');
+    if (pw === null) return;
+    const hash = await window.jinjooSha256Hex(pw);
+    if (hash !== window.jinjooAdminPwHash) { alert('관리자 암호가 올바르지 않습니다.'); return; }
+    document.getElementById('matgoAdminModal').style.display = 'flex';
+    matgoAdminShowTab('employees');
+  };
+  window.closeMatgoAdmin = function(){ document.getElementById('matgoAdminModal').style.display = 'none'; };
+
+  window.matgoAdminShowTab = function(tab){
+    ['employees','grant','usage','log'].forEach(function(t){
+      document.getElementById('matgoAdminTab-'+t).style.display = (t===tab)?'block':'none';
+      document.getElementById('matgoAdminBtn-'+t).style.background = (t===tab)?'#146C8E':'#f1f5f9';
+      document.getElementById('matgoAdminBtn-'+t).style.color = (t===tab)?'#fff':'#475569';
+    });
+    if (tab==='employees') matgoAdminLoadEmployees();
+    if (tab==='grant') matgoAdminLoadEmployeesForSelect();
+    if (tab==='usage') matgoAdminLoadUsage();
+    if (tab==='log') matgoAdminLoadLog();
+  };
+
+  function matgoAdminLoadEmployees(){
+    getClient(async function(client){
+      const res = await client.from('matgo_employees').select('id, username, display_name, active, created_at').order('created_at', { ascending:false });
+      const data = res.data || [];
+      const box = document.getElementById('matgoEmpList');
+      if (data.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">등록된 직원이 없어요</div>'; return; }
+      box.innerHTML = data.map(function(r){
+        return '<div style="display:flex;align-items:center;gap:8px;padding:8px 2px;border-bottom:1px solid #f1f5f9;font-size:12px;">' +
+          '<div style="flex:1;">'+matgoEsc(r.display_name)+' <span style="color:#94a3b8;">('+matgoEsc(r.username)+')</span></div>' +
+          '<button onclick="matgoResetPw('+r.id+',\''+matgoEsc(r.display_name)+'\')" style="font-size:11px;padding:5px 8px;border:1px solid #e2e8f0;border-radius:6px;background:#fff;cursor:pointer;">비번초기화</button>' +
+          (r.active ? '<button onclick="matgoDeactivate('+r.id+')" style="font-size:11px;padding:5px 8px;border:none;border-radius:6px;background:#dc2626;color:#fff;cursor:pointer;">비활성화</button>' : '<span style="color:#94a3b8;font-size:11px;">비활성</span>') +
+          '</div>';
+      }).join('');
+    });
+  }
+
+  window.matgoAddEmployee = async function(){
+    const username = document.getElementById('matgoNewUsername').value.trim();
+    const name = document.getElementById('matgoNewName').value.trim();
+    const pw = document.getElementById('matgoNewPassword').value;
+    const errBox = document.getElementById('matgoAddEmpErr');
+    errBox.textContent = '';
+    if (!username || !name || !pw) { errBox.textContent = '아이디, 이름, 비밀번호를 모두 입력하세요.'; return; }
+    const hash = await window.jinjooSha256Hex(pw);
+    getClient(async function(client){
+      const res = await client.from('matgo_employees').insert({ username: username, display_name: name, password_hash: hash });
+      if (res.error) { errBox.textContent = '이미 존재하는 아이디거나 오류가 발생했습니다.'; return; }
+      document.getElementById('matgoNewUsername').value = '';
+      document.getElementById('matgoNewName').value = '';
+      document.getElementById('matgoNewPassword').value = '';
+      matgoAdminLoadEmployees();
+    });
+  };
+
+  window.matgoResetPw = function(id, name){
+    const pw = prompt(name + ' 님의 새 비밀번호를 입력하세요');
+    if (!pw) return;
+    window.jinjooSha256Hex(pw).then(function(hash){
+      getClient(function(client){
+        client.from('matgo_employees').update({ password_hash: hash }).eq('id', id).then(function(){ alert('비밀번호가 변경되었습니다.'); });
+      });
+    });
+  };
+
+  window.matgoDeactivate = function(id){
+    if (!confirm('이 직원을 비활성화할까요?')) return;
+    getClient(function(client){
+      client.from('matgo_employees').update({ active: false }).eq('id', id).then(function(){ matgoAdminLoadEmployees(); });
+    });
+  };
+
+  function matgoAdminLoadEmployeesForSelect(){
+    getClient(async function(client){
+      const res = await client.from('matgo_employees').select('id, display_name').eq('active', true);
+      const sel = document.getElementById('matgoGrantEmp');
+      sel.innerHTML = (res.data||[]).map(function(r){ return '<option value="'+r.id+'">'+matgoEsc(r.display_name)+'</option>'; }).join('');
+    });
+  }
+
+  window.matgoGrantPoints = function(){
+    const empId = document.getElementById('matgoGrantEmp').value;
+    const points = parseInt(document.getElementById('matgoGrantPoints').value, 10);
+    const reason = document.getElementById('matgoGrantReason').value.trim();
+    const errBox = document.getElementById('matgoGrantErr');
+    errBox.textContent = '';
+    if (!empId || !points) { errBox.textContent = '직원과 포인트를 입력하세요.'; return; }
+    getClient(function(client){
+      client.from('matgo_points_log').insert({ employee_id: empId, points: points, reason: reason || null }).then(function(res){
+        if (res.error) { errBox.textContent = '지급 중 오류가 발생했습니다.'; return; }
+        document.getElementById('matgoGrantPoints').value = '';
+        document.getElementById('matgoGrantReason').value = '';
+        alert('포인트가 지급되었습니다.');
+      });
+    });
+  };
+
+  function matgoAdminLoadUsage(){
+    getClient(async function(client){
+      const empsRes = await client.from('matgo_employees').select('id, display_name').eq('active', true);
+      const sessRes = await client.from('matgo_sessions').select('employee_id, login_at, last_seen_at, logout_at');
+      const emps = empsRes.data || [];
+      const sess = sessRes.data || [];
+      const box = document.getElementById('matgoUsageList');
+      const stats = {};
+      emps.forEach(function(e){ stats[e.id] = { name: e.display_name, count:0, hours:0 }; });
+      sess.forEach(function(s){
+        if (!stats[s.employee_id]) return;
+        stats[s.employee_id].count += 1;
+        const end = s.logout_at || s.last_seen_at;
+        const hrs = (new Date(end) - new Date(s.login_at)) / 3600000;
+        stats[s.employee_id].hours += Math.max(0, hrs);
+      });
+      const rows = Object.keys(stats).map(function(id){ return stats[id]; }).sort(function(a,b){ return b.hours - a.hours; });
+      if (rows.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">데이터가 없어요</div>'; return; }
+      box.innerHTML = rows.map(function(r){
+        return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px solid #f1f5f9;font-size:12px;">' +
+          '<div>'+matgoEsc(r.name)+'</div><div>'+r.count+'회 · '+(Math.round(r.hours*10)/10)+'시간</div></div>';
+      }).join('');
+    });
+  }
+
+  function matgoAdminLoadLog(){
+    getClient(async function(client){
+      const empsRes = await client.from('matgo_employees').select('id, display_name');
+      const nameMap = {};
+      (empsRes.data||[]).forEach(function(e){ nameMap[e.id] = e.display_name; });
+      const logRes = await client.from('matgo_points_log').select('employee_id, points, reason, granted_at').order('granted_at', { ascending:false }).limit(200);
+      const data = logRes.data || [];
+      const box = document.getElementById('matgoLogList');
+      if (data.length===0) { box.innerHTML = '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:10px 0;">지급 내역이 없어요</div>'; return; }
+      box.innerHTML = data.map(function(r){
+        return '<div style="display:flex;justify-content:space-between;padding:7px 2px;border-bottom:1px dashed #e2e8f0;font-size:12px;">' +
+          '<div><b>'+matgoEsc(nameMap[r.employee_id]||'?')+'</b> — '+matgoEsc(r.reason||'포인트 지급')+'<div style="color:#94a3b8;font-size:10px;">'+matgoEsc(r.granted_at)+'</div></div>' +
+          '<div style="font-weight:700;color:'+(r.points>=0?'#16a34a':'#dc2626')+';white-space:nowrap;">'+(r.points>=0?'+':'')+r.points+'P</div></div>';
+      }).join('');
+    });
+  }
+})();
+</script>
+
+
+<script>
+/* ===================== 버튼/탭 배치 편집 기능 (여러 바에 공용 적용, 좌/우 측벽 공유) ===================== */
+(function(){
+  "use strict";
+
+  // ---------- 공통 스타일 ----------
+  var style = document.createElement('style');
+  style.textContent =
+    '.hdrbtn-cell{position:relative;display:inline-block;}' +
+    '.hdrbtn-cell.hdrbtn-editing{outline:2px dashed #9333ea;outline-offset:3px;border-radius:8px;cursor:grab;}' +
+    '.hdrbtn-cell.hdrbtn-editing:active{cursor:grabbing;}' +
+    '.hdrbtn-cell.hdrbtn-dragover{outline:2px solid #dc2626 !important;}' +
+    '.hdrbtn-ctrl{display:none;position:absolute;top:-11px;right:-8px;z-index:80;gap:2px;flex-wrap:nowrap;}' +
+    '.hdrbtn-editing .hdrbtn-ctrl{display:flex;}' +
+    '.hdrbtn-mini{width:20px;height:20px;line-height:18px;padding:0;border-radius:50%;border:1px solid #cbd5e1;background:#fff;font-size:10px;cursor:pointer;box-shadow:0 1px 3px rgba(0,0,0,.25);flex:none;}' +
+    '.hdrbtn-mini:hover{background:#f1f5f9;}' +
+    '.hdrbtn-mini.hdrbtn-mini-on{background:#9333ea;color:#fff;border-color:#9333ea;}' +
+    '.hdrbtn-cell.hdrbtn-hidden-mode{opacity:.35;}' +
+    '.hdrbtn-more-menu .hdrbtn-cell{display:block !important;width:100%;margin-bottom:4px;}' +
+    '.hdrbtn-more-menu .hdrbtn-cell > button{width:100%;text-align:left;}' +
+    '.hdrbtn-rail{position:fixed;top:50%;transform:translateY(-50%);z-index:150;display:flex;flex-direction:column;align-items:stretch;gap:6px;padding:10px 6px;border-radius:12px;min-width:64px;min-height:24px;transition:min-height .15s;}' +
+    '.hdrbtn-rail.hdrbtn-rail-left{left:10px;}' +
+    '.hdrbtn-rail.hdrbtn-rail-right{right:10px;}' +
+    '.hdrbtn-rail.hdrbtn-rail-editing{background:rgba(147,51,234,.10);outline:2px dashed #9333ea;box-shadow:0 4px 16px rgba(0,0,0,.12);}' +
+    '.hdrbtn-rail.hdrbtn-rail-editing.hdrbtn-rail-empty{min-height:140px;justify-content:center;align-items:center;}' +
+    '.hdrbtn-rail-empty-label{display:none;font-size:11px;color:#7c3aed;font-weight:700;text-align:center;line-height:1.5;pointer-events:none;white-space:pre-line;}' +
+    '.hdrbtn-rail.hdrbtn-rail-editing.hdrbtn-rail-empty .hdrbtn-rail-empty-label{display:block;}' +
+    '.hdrbtn-rail .hdrbtn-cell{display:block;}' +
+    '.hdrbtn-rail .hdrbtn-cell > button, .hdrbtn-rail .hdrbtn-cell > div > button{width:100%;white-space:nowrap;font-size:11px;padding:6px 8px;}';
+  document.head.appendChild(style);
+
+  // ---------- 좌/우 측벽: 여러 바가 공유하는 전역 요소 ----------
+  var leftRail = document.createElement('div');
+  leftRail.id = 'hdrBtnLeftRail';
+  leftRail.className = 'hdrbtn-rail hdrbtn-rail-left no-print';
+  leftRail.innerHTML = '<div class="hdrbtn-rail-empty-label">◀\n여기로\n드래그</div>';
+  document.body.appendChild(leftRail);
+
+  var rightRail = document.createElement('div');
+  rightRail.id = 'hdrBtnRightRail';
+  rightRail.className = 'hdrbtn-rail hdrbtn-rail-right no-print';
+  rightRail.innerHTML = '<div class="hdrbtn-rail-empty-label">▶\n여기로\n드래그</div>';
+  document.body.appendChild(rightRail);
+
+  var globalEditFlags = {}; // { storageKey: true/false } - 여러 바 중 하나라도 편집중이면 측벽을 강조 표시
+  function anyEditMode(){
+    for(var k in globalEditFlags){ if(globalEditFlags[k]) return true; }
+    return false;
+  }
+  function refreshRailVisibility(){
+    var editing = anyEditMode();
+    var leftCount = leftRail.querySelectorAll(':scope > .hdrbtn-cell').length;
+    var rightCount = rightRail.querySelectorAll(':scope > .hdrbtn-cell').length;
+    leftRail.style.display = (leftCount > 0 || editing) ? 'flex' : 'none';
+    rightRail.style.display = (rightCount > 0 || editing) ? 'flex' : 'none';
+    leftRail.classList.toggle('hdrbtn-rail-editing', editing);
+    rightRail.classList.toggle('hdrbtn-rail-editing', editing);
+    leftRail.classList.toggle('hdrbtn-rail-empty', leftCount === 0);
+    rightRail.classList.toggle('hdrbtn-rail-empty', rightCount === 0);
+  }
+
+  // ---------- 바 하나(헤더 버튼 줄 / 문서 탭 줄)에 편집 기능을 붙이는 함수 ----------
+  function setupToolbarEditor(barId, storageKey, moreBtnLabel, editBtnLabel){
+    var bar = document.getElementById(barId);
+    if(!bar) return;
+
+    var originalChildren = Array.prototype.slice.call(bar.children);
+    var itemsMap = {};
+    var originalText = {};
+    var allKeys = [];
+    originalChildren.forEach(function(el, i){
+      var key = barId + '_b' + i;
+      allKeys.push(key);
+      var cell = document.createElement('div');
+      cell.className = 'hdrbtn-cell';
+      cell.dataset.btnKey = key;
+      el.parentNode.insertBefore(cell, el);
+      cell.appendChild(el);
+      itemsMap[key] = cell;
+      var labelEl = cell.querySelector('button') || cell;
+      originalText[key] = labelEl.textContent;
+
+      var ctrl = document.createElement('div');
+      ctrl.className = 'hdrbtn-ctrl';
+      ctrl.innerHTML =
+        '<button type="button" class="hdrbtn-mini" data-act="hide" title="숨기기/보이기">👁</button>' +
+        '<button type="button" class="hdrbtn-mini" data-act="left" title="왼쪽 측벽으로/복귀">◀</button>' +
+        '<button type="button" class="hdrbtn-mini" data-act="right" title="오른쪽 측벽으로/복귀">▶</button>' +
+        '<button type="button" class="hdrbtn-mini" data-act="more" title="더보기로 이동/복귀">▤</button>' +
+        '<button type="button" class="hdrbtn-mini" data-act="rename" title="이름 바꾸기">✏️</button>';
+      cell.appendChild(ctrl);
+    });
+
+    // 이 바 전용 "더보기" 드롭다운
+    var moreWrap = document.createElement('div');
+    moreWrap.className = 'hdrbtn-cell';
+    moreWrap.style.display = 'none';
+    moreWrap.innerHTML =
+      '<button type="button" class="hdr-btn hdrbtn-more-btn" style="background:#64748b">⋯ ' + moreBtnLabel + ' ▾</button>' +
+      '<div class="hdrbtn-more-menu" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:70;min-width:200px;padding:8px;overflow:hidden"></div>';
+    bar.appendChild(moreWrap);
+    var moreMenu = moreWrap.querySelector('.hdrbtn-more-menu');
+    moreWrap.querySelector('.hdrbtn-more-btn').addEventListener('click', function(e){
+      e.stopPropagation();
+      moreMenu.style.display = (moreMenu.style.display === 'none') ? 'block' : 'none';
+    });
+    document.addEventListener('click', function(e){
+      if(moreMenu.style.display !== 'none' && !moreWrap.contains(e.target)){
+        moreMenu.style.display = 'none';
+      }
+    });
+
+    // 편집 모드 토글 버튼
+    var editBtn = document.createElement('button');
+    editBtn.type = 'button';
+    editBtn.className = 'hdr-btn';
+    editBtn.style.background = '#9333ea';
+    editBtn.textContent = '🛠 ' + editBtnLabel;
+    editBtn.title = '드래그로 순서를 바꾸거나, 좌우 측벽으로 보내거나, 숨기거나, 이름을 바꿀 수 있습니다';
+    bar.appendChild(editBtn);
+
+    // 설정 불러오기
+    var cfg = null;
+    try { cfg = JSON.parse(localStorage.getItem(storageKey) || 'null'); } catch(e){ cfg = null; }
+    if(!cfg) cfg = {};
+    if(!Array.isArray(cfg.order)) cfg.order = allKeys.slice();
+    else {
+      cfg.order = cfg.order.filter(function(k){ return allKeys.indexOf(k) !== -1; });
+      allKeys.forEach(function(k){ if(cfg.order.indexOf(k) === -1) cfg.order.push(k); });
+    }
+    if(!Array.isArray(cfg.hidden)) cfg.hidden = [];
+    if(typeof cfg.zone !== 'object' || !cfg.zone) cfg.zone = {}; // 'bar' | 'left' | 'right' | 'more'
+    if(typeof cfg.names !== 'object' || !cfg.names) cfg.names = {};
+
+    function saveCfg(){
+      try { localStorage.setItem(storageKey, JSON.stringify(cfg)); } catch(e){}
+    }
+    function zoneOf(key){ return cfg.zone[key] || 'bar'; }
+
+    var editMode = false;
+    var dragKey = null;
+
+    function applyName(cell, key){
+      var labelEl = cell.querySelector('button') || cell;
+      labelEl.textContent = cfg.names[key] || originalText[key];
+    }
+
+    function render(){
+      cfg.order.forEach(function(key){
+        var cell = itemsMap[key];
+        if(!cell) return;
+        applyName(cell, key);
+
+        var isHidden = cfg.hidden.indexOf(key) !== -1;
+        var zone = zoneOf(key);
+
+        if(zone === 'more'){
+          moreMenu.appendChild(cell);
+        } else if(zone === 'left'){
+          leftRail.appendChild(cell);
+        } else if(zone === 'right'){
+          rightRail.appendChild(cell);
+        } else {
+          bar.insertBefore(cell, moreWrap);
+        }
+
+        if(isHidden && !editMode){
+          cell.style.display = 'none';
+        } else {
+          cell.style.display = (zone === 'more') ? 'block' : '';
+          cell.classList.toggle('hdrbtn-hidden-mode', isHidden && editMode);
+        }
+
+        cell.classList.toggle('hdrbtn-editing', editMode);
+        cell.draggable = editMode;
+
+        var ctrl = cell.querySelector('.hdrbtn-ctrl');
+        if(ctrl){
+          var leftBtn = ctrl.querySelector('[data-act="left"]');
+          var rightBtn = ctrl.querySelector('[data-act="right"]');
+          var moreBtn = ctrl.querySelector('[data-act="more"]');
+          if(leftBtn) leftBtn.classList.toggle('hdrbtn-mini-on', zone === 'left');
+          if(rightBtn) rightBtn.classList.toggle('hdrbtn-mini-on', zone === 'right');
+          if(moreBtn) moreBtn.classList.toggle('hdrbtn-mini-on', zone === 'more');
+        }
+      });
+
+      moreWrap.style.display = cfg.order.some(function(k){ return zoneOf(k) === 'more'; }) ? '' : 'none';
+      refreshRailVisibility();
+    }
+
+    function findCellFromEvent(e){
+      return e.target.closest && e.target.closest('.hdrbtn-cell');
+    }
+    function zoneContainerToZone(container){
+      if(container === leftRail) return 'left';
+      if(container === rightRail) return 'right';
+      return 'bar';
+    }
+    [bar, leftRail, rightRail].forEach(function(container){
+      container.addEventListener('dragstart', function(e){
+        var cell = findCellFromEvent(e);
+        if(!editMode || !cell || !cell.dataset.btnKey || !itemsMap[cell.dataset.btnKey]) return;
+        dragKey = cell.dataset.btnKey;
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      container.addEventListener('dragover', function(e){
+        if(!editMode || !dragKey) return;
+        e.preventDefault();
+        var cell = findCellFromEvent(e);
+        if(cell) cell.classList.add('hdrbtn-dragover');
+      });
+      container.addEventListener('dragleave', function(e){
+        var cell = findCellFromEvent(e);
+        if(cell) cell.classList.remove('hdrbtn-dragover');
+      });
+      container.addEventListener('drop', function(e){
+        if(!editMode || !dragKey) return;
+        e.preventDefault();
+        var cell = findCellFromEvent(e);
+        if(cell) cell.classList.remove('hdrbtn-dragover');
+        var newZone = zoneContainerToZone(container);
+        if(newZone === 'bar') delete cfg.zone[dragKey]; else cfg.zone[dragKey] = newZone;
+
+        var targetKey = cell && cell.dataset.btnKey;
+        if(targetKey && targetKey !== dragKey && itemsMap[targetKey]){
+          var from = cfg.order.indexOf(dragKey);
+          var to = cfg.order.indexOf(targetKey);
+          if(from !== -1 && to !== -1){
+            cfg.order.splice(from, 1);
+            cfg.order.splice(to, 0, dragKey);
+          }
+        }
+        dragKey = null;
+        saveCfg();
+        render();
+      });
+    });
+
+    function attachControlHandler(container){
+      container.addEventListener('click', function(e){
+        var mini = e.target.closest && e.target.closest('.hdrbtn-mini');
+        if(!mini) return;
+        var cell = mini.closest('.hdrbtn-cell');
+        var key = cell && cell.dataset.btnKey;
+        if(!key || !itemsMap[key]) return; // 이 바 소속이 아니면 무시
+        e.preventDefault();
+        e.stopPropagation();
+        var act = mini.dataset.act;
+        if(act === 'hide'){
+          var hi = cfg.hidden.indexOf(key);
+          if(hi === -1) cfg.hidden.push(key); else cfg.hidden.splice(hi, 1);
+        } else if(act === 'left'){
+          cfg.zone[key] = (zoneOf(key) === 'left') ? 'bar' : 'left';
+        } else if(act === 'right'){
+          cfg.zone[key] = (zoneOf(key) === 'right') ? 'bar' : 'right';
+        } else if(act === 'more'){
+          cfg.zone[key] = (zoneOf(key) === 'more') ? 'bar' : 'more';
+        } else if(act === 'rename'){
+          var cur = cfg.names[key] || originalText[key];
+          var next = window.prompt('이름을 입력하세요 (비워두면 원래 이름으로 되돌아갑니다)', cur);
+          if(next !== null){
+            next = next.trim();
+            if(next) cfg.names[key] = next; else delete cfg.names[key];
+          }
+        }
+        saveCfg();
+        render();
+      });
+    }
+    attachControlHandler(bar);
+    attachControlHandler(leftRail);
+    attachControlHandler(rightRail);
+
+    editBtn.addEventListener('click', function(){
+      editMode = !editMode;
+      editBtn.textContent = editMode ? '✅ 편집 완료' : ('🛠 ' + editBtnLabel);
+      editBtn.style.background = editMode ? '#16a34a' : '#9333ea';
+      globalEditFlags[storageKey] = editMode;
+      if(editMode) moreMenu.style.display = 'block';
+      render();
+    });
+
+    render();
+  }
+
+  setupToolbarEditor('hdrBtnBar', 'LE_HDRBTN_CFG_V3', '더보기', '배치 편집');
+  setupToolbarEditor('docTabBar', 'LE_DOCTAB_CFG_V1', '더보기', '탭 배치 편집');
+})();
+</script>
 
 </body>
 </html>
