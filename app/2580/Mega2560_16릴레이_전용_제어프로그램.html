@@ -1,0 +1,946 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Mega2560 + 16릴레이 전용 제어 프로그램</title>
+<style>
+body{font-family:Arial,sans-serif;margin:0;background:#f3f4f6;color:#222}
+header{background:#1f2937;color:white;padding:18px 24px;font-size:22px;font-weight:bold;display:flex;align-items:center;gap:12px}
+.headerBadge{background:#2563eb;color:white;font-size:13px;font-weight:bold;padding:4px 12px;border-radius:999px}
+.wrap{max-width:1150px;margin:20px auto;padding:0 15px}
+.card{background:white;border-radius:12px;padding:18px;margin-bottom:16px;box-shadow:0 2px 8px #0001}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center;margin-bottom:8px}
+label{font-weight:bold}
+input,select,button,textarea{font-size:15px;padding:9px;border:1px solid #cbd5e1;border-radius:7px}
+button{cursor:pointer;background:#2563eb;color:white;border:0}
+button.gray{background:#64748b} button.red{background:#dc2626} button.green{background:#059669} button.small{padding:5px 9px;font-size:13px}
+.status{padding:8px;background:#eef2ff;border-radius:7px;margin-top:8px}
+#log{height:130px;width:100%;box-sizing:border-box;font-family:monospace;font-size:12px}
+.small{color:#64748b;font-size:13px}
+h3{margin-top:0}
+table{width:100%;border-collapse:collapse}
+th,td{padding:7px;border-bottom:1px solid #e5e7eb;text-align:left}
+
+/* 릴레이 수동 시험 버튼판 */
+.relayGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:12px}
+.relayBox{border:1px solid #e2e8f0;border-radius:10px;padding:10px;background:#f8fafc}
+.relayBox .rTitle{display:flex;align-items:center;gap:6px;margin-bottom:6px}
+.relayBox input.rName{flex:1;min-width:0;padding:6px;font-size:13px}
+.relayDot{width:11px;height:11px;border-radius:50%;background:#cbd5e1;flex:none}
+.relayDot.on{background:#059669}
+.relayBtns{display:flex;gap:6px}
+.relayBtns button{flex:1;padding:6px;font-size:13px}
+
+/* 입력 채널 상태 표시 */
+.inputGrid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:10px}
+.inputChip{display:flex;align-items:center;gap:8px;border:1px solid #e2e8f0;border-radius:8px;padding:8px 10px;background:#f8fafc;font-size:13px}
+.dot{width:10px;height:10px;border-radius:50%;background:#cbd5e1;flex:none}
+.dot.on{background:#059669}
+.dot.off{background:#94a3b8}
+
+.settings{display:grid;grid-template-columns:260px 1fr;gap:16px}
+.list button{display:block;width:100%;text-align:left;margin:6px 0;background:#e5e7eb;color:#111}
+.list button.active{background:#2563eb;color:white}
+.stepRow{display:flex;gap:6px;align-items:center;padding:6px 0;border-bottom:1px solid #f1f5f9}
+.stepRow .idx{width:22px;color:#64748b;font-size:13px}
+.stepRow select,.stepRow input{padding:6px;font-size:13px}
+.hidden{display:none !important}
+.pinConflict{border-color:#dc2626 !important;background:#fef2f2}
+.pinWarn{color:#dc2626;font-weight:bold;font-size:13px;margin-top:8px;display:none}
+.pinWarn.show{display:block}
+</style>
+</head>
+<body>
+<header>Mega2560 + 16릴레이 전용 제어 프로그램 <span class="headerBadge">보드: Arduino Mega 2560</span></header>
+<div class="wrap">
+
+<div class="card">
+ <h3>1. 연결</h3>
+ <p class="small">USB 시리얼(커스텀 ASCII 펌웨어) 전용입니다. Chrome 또는 Edge 브라우저가 필요합니다(Web Serial API).</p>
+ <div class="row">
+  <label>Baud</label>
+  <select id="baud"><option selected>115200</option><option>9600</option><option>19200</option><option>38400</option><option>57600</option></select>
+  <button onclick="connectDevice()" class="green">연결</button>
+  <button onclick="disconnectDevice()" class="gray">연결 해제</button>
+ </div>
+ <div class="status" id="status">● 연결 안 됨</div>
+</div>
+
+<div class="card">
+ <h3>2. 릴레이 작동 방식</h3>
+ <p class="small">릴레이 모듈이 <b>HIGH 신호에서 켜지는지 / LOW 신호에서 켜지는지</b> 선택하세요. 아래 모든 ON/OFF 버튼·시퀀스 동작은 이 설정에 맞춰 자동으로 반대 신호를 보냅니다.</p>
+ <div class="row">
+  <select id="relayMode" onchange="saveRelayMode()">
+   <option value="high">HIGH 신호일 때 릴레이 ON (일반적인 5V 릴레이보드)</option>
+   <option value="low">LOW 신호일 때 릴레이 ON (Active-Low 릴레이보드, 대부분의 중국산 8/16채널 모듈)</option>
+  </select>
+ </div>
+</div>
+
+<div class="card">
+ <h3>3. R1 ~ R16 채널 → 실제 핀 매핑</h3>
+ <p class="small">R1~R16 각 채널을 실제로 배선한 핀 번호로 지정하세요. <b>아날로그 핀(A0~A15)에 연결하셨다면 아래처럼 숫자로 입력합니다: A0=54, A1=55, A2=56 ... A15=69</b> (Mega2560은 아날로그 핀도 디지털 핀 번호로 그대로 쓸 수 있습니다). 기본값은 A0~A15(54~69)로 채워져 있으니 실제 배선과 다르면 바꿔주세요. "적용"을 누르면 아두이노 EEPROM에 저장됩니다.</p>
+ <div class="row">
+  <button onclick="applyAllOutputMap()" class="green">전체 적용(아두이노에 저장)</button>
+  <button onclick="loadOutputMapFromDevice()" class="gray">현재 설정 불러오기</button>
+ </div>
+ <table>
+  <thead><tr><th style="width:60px">채널</th><th>실제 핀 번호</th><th style="width:90px">적용</th></tr></thead>
+  <tbody id="outputMapRows"></tbody>
+ </table>
+ <div id="outputPinWarn" class="pinWarn"></div>
+</div>
+
+<div class="card">
+ <h3>4. R1 ~ R16 수동 시험</h3>
+ <p class="small">각 릴레이의 이름을 입력하면 자동 저장되며, ON/OFF 버튼으로 바로 테스트할 수 있습니다.</p>
+ <div class="relayGrid" id="relayGrid"></div>
+</div>
+
+<div class="card">
+ <h3>5. 입력 채널 (버튼/스위치)</h3>
+ <p class="small">버튼을 디지털 핀 24, 25, 26...번 순서로 연결하신 경우 기본값이 그대로 맞습니다. (핀 20·21은 메가2560에서 I2C(SDA/SCL) 겸용이라, 나중에 I2C LCD 등을 추가할 때 충돌하지 않도록 일반 입출력 전용인 24번 이후를 기본값으로 뒀습니다.) 채널 수를 맞추고, 실제 배선과 다르면 핀 번호를 수정한 뒤 "적용"을 누르세요. 버튼은 한쪽 다리를 해당 핀에, 반대쪽 다리를 <b>GND(그라운드)</b>에 연결하면 됩니다(내부 풀업저항 사용, 눌렀을 때 ON으로 인식). <b>배선이 길어지면(수 미터 이상) 내부 풀업저항(약 20~50kΩ)이 약해서 노이즈로 오작동할 수 있으니, 그런 경우 외부에 10kΩ 풀업 저항을 달아주세요.</b> 짧은 순간의 접점 흔들림(채터링)은 보드 펌웨어에서 자동으로 걸러줍니다(디바운스).</p>
+ <div class="row">
+  <label>입력 채널 개수</label>
+  <input id="inputCount" type="number" min="0" max="32" value="4" style="width:80px" onchange="onInputCountChange()">
+  <button onclick="applyAllInputMap()" class="green">전체 적용(아두이노에 저장)</button>
+  <button onclick="loadInputMapFromDevice()" class="gray">현재 설정 불러오기</button>
+ </div>
+ <table>
+  <thead><tr><th style="width:70px">채널</th><th>아두이노 핀 번호</th><th>이름</th><th style="width:90px">적용</th></tr></thead>
+  <tbody id="inputMapRows"></tbody>
+ </table>
+ <div id="inputPinWarn" class="pinWarn"></div>
+
+ <div class="row" style="margin-top:14px">
+  <button onclick="uiReadInputs()">▶ 입력 상태 읽기</button>
+  <label><input type="checkbox" id="autoPollInputs" onchange="toggleAutoPollInputs()" style="width:auto;padding:0"> 자동 새로고침(1초)</label>
+ </div>
+ <div class="inputGrid" id="inputStateGrid"></div>
+</div>
+
+<div class="card">
+ <h3>6. 4x4 키패드 (선택)</h3>
+ <p class="small">키패드 배선: <b>행(Row) 4개 핀은 키패드의 1,2,3,4번째 핀(보통 좌측부터)</b>에, <b>열(Column) 4개 핀은 5,6,7,8번째 핀</b>에 연결하세요. 정확한 핀 순서는 제품마다 다를 수 있으니, 배선 후 아래 "키 눌러보기 테스트"로 어떤 버튼이 어떤 문자로 뜨는지 직접 확인한 뒤 아래 매핑표에서 원하는 릴레이를 지정하시면 됩니다. <b>한 키를 계속 누르고 있어도 다른 키가 눌리지 않는 문제 없이</b> 모든 키가 독립적으로 인식됩니다.</p>
+ <div class="row">
+  <button onclick="applyKpConfig()" class="green">핀 설정 적용(아두이노에 저장)</button>
+  <button onclick="loadKpConfigFromDevice()" class="gray">현재 설정 불러오기</button>
+ </div>
+ <table>
+  <thead><tr><th style="width:110px">행(Row) 1~4</th><th style="width:110px">열(Col) 1~4</th></tr></thead>
+  <tbody id="kpPinRows"></tbody>
+ </table>
+ <div id="kpPinWarn" class="pinWarn"></div>
+
+ <div class="row" style="margin-top:14px;border-top:2px solid #e5e7eb;padding-top:14px">
+  <label>키패드 동작 모드</label>
+  <select id="kpMode" onchange="saveKpMode()">
+   <option value="direct">① 키 1개 누르면 지정한 릴레이 즉시 토글</option>
+   <option value="code">② 여러 자리 코드(비밀번호)를 입력하고 #으로 실행 (예: 1→2→4→#)</option>
+  </select>
+ </div>
+
+ <div id="kpDirectSection">
+  <div class="row" style="margin-top:10px"><b>키 → 릴레이 매핑</b></div>
+  <p class="small">키패드 버튼을 누르면(짧게 한 번) 지정한 릴레이가 ON/OFF로 토글됩니다. 사용하지 않을 키는 "사용 안 함"으로 두세요.</p>
+  <table>
+   <thead><tr><th style="width:60px">키</th><th>토글할 릴레이</th></tr></thead>
+   <tbody id="kpKeyMapRows"></tbody>
+  </table>
+ </div>
+
+ <div id="kpCodeSection" class="hidden">
+  <p class="small" style="margin-top:10px">숫자/문자 키(0~9, A~D)를 순서대로 눌러 코드를 입력한 뒤 <b>#</b>을 누르면, 아래 "7. 시퀀스 목록"에서 <b>시작 조건을 "키패드 코드 입력"으로 지정하고 같은 코드를 등록해 둔 시퀀스</b>가 실행됩니다(예: 특정 릴레이는 끄고 다른 릴레이는 켠 뒤 몇 초 후 자동으로 상태를 바꾸는 것도 시퀀스의 "지연(ms)"으로 그대로 구현됩니다). <b>*</b>는 입력 중인 코드를 취소합니다. 8초 동안 다음 키가 없으면 자동으로 취소됩니다.</p>
+ </div>
+
+ <div class="row" style="margin-top:14px">
+  <b>키 눌러보기 / 코드 입력 상태</b> <span class="small">연결된 상태에서 키패드를 눌러보면 아래에 표시됩니다.</span>
+ </div>
+ <div class="status" id="kpLastKey">아직 눌린 키 없음</div>
+</div>
+
+<div class="settings">
+ <div class="card list">
+  <h3>7. 시퀀스 목록</h3>
+  <p class="small">스위치 입력 → 릴레이 여러 개를 순서대로 ON/OFF 하는 동작을 만듭니다.</p>
+  <button onclick="newSequence()">＋ 새 시퀀스</button>
+  <div id="seqList"></div>
+  <div id="boardLimitWarn" class="pinWarn"></div>
+ </div>
+ <div class="card">
+  <div class="row">
+   <label>시퀀스 이름</label><input id="seqName" style="flex:1" placeholder="예: 충진 시작">
+   <button onclick="saveSequence()" class="green">저장</button>
+   <button onclick="deleteSequence()" class="red">삭제</button>
+  </div>
+
+  <div class="row">
+   <label>시작 조건(트리거)</label>
+   <select id="seqTrigCh" onchange="onSeqTrigChChange()"><option value="0">수동 실행만 (자동 트리거 없음)</option></select>
+   <select id="seqTrigCond"><option value="ON">ON됨(눌림)일 때</option><option value="OFF">OFF됨(뗌)일 때</option></select>
+  </div>
+  <div class="row hidden" id="seqCodeRow">
+   <label>키패드 코드</label>
+   <input id="seqCode" placeholder="예: 124 (0~9,A~D만)" style="width:160px" maxlength="8"
+    oninput="this.value=this.value.toUpperCase().replace(/[^0-9A-D]/g,'')">
+   <span class="small">키패드에서 이 순서대로 누르고 <b>#</b>을 누르면 실행됩니다.</span>
+  </div>
+
+  <h3 style="margin-top:14px">동작 순서 (마우스로 추가 · 순서 변경)</h3>
+  <div id="stepRows"></div>
+  <div class="row" style="margin-top:10px">
+   <button onclick="addStep()">＋ 동작 추가</button>
+   <button onclick="runSequence()" class="green">▶ 지금 실행(테스트)</button>
+  </div>
+
+  <p class="small" style="margin-top:16px">※ 아래 "PC 자동 감시"는 <b>이 컴퓨터가 켜져 있고 이 웹페이지가 연결되어 있을 때만</b> 동작하는 테스트용입니다. 컴퓨터 없이 계속 동작시키려면 그 아래 "보드에 저장"을 사용하세요.</p>
+  <div class="row">
+   <label>PC 자동 감시 주기(ms)</label><input id="pollInterval" type="number" min="150" value="300" style="width:90px">
+   <button onclick="startMonitor()" class="green">▶ PC 자동 감시 시작</button>
+   <button onclick="stopMonitor()" class="red">■ 감시 중지</button>
+   <span id="monitorStatus" class="small">감시 중지됨</span>
+  </div>
+
+  <div class="row" style="margin-top:16px;border-top:2px solid #e5e7eb;padding-top:14px">
+   <b>⚡ 독립 작동 (컴퓨터 없이)</b>
+  </div>
+  <p class="small">저장된 모든 시퀀스를 보드(EEPROM)에 통째로 기록합니다. 이후에는 컴퓨터를 끄고 전원(USB 또는 외부 어댑터)만 연결해도 보드가 스스로 입력을 감시하고 자동 실행합니다. 보드 저장 용량: <b>최대 8개 시퀀스 × 시퀀스당 최대 8단계</b> (그 이상은 화면 목록에는 남지만 보드에는 처음 8개/8단계만 저장됩니다).</p>
+  <div class="row">
+   <button onclick="pushAllSequencesToBoard()" class="green">⚡ 전체 시퀀스를 보드에 저장</button>
+   <button onclick="pullSequencesFromBoard()" class="gray">보드에서 불러오기(현재 목록 덮어씀)</button>
+  </div>
+
+  <h3>통신 로그</h3>
+  <textarea id="log" readonly></textarea>
+ </div>
+</div>
+
+</div>
+
+<script>
+/* =========================================================
+   상태 / 저장 데이터
+========================================================= */
+let port=null, writer=null, reader=null;
+let pollTimer=null, monitorTimer=null, isRunningSeq=false;
+let lastInputStates={};
+
+let relayNames=JSON.parse(localStorage.getItem('megaRelayNamesV1')||'{}');           // {1:'밸브1', ...}
+let outputMap=JSON.parse(localStorage.getItem('megaOutputMapV1')||'[]');             // [{ch,pin}] R1~R16 실제 핀
+let inputMap=JSON.parse(localStorage.getItem('megaInputMapV1')||'[]');               // [{ch,pin,name}]
+let sequences=JSON.parse(localStorage.getItem('megaSequencesV1')||'[]');             // [{name,trigCh,trigCond,steps:[{relay,state,delay}]}]
+let selectedSeq=-1;
+let relayState={};                                                                    // {ch:'ON'|'OFF'} 마지막으로 알고 있는 릴레이 상태(키패드 토글용)
+
+/* 키패드 관련 저장 데이터 */
+const KP_KEY_LABELS=['1','2','3','A','4','5','6','B','7','8','9','C','*','0','#','D']; // 보드 스캔 순서와 동일
+let kpRowMap=JSON.parse(localStorage.getItem('megaKpRowMapV1')||'[]');               // [pin,pin,pin,pin] 행 4개
+let kpColMap=JSON.parse(localStorage.getItem('megaKpColMapV1')||'[]');               // [pin,pin,pin,pin] 열 4개
+let kpKeyMap=JSON.parse(localStorage.getItem('megaKpKeyMapV1')||'{}');               // {'1':relayCh, ...} 0/미설정이면 사용 안 함
+let kpMode=localStorage.getItem('megaKpModeV1')||'direct';                           // 'direct' | 'code'
+
+function log(t){let x=document.getElementById('log');x.value+=new Date().toLocaleTimeString()+'  '+t+'\n';x.scrollTop=x.scrollHeight}
+
+/* =========================================================
+   연결 / 해제 (USB 시리얼, 커스텀 ASCII 전용)
+========================================================= */
+async function connectDevice(){
+ if(!('serial' in navigator)){alert('이 브라우저는 Web Serial을 지원하지 않습니다. Chrome 또는 Edge를 사용하세요.');return}
+ try{
+  port=await navigator.serial.requestPort();
+  await port.open({baudRate:+document.getElementById('baud').value,dataBits:8,stopBits:1,parity:'none'});
+  writer=port.writable.getWriter();
+  reader=port.readable.getReader();
+  document.getElementById('status').textContent='● USB 시리얼 연결됨 (Arduino Mega 2560)';
+  log('시리얼 포트 연결 완료');
+  startReadLoop();
+ }catch(e){log('연결 오류: '+e.message)}
+}
+async function disconnectDevice(){
+ stopMonitor();
+ if(pollTimer){clearInterval(pollTimer);pollTimer=null;document.getElementById('autoPollInputs').checked=false}
+ try{
+  if(reader){try{await reader.cancel()}catch(e){} try{reader.releaseLock()}catch(e){} reader=null}
+  if(writer){writer.releaseLock();writer=null}
+  if(port){await port.close();port=null}
+ }catch(e){log('연결 해제 오류: '+e.message)}
+ rxBuffer=''; rxLineWaiters.forEach(w=>w(null)); rxLineWaiters=[];
+ document.getElementById('status').textContent='● 연결 안 됨';
+ log('연결 해제');
+}
+
+/* =========================================================
+   시리얼 수신: 백그라운드에서 계속 읽으면서 줄 단위로 분리.
+   - "KEY x" 로 시작하는 줄은 언제 도착하든(요청 응답 중이 아니어도)
+     즉시 키패드 이벤트로 처리한다.
+   - 그 외의 줄은 지금 응답을 기다리고 있는 명령(serialSendText 등)에
+     순서대로 전달한다.
+   이렇게 분리해야 "PC 자동 감시" 도중에도 키패드를 누르면 그 즉시
+   릴레이가 토글되고, PIN/STATUS?/INPUT? 등 기존 명령 응답과 섞여
+   깨지지 않는다.
+========================================================= */
+let rxBuffer='';
+let rxLineWaiters=[]; // 대기 중인 콜백들(응답 1줄을 기다리는 쪽)
+async function startReadLoop(){
+ rxBuffer='';
+ while(reader){
+  let result;
+  try{ result=await reader.read() }catch(e){ break }
+  if(!result||result.done) break;
+  if(result.value&&result.value.length){
+   rxBuffer+=new TextDecoder().decode(result.value);
+   let idx;
+   while((idx=rxBuffer.indexOf('\n'))>=0){
+    const rawLine=rxBuffer.slice(0,idx).replace(/\r$/,'');
+    rxBuffer=rxBuffer.slice(idx+1);
+    dispatchRxLine(rawLine);
+   }
+  }
+ }
+}
+function dispatchRxLine(line){
+ if(line.startsWith('KEY ')){
+  handleKeypadLine(line);
+  return;
+ }
+ if(rxLineWaiters.length){
+  const w=rxLineWaiters.shift();
+  w(line);
+ } else {
+  log('RX(비동기): '+line);
+ }
+}
+function waitForLine(timeoutMs){
+ return new Promise(resolve=>{
+  let done=false;
+  const cb=(line)=>{ if(done) return; done=true; resolve(line) };
+  rxLineWaiters.push(cb);
+  setTimeout(()=>{
+   if(done) return; done=true;
+   const i=rxLineWaiters.indexOf(cb); if(i>=0) rxLineWaiters.splice(i,1);
+   resolve(null);
+  },timeoutMs);
+ });
+}
+
+/* 텍스트(ASCII) 명령 전송 + 응답 한 줄 대기
+   프로토콜:
+   - 출력 쓰기: "PIN <2자리채널> ON/OFF\r\n"
+   - 출력 읽기: "STATUS?\r\n" -> "STATUS 1,0,...\r\n"
+   - 입력 읽기: "INPUT?\r\n"  -> "INPUT 1,0,...\r\n"
+   - 입력 핀매핑: "SETIN <ch> <pin>\r\n" / "GETCONFIG?\r\n" -> "CONFIG OUT ... IN 1:25,2:26,...\r\n"
+   - 키패드: "SETKPROW/SETKPCOL <ch> <pin>\r\n" / "GETKPCONFIG?\r\n" -> "KPCONFIG ROW ... COL ...\r\n" */
+async function serialSendText(cmd,timeoutMs=400,quiet=false){
+ if(!quiet) log('TX: '+cmd.replace(/\r/g,'<CR>').replace(/\n/g,'<LF>'));
+ if(!writer||!reader){if(!quiet) log('시뮬레이션: 실제 장치가 연결되지 않았습니다.');return null}
+ try{ await writer.write(new TextEncoder().encode(cmd)) }catch(e){if(!quiet) log('TX 오류: '+e.message);return null}
+ const line=await waitForLine(timeoutMs);
+ if(line!==null){
+  if(!quiet) log('RX: '+line);
+  return line+'\n';
+ }
+ if(!quiet) log('RX 없음 (타임아웃)');
+ return null;
+}
+/* 여러 줄 응답을 특정 마커(endMarker)가 나올 때까지 계속 읽는 버전 (SEQGET? 전용) */
+async function serialSendMultiline(cmd,endMarker,timeoutMs=2000){
+ log('TX: '+cmd.replace(/\r/g,'<CR>').replace(/\n/g,'<LF>'));
+ if(!writer||!reader){log('시뮬레이션: 실제 장치가 연결되지 않았습니다.');return null}
+ try{ await writer.write(new TextEncoder().encode(cmd)) }catch(e){log('TX 오류: '+e.message);return null}
+ let lines=[]; const deadline=Date.now()+timeoutMs;
+ while(Date.now()<deadline){
+  const remain=Math.max(deadline-Date.now(),0);
+  const line=await waitForLine(remain);
+  if(line===null) break;
+  lines.push(line);
+  if(line.includes(endMarker)) break;
+ }
+ if(lines.length){ const text=lines.join('\n')+'\n'; log('RX: '+text.trim()); return text }
+ log('RX 없음 (타임아웃)');
+ return null;
+}
+
+/* =========================================================
+   릴레이 작동 방식 (HIGH / LOW)
+========================================================= */
+function saveRelayMode(){
+ localStorage.setItem('megaRelayModeV1',document.getElementById('relayMode').value);
+}
+function loadRelayMode(){
+ document.getElementById('relayMode').value=localStorage.getItem('megaRelayModeV1')||'high';
+}
+// UI에서 말하는 "릴레이 ON(작동)" -> 실제 핀에 보낼 신호(ON/OFF)로 변환
+function relayCmdState(state){
+ const mode=document.getElementById('relayMode').value;
+ if(mode==='low'){ return state==='ON'?'OFF':'ON' }
+ return state;
+}
+async function sendRelay(ch,state,quiet=false,wait=true){
+ relayState[ch]=state;
+ const cmd='PIN '+String(ch).padStart(2,'0')+' '+relayCmdState(state)+'\r\n';
+ if(wait){ await serialSendText(cmd,400,quiet); return }
+ // 시퀀스 동시 실행용: 응답을 기다리지 않고 바로 씀 (여러 릴레이를 동시에 끄고 켤 때 시간차 방지)
+ if(!quiet) log('TX: '+cmd.replace(/\r/g,'<CR>').replace(/\n/g,'<LF>'));
+ if(!writer){ if(!quiet) log('시뮬레이션: 실제 장치가 연결되지 않았습니다.'); return }
+ try{ await writer.write(new TextEncoder().encode(cmd)) }catch(e){ if(!quiet) log('TX 오류: '+e.message) }
+}
+
+/* =========================================================
+   3. R1~R16 채널 → 실제 핀 매핑
+========================================================= */
+function saveOutputMap(){ localStorage.setItem('megaOutputMapV1',JSON.stringify(outputMap)) }
+function ensureOutputMapDefaults(){
+ if(outputMap.length===16) return;
+ outputMap=[]; for(let ch=1;ch<=16;ch++) outputMap.push({ch,pin:53+ch}); // 기본값 A0(54)~A15(69)
+ saveOutputMap();
+}
+function pinLabel(pin){
+ if(pin>=54&&pin<=69) return pin+' (A'+(pin-54)+')';
+ return String(pin);
+}
+/* 출력(R1~R16)과 입력 채널 사이의 핀 중복을 함께 검사 */
+function getPinConflicts(){
+ const all=[...outputMap.map(r=>({ch:r.ch,pin:r.pin,label:'R'+r.ch})),
+            ...inputMap.map(r=>({ch:r.ch,pin:r.pin,label:'입력CH'+r.ch+(r.name?'('+r.name+')':'')}))];
+ const byPin={};
+ all.forEach(r=>{ (byPin[r.pin]=byPin[r.pin]||[]).push(r.label) });
+ const conflicts={};
+ Object.keys(byPin).forEach(p=>{ if(byPin[p].length>1) conflicts[p]=byPin[p] });
+ return conflicts;
+}
+function refreshPinConflictWarnings(){
+ const conflicts=getPinConflicts();
+ const pins=Object.keys(conflicts);
+ const msg=pins.length? '⚠ 핀 번호 중복: '+pins.map(p=>'핀 '+p+' → '+conflicts[p].join(' + ')).join(' / ')+' — 같은 핀을 두 군데서 쓰고 있으니 하나를 다른 번호로 바꿔주세요.' : '';
+ ['outputPinWarn','inputPinWarn'].forEach(id=>{
+  const el=document.getElementById(id); if(!el) return;
+  el.textContent=msg; el.classList.toggle('show',!!msg);
+ });
+ document.querySelectorAll('.omPin,.imPin').forEach(inp=>{
+  inp.classList.toggle('pinConflict', pins.includes(String(+inp.value)));
+ });
+}
+function renderOutputMapRows(){
+ const tb=document.getElementById('outputMapRows'); tb.innerHTML='';
+ outputMap.forEach(r=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>R${r.ch}</td>
+   <td><input type="number" class="omPin" value="${r.pin}" style="width:110px" onchange="outputMap.find(x=>x.ch===${r.ch}).pin=+this.value;saveOutputMap();renderRelayGrid();refreshPinConflictWarnings()">
+       <span class="small">${pinLabel(r.pin)}</span></td>
+   <td><button class="gray small" onclick="applyOneOutputMap(${r.ch})">적용</button></td>`;
+  tb.appendChild(tr);
+ });
+ refreshPinConflictWarnings();
+}
+async function applyOneOutputMap(ch){
+ const r=outputMap.find(x=>x.ch===ch); if(!r) return;
+ await serialSendText('SETOUT '+String(ch).padStart(2,'0')+' '+r.pin+'\r\n');
+}
+async function applyAllOutputMap(){
+ for(const r of outputMap){
+  await serialSendText('SETOUT '+String(r.ch).padStart(2,'0')+' '+r.pin+'\r\n',400,true);
+  await new Promise(res=>setTimeout(res,80));
+ }
+ log('출력(릴레이) 핀 매핑 '+outputMap.length+'건 전체 적용 완료');
+}
+async function loadOutputMapFromDevice(){
+ const text=await serialSendText('GETCONFIG?\r\n',600);
+ if(!text){alert('아두이노 응답이 없습니다. 연결 상태를 확인하세요.');return}
+ const outMatch=text.match(/OUT\s+([\d:,\s]*?)(?:\sIN\s|$)/i);
+ if(outMatch&&outMatch[1].trim()){
+  outMatch[1].split(',').forEach(pair=>{
+   const m=pair.trim().match(/(\d+):(\d+)/);
+   if(m){ const ch=+m[1],pin=+m[2]; const ex=outputMap.find(r=>r.ch===ch); if(ex) ex.pin=pin }
+  });
+  saveOutputMap(); renderOutputMapRows(); renderRelayGrid();
+  log('아두이노에서 릴레이 핀 매핑을 불러왔습니다.');
+ } else { log('릴레이 핀 매핑 정보를 읽지 못했습니다.') }
+}
+
+/* =========================================================
+   4. R1~R16 수동 시험 버튼판
+========================================================= */
+function saveRelayNames(){ localStorage.setItem('megaRelayNamesV1',JSON.stringify(relayNames)) }
+function renderRelayGrid(){
+ const grid=document.getElementById('relayGrid'); grid.innerHTML='';
+ for(let ch=1;ch<=16;ch++){
+  const pin=(outputMap.find(r=>r.ch===ch)||{}).pin;
+  const box=document.createElement('div'); box.className='relayBox';
+  box.innerHTML=`<div class="rTitle"><span class="relayDot" id="rdot${ch}"></span><b>R${ch}</b><span class="small">${pin?('· '+pinLabel(pin)):''}</span>
+    <input class="rName" placeholder="이름(예: 밸브1)" value="${relayNames[ch]||''}" onchange="relayNames[${ch}]=this.value;saveRelayNames()"></div>
+   <div class="relayBtns">
+    <button class="green" onclick="sendRelay(${ch},'ON');setRelayDot(${ch},true)">ON</button>
+    <button class="gray" onclick="sendRelay(${ch},'OFF');setRelayDot(${ch},false)">OFF</button>
+   </div>`;
+  grid.appendChild(box);
+ }
+}
+function setRelayDot(ch,on){
+ const d=document.getElementById('rdot'+ch); if(d) d.classList.toggle('on',!!on);
+}
+function relayLabel(ch){ return 'R'+ch+(relayNames[ch]?' ('+relayNames[ch]+')':'') }
+
+/* =========================================================
+   4. 입력 채널 매핑 + 상태 표시
+========================================================= */
+function saveInputMap(){ localStorage.setItem('megaInputMapV1',JSON.stringify(inputMap)) }
+function onInputCountChange(){
+ const n=Math.max(0,Math.min(32,+document.getElementById('inputCount').value||0));
+ const next=[];
+ for(let i=1;i<=n;i++){
+  const exist=inputMap.find(r=>r.ch===i);
+  next.push(exist||{ch:i,pin:23+i,name:''}); // 기본값: 24번부터 순서대로 (20·21은 I2C용이라 회피)
+ }
+ inputMap=next; saveInputMap();
+ renderInputMapRows(); renderSeqTrigOptions(); renderInputStateGrid(null);
+}
+function renderInputMapRows(){
+ const tb=document.getElementById('inputMapRows'); tb.innerHTML='';
+ inputMap.forEach(r=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td>CH${r.ch}</td>
+   <td><input type="number" class="imPin" value="${r.pin}" style="width:90px" onchange="inputMap.find(x=>x.ch===${r.ch}).pin=+this.value;saveInputMap();renderSeqTrigOptions();refreshPinConflictWarnings()"></td>
+   <td><input type="text" class="imName" value="${r.name||''}" placeholder="예: 풋스위치" style="width:150px" onchange="inputMap.find(x=>x.ch===${r.ch}).name=this.value;saveInputMap();renderSeqTrigOptions()"></td>
+   <td><button class="gray small" onclick="applyOneInputMap(${r.ch})">적용</button></td>`;
+  tb.appendChild(tr);
+ });
+ refreshPinConflictWarnings();
+}
+async function applyOneInputMap(ch){
+ const r=inputMap.find(x=>x.ch===ch); if(!r) return;
+ await serialSendText('SETIN '+String(ch).padStart(2,'0')+' '+r.pin+'\r\n');
+}
+async function applyAllInputMap(){
+ for(const r of inputMap){
+  await serialSendText('SETIN '+String(r.ch).padStart(2,'0')+' '+r.pin+'\r\n',400,true);
+  await new Promise(res=>setTimeout(res,80));
+ }
+ log('입력 핀 매핑 '+inputMap.length+'건 전체 적용 완료');
+}
+async function loadInputMapFromDevice(){
+ const text=await serialSendText('GETCONFIG?\r\n',600);
+ if(!text){alert('아두이노 응답이 없습니다. 연결 상태를 확인하세요.');return}
+ const inMatch=text.match(/IN\s+([\d:,\s]*)/i);
+ if(inMatch&&inMatch[1].trim()){
+  inMatch[1].split(',').forEach(pair=>{
+   const m=pair.trim().match(/(\d+):(\d+)/);
+   if(m){ const ch=+m[1],pin=+m[2]; const ex=inputMap.find(r=>r.ch===ch); if(ex) ex.pin=pin; else inputMap.push({ch,pin,name:''}) }
+  });
+  inputMap.sort((a,b)=>a.ch-b.ch);
+  document.getElementById('inputCount').value=inputMap.length;
+  saveInputMap(); renderInputMapRows(); renderSeqTrigOptions();
+  log('아두이노에서 입력 핀 매핑을 불러왔습니다.');
+ } else { log('저장된 입력 매핑이 없습니다.') }
+}
+function renderInputStateGrid(states){
+ const grid=document.getElementById('inputStateGrid'); grid.innerHTML='';
+ inputMap.forEach((r,i)=>{
+  const on=states?states[i]:null;
+  const chip=document.createElement('div'); chip.className='inputChip';
+  const dotClass=on===null?'':(on?'on':'off');
+  const label='D'+r.pin+' '+(r.name?('('+r.name+') '):'')+(on===null?'':(on?'● ON':'○ OFF'));
+  chip.innerHTML=`<span class="dot ${dotClass}"></span><span>${label}</span>`;
+  grid.appendChild(chip);
+ });
+}
+async function readInputStates(){
+ const text=await serialSendText('INPUT?\r\n',400,true);
+ if(!text) return null;
+ const m=text.match(/INPUT\s+([\d,]+)/i);
+ if(!m) return null;
+ const bits=m[1].split(',').map(v=>v.trim()==='1'?1:0);
+ return inputMap.map(r=>bits[r.ch-1]);
+}
+async function uiReadInputs(){
+ const states=await readInputStates();
+ renderInputStateGrid(states);
+}
+function toggleAutoPollInputs(){
+ const on=document.getElementById('autoPollInputs').checked;
+ if(on){ pollTimer=setInterval(uiReadInputs,1000); log('입력 자동 새로고침 시작') }
+ else { if(pollTimer){clearInterval(pollTimer);pollTimer=null;log('입력 자동 새로고침 중지')} }
+}
+
+/* =========================================================
+   6. 4x4 키패드
+========================================================= */
+function ensureKpDefaults(){
+ if(kpRowMap.length!==4){ kpRowMap=[30,31,32,33]; localStorage.setItem('megaKpRowMapV1',JSON.stringify(kpRowMap)) }
+ if(kpColMap.length!==4){ kpColMap=[34,35,36,37]; localStorage.setItem('megaKpColMapV1',JSON.stringify(kpColMap)) }
+}
+function saveKpPinMaps(){
+ localStorage.setItem('megaKpRowMapV1',JSON.stringify(kpRowMap));
+ localStorage.setItem('megaKpColMapV1',JSON.stringify(kpColMap));
+}
+function renderKpPinRows(){
+ const tb=document.getElementById('kpPinRows'); tb.innerHTML='';
+ for(let i=0;i<4;i++){
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input type="number" class="kpRow" value="${kpRowMap[i]}" style="width:90px"
+    onchange="kpRowMap[${i}]=+this.value;saveKpPinMaps()"></td>
+   <td><input type="number" class="kpCol" value="${kpColMap[i]}" style="width:90px"
+    onchange="kpColMap[${i}]=+this.value;saveKpPinMaps()"></td>`;
+  tb.appendChild(tr);
+ }
+}
+async function applyKpConfig(){
+ if(!writer||!reader){alert('먼저 보드에 연결하세요.');return}
+ for(let i=0;i<4;i++){ await serialSendText('SETKPROW '+i+' '+kpRowMap[i]+'\r\n',400,true); await new Promise(res=>setTimeout(res,60)) }
+ for(let i=0;i<4;i++){ await serialSendText('SETKPCOL '+i+' '+kpColMap[i]+'\r\n',400,true); await new Promise(res=>setTimeout(res,60)) }
+ log('키패드 핀 설정 적용 완료');
+}
+async function loadKpConfigFromDevice(){
+ const text=await serialSendText('GETKPCONFIG?\r\n',600);
+ if(!text){alert('아두이노 응답이 없습니다. 연결 상태를 확인하세요.');return}
+ const rowMatch=text.match(/ROW\s+([\d,]+)/i);
+ const colMatch=text.match(/COL\s+([\d,]+)/i);
+ if(rowMatch) kpRowMap=rowMatch[1].split(',').map(Number);
+ if(colMatch) kpColMap=colMatch[1].split(',').map(Number);
+ saveKpPinMaps(); renderKpPinRows();
+ log('아두이노에서 키패드 핀 매핑을 불러왔습니다.');
+}
+function saveKpKeyMap(){ localStorage.setItem('megaKpKeyMapV1',JSON.stringify(kpKeyMap)) }
+function renderKpKeyMapRows(){
+ const tb=document.getElementById('kpKeyMapRows'); tb.innerHTML='';
+ KP_KEY_LABELS.forEach(key=>{
+  const tr=document.createElement('tr');
+  let opts='<option value="0">사용 안 함</option>';
+  for(let ch=1;ch<=16;ch++) opts+=`<option value="${ch}" ${(+kpKeyMap[key]||0)===ch?'selected':''}>${relayLabel(ch)}</option>`;
+  tr.innerHTML=`<td><b>${key}</b></td><td><select onchange="kpKeyMap['${key}']=+this.value;saveKpKeyMap()">${opts}</select></td>`;
+  tb.appendChild(tr);
+ });
+}
+function saveKpMode(){
+ kpMode=document.getElementById('kpMode').value;
+ localStorage.setItem('megaKpModeV1',kpMode);
+ renderKpModeUI();
+}
+function renderKpModeUI(){
+ document.getElementById('kpMode').value=kpMode;
+ document.getElementById('kpDirectSection').classList.toggle('hidden',kpMode!=='direct');
+ document.getElementById('kpCodeSection').classList.toggle('hidden',kpMode!=='code');
+ kpCodeBuffer=''; clearTimeout(kpCodeClearTimer);
+ document.getElementById('kpLastKey').textContent='아직 눌린 키 없음';
+}
+
+const KP_CODE_TIMEOUT_MS=8000; // 코드 입력 중 8초 동안 다음 키가 없으면 자동 취소
+let kpCodeBuffer='';
+let kpCodeClearTimer=null;
+
+// 보드에서 "KEY x" 가 도착했을 때(언제든, 요청 응답 중이 아니어도 호출됨)
+function handleKeypadLine(line){
+ const m=line.match(/^KEY\s+(\S)/);
+ if(!m) return;
+ const key=m[1];
+
+ if(kpMode==='code'){
+  handleKeypadCodeKey(key);
+  return;
+ }
+
+ // ① 직접 토글 모드
+ document.getElementById('kpLastKey').textContent='마지막 입력: "'+key+'"  ('+new Date().toLocaleTimeString()+')';
+ const ch=+kpKeyMap[key]||0;
+ if(!ch){ log('⌨ 키패드 "'+key+'" 눌림 (매핑된 릴레이 없음)'); return }
+ const cur=relayState[ch]||'OFF';
+ const next=cur==='ON'?'OFF':'ON';
+ log('⌨ 키패드 "'+key+'" 눌림 → '+relayLabel(ch)+' '+next);
+ sendRelay(ch,next,true);
+ setRelayDot(ch,next==='ON');
+}
+
+// ② 코드 입력 모드: 숫자/문자는 버퍼에 쌓고, '#'으로 확인, '*'로 취소, 무입력 8초면 자동 취소
+function handleKeypadCodeKey(key){
+ if(key==='*'){
+  kpCodeBuffer=''; clearTimeout(kpCodeClearTimer);
+  document.getElementById('kpLastKey').textContent='코드 입력 취소됨';
+  log('⌨ 코드 입력 취소(*)');
+  return;
+ }
+ if(key==='#'){
+  clearTimeout(kpCodeClearTimer);
+  const code=kpCodeBuffer; kpCodeBuffer='';
+  if(!code){ document.getElementById('kpLastKey').textContent='입력된 코드 없음'; return }
+  const seq=sequences.find(s=>s.trigType==='code' && s.trigCode===code);
+  if(!seq){
+   document.getElementById('kpLastKey').textContent='코드 "'+code+'" 불일치';
+   log('⌨ 코드 "'+code+'" 입력 → 일치하는 시퀀스 없음');
+   return;
+  }
+  document.getElementById('kpLastKey').textContent='코드 "'+code+'" → "'+seq.name+'" 실행';
+  log('⌨ 코드 "'+code+'" 입력 → 시퀀스 "'+seq.name+'" 실행');
+  if(isRunningSeq){ log('⚠ 다른 시퀀스가 실행 중이라 건너뜀'); return }
+  runStepsNow(seq.steps,true);
+  return;
+ }
+ // 그 외 키(0~9,A~D)는 코드에 누적
+ kpCodeBuffer+=key;
+ if(kpCodeBuffer.length>8) kpCodeBuffer=kpCodeBuffer.slice(-8); // 너무 길어지는 실수 방지
+ document.getElementById('kpLastKey').textContent='입력 중: '+kpCodeBuffer+'ـ  (#으로 실행, *로 취소)';
+ clearTimeout(kpCodeClearTimer);
+ kpCodeClearTimer=setTimeout(()=>{
+  kpCodeBuffer='';
+  document.getElementById('kpLastKey').textContent='입력 시간 초과로 취소됨';
+  log('⌨ 코드 입력 8초 초과로 자동 취소');
+ },KP_CODE_TIMEOUT_MS);
+}
+
+/* =========================================================
+   7. 시퀀스 (스위치 → 릴레이 여러 개 순서 동작)
+========================================================= */
+function renderSeqTrigOptions(){
+ const sel=document.getElementById('seqTrigCh');
+ const cur=sel.value;
+ sel.innerHTML='<option value="0">수동 실행만 (자동 트리거 없음)</option><option value="KEYPAD">키패드 코드 입력</option>';
+ inputMap.forEach(r=>{
+  const opt=document.createElement('option');
+  opt.value=r.ch; opt.textContent='CH'+r.ch+' — D'+r.pin+(r.name?(' ('+r.name+')'):'');
+  sel.appendChild(opt);
+ });
+ if([...sel.options].some(o=>o.value===cur)) sel.value=cur;
+}
+function onSeqTrigChChange(){
+ const isCode=document.getElementById('seqTrigCh').value==='KEYPAD';
+ document.getElementById('seqCodeRow').classList.toggle('hidden',!isCode);
+ document.getElementById('seqTrigCond').classList.toggle('hidden',isCode);
+}
+function renderSeqList(){
+ const list=document.getElementById('seqList'); list.innerHTML='';
+ sequences.forEach((s,i)=>{
+  const b=document.createElement('button');
+  b.textContent=(i+1)+'. '+s.name;
+  b.className=i===selectedSeq?'active':'';
+  b.onclick=()=>selectSequence(i);
+  list.appendChild(b);
+ });
+ refreshBoardLimitWarning();
+}
+function refreshBoardLimitWarning(){
+ const el=document.getElementById('boardLimitWarn'); if(!el) return;
+ const overSeq = sequences.length>BOARD_MAX_SEQ;
+ const overStepNames = sequences.filter(s=>s.steps.length>BOARD_MAX_STEPS).map(s=>s.name);
+ let msg='';
+ if(overSeq) msg+='⚠ 시퀀스가 '+sequences.length+'개라 보드 저장 시 뒤쪽 '+(sequences.length-BOARD_MAX_SEQ)+'개는 잘립니다(보드 최대 '+BOARD_MAX_SEQ+'개). ';
+ if(overStepNames.length) msg+='⚠ "'+overStepNames.join('", "')+'" 시퀀스는 '+BOARD_MAX_STEPS+'단계를 넘어 보드 저장 시 뒷부분이 잘립니다. ';
+ if(msg) msg+='(PC 자동 감시에서는 정상 작동하지만 컴퓨터 없이 보드 단독으로는 잘린 부분이 동작하지 않습니다)';
+ el.textContent=msg; el.classList.toggle('show',!!msg);
+}
+function newSequence(){
+ selectedSeq=-1;
+ document.getElementById('seqName').value='새 시퀀스';
+ renderSeqTrigOptions();
+ document.getElementById('seqTrigCh').value='0';
+ document.getElementById('seqTrigCond').value='ON';
+ document.getElementById('seqCode').value='';
+ onSeqTrigChChange();
+ document.getElementById('stepRows').innerHTML='';
+ addStep();
+ renderSeqList();
+}
+function selectSequence(i){
+ selectedSeq=i; const s=sequences[i];
+ document.getElementById('seqName').value=s.name;
+ document.getElementById('stepRows').innerHTML='';
+ s.steps.forEach(st=>addStep(st));
+ renderSeqTrigOptions();
+ if(s.trigType==='code'){
+  document.getElementById('seqTrigCh').value='KEYPAD';
+  document.getElementById('seqCode').value=s.trigCode||'';
+ } else {
+  document.getElementById('seqTrigCh').value=s.trigCh||0;
+  document.getElementById('seqCode').value='';
+ }
+ document.getElementById('seqTrigCond').value=s.trigCond||'ON';
+ onSeqTrigChChange();
+ renderSeqList();
+}
+function relayOptionsHtml(selected){
+ let h=''; for(let ch=1;ch<=16;ch++){ h+=`<option value="${ch}" ${+selected===ch?'selected':''}>${relayLabel(ch)}</option>` } return h;
+}
+function addStep(st={relay:1,state:'ON',delay:0}){
+ const wrap=document.getElementById('stepRows');
+ const row=document.createElement('div'); row.className='stepRow';
+ row.innerHTML=`<span class="idx"></span>
+  <select class="stRelay">${relayOptionsHtml(st.relay)}</select>
+  <select class="stState"><option ${st.state==='ON'?'selected':''}>ON</option><option ${st.state==='OFF'?'selected':''}>OFF</option></select>
+  <label class="small">지연(ms) 그 다음</label>
+  <input type="number" class="stDelay" min="0" value="${st.delay}" style="width:90px">
+  <button class="gray small" onclick="moveStep(this,-1)">▲</button>
+  <button class="gray small" onclick="moveStep(this,1)">▼</button>
+  <button class="red small" onclick="this.closest('.stepRow').remove();renumberSteps()">삭제</button>`;
+ wrap.appendChild(row);
+ renumberSteps();
+}
+function renumberSteps(){
+ [...document.querySelectorAll('#stepRows .stepRow')].forEach((r,i)=>r.querySelector('.idx').textContent=(i+1)+'.');
+}
+function moveStep(btn,dir){
+ const row=btn.closest('.stepRow');
+ if(dir<0 && row.previousElementSibling) row.parentNode.insertBefore(row,row.previousElementSibling);
+ else if(dir>0 && row.nextElementSibling) row.parentNode.insertBefore(row.nextElementSibling,row);
+ renumberSteps();
+}
+function getSteps(){
+ return [...document.querySelectorAll('#stepRows .stepRow')].map(r=>({
+  relay:+r.querySelector('.stRelay').value,
+  state:r.querySelector('.stState').value,
+  delay:+r.querySelector('.stDelay').value||0
+ }));
+}
+function saveSequence(){
+ const name=document.getElementById('seqName').value.trim()||'이름 없음';
+ const steps=getSteps();
+ if(!steps.length){alert('동작을 하나 이상 추가하세요.');return}
+ const trigSel=document.getElementById('seqTrigCh').value;
+ let s;
+ if(trigSel==='KEYPAD'){
+  const code=document.getElementById('seqCode').value.trim().toUpperCase();
+  if(!code){alert('키패드 코드를 입력하세요 (예: 124).');return}
+  s={name,trigType:'code',trigCode:code,trigCh:0,trigCond:'ON',steps};
+ } else {
+  const trigCh=+trigSel;
+  s={name,trigType:trigCh>0?'channel':'none',trigCh,trigCond:document.getElementById('seqTrigCond').value,trigCode:'',steps};
+ }
+ if(selectedSeq<0){ sequences.push(s); selectedSeq=sequences.length-1 } else sequences[selectedSeq]=s;
+ localStorage.setItem('megaSequencesV1',JSON.stringify(sequences));
+ renderSeqList();
+ log('시퀀스 저장: '+name+' ('+steps.length+'단계)'+(s.trigType==='code'?' [코드: '+s.trigCode+']':''));
+}
+function deleteSequence(){
+ if(selectedSeq<0) return;
+ if(confirm('현재 시퀀스를 삭제할까요?')){
+  sequences.splice(selectedSeq,1); selectedSeq=-1;
+  localStorage.setItem('megaSequencesV1',JSON.stringify(sequences));
+  newSequence(); renderSeqList();
+ }
+}
+/* =========================================================
+   보드에 저장 / 불러오기 (독립 작동용)
+========================================================= */
+const BOARD_MAX_SEQ=8, BOARD_MAX_STEPS=8;
+async function pushAllSequencesToBoard(){
+ if(!writer||!reader){alert('먼저 보드에 연결하세요.');return}
+ if(!sequences.length){alert('저장할 시퀀스가 없습니다. 먼저 시퀀스를 만들고 "저장"을 눌러주세요.');return}
+ const overSeq = sequences.length>BOARD_MAX_SEQ;
+ const overStepSeqs = sequences.filter(s=>s.steps.length>BOARD_MAX_STEPS);
+ if(overSeq || overStepSeqs.length){
+  let msg='⚠ 독립 작동(보드 EEPROM) 저장 한계를 초과했습니다.\n\n';
+  if(overSeq) msg+='· 시퀀스 '+sequences.length+'개 중 뒤쪽 '+(sequences.length-BOARD_MAX_SEQ)+'개는 저장되지 않습니다 (최대 '+BOARD_MAX_SEQ+'개).\n';
+  if(overStepSeqs.length) msg+=overStepSeqs.map(s=>'· "'+s.name+'" 시퀀스: '+s.steps.length+'단계 중 뒤쪽 '+(s.steps.length-BOARD_MAX_STEPS)+'단계는 저장되지 않습니다 (최대 '+BOARD_MAX_STEPS+'단계).').join('\n')+'\n';
+  msg+='\n※ PC 자동 감시에서는 문제없이 전체가 작동하지만, 컴퓨터를 끄고 보드 단독으로 돌리면 잘려나간 부분은 동작하지 않습니다.\n\n그래도 잘린 채로 보드에 저장할까요?';
+  if(!confirm(msg)) return;
+ }
+ const list=sequences.slice(0,BOARD_MAX_SEQ);
+ log('보드 저장 시작: 총 '+list.length+'개 시퀀스');
+ await serialSendText('SEQCLR\r\n',500,true);
+ for(let idx=0;idx<list.length;idx++){
+  const s=list[idx];
+  const trigCond=(s.trigCond==='ON')?1:0;
+  await serialSendText('SEQTRIG '+idx+' '+(s.trigCh||0)+' '+trigCond+'\r\n',400,true);
+  const steps=s.steps.slice(0,BOARD_MAX_STEPS);
+  if(s.steps.length>BOARD_MAX_STEPS) log('⚠ "'+s.name+'" 시퀀스는 '+s.steps.length+'단계 중 앞 '+BOARD_MAX_STEPS+'단계만 보드에 저장됩니다.');
+  for(let si=0;si<steps.length;si++){
+   const st=steps[si];
+   await serialSendText('SEQSTEP '+idx+' '+si+' '+st.relay+' '+(st.state==='ON'?1:0)+' '+st.delay+'\r\n',400,true);
+  }
+  const safeName=(s.name||('seq'+(idx+1))).replace(/[^\w가-힣\-]/g,'').slice(0,11)||('seq'+(idx+1));
+  await serialSendText('SEQNAME '+idx+' '+safeName+'\r\n',400,true);
+  await serialSendText('SEQCOUNT '+idx+' '+steps.length+'\r\n',400,true);
+ }
+ log('보드 저장 완료 ('+list.length+'개). 이제 컴퓨터 없이도 전원만 있으면 자동 작동합니다.');
+ alert('보드에 저장되었습니다. 이제 컴퓨터를 꺼도 전원(USB 또는 어댑터)만 연결되어 있으면 자동으로 동작합니다.');
+}
+async function pullSequencesFromBoard(){
+ if(!writer||!reader){alert('먼저 보드에 연결하세요.');return}
+ if(!confirm('보드에 저장된 시퀀스로 현재 화면의 목록을 덮어씁니다. 계속할까요?')) return;
+ const text=await serialSendMultiline('SEQGET?\r\n','SEQGETDONE',2000);
+ if(!text){alert('보드 응답이 없습니다. 연결 상태를 확인하세요.');return}
+ const lines=text.split('\n').map(l=>l.trim()).filter(l=>l.startsWith('SEQ '));
+ const newSeqs=[];
+ lines.forEach(line=>{
+  const p=line.split(/\s+/);
+  const trigCh=+p[2]||0, trigCond=(p[3]==='1')?'ON':'OFF', numSteps=+p[4]||0;
+  const name=p[5]||('시퀀스'+(+p[1]+1));
+  const stepscsv=p[6]||'';
+  const steps=stepscsv?stepscsv.split(';').filter(x=>x).map(tok=>{const a=tok.split(',').map(Number);return{relay:a[0],state:a[1]?'ON':'OFF',delay:a[2]||0}}):[];
+  if(numSteps>0) newSeqs.push({name,trigCh,trigCond,steps});
+ });
+ sequences=newSeqs;
+ localStorage.setItem('megaSequencesV1',JSON.stringify(sequences));
+ if(sequences.length){ selectSequence(0) } else { selectedSeq=-1; newSequence() }
+ renderSeqList();
+ log('보드에서 시퀀스 '+sequences.length+'개를 불러왔습니다.');
+}
+
+async function runStepsNow(steps,quiet=false){
+ isRunningSeq=true;
+ for(const st of steps){
+  await sendRelay(st.relay,st.state,quiet,false);
+  setRelayDot(st.relay, st.state==='ON');
+  if(st.delay) await new Promise(res=>setTimeout(res,st.delay));
+ }
+ isRunningSeq=false;
+}
+async function runSequence(){
+ const steps=getSteps();
+ if(!steps.length){alert('동작을 하나 이상 추가하세요.');return}
+ log('시퀀스 테스트 실행 ('+steps.length+'단계)');
+ await runStepsNow(steps);
+}
+
+/* =========================================================
+   자동 감시 (트리거 조건 → 시퀀스 자동 실행)
+========================================================= */
+async function monitorTick(){
+ if(isRunningSeq) return;
+ const active=sequences.filter(s=>s.trigCh && s.trigCh>0);
+ if(!active.length) return;
+ const states=await readInputStates();
+ if(!states) return;
+ for(const s of active){
+  const idx=inputMap.findIndex(r=>r.ch===s.trigCh);
+  if(idx<0) continue;
+  const cur=states[idx];
+  const key='seq_ch'+s.trigCh, prev=lastInputStates[key];
+  const target=s.trigCond==='ON'?1:0;
+  if(cur===target && prev!==target){
+   log('⚡ 트리거: CH'+s.trigCh+' '+s.trigCond+' → 시퀀스 "'+s.name+'" 실행');
+   await runStepsNow(s.steps,true);
+  }
+  lastInputStates[key]=cur;
+ }
+ renderInputStateGrid(states);
+}
+function startMonitor(){
+ if(!sequences.some(s=>s.trigCh>0)){alert('자동 트리거가 설정된 시퀀스가 없습니다. (시작 조건에서 입력 채널을 선택하고 저장하세요)');return}
+ const interval=+document.getElementById('pollInterval').value||300;
+ if(monitorTimer) clearInterval(monitorTimer);
+ lastInputStates={};
+ monitorTimer=setInterval(monitorTick,interval);
+ document.getElementById('monitorStatus').textContent='● 감시 중 (주기 '+interval+'ms)';
+ log('자동 감시 시작 (주기 '+interval+'ms)');
+}
+function stopMonitor(){
+ if(monitorTimer){clearInterval(monitorTimer);monitorTimer=null}
+ document.getElementById('monitorStatus').textContent='감시 중지됨';
+ log('자동 감시 중지');
+}
+
+/* =========================================================
+   초기화
+========================================================= */
+loadRelayMode();
+ensureOutputMapDefaults();
+renderOutputMapRows();
+renderRelayGrid();
+document.getElementById('inputCount').value = inputMap.length || 4;
+if(!inputMap.length) onInputCountChange(); else { renderInputMapRows(); renderSeqTrigOptions(); renderInputStateGrid(null) }
+ensureKpDefaults();
+renderKpPinRows();
+renderKpKeyMapRows();
+renderKpModeUI();
+if(sequences.length){ renderSeqList(); selectSequence(0) } else { newSequence() }
+</script>
+</body>
+</html>
