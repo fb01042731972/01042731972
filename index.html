@@ -3265,10 +3265,18 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (!supaClient) return;
     const wraps = Array.from(leChatSelectedIds);
     if (!wraps.length) return;
-    const pw = prompt('관리자 비밀번호를 입력하세요.');
-    if (pw === null) return;
-    const pwHash = await window.jinjooSha256Hex(pw);
-    if (pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
+    // 선택한 메시지 중 내가 쓴 것이 아닌 메시지가 하나라도 있으면 관리자 비밀번호가 필요.
+    // 선택한 메시지가 전부 내가 쓴 메시지라면 관리자 비밀번호 없이 바로 삭제 가능.
+    const hasOthersMsg = wraps.some(function(wrap){
+      const msgSenderName = wrap.dataset.msgSenderName || wrap.dataset.msgSender || '';
+      return leChatNorm(msgSenderName) !== leChatNorm(leChatNickname);
+    });
+    if (hasOthersMsg) {
+      const pw = prompt('선택한 메시지 중 다른 사람이 보낸 메시지가 포함되어 있습니다. 삭제하려면 관리자 비밀번호를 입력하세요.');
+      if (pw === null) return;
+      const pwHash = await window.jinjooSha256Hex(pw);
+      if (pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
+    }
     if (!confirm(wraps.length + '개의 메시지를 삭제하시겠습니까?\n삭제하면 채팅방의 모두에게서 사라집니다.')) return;
     let failCount = 0;
     for (const wrap of wraps) {
@@ -26449,6 +26457,23 @@ function getStampItemTable(prefix) {
     return tbody ? tbody.closest('table') : null;
   } catch(e) { return null; }
 }
+// 🆕 도장이 "표보다 위(회사정보 영역)"에 있으면 표 위쪽 영역의 높이를, "표와 같거나 아래(서명란 등)"에
+// 있으면 표 아래쪽 영역의 높이를 잰다. 이 영역들은 품목 행 수와 무관하게 일정하므로(품목이 늘어나는 건
+// 표 자기 자신뿐), 화면(입력폼)과 인쇄 문서에서 각각 이 값을 재서 비율을 내면 품목을 아무리 추가해도
+// 흔들리지 않는 안정적인 보정 비율을 얻을 수 있다.
+// (예전에는 문서 "전체" 높이로 비율을 냈는데, 입력폼은 행마다 인쇄본보다 훨씬 크게 늘어나서 품목을
+//  추가할 때마다 비율이 계속 달라지고 도장이 점점 엉뚱한 곳으로 밀려나는 원인이 되었다.)
+function getStampRefHeight(container, table, anchor) {
+  try {
+    if(!container || !table) return 0;
+    const cRect = container.getBoundingClientRect();
+    const tRect = table.getBoundingClientRect();
+    if(!cRect.height || !tRect.height) return 0;
+    return anchor === 'top'
+      ? Math.max(0, tRect.top - cRect.top)      // 표보다 위쪽 영역(회사정보 등)의 높이
+      : Math.max(0, cRect.bottom - tRect.bottom); // 표보다 아래쪽 영역(서명란 등)의 높이
+  } catch(e) { return 0; }
+}
 function loadStampPosAll() {
   try {
     const v = JSON.parse(localStorage.getItem(K_STAMP_POS));
@@ -26477,11 +26502,13 @@ function loadStampPos(prefix) {
       if(h){
         saved.yBottom = Math.max(0, h - (h * (saved.y/100)));
         saved.anchor = 'bottom';
+        const table = getStampItemTable(prefix);
+        const refH = getStampRefHeight(container, table, 'bottom');
         // 🛠 버그 수정: 이전에는 이 변환값을 저장하지 않아서, 품목을 추가할 때마다(=컨테이너
         // 높이 h가 커질 때마다) 매번 다시 계산되어 결국 예전 %기준 버그가 그대로 재현되고
         // 있었습니다(추가 버튼을 누를 때마다 도장/사진이 한 칸씩 아래로 밀림). 계산한 값을
         // 즉시 저장해서, 이후로는 다시 계산하지 않고 고정된 px 값을 그대로 쓰도록 합니다.
-        saveStampPos(prefix, saved.x, saved.yBottom, saved.size, 'bottom');
+        saveStampPos(prefix, saved.x, saved.yBottom, saved.size, 'bottom', h, refH);
       }
     } catch(e) {}
   }
@@ -26508,18 +26535,25 @@ function computeCeoAdjacentPos(prefix) {
     let yTop = (wRect.top + wRect.height/2) - cRect.top;
     x = Math.max(3, Math.min(97, x));
     yTop = Math.max(0, yTop);
-    return { x, yTop, anchor: 'top', size: STAMP_POS_DEFAULT.size, containerH: cRect.height };
+    const table0 = getStampItemTable(prefix);
+    const refH0 = getStampRefHeight(container, table0, 'top');
+    return { x, yTop, anchor: 'top', size: STAMP_POS_DEFAULT.size, containerH: cRect.height, refH: refH0 };
   } catch(e) { return null; }
 }
-function saveStampPos(prefix, x, yFromEdge, size, anchor, containerH) {
+function saveStampPos(prefix, x, yFromEdge, size, anchor, containerH, refH) {
   const all = loadStampPosAll();
   const prev = all[prefix] || {};
   const entry = { x, anchor: anchor || 'bottom', size: size !== undefined ? size : (prev.size || STAMP_POS_DEFAULT.size) };
   if(entry.anchor === 'top') entry.yTop = yFromEdge; else entry.yBottom = yFromEdge;
   // 🆕 이 위치를 저장할 당시 화면에 보이던 문서 컨테이너의 실제 높이(px)도 함께 기억해 둡니다.
-  // 인쇄/PDF저장 화면은 글꼴·여백·표 스타일이 달라 문서 전체 높이가 화면과 다르므로,
-  // 저장 당시 높이 대비 인쇄 문서의 실제 높이 비율만큼 위치를 보정해서 화면과 같은 자리에 찍히게 합니다.
+  // (예전 버전과의 호환을 위해 남겨두지만, 아래 refH가 있으면 그쪽을 우선 사용합니다.)
   entry.containerH = (containerH !== undefined) ? containerH : (prev.containerH || undefined);
+  // 🆕 표(품목 목록)를 제외한 영역(도장이 위쪽이면 표 위 회사정보 영역, 아래쪽이면 표 아래 서명란 등)의
+  // 높이만 따로 기억해 둡니다. 이 영역은 품목을 몇 개를 추가하든 커지지 않으므로, 인쇄/PDF저장 시
+  // 이 값 대비 인쇄 문서의 같은 영역 높이 비율로 보정하면 품목 추가 여부와 상관없이 항상 같은 자리에
+  // 도장이 찍힙니다. (예전에는 문서 "전체" 높이로 비율을 냈었는데, 품목을 추가할 때마다 화면(입력폼)과
+  // 인쇄본의 늘어나는 정도가 서로 달라서 매번 비율이 바뀌어 도장이 계속 움직이는 원인이었습니다.)
+  entry.refH = (refH !== undefined && refH > 0) ? refH : (prev.refH || undefined);
   all[prefix] = entry;
   localStorage.setItem(K_STAMP_POS, JSON.stringify(all));
 }
@@ -26598,10 +26632,12 @@ function stampDragEnd() {
   const yFromEdge = anchor === 'top'
     ? (parseFloat(layer.style.top) || 0)
     : (parseFloat(layer.style.bottom) || STAMP_POS_DEFAULT.yBottom);
-  // 🆕 지금 이 순간 화면에 보이는 문서 컨테이너의 실제 높이를 함께 저장 —
-  // 인쇄/PDF저장 시 이 높이 대비 비율로 위치를 보정하는 데 사용됩니다.
+  // 🆕 지금 이 순간 화면에 보이는 문서 컨테이너의 실제 높이와, 표를 제외한 영역의 높이(refH)를
+  // 함께 저장합니다 — 인쇄/PDF저장 시 이 값 대비 비율로 위치를 보정하는 데 사용됩니다.
   const containerH = container ? container.getBoundingClientRect().height : undefined;
-  saveStampPos(prefix, x, yFromEdge, undefined, anchor, containerH);
+  const table = getStampItemTable(prefix);
+  const refH = getStampRefHeight(container, table, anchor);
+  saveStampPos(prefix, x, yFromEdge, undefined, anchor, containerH, refH);
   document.removeEventListener('mousemove', stampDragMove);
   document.removeEventListener('mouseup', stampDragEnd);
   document.removeEventListener('touchmove', stampDragMove);
@@ -26646,7 +26682,7 @@ function stampResizeEnd() {
   const x = parseFloat(layer.style.left) || cur.x;
   const anchor = cur.anchor === 'top' ? 'top' : 'bottom';
   const yFromEdge = anchor === 'top' ? cur.yTop : cur.yBottom;
-  saveStampPos(prefix, x, yFromEdge, size, anchor, cur.containerH);
+  saveStampPos(prefix, x, yFromEdge, size, anchor, cur.containerH, cur.refH);
   document.removeEventListener('mousemove', stampResizeMove);
   document.removeEventListener('mouseup', stampResizeEnd);
   document.removeEventListener('touchmove', stampResizeMove);
@@ -28097,6 +28133,7 @@ function buildClassicDocHTML(type) {
       + 'data-anchor="' + sp.anchor + '" '
       + 'data-y="' + (sp.anchor === 'top' ? sp.yTop : sp.yBottom) + '" '
       + 'data-container-h="' + (sp.containerH || 0) + '" '
+      + 'data-ref-h="' + (sp.refH || 0) + '" '
       + 'style="position:absolute;left:' + sp.x + '%;' + stampPosStyle + ';width:' + sp.size + 'px;height:' + sp.size + 'px;object-fit:contain">';
   }
 
@@ -28112,7 +28149,7 @@ function buildClassicDocHTML(type) {
       + '<span>합 계 금 액 <span style="font-size:11px;font-weight:400">(공급가액+세액)</span></span>'
       + '<span>' + korAmt + '원整 （￦ ' + total.toLocaleString() + ' ）</span>'
     + '</div>'
-    + '<table style="width:100%;border-collapse:collapse;font-size:12px">'
+    + '<table id="printItemTable" style="width:100%;border-collapse:collapse;font-size:12px">'
       + '<thead><tr>'
         + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9">품 명</th>'
         + '<th style="border:1px solid #333;padding:6px;background:#f1f5f9;width:70px">규 격</th>'
@@ -28194,10 +28231,17 @@ function printDoc(type) {
       '<span style="color:#cbd5e1;font-size:12px">버튼을 누른 뒤, 인쇄 대화상자의 "대상/프린터"에서 <b style="color:#fff">PDF로 저장</b>을 선택하세요.</span>' +
     '</div>';
 
-  // 🆕 도장 위치 보정 스크립트 — 화면(quote-wrap)과 인쇄 문서(classic-doc)는 글꼴·여백·표 스타일이
-  // 달라서 문서 전체 높이가 서로 다릅니다. 화면에서 도장을 놓았을 당시의 문서 높이(data-container-h)와
-  // 지금 이 인쇄창에 실제로 렌더링된 문서 높이를 비교해, 그 비율만큼 도장의 top/bottom 값을 다시 계산해서
-  // 화면에서 본 것과 같은 자리(예: 서명란 부근)에 도장이 찍히도록 맞춥니다.
+  // 🆕 도장 위치 보정 스크립트 — 화면(입력폼)과 인쇄 문서(classic-doc)는 글꼴·여백·표 스타일이
+  // 달라서 같은 위치라도 실제 px 값이 서로 다릅니다.
+  // 🛠 버그 수정: 예전에는 "문서 전체 높이"의 비율로 보정했는데, 품목을 추가하면 입력폼은 한 줄당
+  // 인쇄본보다 훨씬 크게 늘어나서(입력칸·여백이 더 크므로) 품목 개수가 바뀔 때마다 이 비율 자체가
+  // 계속 달라졌습니다. 그 결과 도장 위치를 한 번도 다시 옮기지 않아도, 품목을 추가할 때마다 인쇄/PDF에서는
+  // 도장이 계속 다른 곳으로 이동해 버리는 문제가 있었습니다.
+  // 이제는 "품목 표 자체를 제외한 영역"(도장이 표 위쪽이면 회사정보 영역, 표 아래쪽이면 서명란 등)의
+  // 높이만으로 비율을 냅니다. 이 영역은 품목을 몇 개 추가하든 커지지 않으므로(커지는 건 표뿐입니다),
+  // 품목 개수와 상관없이 항상 안정적인 보정 비율이 나와 도장이 제자리에 유지됩니다.
+  // (표를 찾을 수 없거나 예전에 저장된 위치라 이 값이 없는 경우에만, 예전 방식(문서 전체 높이 비율)으로
+  //  대체 동작합니다.)
   const stampFixScript = ''
     + '<script>'
     + 'window.addEventListener("load",function(){'
@@ -28205,12 +28249,23 @@ function printDoc(type) {
     + '    var img = document.getElementById("printStampImg");'
     + '    var doc = document.querySelector(".classic-doc");'
     + '    if(img && doc){'
-    + '      var savedH = parseFloat(img.getAttribute("data-container-h"))||0;'
     + '      var y = parseFloat(img.getAttribute("data-y"))||0;'
     + '      var anchor = img.getAttribute("data-anchor");'
-    + '      var curH = doc.getBoundingClientRect().height;'
-    + '      if(savedH>0 && curH>0){'
-    + '        var scale = curH/savedH;'
+    + '      var docRect = doc.getBoundingClientRect();'
+    + '      var table = document.getElementById("printItemTable");'
+    + '      var savedRefH = parseFloat(img.getAttribute("data-ref-h"))||0;'
+    + '      var scale = 0;'
+    + '      if(table && savedRefH>0){'
+    + '        var tRect = table.getBoundingClientRect();'
+    + '        var curRefH = (anchor==="top") ? (tRect.top - docRect.top) : (docRect.bottom - tRect.bottom);'
+    + '        if(curRefH>0) scale = curRefH/savedRefH;'
+    + '      }'
+    + '      if(!scale){'
+    + '        var savedH = parseFloat(img.getAttribute("data-container-h"))||0;'
+    + '        var curH = docRect.height;'
+    + '        if(savedH>0 && curH>0) scale = curH/savedH;'
+    + '      }'
+    + '      if(scale>0){'
     + '        scale = Math.max(0.3, Math.min(3, scale));'
     + '        var y2 = Math.round(y*scale);'
     + '        if(anchor==="top"){ img.style.top = y2+"px"; img.style.bottom="auto"; }'
