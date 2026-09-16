@@ -505,7 +505,7 @@
 (function(){
   // 비밀번호 원문은 HTML 소스에 저장하지 않습니다.
   var DEFAULT_PW_HASH = 'c64306c91d63dfeed553ccc9e3ba29bc7e84449a67c5714a2f5f497d140f845f';
-  var ADMIN_PW_HASH = 'f06cc37baeab1d5525c2a8d0bbc11920e973af4e89d0c8d7258b4c27aad2bb50';
+  var ADMIN_PW_HASH = '8f56743ebfc75e95f389831748bd8a90a266edc1510e754e1a8b0cd89efe38cf';
   var STORAGE_KEY = 'jinjoo_gate_pw_hash';
 
   // 보안 원칙:
@@ -1198,6 +1198,27 @@ const LE_CHAT_CONFIG = {
 // 테이블과 send-call-push Edge Function을 배포해야 실제로 동작합니다.
 const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnDGUR9lM5iwmYA7J8R6fG4NYaWgszpbPTW_PRIVT4E8';
 
+// 채팅/맛고포인트/배경테마 등 여러 기능이 전부 같은 Supabase 프로젝트(LE_CHAT_CONFIG)를 사용합니다.
+// 기능마다 각자 createClient()를 부르면 같은 로그인 정보(storage key)를 쓰는 GoTrueClient가
+// 여러 개 생겨 "Multiple GoTrueClient instances" 경고가 뜨므로, 클라이언트를 하나만 만들어 공유합니다.
+window.getLeMainClient = function(){
+  if (!window._leMainClient && window.supabase && window.supabase.createClient) {
+    window._leMainClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+  }
+  return window._leMainClient || null;
+};
+
+// 공용 게시판은 채팅과 다른 Supabase 프로젝트를 쓰지만, 이 프로젝트도 여러 기능(게시판 미리보기,
+// 게시판 모달)이 각자 클라이언트를 만들면 같은 경고가 뜨므로 마찬가지로 하나만 공유합니다.
+const LE_BOARD_URL_SHARED = 'https://yzgmqbnrsylxrwokrjii.supabase.co';
+const LE_BOARD_KEY_SHARED = 'sb_publishable_s-xgGybt-6N5RLqn_8r6Bw_nRF5yIHG';
+window.getLeBoardClient = function(){
+  if (!window._leBoardClient && window.supabase && window.supabase.createClient) {
+    window._leBoardClient = window.supabase.createClient(LE_BOARD_URL_SHARED, LE_BOARD_KEY_SHARED);
+  }
+  return window._leBoardClient || null;
+};
+
 (function(){
   let supaClient = null;
   let leChatUnlocked = true;
@@ -1210,8 +1231,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
   const LE_BOARD_KEY = 'sb_publishable_s-xgGybt-6N5RLqn_8r6Bw_nRF5yIHG';
   function leChatMakeBoardClient(){
     if (leChatBoardClient) return leChatBoardClient;
-    if (!window.supabase || !window.supabase.createClient) return null;
-    leChatBoardClient = window.supabase.createClient(LE_BOARD_URL, LE_BOARD_KEY);
+    leChatBoardClient = window.getLeBoardClient();
     return leChatBoardClient;
   }
   // 내가 방금 이 브라우저에서 보낸 메시지를 Realtime 이벤트와 연결
@@ -1618,7 +1638,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     const token = leChatMakeToken();
     try {
       loadSupabaseLib(async function(){
-        if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+        if (!supaClient) supaClient = window.getLeMainClient();
         const { error } = await supaClient.from('chat_guests').insert({
           token: token, guest_name: label, created_by: leChatNickname, active: true
         });
@@ -1650,7 +1670,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     const listEl = document.getElementById('leChatInviteList');
     listEl.innerHTML = '<div style="color:#94a3b8;font-size:11px;">불러오는 중...</div>';
     loadSupabaseLib(async function(){
-      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      if (!supaClient) supaClient = window.getLeMainClient();
       try {
         const { data, error } = await supaClient.from('chat_guests').select('*').order('created_at', { ascending: false });
         if (error) throw error;
@@ -2063,7 +2083,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
   function leSiteInit(){
     if (!leChatConfigured()) return;
     loadSupabaseLib(function(){
-      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      if (!supaClient) supaClient = window.getLeMainClient();
       leChatFetchPublicIp(function(ip){
         leSiteIp = ip;
         leSiteCheckBanned(function(banned){
@@ -2126,7 +2146,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     const listEl = document.getElementById('leVisitorBannedList');
     if (!listEl) return;
     loadSupabaseLib(function(){
-      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      if (!supaClient) supaClient = window.getLeMainClient();
       supaClient.from('banned_ips').select('*').order('created_at', { ascending: false })
         .then(function(res){
           const rows = (res && res.data) || [];
@@ -2152,7 +2172,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     if (!ip) { alert('차단할 IP를 입력해주세요.'); return; }
     if (!confirm(ip + ' 을(를) 영구 차단하시겠습니까?\n이 IP는 즉시(최대 몇 초 이내) 접속이 차단됩니다.')) return;
     loadSupabaseLib(function(){
-      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      if (!supaClient) supaClient = window.getLeMainClient();
       supaClient.from('banned_ips').upsert({ ip: ip }).then(function(res){
         if (res && res.error) { alert('차단 실패: ' + res.error.message + ' (Supabase에 banned_ips 테이블이 있는지 확인해주세요)'); return; }
         const input = document.getElementById('leVisitorManualIp');
@@ -2167,7 +2187,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
   window.leUnbanIp = function(ip){
     if (!confirm(ip + ' 의 차단을 해제하시겠습니까?')) return;
     loadSupabaseLib(function(){
-      if (!supaClient) supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      if (!supaClient) supaClient = window.getLeMainClient();
       supaClient.from('banned_ips').delete().eq('ip', ip).then(function(res){
         if (res && res.error) { alert('해제 실패: ' + res.error.message); return; }
         leSiteRefreshBannedListIfOpen();
@@ -2181,7 +2201,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
   function leChatVerifyGuestToken(enterOnSuccess){
     loadSupabaseLib(function(){
       if (!supaClient) {
-        supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+        supaClient = window.getLeMainClient();
       }
       supaClient.from('chat_guests').select('*').eq('token', leChatGuestToken).maybeSingle()
         .then(function(res){
@@ -2295,7 +2315,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
     document.getElementById('leChatBody').style.display = 'flex';
     loadSupabaseLib(function(){
       if (!supaClient) {
-        supaClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+        supaClient = window.getLeMainClient();
       }
       // 채팅에 들어오는 즉시 화상통화 신호 채널을 구독해둠 (그래야 상대방이 걸었을 때 벨이 울림)
       if (typeof leCallEnsureChannel === 'function') leCallEnsureChannel();
@@ -6610,6 +6630,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
                 <div class="quote-label">대표자</div>
                 <div class="ceo-stamp-wrap">
                   <input class="quote-inp" id="q_sup_ceo" placeholder="대표자명">
+                  <img id="q_stamp_fixed_img" class="stamp-inline hidden" src="" alt="도장">
                 </div>
               </div>
             </div>
@@ -6959,6 +6980,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
                 <div class="quote-label">대표자</div>
                 <div class="ceo-stamp-wrap">
                   <input class="quote-inp" id="o_sup_ceo" placeholder="대표자명">
+                  <img id="o_stamp_fixed_img" class="stamp-inline hidden" src="" alt="도장">
                 </div>
               </div>
             </div>
@@ -7205,6 +7227,7 @@ const LE_PUSH_VAPID_PUBLIC_KEY = 'BKS3iYC0THrnOtI0-A2lfn2D0_yIgvc4oc6UzxbYiZPKnD
                 <div class="quote-label">대표자</div>
                 <div class="ceo-stamp-wrap">
                   <input class="quote-inp" id="s_my_ceo" placeholder="대표자명">
+                  <img id="s_stamp_fixed_img" class="stamp-inline hidden" src="" alt="도장">
                 </div>
               </div>
             </div>
@@ -9422,7 +9445,7 @@ const BOARD_URL='https://yzgmqbnrsylxrwokrjii.supabase.co';
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const fmt=v=>{try{return new Date(v).toLocaleString('ko-KR')}catch(e){return ''}};
   const sizeFmt=n=>{n=Number(n)||0;if(n<1024)return n+' B';if(n<1024*1024)return (n/1024).toFixed(1)+' KB';if(n<1024*1024*1024)return (n/1024/1024).toFixed(1)+' MB';return (n/1024/1024/1024).toFixed(1)+' GB'};
-  function makeClient(){if(bc)return bc;if(!window.supabase?.createClient)return null;bc=window.supabase.createClient(BOARD_URL,BOARD_KEY);return bc;}
+  function makeClient(){if(bc)return bc;bc=window.getLeBoardClient();return bc;}
   async function ensureSupabase(){
     if(window.supabase)return true;
     if(typeof loadSupabaseLib==='function') return await new Promise(resolve=>loadSupabaseLib(()=>resolve(!!window.supabase)));
@@ -26428,7 +26451,15 @@ function applyQuoteImages() {
     if(logoImg){
       if(logo){ logoImg.src=logo; logoImg.classList.remove('hidden'); } else { logoImg.classList.add('hidden'); }
     }
-    renderStampDragLayer(prefix, stamp);
+    // 🆕 도장은 더 이상 자유롭게 드래그해서 옮기는 방식이 아니라, "대표자" 입력칸 바로 옆에
+    // 항상 고정되어 표시됩니다 (움직이지 않음). 예전의 드래그 가능한 도장 레이어는 더 이상 사용하지 않습니다.
+    const fixedImg = document.getElementById(prefix+'_stamp_fixed_img');
+    if(fixedImg){
+      if(stamp){ fixedImg.src = stamp; fixedImg.classList.remove('hidden'); }
+      else { fixedImg.classList.add('hidden'); fixedImg.src = ''; }
+    }
+    const dragLayer = document.getElementById(prefix+'_stamp_drag');
+    if(dragLayer) dragLayer.classList.add('hidden'); // 예전 드래그 레이어는 항상 숨김
   });
 }
 
@@ -37417,7 +37448,7 @@ document.addEventListener('keydown',function(e){
   function getClient(cb){
     if (window._matgoClient) { cb(window._matgoClient); return; }
     loadSupabaseLib(function(){
-      window._matgoClient = window.supabase.createClient(LE_CHAT_CONFIG.supabaseUrl, LE_CHAT_CONFIG.supabaseAnonKey);
+      window._matgoClient = window.getLeMainClient();
       cb(window._matgoClient);
     });
   }
@@ -37975,6 +38006,232 @@ document.addEventListener('keydown',function(e){
 
   setupToolbarEditor('hdrBtnBar', 'LE_HDRBTN_CFG_V3', '더보기', '배치 편집');
   setupToolbarEditor('docTabBar', 'LE_DOCTAB_CFG_V1', '더보기', '탭 배치 편집');
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     🎨 시즌 배경 테마 (관리자 전용 설정, 전체 직원 화면에 동일 적용)
+     - 기본 제공: 가을(낙엽) / 겨울(눈송이) 애니메이션 배경
+     - 관리자는 직접 이미지·GIF·동영상을 올려 '커스텀' 배경으로도 설정 가능
+     - Supabase(app_settings 테이블 + site-backgrounds 버킷)로 저장되어
+       접속한 모든 사람 화면에 실시간으로 동일하게 표시됩니다.
+     ══════════════════════════════════════════════════════════════ -->
+<div id="leSeasonBgLayer" style="position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;"></div>
+
+<button id="leSeasonBgBtn" title="배경 테마 설정 (관리자 전용)" style="position:fixed;left:14px;bottom:14px;z-index:9997;width:44px;height:44px;border-radius:50%;background:#146C8E;color:#fff;border:none;box-shadow:0 3px 10px rgba(0,0,0,.28);cursor:pointer;font-size:19px;line-height:44px;">🎨</button>
+
+<div id="leSeasonBgModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.55);align-items:center;justify-content:center;padding:16px;">
+  <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:22px;max-height:90vh;overflow-y:auto;">
+    <div style="font-weight:800;font-size:15px;margin-bottom:6px;color:#1B2A31;">🎨 배경 테마 설정</div>
+    <div style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:16px;">여기서 바꾸면 접속한 모든 직원 화면 배경이 동일하게 바뀝니다. 누구나 자유롭게 바꿀 수 있어요.</div>
+
+    <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">기본 제공 테마</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
+      <button data-theme="none" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;font-size:12px;font-weight:700;cursor:pointer;">기본(없음)</button>
+      <button data-theme="autumn" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#c2410c;font-size:12px;font-weight:700;cursor:pointer;">🍁 가을 분위기</button>
+      <button data-theme="winter" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;">❄️ 겨울 분위기</button>
+    </div>
+
+    <div style="border-top:1px solid #e5e7eb;padding-top:14px;">
+      <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">직접 이미지 · GIF · 동영상 업로드</div>
+      <input type="file" id="leSeasonUploadInput" accept="image/*,video/mp4,video/webm" style="width:100%;font-size:12px;">
+      <div id="leSeasonUploadStatus" style="font-size:11px;color:#94a3b8;margin-top:6px;">업로드하면 '커스텀' 배경으로 저장되어 전체 화면 뒤에 표시됩니다. (이미지는 자동으로 용량을 줄여 올려요. 동영상은 되도록 10MB 이하로 짧게 올려주세요 — 용량이 크면 버벅일 수 있어요)</div>
+    </div>
+
+    <div style="text-align:right;margin-top:18px;">
+      <button id="leSeasonBgClose" style="background:#f1f5f9;color:#334155;border:none;border-radius:8px;padding:8px 16px;font-size:12px;font-weight:700;cursor:pointer;">닫기</button>
+    </div>
+  </div>
+</div>
+
+<style id="leSeasonBgStyle">
+.le-season-piece{position:absolute;top:-10vh;opacity:.85;animation-name:leSeasonFall;animation-timing-function:linear;animation-iteration-count:infinite;will-change:transform;}
+@keyframes leSeasonFall{
+  0%{transform:translateY(-10vh) translateX(0) rotate(0deg);}
+  100%{transform:translateY(110vh) translateX(20px) rotate(360deg);}
+}
+</style>
+
+<script>
+(function(){
+  // 이 페이지에 이미 있는 직원 채팅용 Supabase 프로젝트를 그대로 재사용합니다.
+  var seasonSbClient = null;
+
+  function ensureSeasonSb(cb){
+    if (window.supabase && window.supabase.createClient) {
+      if (!seasonSbClient) seasonSbClient = window.getLeMainClient();
+      cb();
+      return;
+    }
+    var existing = document.querySelector('script[data-le-season-sb]');
+    if (existing) { existing.addEventListener('load', function(){ ensureSeasonSb(cb); }); return; }
+    var s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    s.setAttribute('data-le-season-sb', '1');
+    s.onload = function(){ seasonSbClient = window.getLeMainClient(); cb(); };
+    document.head.appendChild(s);
+  }
+
+  var layer = document.getElementById('leSeasonBgLayer');
+
+  function isVideoUrl(url){ return /\.(mp4|webm|mov)(\?|$)/i.test(url || ''); }
+
+  function clearLayer(){ layer.innerHTML=''; layer.style.backgroundImage=''; layer.style.backgroundSize=''; layer.style.backgroundPosition=''; }
+
+  function renderCustom(url){
+    clearLayer();
+    if (isVideoUrl(url)) {
+      layer.innerHTML = '<video autoplay muted loop playsinline style="width:100%;height:100%;object-fit:cover;"><source src="'+url+'"></video>';
+    } else {
+      layer.style.backgroundImage = 'url("'+url+'")';
+      layer.style.backgroundSize = 'cover';
+      layer.style.backgroundPosition = 'center';
+    }
+  }
+
+  function renderParticles(kind){
+    clearLayer();
+    var count = 36;
+    var emojiSet = (kind === 'autumn') ? ['🍁','🍂','🍃'] : ['❄️'];
+    var html = '';
+    for (var i=0; i<count; i++){
+      var e = emojiSet[Math.floor(Math.random()*emojiSet.length)];
+      var left = Math.random()*100;
+      var dur = 9 + Math.random()*12;
+      var delay = -(Math.random()*20);
+      var size = 14 + Math.random()*16;
+      html += '<span class="le-season-piece" style="left:'+left+'vw;font-size:'+size+'px;animation-duration:'+dur+'s;animation-delay:'+delay+'s;">'+e+'</span>';
+    }
+    layer.innerHTML = html;
+  }
+
+  function applyTheme(theme, imageUrl){
+    if (theme === 'autumn') renderParticles('autumn');
+    else if (theme === 'winter') renderParticles('winter');
+    else if (theme === 'custom' && imageUrl) renderCustom(imageUrl);
+    else clearLayer();
+  }
+
+  function loadCurrentTheme(){
+    ensureSeasonSb(function(){
+      seasonSbClient.from('app_settings').select('value').eq('key','home_background').maybeSingle()
+        .then(function(res){
+          if (res && res.data && res.data.value) {
+            try { var d = JSON.parse(res.data.value); applyTheme(d.theme, d.image_url); } catch(e){}
+          }
+        })
+        .catch(function(){ /* 테이블이 아직 없으면 무시 */ });
+
+      try {
+        seasonSbClient.channel('le_home_bg_room')
+          .on('postgres_changes', { event:'*', schema:'public', table:'app_settings', filter:'key=eq.home_background' }, function(payload){
+            if (payload.new && payload.new.value) {
+              try { var d = JSON.parse(payload.new.value); applyTheme(d.theme, d.image_url); } catch(e){}
+            }
+          })
+          .subscribe();
+      } catch(e){ /* realtime 미지원 환경이면 조용히 무시 */ }
+    });
+  }
+
+  function saveTheme(theme, imageUrl){
+    ensureSeasonSb(function(){
+      var value = JSON.stringify({ theme: theme, image_url: imageUrl || null });
+      seasonSbClient.from('app_settings').upsert({ key:'home_background', value: value, updated_at: new Date().toISOString() })
+        .then(function(res){
+          if (res && res.error) alert('저장 실패: ' + res.error.message + ' (Supabase에 app_settings 테이블이 있는지 확인해주세요)');
+        });
+    });
+  }
+
+  // 배경 테마는 누구나 바로 바꿀 수 있도록 비밀번호 확인 없이 적용합니다.
+
+  // 큰 이미지를 올리면 화면이 버벅일 수 있어, 업로드 전 브라우저에서 자동으로 크기를 줄입니다.
+  // (동영상은 브라우저에서 압축이 어려워 원본 그대로 올라갑니다.)
+  var SEASON_IMG_MAX_DIM = 1920;      // 긴 변 기준 최대 픽셀
+  var SEASON_IMG_QUALITY = 0.82;      // JPEG 압축 품질
+  var SEASON_VIDEO_MAX_MB = 15;       // 동영상 용량 경고 기준(MB)
+
+  function compressSeasonImage(file){
+    return new Promise(function(resolve){
+      var img = new Image();
+      var reader = new FileReader();
+      reader.onload = function(e){
+        img.onload = function(){
+          var w = img.width, h = img.height;
+          var scale = Math.min(1, SEASON_IMG_MAX_DIM / Math.max(w, h));
+          var cw = Math.round(w * scale), ch = Math.round(h * scale);
+          var canvas = document.createElement('canvas');
+          canvas.width = cw; canvas.height = ch;
+          var ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, cw, ch);
+          canvas.toBlob(function(blob){
+            if (!blob) { resolve(file); return; } // 압축 실패 시 원본 그대로 사용
+            var newName = file.name.replace(/\.[^.]+$/, '') + '.jpg';
+            resolve(new File([blob], newName, { type: 'image/jpeg' }));
+          }, 'image/jpeg', SEASON_IMG_QUALITY);
+        };
+        img.onerror = function(){ resolve(file); }; // 읽기 실패 시 원본 그대로 사용
+        img.src = e.target.result;
+      };
+      reader.onerror = function(){ resolve(file); };
+      reader.readAsDataURL(file);
+    });
+  }
+
+  var btn = document.getElementById('leSeasonBgBtn');
+  var modal = document.getElementById('leSeasonBgModal');
+  var closeBtn = document.getElementById('leSeasonBgClose');
+  var uploadInput = document.getElementById('leSeasonUploadInput');
+  var uploadStatus = document.getElementById('leSeasonUploadStatus');
+
+  if (btn) btn.addEventListener('click', function(){ modal.style.display = 'flex'; });
+  if (closeBtn) closeBtn.addEventListener('click', function(){ modal.style.display = 'none'; });
+  if (modal) modal.addEventListener('click', function(e){ if (e.target === modal) modal.style.display = 'none'; });
+
+  document.querySelectorAll('.le-season-opt').forEach(function(optBtn){
+    optBtn.addEventListener('click', async function(){
+      var theme = optBtn.getAttribute('data-theme');
+      applyTheme(theme, null);
+      saveTheme(theme, null);
+      modal.style.display = 'none';
+    });
+  });
+
+  if (uploadInput) uploadInput.addEventListener('change', async function(evt){
+    var file = evt.target.files[0];
+    if (!file) return;
+
+    var isVideo = /^video\//.test(file.type);
+
+    if (isVideo && file.size > SEASON_VIDEO_MAX_MB * 1024 * 1024) {
+      var okBig = confirm('동영상 용량이 ' + SEASON_VIDEO_MAX_MB + 'MB보다 큽니다(약 ' + (file.size/1024/1024).toFixed(1) + 'MB).\n용량이 크면 다른 분들 화면에서 버벅일 수 있어요. 그래도 계속 업로드할까요?\n(가능하면 더 짧고 가벼운 동영상으로 다시 시도해주세요)');
+      if (!okBig) { evt.target.value = ''; return; }
+    }
+
+    uploadStatus.textContent = '용량 최적화 중...';
+    var uploadFile = file;
+    if (!isVideo) {
+      try { uploadFile = await compressSeasonImage(file); } catch(e){ uploadFile = file; }
+    }
+
+    uploadStatus.textContent = '업로드 중...';
+    ensureSeasonSb(function(){
+      var path = 'bg_' + Date.now() + '_' + uploadFile.name.replace(/[^a-zA-Z0-9._-]/g, '_');
+      seasonSbClient.storage.from('site-backgrounds').upload(path, uploadFile, { upsert: true })
+        .then(function(up){
+          if (up.error) { alert('업로드 실패: ' + up.error.message + ' (Supabase에 site-backgrounds 버킷이 있는지 확인해주세요)'); uploadStatus.textContent=''; return; }
+          var pub = seasonSbClient.storage.from('site-backgrounds').getPublicUrl(path);
+          var url = pub.data.publicUrl;
+          applyTheme('custom', url);
+          saveTheme('custom', url);
+          uploadStatus.textContent = '✅ 적용되었습니다.';
+          setTimeout(function(){ modal.style.display = 'none'; evt.target.value=''; uploadStatus.textContent="업로드하면 '커스텀' 배경으로 저장되어 전체 화면 뒤에 표시됩니다. (이미지는 자동으로 용량을 줄여 올려요. 동영상은 되도록 10MB 이하로 짧게 올려주세요 — 용량이 크면 버벅일 수 있어요)"; }, 900);
+        });
+    });
+  });
+
+  window.addEventListener('load', loadCurrentTheme);
 })();
 </script>
 
