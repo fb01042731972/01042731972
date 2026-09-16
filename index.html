@@ -38025,12 +38025,31 @@ document.addEventListener('keydown',function(e){
     <div style="font-weight:800;font-size:15px;margin-bottom:6px;color:#1B2A31;">🎨 배경 테마 설정</div>
     <div style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:16px;">여기서 바꾸면 접속한 모든 직원 화면 배경이 동일하게 바뀝니다. 누구나 자유롭게 바꿀 수 있어요.</div>
 
-    <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">기본 제공 테마</div>
+    <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">🤖 자동 (날씨·시간 연동)</div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
+      <button data-theme="auto" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #c4b5fd;border-radius:10px;background:#f5f3ff;color:#6d28d9;font-size:12px;font-weight:700;cursor:pointer;">🤖 자동 (실시간 날씨로 자동 변경)</button>
+    </div>
+    <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">기본 제공 테마 (수동 선택)</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;">
       <button data-theme="none" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #cbd5e1;border-radius:10px;background:#f8fafc;font-size:12px;font-weight:700;cursor:pointer;">기본(없음)</button>
-      <button data-theme="autumn" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#c2410c;font-size:12px;font-weight:700;cursor:pointer;">🍁 가을 분위기</button>
-      <button data-theme="winter" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;">❄️ 겨울 분위기</button>
+      <button data-theme="spring" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fbcfe8;border-radius:10px;background:#fdf2f8;color:#be185d;font-size:12px;font-weight:700;cursor:pointer;">🌸 봄 벚꽃</button>
+      <button data-theme="summer" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #a5f3fc;border-radius:10px;background:#ecfeff;color:#0e7490;font-size:12px;font-weight:700;cursor:pointer;">🌊 여름 바다</button>
+      <button data-theme="autumn" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#c2410c;font-size:12px;font-weight:700;cursor:pointer;">🍁 가을 낙엽</button>
+      <button data-theme="winter" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;">❄️ 겨울 눈</button>
+      <button data-theme="rain" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #cbd5e1;border-radius:10px;background:#f1f5f9;color:#334155;font-size:12px;font-weight:700;cursor:pointer;">☔ 장마 · 비</button>
+      <button data-theme="night" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #c7d2fe;border-radius:10px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;cursor:pointer;">🌌 별밤 은하수</button>
+      <button data-theme="firefly" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fde68a;border-radius:10px;background:#fefce8;color:#a16207;font-size:12px;font-weight:700;cursor:pointer;">✨ 여름밤 반딧불이</button>
+      <button data-theme="tropical" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#be123c;font-size:12px;font-weight:700;cursor:pointer;">🌺 열대 여름</button>
+      <button data-theme="crystal" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #bae6fd;border-radius:10px;background:#f0f9ff;color:#0369a1;font-size:12px;font-weight:700;cursor:pointer;">💎 겨울 크리스탈</button>
+      <button data-theme="christmas" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #bbf7d0;border-radius:10px;background:#f0fdf4;color:#15803d;font-size:12px;font-weight:700;cursor:pointer;">🎄 크리스마스</button>
+      <button data-theme="newyear" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fde68a;border-radius:10px;background:#fffbeb;color:#b45309;font-size:12px;font-weight:700;cursor:pointer;">🎆 새해 불꽃놀이</button>
+      <button data-theme="lunarnewyear" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fecdd3;border-radius:10px;background:#fff1f2;color:#e11d48;font-size:12px;font-weight:700;cursor:pointer;">🧧 설날</button>
+      <button data-theme="valentine" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fbcfe8;border-radius:10px;background:#fdf2f8;color:#db2777;font-size:12px;font-weight:700;cursor:pointer;">💕 발렌타인</button>
+      <button data-theme="halloween" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fdba74;border-radius:10px;background:#fff7ed;color:#9a3412;font-size:12px;font-weight:700;cursor:pointer;">🎃 할로윈</button>
+      <button data-theme="chuseok" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fde68a;border-radius:10px;background:#fffbeb;color:#92400e;font-size:12px;font-weight:700;cursor:pointer;">🌕 추석</button>
+      <button data-theme="children" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#2563eb;font-size:12px;font-weight:700;cursor:pointer;">🎈 어린이날</button>
     </div>
+    <div id="leSeasonAutoStatus" style="font-size:11px;color:#8b5cf6;margin:-8px 0 14px;display:none;">🤖 자동 모드: 현재 위치의 실시간 날씨를 확인해 배경을 고르고 있어요...</div>
 
     <div style="border-top:1px solid #e5e7eb;padding-top:14px;">
       <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">직접 이미지 · GIF · 동영상 업로드</div>
@@ -38089,10 +38108,30 @@ document.addEventListener('keydown',function(e){
     }
   }
 
+  // 테마별 이모지 구성 (자동 모드도 이 값들을 그대로 사용합니다)
+  var SEASON_THEME_EMOJI = {
+    autumn: ['🍁','🍂','🍃'],
+    winter: ['❄️'],
+    spring: ['🌸','🌸','🌷'],
+    summer: ['🌊','💧'],
+    rain: ['☔','💧'],
+    night: ['⭐','✨','🌌'],
+    firefly: ['✨','🌟'],
+    tropical: ['🌺','🌴'],
+    crystal: ['💎','❄️'],
+    christmas: ['🎄','❄️','⭐'],
+    newyear: ['🎆','✨'],
+    lunarnewyear: ['🧧','🎋'],
+    valentine: ['💕','💗'],
+    halloween: ['🎃','🦇'],
+    chuseok: ['🌕','🍂'],
+    children: ['🎈','🎉']
+  };
+
   function renderParticles(kind){
     clearLayer();
     var count = 36;
-    var emojiSet = (kind === 'autumn') ? ['🍁','🍂','🍃'] : ['❄️'];
+    var emojiSet = SEASON_THEME_EMOJI[kind] || ['❄️'];
     var html = '';
     for (var i=0; i<count; i++){
       var e = emojiSet[Math.floor(Math.random()*emojiSet.length)];
@@ -38105,11 +38144,81 @@ document.addEventListener('keydown',function(e){
     layer.innerHTML = html;
   }
 
+  // ── 🤖 자동 모드: 브라우저 위치 + 실시간 날씨(Open-Meteo, 무료/키 불필요)로
+  //    비/눈/맑음 + 계절 + 낮/밤을 판단해 알맞은 테마를 자동으로 고릅니다 ──
+  var autoRefreshTimer = null;
+  var FALLBACK_LAT = 37.5665, FALLBACK_LON = 126.9780; // 위치 권한 거부/실패 시 기본 좌표
+
+  function seasonKeyByMonth(month){
+    if (month === 12 || month === 1 || month === 2) return 'winter';
+    if (month >= 3 && month <= 5) return 'spring';
+    if (month >= 6 && month <= 8) return 'summer';
+    return 'autumn';
+  }
+
+  function pickAutoThemeKey(weatherCode, isDay, month){
+    var SNOW_CODES = [71,73,75,77,85,86];
+    var RAIN_CODES = [51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99];
+    if (SNOW_CODES.indexOf(weatherCode) !== -1) return 'winter';
+    if (RAIN_CODES.indexOf(weatherCode) !== -1) return 'rain';
+    if (!isDay) return 'night';
+    return seasonKeyByMonth(month);
+  }
+
+  function runAutoTheme(lat, lon){
+    var statusEl = document.getElementById('leSeasonAutoStatus');
+    var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon
+      + '&current=weather_code,is_day&timezone=auto';
+    fetch(url).then(function(r){ return r.json(); }).then(function(d){
+      var cur = d && d.current ? d.current : {};
+      var key = pickAutoThemeKey(cur.weather_code, cur.is_day === 1, new Date().getMonth() + 1);
+      renderParticles(key);
+      if (statusEl) statusEl.style.display = 'none';
+    }).catch(function(){
+      renderParticles(seasonKeyByMonth(new Date().getMonth() + 1));
+      if (statusEl) statusEl.style.display = 'none';
+    });
+  }
+
+  function startAutoTheme(){
+    var statusEl = document.getElementById('leSeasonAutoStatus');
+    if (statusEl) statusEl.style.display = 'block';
+    function go(lat, lon){ runAutoTheme(lat, lon); }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        function(pos){ go(pos.coords.latitude, pos.coords.longitude); },
+        function(){ go(FALLBACK_LAT, FALLBACK_LON); },
+        { timeout: 5000, maximumAge: 600000 }
+      );
+    } else {
+      go(FALLBACK_LAT, FALLBACK_LON);
+    }
+    if (autoRefreshTimer) clearInterval(autoRefreshTimer);
+    autoRefreshTimer = setInterval(function(){
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(pos){ runAutoTheme(pos.coords.latitude, pos.coords.longitude); },
+          function(){ runAutoTheme(FALLBACK_LAT, FALLBACK_LON); },
+          { timeout: 5000, maximumAge: 600000 }
+        );
+      } else {
+        runAutoTheme(FALLBACK_LAT, FALLBACK_LON);
+      }
+    }, 30 * 60 * 1000); // 30분마다 날씨 재확인
+  }
+
+  function stopAutoTheme(){
+    if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+    var statusEl = document.getElementById('leSeasonAutoStatus');
+    if (statusEl) statusEl.style.display = 'none';
+  }
+
   function applyTheme(theme, imageUrl){
-    if (theme === 'autumn') renderParticles('autumn');
-    else if (theme === 'winter') renderParticles('winter');
-    else if (theme === 'custom' && imageUrl) renderCustom(imageUrl);
-    else clearLayer();
+    if (theme === 'auto') { startAutoTheme(); return; }
+    stopAutoTheme();
+    if (theme === 'custom' && imageUrl) renderCustom(imageUrl);
+    else if (theme === 'none' || !theme) clearLayer();
+    else renderParticles(theme);
   }
 
   function loadCurrentTheme(){
