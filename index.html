@@ -6706,9 +6706,14 @@ window.getLeBoardClient = function(){
               </div>
               <div>
                 <div class="quote-label">직인(도장)</div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <input type="file" id="q_stamp_file" accept="image/*" class="text-[10px]" onchange="uploadQuoteImage(this,'stamp')">
                   <button onclick="removeQuoteImage('stamp','q')" class="text-[10px] text-red-500 hover:underline">삭제</button>
+                </div>
+                <div class="flex items-center gap-1 mt-1" title="도장 위치는 대표자 칸 옆에 고정되며, 크기만 조절할 수 있습니다">
+                  <span class="text-[10px] text-gray-500">크기</span>
+                  <input type="range" id="q_stamp_size" min="20" max="100" step="1" value="38" oninput="setStampSize(this.value)" style="width:90px;vertical-align:middle">
+                  <span class="text-[10px] text-gray-500" id="q_stamp_size_lbl">38px</span>
                 </div>
               </div>
             </div>
@@ -7053,9 +7058,14 @@ window.getLeBoardClient = function(){
               </div>
               <div>
                 <div class="quote-label">직인(도장)</div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <input type="file" id="o_stamp_file" accept="image/*" class="text-[10px]" onchange="uploadQuoteImage(this,'stamp')">
                   <button onclick="removeQuoteImage('stamp','o')" class="text-[10px] text-red-500 hover:underline">삭제</button>
+                </div>
+                <div class="flex items-center gap-1 mt-1" title="도장 위치는 대표자 칸 옆에 고정되며, 크기만 조절할 수 있습니다">
+                  <span class="text-[10px] text-gray-500">크기</span>
+                  <input type="range" id="o_stamp_size" min="20" max="100" step="1" value="38" oninput="setStampSize(this.value)" style="width:90px;vertical-align:middle">
+                  <span class="text-[10px] text-gray-500" id="o_stamp_size_lbl">38px</span>
                 </div>
               </div>
             </div>
@@ -26424,6 +26434,30 @@ function delNotePreset(prefix) {
 // ════════════════════════════════════════
 const K_LOGO  = 'QUOTE_LOGO_V1';
 const K_STAMP = 'QUOTE_STAMP_V1';
+const K_STAMP_SIZE = 'QUOTE_STAMP_SIZE_V1'; // 도장 크기(px) — 위치는 고정, 크기만 조절 가능
+const STAMP_SIZE_DEFAULT = 38, STAMP_SIZE_MIN2 = 20, STAMP_SIZE_MAX2 = 100;
+function getStampSize() {
+  const v = parseInt(localStorage.getItem(K_STAMP_SIZE), 10);
+  return (v && v >= STAMP_SIZE_MIN2 && v <= STAMP_SIZE_MAX2) ? v : STAMP_SIZE_DEFAULT;
+}
+// 도장 크기 입력칸(견적서/발주서 등 여러 탭)의 표시값을 서로 동기화합니다.
+function syncStampSizeInputs(size) {
+  ['q_stamp_size','o_stamp_size'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = size;
+    const lbl = document.getElementById(id+'_lbl');
+    if(lbl) lbl.textContent = size + 'px';
+  });
+}
+// 도장 "크기"만 조절합니다 (위치는 항상 대표자 입력칸 옆에 고정).
+function setStampSize(px) {
+  const size = Math.max(STAMP_SIZE_MIN2, Math.min(STAMP_SIZE_MAX2, parseInt(px, 10) || STAMP_SIZE_DEFAULT));
+  localStorage.setItem(K_STAMP_SIZE, String(size));
+  syncStampSizeInputs(size);
+  applyQuoteImages();
+  scheduleFolderSync();
+  showToast('도장 크기가 저장되었습니다.');
+}
 
 function uploadQuoteImage(inputEl, kind) {
   const file = inputEl.files[0];
@@ -26463,6 +26497,7 @@ function linkQuoteImageToSelectedSupplier(inputIdOrPrefix, kind, dataUrl) {
 function applyQuoteImages() {
   const logo  = localStorage.getItem(K_LOGO);
   const stamp = localStorage.getItem(K_STAMP);
+  syncStampSizeInputs(getStampSize());
   ['q','o','s'].forEach(prefix => {
     const logoImg  = document.getElementById(prefix+'_logo_img');
     if(logoImg){
@@ -26472,6 +26507,9 @@ function applyQuoteImages() {
     // 항상 고정되어 표시됩니다 (움직이지 않음). 예전의 드래그 가능한 도장 레이어는 더 이상 사용하지 않습니다.
     const fixedImg = document.getElementById(prefix+'_stamp_fixed_img');
     if(fixedImg){
+      const sz = getStampSize();
+      fixedImg.style.width = sz + 'px';
+      fixedImg.style.height = sz + 'px';
       if(stamp){ fixedImg.src = stamp; fixedImg.classList.remove('hidden'); }
       else { fixedImg.classList.add('hidden'); fixedImg.src = ''; }
     }
@@ -28085,8 +28123,9 @@ function buildClassicDocHTML(type) {
   // "성명(대표자)" 칸 바로 뒤에 항상 붙는 고정 자리로 도장을 넣는다. 인쇄/PDF저장/서식복사
   // 모두 이 함수(buildClassicDocHTML)를 그대로 재사용하므로 여기 한 곳만 고치면 셋 다 해결된다.
   const stampImgSrc = localStorage.getItem(K_STAMP);
+  const stampPrintSize = getStampSize();
   const stampInlineHtml = stampImgSrc
-    ? '<img src="' + stampImgSrc + '" alt="도장" style="width:42px;height:42px;object-fit:contain;vertical-align:middle;margin-left:6px">'
+    ? '<img src="' + stampImgSrc + '" alt="도장" style="width:' + stampPrintSize + 'px;height:' + stampPrintSize + 'px;object-fit:contain;vertical-align:middle;margin-left:6px">'
     : '';
 
   const partyTableHtml = (label, p, stampHtml) => ''
@@ -34623,6 +34662,7 @@ function buildBackupObject() {
     cloudBackupLinks: localStorage.getItem(K_CLOUD_LINKS),
     logo: localStorage.getItem(K_LOGO),
     stamp: localStorage.getItem(K_STAMP),
+    stampSize: localStorage.getItem(K_STAMP_SIZE),
     draftRows: localStorage.getItem(K_DRAFT_ROWS),
     draftFields: localStorage.getItem(K_DRAFT_FIELDS),
     history: localStorage.getItem(K_HISTORY),
@@ -34735,6 +34775,7 @@ function applyBackupObjectToStorage(backup) {
   // (예전 백업 파일이나 도장 저장 전에 만든 백업을 불러오면 도장이 사라지던 원인이었음)
   if (backup.logo) localStorage.setItem(K_LOGO, backup.logo);
   if (backup.stamp) localStorage.setItem(K_STAMP, backup.stamp);
+  if (backup.stampSize) localStorage.setItem(K_STAMP_SIZE, backup.stampSize);
 }
 
 // 사용자가 저장 위치(폴더)를 지정 — 이후에는 이 폴더 안의 정해진 파일 1개에만 덮어씀.
