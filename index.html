@@ -38446,6 +38446,9 @@ document.addEventListener('keydown',function(e){
      - 외부 RSS는 무료 rss2json.com 변환 서비스를 거쳐 가져오며, 사용량이
        많으면 일시적으로 응답이 늦거나 비어올 수 있어 실패 시 조용히 건너뜁니다.
      - 티커 전체는 10분마다 자동으로 모든 소스를 다시 불러와 갱신됩니다.
+     - 🔗 원본 링크가 있는 항목(뉴스/블로그/유튜브 등)은 밑줄이 표시되며, 클릭하면
+       그 글의 원본 주소가 새 창(새 탭)으로 열립니다. (인기제품·광고 문구처럼
+       링크가 없는 항목은 클릭해도 아무 반응이 없습니다)
      ══════════════════════════════════════════════════════════════ -->
 <div id="leNewsTicker" style="position:fixed;left:0;right:0;bottom:0;height:34px;background:#0f172a;color:#f8fafc;z-index:9996;overflow:hidden;display:flex;align-items:center;box-shadow:0 -2px 10px rgba(0,0,0,.25);">
   <span style="flex:none;background:#dc2626;color:#fff;font-size:11px;font-weight:800;padding:4px 10px;height:100%;display:flex;align-items:center;">🔴 LIVE</span>
@@ -38490,12 +38493,14 @@ document.addEventListener('keydown',function(e){
 
   function fmtWon(n){ return (n||0).toLocaleString('ko-KR') + '원'; }
 
-  async function fetchRssTitles(rssUrl, limit){
+  async function fetchRssItems(rssUrl, limit){
     try {
       var res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl) + '&count=' + (limit || 8));
       var data = await res.json();
       if (data && data.status === 'ok' && Array.isArray(data.items)) {
-        return data.items.slice(0, limit || 8).map(function(it){ return (it.title || '').trim(); }).filter(Boolean);
+        return data.items.slice(0, limit || 8).map(function(it){
+          return { title: (it.title || '').trim(), link: (it.link || '').trim() };
+        }).filter(function(it){ return it.title; });
       }
     } catch(e) { /* 실패 시 조용히 건너뜀 */ }
     return [];
@@ -38503,14 +38508,18 @@ document.addEventListener('keydown',function(e){
 
   // 유튜브에서 특정 검색어로 최신 영상을 가져옵니다. (Google Cloud에서 발급한, 이 사이트 주소로 제한된 API 키 사용)
   var YOUTUBE_API_KEY = 'AIzaSyAvSDdxllO6o5hO9ejA4yhPBL1L4J3OYZY';
-  async function fetchYoutubeTitles(query, limit){
+  async function fetchYoutubeItems(query, limit){
     try {
       var url = 'https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&order=date&maxResults=' + (limit || 5)
         + '&q=' + encodeURIComponent(query) + '&key=' + YOUTUBE_API_KEY;
       var res = await fetch(url);
       var data = await res.json();
       if (data && Array.isArray(data.items)) {
-        return data.items.map(function(it){ return (it.snippet && it.snippet.title) ? it.snippet.title.trim() : ''; }).filter(Boolean);
+        return data.items.map(function(it){
+          var vid = it.id && it.id.videoId;
+          var title = (it.snippet && it.snippet.title) ? it.snippet.title.trim() : '';
+          return { title: title, link: vid ? ('https://www.youtube.com/watch?v=' + vid) : '' };
+        }).filter(function(it){ return it.title; });
       }
     } catch(e) { /* 하루 사용량 초과 등으로 실패해도 조용히 건너뜀 */ }
     return [];
@@ -38522,24 +38531,24 @@ document.addEventListener('keydown',function(e){
     var top = getTopSellingProducts(5);
     if (top.length) {
       top.forEach(function(p, i){
-        items.push('🔥 인기제품 ' + (i+1) + '위 · ' + p.name + ' (' + p.count + '건 판매' + (p.amount ? ', 누적 ' + fmtWon(p.amount) : '') + ')');
+        items.push({ text: '🔥 인기제품 ' + (i+1) + '위 · ' + p.name + ' (' + p.count + '건 판매' + (p.amount ? ', 누적 ' + fmtWon(p.amount) : '') + ')', url: null });
       });
     } else {
-      items.push('🔥 인기제품: 재고 관리에서 "판매 처리"를 등록하면 자동으로 순위가 표시됩니다');
+      items.push({ text: '🔥 인기제품: 재고 관리에서 "판매 처리"를 등록하면 자동으로 순위가 표시됩니다', url: null });
     }
 
-    var bizTitles = await fetchRssTitles('https://mss.go.kr/rss/smba/board/310.do', 5); // 중기부 사업공고
-    bizTitles.forEach(function(t){ items.push('🏛 중기부 지원사업 · ' + t); });
-    if (!bizTitles.length) {
-      var newsTitles2 = await fetchRssTitles('https://mss.go.kr/rss/smba/board/86.do', 3); // 보도자료(대체)
-      newsTitles2.forEach(function(t){ items.push('🏛 중기부 소식 · ' + t); });
+    var bizItems = await fetchRssItems('https://mss.go.kr/rss/smba/board/310.do', 5); // 중기부 사업공고
+    bizItems.forEach(function(it){ items.push({ text: '🏛 중기부 지원사업 · ' + it.title, url: it.link || null }); });
+    if (!bizItems.length) {
+      var newsItems2 = await fetchRssItems('https://mss.go.kr/rss/smba/board/86.do', 3); // 보도자료(대체)
+      newsItems2.forEach(function(it){ items.push({ text: '🏛 중기부 소식 · ' + it.title, url: it.link || null }); });
     }
 
-    var newsTitles = await fetchRssTitles('https://news.google.com/rss/search?q=%EA%B2%BD%EC%A0%9C%20OR%20%EC%A6%9D%EC%8B%9C%20OR%20%EA%B8%88%EB%A6%AC%20OR%20%EA%B8%B0%EC%97%85&hl=ko&gl=KR&ceid=KR:ko', 8);
-    newsTitles.forEach(function(t){ items.push('📈 경제 뉴스 · ' + t); });
+    var newsItems = await fetchRssItems('https://news.google.com/rss/search?q=%EA%B2%BD%EC%A0%9C%20OR%20%EC%A6%9D%EC%8B%9C%20OR%20%EA%B8%88%EB%A6%AC%20OR%20%EA%B8%B0%EC%97%85&hl=ko&gl=KR&ceid=KR:ko', 8);
+    newsItems.forEach(function(it){ items.push({ text: '📈 경제 뉴스 · ' + it.title, url: it.link || null }); });
 
-    var companyTitles = await fetchRssTitles('https://news.google.com/rss/search?q=%22%EC%9D%B4%EC%A7%84%EC%A3%BC%EB%B0%A9%EC%82%B0%EC%97%85%22&hl=ko&gl=KR&ceid=KR:ko', 5); // "이진주방산업" 구글 뉴스 검색
-    companyTitles.forEach(function(t){ items.push('🔎 이진주방산업 언급 · ' + t); });
+    var companyItems = await fetchRssItems('https://news.google.com/rss/search?q=%22%EC%9D%B4%EC%A7%84%EC%A3%BC%EB%B0%A9%EC%82%B0%EC%97%85%22&hl=ko&gl=KR&ceid=KR:ko', 5); // "이진주방산업" 구글 뉴스 검색
+    companyItems.forEach(function(it){ items.push({ text: '🔎 이진주방산업 언급 · ' + it.title, url: it.link || null }); });
 
     // 🔗 RSS 소식 관리에 등록된 목록 — 갱신마다(10분마다) 그중 하나를 무작위로 골라
     // 그 글을 개수 제한 없이 그대로 가져옴 ("⚙️ 설정 → 🔗 RSS 소식 관리"에서 원하는 만큼 추가 가능)
@@ -38548,32 +38557,56 @@ document.addEventListener('keydown',function(e){
       if (tickerRssList && tickerRssList.length) {
         var pickedRss = tickerRssList[Math.floor(Math.random() * tickerRssList.length)];
         if (pickedRss && pickedRss.url) {
-          var rssTitles = await fetchRssTitles(pickedRss.url, 50);
+          var rssItems = await fetchRssItems(pickedRss.url, 50);
           var rssLabel = (pickedRss.label && pickedRss.label.trim()) ? pickedRss.label.trim() : '소식';
-          rssTitles.forEach(function(t){ items.push('📝 ' + rssLabel + ' · ' + t); });
+          rssItems.forEach(function(it){ items.push({ text: '📝 ' + rssLabel + ' · ' + it.title, url: it.link || null }); });
         }
       }
     } catch(e) { /* 조용히 무시 */ }
 
-    var ytTitles = await fetchYoutubeTitles('이진주방산업', 5);
-    ytTitles.forEach(function(t){ items.push('🎥 유튜브 · ' + t); });
+    var ytItems = await fetchYoutubeItems('이진주방산업', 5);
+    ytItems.forEach(function(it){ items.push({ text: '🎥 유튜브 · ' + it.title, url: it.link || null }); });
 
     // 📢 광고 설정에 등록된 문구가 있으면(광고 사용함 + 문구 입력됨) 자막 티커에도 함께 흘러가게 표시
     try {
       var adInfo = (typeof loadAdSettings === 'function') ? loadAdSettings() : null;
       if (adInfo && adInfo.enabled && adInfo.text) {
-        items.push('📢 광고 · ' + adInfo.text);
+        items.push({ text: '📢 광고 · ' + adInfo.text, url: null });
       }
     } catch(e) { /* 조용히 무시 */ }
 
     return items;
   }
 
+  // 클릭하면 새 창으로 링크가 열리도록, 링크가 있는 항목만 밑줄이 생기는 클릭 가능한 조각들로 만듭니다.
+  function buildTickerFragment(items){
+    var frag = document.createDocumentFragment();
+    items.forEach(function(it, idx){
+      if (idx > 0) frag.appendChild(document.createTextNode('　　◆　　'));
+      var span = document.createElement('span');
+      span.className = 'le-ticker-item';
+      span.textContent = it.text;
+      if (it.url) {
+        span.setAttribute('data-url', it.url);
+        span.style.cursor = 'pointer';
+        span.style.textDecoration = 'underline';
+        span.style.textDecorationColor = 'rgba(255,255,255,.35)';
+        span.style.textUnderlineOffset = '3px';
+        span.title = '눌러서 새 창으로 열기';
+      }
+      frag.appendChild(span);
+    });
+    return frag;
+  }
+
   function renderTicker(items){
-    if (!items || !items.length) items = ['🔥 표시할 소식을 불러오지 못했습니다. 잠시 후 자동으로 다시 시도합니다.'];
-    var line = items.join('　　◆　　');
+    if (!items || !items.length) items = [{ text: '🔥 표시할 소식을 불러오지 못했습니다. 잠시 후 자동으로 다시 시도합니다.', url: null }];
     // 매끄럽게 반복되도록 내용을 두 번 이어붙입니다.
-    track.textContent = line + '　　◆　　' + line + '　　◆　　';
+    track.innerHTML = '';
+    track.appendChild(buildTickerFragment(items));
+    track.appendChild(document.createTextNode('　　◆　　'));
+    track.appendChild(buildTickerFragment(items));
+    track.appendChild(document.createTextNode('　　◆　　'));
     track.style.animation = 'none';
     void track.offsetWidth; // 강제 리플로우
     var halfWidth = track.scrollWidth / 2;
@@ -38581,6 +38614,19 @@ document.addEventListener('keydown',function(e){
     var duration = Math.max(18, halfWidth / pxPerSecond);
     track.style.animation = 'leTickerScroll ' + duration + 's linear infinite';
   }
+
+  // 링크가 있는 항목을 클릭하면 새 창(새 탭)으로 열어줍니다.
+  track.addEventListener('click', function(e){
+    var target = e.target;
+    while (target && target !== track) {
+      if (target.classList && target.classList.contains('le-ticker-item')) {
+        var url = target.getAttribute('data-url');
+        if (url) window.open(url, '_blank', 'noopener,noreferrer');
+        return;
+      }
+      target = target.parentNode;
+    }
+  });
 
   async function refreshTicker(){
     try {
