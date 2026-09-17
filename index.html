@@ -461,18 +461,6 @@
 }
 </style>
 
-
-<style>
-/* 독립 새창 기능 표시 */
-#docTabBar > button { position: relative; }
-#docTabBar > button::after {
-  content: ' ↗';
-  font-size: 0.85em;
-  opacity: .75;
-}
-.feature-window-mode #docTabBar { position: sticky; top: 0; z-index: 9999; }
-</style>
-
 </head>
 <body class="p-3 md:p-5">
 
@@ -515,42 +503,6 @@
 
   </div>
 </div>
-
-<script>
-/* 각 기능을 독립 새창으로 여는 공통 함수 */
-function openFeatureWindow(feature, title) {
-  const url = new URL(window.location.href);
-  url.hash = 'feature-window=' + encodeURIComponent(feature);
-  const name = 'feature_' + feature.replace(/[^a-zA-Z0-9_-]/g, '_');
-  const w = Math.min(Math.max(window.screen.availWidth - 120, 900), 1800);
-  const h = Math.min(Math.max(window.screen.availHeight - 160, 700), 1200);
-  const child = window.open(
-    url.toString(),
-    name,
-    'width=' + w + ',height=' + h + ',resizable=yes,scrollbars=yes'
-  );
-  if (child) {
-    child.focus();
-  } else {
-    alert('새창이 차단되었습니다. 브라우저의 팝업 차단을 해제해 주세요.');
-  }
-  return false;
-}
-
-/* 새창 모드에서는 해당 기능 외 화면을 최대한 단순하게 표시 */
-(function setupFeatureWindow() {
-  const m = location.hash.match(/^#feature-window=([^&]+)/);
-  if (!m) return;
-  const feature = decodeURIComponent(m[1]);
-  window.addEventListener('DOMContentLoaded', function() {
-    document.body.classList.add('feature-window-mode');
-    document.documentElement.dataset.featureWindow = feature;
-    document.title = (feature === 'quote' ? '견적서' :
-                       feature === 'order' ? '발주서' : feature);
-  });
-})();
-</script>
-
 <script>
 (function(){
   // 비밀번호 원문은 HTML 소스에 저장하지 않습니다.
@@ -6398,15 +6350,15 @@ window.getLeBoardClient = function(){
     <div id="globalSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:100;max-height:440px;overflow-y:auto"></div>
   </div>
   <div id="docTabBar" class="flex gap-1 flex-wrap">
-    <button id="docTabQuote" onclick="return openFeatureWindow('quote','견적서')" title="고객에게 보낼 견적서를 작성합니다" class="doc-tab active px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📘 견적서</button>
+    <button id="docTabQuote" onclick="switchDocType('quote')" title="고객에게 보낼 견적서를 작성합니다" class="doc-tab active px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📘 견적서</button>
 
-    <button id="docTabOrder" onclick="return openFeatureWindow('order','발주서')" title="우리 회사가 발주(주문)할 때 쓰는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📙 발주서</button>
-    <button id="docTabStatement" onclick="return openFeatureWindow('statement','거래명세표')" title="물건을 납품한 뒤 금액을 정리해 보내는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📗 거래명세표</button>
-    <button id="docTabWorkorder" onclick="return openFeatureWindow('workorder','작업지시서')" title="현장 작업자가 볼 스케치·사진 도면과 작업 지시 내용을 만듭니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📝 작업지시서</button>
-    <button id="docTabWorkboard" onclick="return openFeatureWindow('workboard','작업현황')" title="접수 순서대로 모든 작업 주문을 한 표로 관리합니다 (날짜/상호/연락처/제품명/작업내용/수량/금액/운송/출고일/작업자/작업상태 등)" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">📋 작업현황판<span id="workboardBadge" class="ship-badge" style="display:none">0</span></button>
-    <button id="docTabHistory" onclick="return openFeatureWindow('history','작업이력')" title="지금까지 작성하고 저장한 견적서·발주서·거래명세표 목록을 확인합니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">🗂️ 거래내역<span id="receivableBadge" class="ship-badge" style="display:none">0</span></button>
-    <button id="docTabShipping" onclick="return openFeatureWindow('shipping','출고관리')" title="제작·배송 중인 제품의 진행 상황을 관리합니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">🚚 제품 진행중<span id="shipBadge" class="ship-badge" style="display:none">0</span></button>
-    <button id="docTabLedger" onclick="return openFeatureWindow('ledger','거래원장')" title="수입과 지출을 날짜별로 기록하는 간단한 가계부입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📒 가계부</button>
+    <button id="docTabOrder" onclick="switchDocType('order')" title="우리 회사가 발주(주문)할 때 쓰는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📙 발주서</button>
+    <button id="docTabStatement" onclick="switchDocType('statement')" title="물건을 납품한 뒤 금액을 정리해 보내는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📗 거래명세표</button>
+    <button id="docTabWorkorder" onclick="switchDocType('workorder')" title="현장 작업자가 볼 스케치·사진 도면과 작업 지시 내용을 만듭니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📝 작업지시서</button>
+    <button id="docTabWorkboard" onclick="switchDocType('workboard')" title="접수 순서대로 모든 작업 주문을 한 표로 관리합니다 (날짜/상호/연락처/제품명/작업내용/수량/금액/운송/출고일/작업자/작업상태 등)" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">📋 작업현황판<span id="workboardBadge" class="ship-badge" style="display:none">0</span></button>
+    <button id="docTabHistory" onclick="switchDocType('history')" title="지금까지 작성하고 저장한 견적서·발주서·거래명세표 목록을 확인합니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">🗂️ 거래내역<span id="receivableBadge" class="ship-badge" style="display:none">0</span></button>
+    <button id="docTabShipping" onclick="switchDocType('shipping')" title="제작·배송 중인 제품의 진행 상황을 관리합니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap" style="position:relative">🚚 제품 진행중<span id="shipBadge" class="ship-badge" style="display:none">0</span></button>
+    <button id="docTabLedger" onclick="switchDocType('ledger')" title="수입과 지출을 날짜별로 기록하는 간단한 가계부입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📒 가계부</button>
     <button id="docTabInventory" onclick="switchDocType('inventory')" title="만들어 둔 제품·자재의 재고를 관리합니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📦 재고</button>
     <button id="docTabContacts" onclick="switchDocType('contacts')" title="거래처와 담당자 연락처를 저장하고 검색합니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">👤 업체 관리</button>
   </div>
@@ -6417,18 +6369,18 @@ window.getLeBoardClient = function(){
   <div class="bg-white rounded-lg shadow-md p-4">
     <div class="flex justify-between items-center mb-2">
       <div class="text-xs font-bold text-gray-500">📊 <span id="dashMonthLabel"></span> 요약</div>
-      <button onclick="return openFeatureWindow('ledger','거래원장')" class="text-[11px] text-blue-600 hover:underline">가계부에서 자세히 보기 →</button>
+      <button onclick="switchDocType('ledger')" class="text-[11px] text-blue-600 hover:underline">가계부에서 자세히 보기 →</button>
     </div>
     <div class="grid grid-cols-2 md:grid-cols-4 gap-2">
-      <div class="p-3 rounded-lg border border-green-200 bg-green-50 cursor-pointer" onclick="return openFeatureWindow('ledger','거래원장')">
+      <div class="p-3 rounded-lg border border-green-200 bg-green-50 cursor-pointer" onclick="switchDocType('ledger')">
         <div class="text-[11px] text-green-700 font-semibold">💰 이번달 매출</div>
         <div id="dashIncome" class="text-lg font-black text-green-700">0원</div>
       </div>
-      <div class="p-3 rounded-lg border border-red-200 bg-red-50 cursor-pointer" onclick="return openFeatureWindow('ledger','거래원장')">
+      <div class="p-3 rounded-lg border border-red-200 bg-red-50 cursor-pointer" onclick="switchDocType('ledger')">
         <div class="text-[11px] text-red-600 font-semibold">💸 이번달 지출</div>
         <div id="dashExpense" class="text-lg font-black text-red-600">0원</div>
       </div>
-      <div class="p-3 rounded-lg border border-blue-200 bg-blue-50 cursor-pointer" onclick="return openFeatureWindow('ledger','거래원장')">
+      <div class="p-3 rounded-lg border border-blue-200 bg-blue-50 cursor-pointer" onclick="switchDocType('ledger')">
         <div class="text-[11px] text-blue-700 font-semibold">📈 이번달 순이익</div>
         <div id="dashNet" class="text-lg font-black text-blue-700">0원</div>
       </div>
