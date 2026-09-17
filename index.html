@@ -38538,6 +38538,7 @@ document.addEventListener('keydown',function(e){
   async function buildTickerItems(){
     var items = [];
 
+    // 🔥 인기 제품과 📢 광고는 항상(매번) 기본으로 표시됩니다.
     var top = getTopSellingProducts(5);
     if (top.length) {
       top.forEach(function(p, i){
@@ -38547,38 +38548,64 @@ document.addEventListener('keydown',function(e){
       items.push({ text: '🔥 인기제품: 재고 관리에서 "판매 처리"를 등록하면 자동으로 순위가 표시됩니다', url: null });
     }
 
-    var bizItems = await fetchRssItems('https://mss.go.kr/rss/smba/board/310.do', 5); // 중기부 사업공고
-    bizItems.forEach(function(it){ items.push({ text: '🏛 중기부 지원사업 · ' + it.title, url: it.link || null }); });
-    if (!bizItems.length) {
-      var newsItems2 = await fetchRssItems('https://mss.go.kr/rss/smba/board/86.do', 3); // 보도자료(대체)
-      newsItems2.forEach(function(it){ items.push({ text: '🏛 중기부 소식 · ' + it.title, url: it.link || null }); });
-    }
+    // 📰 뉴스/RSS/유튜브 등 "소식" 소스들은 매번 전부 다 불러오지 않고,
+    // 갱신할 때마다(10분마다) 이 중 하나를 무작위로 골라서 한 소스만 보여줍니다.
+    // (유튜브 한 번, 네이버 블로그 한 번, 경제 뉴스 한 번... 이렇게 돌아가며 랜덤 노출)
+    // 등록된 RSS가 여러 개면 그것들도 각각 하나의 소스로 취급되어 같은 방식으로 섞여 뽑힙니다.
+    var sources = [];
 
-    var newsItems = await fetchRssItems('https://news.google.com/rss/search?q=%EA%B2%BD%EC%A0%9C%20OR%20%EC%A6%9D%EC%8B%9C%20OR%20%EA%B8%88%EB%A6%AC%20OR%20%EA%B8%B0%EC%97%85&hl=ko&gl=KR&ceid=KR:ko', 8);
-    newsItems.forEach(function(it){ items.push({ text: '📈 경제 뉴스 · ' + it.title, url: it.link || null }); });
+    sources.push(async function(){
+      var bizItems = await fetchRssItems('https://mss.go.kr/rss/smba/board/310.do', 5); // 중기부 사업공고
+      if (!bizItems.length) {
+        var alt = await fetchRssItems('https://mss.go.kr/rss/smba/board/86.do', 3); // 보도자료(대체)
+        return alt.map(function(it){ return { text: '🏛 중기부 소식 · ' + it.title, url: it.link || null }; });
+      }
+      return bizItems.map(function(it){ return { text: '🏛 중기부 지원사업 · ' + it.title, url: it.link || null }; });
+    });
 
-    var companyItems = await fetchRssItems('https://news.google.com/rss/search?q=%22%EC%9D%B4%EC%A7%84%EC%A3%BC%EB%B0%A9%EC%82%B0%EC%97%85%22&hl=ko&gl=KR&ceid=KR:ko', 5); // "이진주방산업" 구글 뉴스 검색
-    companyItems.forEach(function(it){ items.push({ text: '🔎 이진주방산업 언급 · ' + it.title, url: it.link || null }); });
+    sources.push(async function(){
+      var newsItems = await fetchRssItems('https://news.google.com/rss/search?q=%EA%B2%BD%EC%A0%9C%20OR%20%EC%A6%9D%EC%8B%9C%20OR%20%EA%B8%88%EB%A6%AC%20OR%20%EA%B8%B0%EC%97%85&hl=ko&gl=KR&ceid=KR:ko', 8);
+      return newsItems.map(function(it){ return { text: '📈 경제 뉴스 · ' + it.title, url: it.link || null }; });
+    });
 
-    // 🔗 RSS 소식 관리에 등록된 목록 — 등록해 둔 RSS를 갱신마다(10분마다) "전부" 가져와서 보여줍니다.
-    // (예전에는 여러 개 중 하나만 무작위로 골랐었는데, 그러면 새로 추가한 RSS가 어쩌다 한 번씩만
-    // 나오는 것처럼 보이고 유튜브 등 항상 나오는 항목만 계속 보이는 것처럼 느껴질 수 있어서,
-    // "⚙️ 설정 → 🔗 RSS 소식 관리"에 등록해 둔 것은 모두 매번 반영되도록 바꿨습니다)
+    sources.push(async function(){
+      var companyItems = await fetchRssItems('https://news.google.com/rss/search?q=%22%EC%9D%B4%EC%A7%84%EC%A3%BC%EB%B0%A9%EC%82%B0%EC%97%85%22&hl=ko&gl=KR&ceid=KR:ko', 5); // "이진주방산업" 구글 뉴스 검색
+      return companyItems.map(function(it){ return { text: '🔎 이진주방산업 언급 · ' + it.title, url: it.link || null }; });
+    });
+
+    // 🔗 RSS 소식 관리에 등록된 목록 — 등록해 둔 RSS 하나하나가 위 뉴스 소스들과
+    // 똑같이 "하나의 소스"로 추가되어, 갱신마다 무작위 추첨에 함께 섞여 들어갑니다.
     try {
       var tickerRssList = (typeof loadTickerRssList === 'function') ? loadTickerRssList() : [];
-      for (var ri = 0; ri < tickerRssList.length; ri++) {
-        var oneRss = tickerRssList[ri];
-        if (!oneRss || !oneRss.url) continue;
-        var rssItems = await fetchRssItems(oneRss.url, 30);
-        var rssLabel = (oneRss.label && oneRss.label.trim()) ? oneRss.label.trim() : '소식';
-        rssItems.forEach(function(it){ items.push({ text: '📝 ' + rssLabel + ' · ' + it.title, url: it.link || null }); });
-      }
+      tickerRssList.forEach(function(oneRss){
+        if (!oneRss || !oneRss.url) return;
+        sources.push(async function(){
+          var rssItems = await fetchRssItems(oneRss.url, 30);
+          var rssLabel = (oneRss.label && oneRss.label.trim()) ? oneRss.label.trim() : '소식';
+          return rssItems.map(function(it){ return { text: '📝 ' + rssLabel + ' · ' + it.title, url: it.link || null }; });
+        });
+      });
     } catch(e) { /* 조용히 무시 */ }
 
-    var ytItems = await fetchYoutubeItems('이진주방산업', 5);
-    ytItems.forEach(function(it){ items.push({ text: '🎥 유튜브 · ' + it.title, url: it.link || null }); });
+    sources.push(async function(){
+      var ytItems = await fetchYoutubeItems('이진주방산업', 5);
+      return ytItems.map(function(it){ return { text: '🎥 유튜브 · ' + it.title, url: it.link || null }; });
+    });
 
-    // 📢 광고 설정에 등록된 문구가 있으면(광고 사용함 + 문구 입력됨) 자막 티커에도 함께 흘러가게 표시
+    // 무작위로 소스 하나를 골라 실행합니다. 결과가 비어 있으면(그날 유튜브 사용량 초과 등)
+    // 조용히 다른 소스를 한 번 더 무작위로 시도해서, 자막이 텅 비는 일을 줄입니다.
+    var order = sources.map(function(_, i){ return i; });
+    for (var s = order.length - 1; s > 0; s--) {
+      var j = Math.floor(Math.random() * (s + 1));
+      var tmp = order[s]; order[s] = order[j]; order[j] = tmp;
+    }
+    var picked = [];
+    for (var oi = 0; oi < order.length && picked.length === 0; oi++) {
+      try { picked = await sources[order[oi]](); } catch(e) { picked = []; }
+    }
+    picked.forEach(function(it){ items.push(it); });
+
+    // 📢 광고 설정에 등록된 문구가 있으면(광고 사용함 + 문구 입력됨) 자막 티커에도 항상 함께 표시
     try {
       var adInfo = (typeof loadAdSettings === 'function') ? loadAdSettings() : null;
       if (adInfo && adInfo.enabled && adInfo.text) {
