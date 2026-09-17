@@ -33910,6 +33910,7 @@ function saveAdSettings() {
   saveAdSettingsToStorage(s);
   if (typeof showToast === 'function') showToast('광고 설정이 저장되었습니다.');
   closeAdSettingsModal();
+  if (window.leRefreshNewsTicker) window.leRefreshNewsTicker(); // 하단 자막 티커에 바로 반영
 }
 function previewAdNow() {
   const chk = document.getElementById('adEnabledChk');
@@ -33990,8 +33991,9 @@ function saveTickerRssModal() {
     if (url) list.push({ label: label, url: url });
   });
   saveTickerRssListToStorage(list);
-  if (typeof showToast === 'function') showToast('RSS 소식 목록이 저장되었습니다. 다음 갱신(최대 10분 이내)부터 반영됩니다.');
+  if (typeof showToast === 'function') showToast('RSS 소식 목록이 저장되었습니다. 하단 자막 티커에 바로 반영됩니다.');
   closeTickerRssModal();
+  if (window.leRefreshNewsTicker) window.leRefreshNewsTicker(); // 기다리지 않고 즉시 갱신
 }
 function todayStr() {
   const d = new Date();
@@ -38586,6 +38588,9 @@ document.addEventListener('keydown',function(e){
       renderTicker(items);
     } catch(e) { /* 조용히 무시하고 다음 주기에 재시도 */ }
   }
+  // 광고 설정/RSS 소식 관리에서 저장하자마자 기다리지 않고 바로 반영되도록,
+  // 다른 곳(모달 저장 버튼 등)에서 호출할 수 있게 전역으로 노출해 둡니다.
+  window.leRefreshNewsTicker = refreshTicker;
 
   refreshTicker();
   setInterval(refreshTicker, 10 * 60 * 1000); // 10분마다 전체 갱신 (실시간 반영 + 외부 RSS 과호출 방지)
