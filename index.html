@@ -89,9 +89,11 @@
   .quote-title-ko{font-size:26px;font-weight:900;letter-spacing:6px}
   .quote-title-en{font-size:11px;opacity:.7;letter-spacing:2px;margin-top:2px}
   .quote-stamp{background:#fff;color:#dc2626;border:3px solid #dc2626;border-radius:50%;width:62px;height:62px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:900;letter-spacing:1px;transform:rotate(-15deg);flex-shrink:0}
-  .ceo-stamp-wrap{display:flex;align-items:center;gap:6px}
-  .ceo-stamp-wrap input{flex:1;min-width:0}
-  .stamp-inline{width:38px;height:38px;font-size:8px;flex-shrink:0}
+  .ceo-stamp-wrap{display:flex;align-items:center;gap:6px;position:relative}
+  .ceo-stamp-wrap input{flex:1;min-width:0;padding-right:42px}
+  /* 도장 크기를 키워도 주변 레이아웃(입력칸 줄 높이 등)이 함께 늘어나 화면이 깨지지 않도록,
+     도장 이미지는 항상 절대 위치로 띄워서 표시합니다 (자리만 차지하지 않고 겹쳐서 보임). */
+  .stamp-inline{position:absolute;right:2px;top:50%;transform:translateY(-50%);width:38px;height:38px;font-size:8px;pointer-events:none;z-index:2}
   img.stamp-inline{border-radius:50%}
   /* 도장 드래그 이동 */
   .doc-stamp-drag{position:absolute;cursor:grab;touch-action:none;z-index:40;user-select:none;-webkit-user-select:none}
@@ -6706,9 +6708,14 @@ window.getLeBoardClient = function(){
               </div>
               <div>
                 <div class="quote-label">직인(도장)</div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <input type="file" id="q_stamp_file" accept="image/*" class="text-[10px]" onchange="uploadQuoteImage(this,'stamp')">
                   <button onclick="removeQuoteImage('stamp','q')" class="text-[10px] text-red-500 hover:underline">삭제</button>
+                </div>
+                <div class="flex items-center gap-1 mt-1" title="도장 위치는 대표자 칸 옆에 고정되며, 크기만 조절할 수 있습니다">
+                  <span class="text-[10px] text-gray-500">크기</span>
+                  <input type="range" id="q_stamp_size" min="20" max="70" step="1" value="38" oninput="setStampSize(this.value)" style="width:90px;vertical-align:middle">
+                  <span class="text-[10px] text-gray-500" id="q_stamp_size_lbl">38px</span>
                 </div>
               </div>
             </div>
@@ -7053,9 +7060,14 @@ window.getLeBoardClient = function(){
               </div>
               <div>
                 <div class="quote-label">직인(도장)</div>
-                <div class="flex items-center gap-2">
+                <div class="flex items-center gap-2 flex-wrap">
                   <input type="file" id="o_stamp_file" accept="image/*" class="text-[10px]" onchange="uploadQuoteImage(this,'stamp')">
                   <button onclick="removeQuoteImage('stamp','o')" class="text-[10px] text-red-500 hover:underline">삭제</button>
+                </div>
+                <div class="flex items-center gap-1 mt-1" title="도장 위치는 대표자 칸 옆에 고정되며, 크기만 조절할 수 있습니다">
+                  <span class="text-[10px] text-gray-500">크기</span>
+                  <input type="range" id="o_stamp_size" min="20" max="70" step="1" value="38" oninput="setStampSize(this.value)" style="width:90px;vertical-align:middle">
+                  <span class="text-[10px] text-gray-500" id="o_stamp_size_lbl">38px</span>
                 </div>
               </div>
             </div>
@@ -22847,7 +22859,6 @@ function renderQuoteTable() {
     initRowDragHandle(tr.querySelector('.row-drag-handle'), 'q');
   });
   updateQuoteTotals();
-  if (typeof renderStampDragLayer === 'function') renderStampDragLayer('q');
 }
 function updateQuoteAmount(i) {
   const r = quoteRows[i];
@@ -23064,7 +23075,6 @@ function renderOrderTable() {
     initRowDragHandle(tr.querySelector('.row-drag-handle'), 'o');
   });
   updateOrderTotals();
-  if (typeof renderStampDragLayer === 'function') renderStampDragLayer('o');
 }
 function updateOrderAmount(i) {
   const r = orderRows[i];
@@ -23151,7 +23161,6 @@ function renderStatementTable() {
     initRowDragHandle(tr.querySelector('.row-drag-handle'), 's');
   });
   updateStatementTotals();
-  if (typeof renderStampDragLayer === 'function') renderStampDragLayer('s');
 }
 function updateStatementRowAmount(i) {
   const r = statementRows[i];
@@ -26427,6 +26436,30 @@ function delNotePreset(prefix) {
 // ════════════════════════════════════════
 const K_LOGO  = 'QUOTE_LOGO_V1';
 const K_STAMP = 'QUOTE_STAMP_V1';
+const K_STAMP_SIZE = 'QUOTE_STAMP_SIZE_V1'; // 도장 크기(px) — 위치는 고정, 크기만 조절 가능
+const STAMP_SIZE_DEFAULT = 38, STAMP_SIZE_MIN2 = 20, STAMP_SIZE_MAX2 = 70;
+function getStampSize() {
+  const v = parseInt(localStorage.getItem(K_STAMP_SIZE), 10);
+  return (v && v >= STAMP_SIZE_MIN2 && v <= STAMP_SIZE_MAX2) ? v : STAMP_SIZE_DEFAULT;
+}
+// 도장 크기 입력칸(견적서/발주서 등 여러 탭)의 표시값을 서로 동기화합니다.
+function syncStampSizeInputs(size) {
+  ['q_stamp_size','o_stamp_size'].forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.value = size;
+    const lbl = document.getElementById(id+'_lbl');
+    if(lbl) lbl.textContent = size + 'px';
+  });
+}
+// 도장 "크기"만 조절합니다 (위치는 항상 대표자 입력칸 옆에 고정).
+function setStampSize(px) {
+  const size = Math.max(STAMP_SIZE_MIN2, Math.min(STAMP_SIZE_MAX2, parseInt(px, 10) || STAMP_SIZE_DEFAULT));
+  localStorage.setItem(K_STAMP_SIZE, String(size));
+  syncStampSizeInputs(size);
+  applyQuoteImages();
+  scheduleFolderSync();
+  showToast('도장 크기가 저장되었습니다.');
+}
 
 function uploadQuoteImage(inputEl, kind) {
   const file = inputEl.files[0];
@@ -26466,6 +26499,7 @@ function linkQuoteImageToSelectedSupplier(inputIdOrPrefix, kind, dataUrl) {
 function applyQuoteImages() {
   const logo  = localStorage.getItem(K_LOGO);
   const stamp = localStorage.getItem(K_STAMP);
+  syncStampSizeInputs(getStampSize());
   ['q','o','s'].forEach(prefix => {
     const logoImg  = document.getElementById(prefix+'_logo_img');
     if(logoImg){
@@ -26475,6 +26509,9 @@ function applyQuoteImages() {
     // 항상 고정되어 표시됩니다 (움직이지 않음). 예전의 드래그 가능한 도장 레이어는 더 이상 사용하지 않습니다.
     const fixedImg = document.getElementById(prefix+'_stamp_fixed_img');
     if(fixedImg){
+      const sz = getStampSize();
+      fixedImg.style.width = sz + 'px';
+      fixedImg.style.height = sz + 'px';
       if(stamp){ fixedImg.src = stamp; fixedImg.classList.remove('hidden'); }
       else { fixedImg.classList.add('hidden'); fixedImg.src = ''; }
     }
@@ -26824,13 +26861,6 @@ function switchDocType(type) {
     if(sec) sec.style.display = (t === type) ? 'block' : 'none';
     if(tab) tab.classList.toggle('active', t === type);
   });
-  // 🆕 견적서/발주서/거래명세표 탭이 화면에 보이게 된 시점에 도장 위치를 다시 계산.
-  // (숨겨진 탭 상태에서는 크기를 잴 수 없어 "대표자 옆" 기본 위치를 정확히 잡지 못하므로,
-  //  실제로 화면에 나타났을 때 한 번 더 맞춰준다)
-  if(type === 'quote' || type === 'order' || type === 'statement'){
-    const p = type === 'order' ? 'o' : (type === 'statement' ? 's' : 'q');
-    renderStampDragLayer(p);
-  }
   const priceArea = document.getElementById('priceSettingsArea');
   if (priceArea) priceArea.style.display = (type === 'quote' || type === 'order' || type === 'statement') ? '' : 'none';
   if (type === 'history') renderHistoryTable();
@@ -28091,7 +28121,16 @@ function buildClassicDocHTML(type) {
     : '';
 
   // 등록번호/상호/성명/주소/업태·종목을 담은 표(공급자·공급받는자 공용) — 거래명세표에서 사용
-  const partyTableHtml = (label, p) => ''
+  // 🆕 도장 위치 고정: 더 이상 화면 곳곳을 떠다니는 절대좌표 오버레이를 쓰지 않고,
+  // "성명(대표자)" 칸 바로 뒤에 항상 붙는 고정 자리로 도장을 넣는다. 인쇄/PDF저장/서식복사
+  // 모두 이 함수(buildClassicDocHTML)를 그대로 재사용하므로 여기 한 곳만 고치면 셋 다 해결된다.
+  const stampImgSrc = localStorage.getItem(K_STAMP);
+  const stampPrintSize = getStampSize();
+  const stampInlineHtml = stampImgSrc
+    ? '<img src="' + stampImgSrc + '" alt="도장" style="width:' + stampPrintSize + 'px;height:' + stampPrintSize + 'px;object-fit:contain;vertical-align:middle;margin-left:6px">'
+    : '';
+
+  const partyTableHtml = (label, p, stampHtml) => ''
     + '<table style="width:100%;border-collapse:collapse;font-size:11px">'
       + '<tr>'
         + '<td rowspan="4" style="border:1px solid #333;background:#f3f4f6;width:20px;text-align:center;font-weight:700;writing-mode:vertical-rl;letter-spacing:2px">' + label + '</td>'
@@ -28102,7 +28141,7 @@ function buildClassicDocHTML(type) {
         + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc">상호(법인명)</td>'
         + '<td style="border:1px solid #333;padding:4px 6px">' + esc(p.name) + '</td>'
         + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc;width:44px">성명</td>'
-        + '<td style="border:1px solid #333;padding:4px 6px">' + esc(p.ceo) + '</td>'
+        + '<td style="border:1px solid #333;padding:4px 6px">' + esc(p.ceo) + (stampHtml || '') + '</td>'
       + '</tr>'
       + '<tr>'
         + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc">사업장주소</td>'
@@ -28122,7 +28161,7 @@ function buildClassicDocHTML(type) {
     ? (''
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;margin-bottom:14px">'
         + '<div style="width:49%">' + partyTableHtml('공급받는자', { reg: toClient.reg, name: toNameVal, ceo: toClient.ceo, addr: toClient.addr, biz: toClient.biz, item: toClient.item }) + '</div>'
-        + '<div style="width:49%">' + partyTableHtml('공급자', sup) + '</div>'
+        + '<div style="width:49%">' + partyTableHtml('공급자', sup, stampInlineHtml) + '</div>'
       + '</div>')
     : (''
       + '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:14px">'
@@ -28144,7 +28183,7 @@ function buildClassicDocHTML(type) {
             + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc">상호(법인명)</td>'
             + '<td style="border:1px solid #333;padding:4px 6px">' + esc(sup.name) + '</td>'
             + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc;width:44px">성명</td>'
-            + '<td style="border:1px solid #333;padding:4px 6px">' + esc(sup.ceo) + '</td>'
+            + '<td style="border:1px solid #333;padding:4px 6px">' + esc(sup.ceo) + stampInlineHtml + '</td>'
           + '</tr>'
           + '<tr>'
             + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc">사업장주소</td>'
@@ -28163,34 +28202,8 @@ function buildClassicDocHTML(type) {
         + '</table>'
       + '</div>');
 
-  const stampPrefix = type === 'order' ? 'o' : (type === 'statement' ? 's' : 'q');
-  const stampImgSrc = localStorage.getItem(K_STAMP);
-  let stampOverlayHtml = '';
-  if (stampImgSrc) {
-    const sp = loadStampPos(stampPrefix);
-    // 🛠 변경: top(%) 대신 bottom(px)으로 앵커링 — 품목 행이 늘어도(빈 행 추가 등)
-    // 문서 하단(서명란) 기준 위치가 유지되어 도장이 아래로 밀려 내려가지 않음
-    // 🛠 버그 수정: 화면에서는 도장이 "위쪽 기준(top-anchor)"으로 저장될 수 있는데(예: 아직 한 번도
-    // 옮기지 않아 대표자 칸 옆에 놓인 기본 위치), 인쇄/PDF에서는 항상 bottom(px)만 사용하고 있어서
-    // sp.yBottom이 없는 경우 위치가 깨져 화면과 다른 곳(문서 맨 위 등)에 찍혔습니다.
-    // 화면(renderStampDragLayer)과 동일하게 anchor에 따라 top/bottom을 분기하도록 수정.
-    const stampPosStyle = (sp.anchor === 'top')
-      ? ('top:' + sp.yTop + 'px;bottom:auto;transform:translate(-50%,-50%)')
-      : ('top:auto;bottom:' + sp.yBottom + 'px;transform:translate(-50%,50%)');
-    // 🆕 data-* 속성에 "화면에서 이 위치를 저장할 당시의 문서 높이"와 원본 좌표를 함께 실어 보냅니다.
-    // 인쇄창은 화면과 글꼴·여백·표 스타일이 달라 문서 전체 높이가 다르므로, 이 정보를 이용해
-    // 인쇄창 자신의 실제 렌더링 높이를 측정한 뒤 그 비율만큼 도장 위치를 다시 계산합니다(아래 stampFixScript).
-    stampOverlayHtml = '<img id="printStampImg" src="' + stampImgSrc + '" '
-      + 'data-anchor="' + sp.anchor + '" '
-      + 'data-y="' + (sp.anchor === 'top' ? sp.yTop : sp.yBottom) + '" '
-      + 'data-container-h="' + (sp.containerH || 0) + '" '
-      + 'data-ref-h="' + (sp.refH || 0) + '" '
-      + 'style="position:absolute;left:' + sp.x + '%;' + stampPosStyle + ';width:' + sp.size + 'px;height:' + sp.size + 'px;object-fit:contain">';
-  }
-
   return ''
     + '<div class="classic-doc" style="position:relative;width:100%;max-width:800px;margin:0 auto;background:#fff;color:#111;font-family:\'Malgun Gothic\',dotum,sans-serif;padding:28px;border:1px solid #333;box-sizing:border-box">'
-    + stampOverlayHtml
     + '<div style="font-size:12px;margin-bottom:6px">No. <span style="border-bottom:1px solid #333;padding:0 6px">' + (esc(numVal) || '&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;') + '</span></div>'
     + '<div style="text-align:center;font-size:30px;font-weight:700;letter-spacing:20px;margin:6px 0 18px">' + title + '</div>'
     + (type === 'statement' ? ('<div style="font-size:12px;margin-bottom:8px">' + esc(dateVal) + '</div>') : '')
@@ -28293,49 +28306,17 @@ function printDoc(type) {
   // 품목 개수와 상관없이 항상 안정적인 보정 비율이 나와 도장이 제자리에 유지됩니다.
   // (표를 찾을 수 없거나 예전에 저장된 위치라 이 값이 없는 경우에만, 예전 방식(문서 전체 높이 비율)으로
   //  대체 동작합니다.)
-  const stampFixScript = ''
-    + '<script>'
-    + 'window.addEventListener("load",function(){'
-    + '  try{'
-    + '    var img = document.getElementById("printStampImg");'
-    + '    var doc = document.querySelector(".classic-doc");'
-    + '    if(img && doc){'
-    + '      var y = parseFloat(img.getAttribute("data-y"))||0;'
-    + '      var anchor = img.getAttribute("data-anchor");'
-    + '      var docRect = doc.getBoundingClientRect();'
-    + '      var table = document.getElementById("printItemTable");'
-    + '      var savedRefH = parseFloat(img.getAttribute("data-ref-h"))||0;'
-    + '      var scale = 0;'
-    + '      if(table && savedRefH>0){'
-    + '        var tRect = table.getBoundingClientRect();'
-    + '        var curRefH = (anchor==="top") ? (tRect.top - docRect.top) : (docRect.bottom - tRect.bottom);'
-    + '        if(curRefH>0) scale = curRefH/savedRefH;'
-    + '      }'
-    + '      if(!scale){'
-    + '        var savedH = parseFloat(img.getAttribute("data-container-h"))||0;'
-    + '        var curH = docRect.height;'
-    + '        if(savedH>0 && curH>0) scale = curH/savedH;'
-    + '      }'
-    + '      if(scale>0){'
-    + '        scale = Math.max(0.3, Math.min(3, scale));'
-    + '        var y2 = Math.round(y*scale);'
-    + '        if(anchor==="top"){ img.style.top = y2+"px"; img.style.bottom="auto"; }'
-    + '        else { img.style.bottom = y2+"px"; img.style.top="auto"; }'
-    + '      }'
-    + '    }'
-    + '  }catch(e){}'
-    + '});'
-    + '<\/script>';
-
-  // 인쇄창 스스로가 로드되자마자 인쇄 대화상자를 띄우도록 함(창을 연 원래 페이지가 아니라
+  // 도장은 이제 "성명(대표자)" 칸 바로 뒤에 표(table) 셀의 일반 콘텐츠로 들어가 있어서
+  // (buildClassicDocHTML/partyTableHtml 참고), 인쇄창에서 별도로 좌표를 다시 계산해 옥겨줄
+  // 필요가 없습니다. 그래서 예전에 있던 위치 보정 스크립트(stampFixScript)는 완전히 제거했습니다.
+  // 인쇄창 스스로가 로드되자마자 인쇄 대화상자를 띄우도록 함(창을 열 원래 페이지가 아니라
   // 창 자기 자신이 호출해야, 브라우저가 "사용자와 직접 연결된 동작"으로 더 안정적으로 인식함).
-  // 도장 위치 보정(stampFixScript)이 먼저 반영된 뒤에 인쇄 대화상자가 뜨도록 지연시간을 살짝 더 둡니다.
   const autoPrintScript =
     '<script>window.addEventListener("load",function(){ setTimeout(function(){ try{ window.print(); }catch(e){} }, 300); });<\/script>';
 
   const bodyWrap = '<div style="padding:16px 0">' + docHtml + '</div>';
   const printFileName = getDocPrintFileName(type);
-  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>' + escQ(printFileName) + '</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyWrap + stampFixScript + autoPrintScript + shareBar.script + '</body></html>';
+  const fullHTML = '<!DOCTYPE html><html lang="ko"><head><meta charset="UTF-8"><title>' + escQ(printFileName) + '</title><style>' + styles + '</style></head><body>' + printBtnBar + bodyWrap + autoPrintScript + shareBar.script + '</body></html>';
   const blob = new Blob([fullHTML], {type:'text/html;charset=utf-8'});
   const url  = URL.createObjectURL(blob);
   const win  = window.open(url, '_blank');
@@ -34683,6 +34664,7 @@ function buildBackupObject() {
     cloudBackupLinks: localStorage.getItem(K_CLOUD_LINKS),
     logo: localStorage.getItem(K_LOGO),
     stamp: localStorage.getItem(K_STAMP),
+    stampSize: localStorage.getItem(K_STAMP_SIZE),
     draftRows: localStorage.getItem(K_DRAFT_ROWS),
     draftFields: localStorage.getItem(K_DRAFT_FIELDS),
     history: localStorage.getItem(K_HISTORY),
@@ -34795,6 +34777,7 @@ function applyBackupObjectToStorage(backup) {
   // (예전 백업 파일이나 도장 저장 전에 만든 백업을 불러오면 도장이 사라지던 원인이었음)
   if (backup.logo) localStorage.setItem(K_LOGO, backup.logo);
   if (backup.stamp) localStorage.setItem(K_STAMP, backup.stamp);
+  if (backup.stampSize) localStorage.setItem(K_STAMP_SIZE, backup.stampSize);
 }
 
 // 사용자가 저장 위치(폴더)를 지정 — 이후에는 이 폴더 안의 정해진 파일 1개에만 덮어씀.
