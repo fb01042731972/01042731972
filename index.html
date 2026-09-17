@@ -38610,8 +38610,8 @@ document.addEventListener('keydown',function(e){
     track.style.animation = 'none';
     void track.offsetWidth; // 강제 리플로우
     var halfWidth = track.scrollWidth / 2;
-    var pxPerSecond = 70;
-    var duration = Math.max(18, halfWidth / pxPerSecond);
+    var pxPerSecond = 40; // 숫자가 작을수록 더 천천히 흘러갑니다 (기존 70 → 40으로 늦춤)
+    var duration = Math.max(25, halfWidth / pxPerSecond);
     track.style.animation = 'leTickerScroll ' + duration + 's linear infinite';
   }
 
