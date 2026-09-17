@@ -38451,11 +38451,16 @@ document.addEventListener('keydown',function(e){
      - 🎥 유튜브: YouTube Data API v3로 "이진주방산업" 검색한 최신 영상 제목
        (이 API 키는 fb01042731972.github.io 에서만 쓰이도록 제한되어 있고,
        구글이 정한 무료 하루 사용량을 넘기면 그날은 조용히 건너뛰고 다음날 자동 재개됩니다)
+     - 🚀 실시간 검색어: 구글 트렌드의 대한민국 일별 인기 급상승 검색어 공개 RSS
+       (API 키/로그인 불필요, 완전 무료 — 네이버 실시간 검색어는 2021년 서비스 종료로
+       더 이상 제공되지 않아 구글 트렌드로 대체)
      - 📢 광고: "📢 광고 설정"에서 등록한 광고 문구가 있으면(광고 사용함 체크 +
        문구 입력) 이 자막 티커에도 함께 흘러가며 표시됩니다
+     - 뉴스/RSS/유튜브/실시간 검색어 등 "소식" 소스는 매 갱신(10분마다)마다 이 중
+       하나를 무작위로 골라서 한 소스만 보여줍니다(인기제품·광고는 항상 표시).
      - 외부 RSS는 무료 rss2json.com 변환 서비스를 거쳐 가져오며, 사용량이
        많으면 일시적으로 응답이 늦거나 비어올 수 있어 실패 시 조용히 건너뜁니다.
-     - 티커 전체는 10분마다 자동으로 모든 소스를 다시 불러와 갱신됩니다.
+     - 티커 전체는 10분마다 자동으로 갱신되며, 그때마다 소스를 다시 무작위로 고릅니다.
      - 🔗 원본 링크가 있는 항목(뉴스/블로그/유튜브 등)은 밑줄이 표시되며, 클릭하면
        그 글의 원본 주소가 새 창(새 탭)으로 열립니다. (인기제품·광고 문구처럼
        링크가 없는 항목은 클릭해도 아무 반응이 없습니다)
@@ -38535,6 +38540,10 @@ document.addEventListener('keydown',function(e){
     return [];
   }
 
+  // 직전 회차에 어떤 뉴스 소스가 뽑혔는지 기억해서, 같은 소스가 연속으로 또 뽑히는 걸
+  // 최대한 피합니다(가능한 다른 소스가 있으면 그걸 먼저 시도). 새로고침하면 초기화됩니다.
+  var lastTickerSourceKey = null;
+
   async function buildTickerItems(){
     var items = [];
 
@@ -38552,26 +38561,27 @@ document.addEventListener('keydown',function(e){
     // 갱신할 때마다(10분마다) 이 중 하나를 무작위로 골라서 한 소스만 보여줍니다.
     // (유튜브 한 번, 네이버 블로그 한 번, 경제 뉴스 한 번... 이렇게 돌아가며 랜덤 노출)
     // 등록된 RSS가 여러 개면 그것들도 각각 하나의 소스로 취급되어 같은 방식으로 섞여 뽑힙니다.
+    // 각 소스에는 key를 붙여서, 매번 같은 소스만 반복해서 뽑히는지 확인/방지할 수 있게 합니다.
     var sources = [];
 
-    sources.push(async function(){
+    sources.push({ key: 'biz', run: async function(){
       var bizItems = await fetchRssItems('https://mss.go.kr/rss/smba/board/310.do', 5); // 중기부 사업공고
       if (!bizItems.length) {
         var alt = await fetchRssItems('https://mss.go.kr/rss/smba/board/86.do', 3); // 보도자료(대체)
         return alt.map(function(it){ return { text: '🏛 중기부 소식 · ' + it.title, url: it.link || null }; });
       }
       return bizItems.map(function(it){ return { text: '🏛 중기부 지원사업 · ' + it.title, url: it.link || null }; });
-    });
+    }});
 
-    sources.push(async function(){
+    sources.push({ key: 'economic', run: async function(){
       var newsItems = await fetchRssItems('https://news.google.com/rss/search?q=%EA%B2%BD%EC%A0%9C%20OR%20%EC%A6%9D%EC%8B%9C%20OR%20%EA%B8%88%EB%A6%AC%20OR%20%EA%B8%B0%EC%97%85&hl=ko&gl=KR&ceid=KR:ko', 8);
       return newsItems.map(function(it){ return { text: '📈 경제 뉴스 · ' + it.title, url: it.link || null }; });
-    });
+    }});
 
-    sources.push(async function(){
+    sources.push({ key: 'company', run: async function(){
       var companyItems = await fetchRssItems('https://news.google.com/rss/search?q=%22%EC%9D%B4%EC%A7%84%EC%A3%BC%EB%B0%A9%EC%82%B0%EC%97%85%22&hl=ko&gl=KR&ceid=KR:ko', 5); // "이진주방산업" 구글 뉴스 검색
       return companyItems.map(function(it){ return { text: '🔎 이진주방산업 언급 · ' + it.title, url: it.link || null }; });
-    });
+    }});
 
     // 🔗 RSS 소식 관리에 등록된 목록 — 등록해 둔 RSS 하나하나가 위 뉴스 소스들과
     // 똑같이 "하나의 소스"로 추가되어, 갱신마다 무작위 추첨에 함께 섞여 들어갑니다.
@@ -38579,33 +38589,51 @@ document.addEventListener('keydown',function(e){
       var tickerRssList = (typeof loadTickerRssList === 'function') ? loadTickerRssList() : [];
       tickerRssList.forEach(function(oneRss){
         if (!oneRss || !oneRss.url) return;
-        sources.push(async function(){
+        sources.push({ key: 'rss:' + oneRss.url, run: async function(){
           var rssItems = await fetchRssItems(oneRss.url, 30);
           var rssLabel = (oneRss.label && oneRss.label.trim()) ? oneRss.label.trim() : '소식';
           return rssItems.map(function(it){ return { text: '📝 ' + rssLabel + ' · ' + it.title, url: it.link || null }; });
-        });
+        }});
       });
     } catch(e) { /* 조용히 무시 */ }
 
-    sources.push(async function(){
+    sources.push({ key: 'youtube', run: async function(){
       var ytItems = await fetchYoutubeItems('이진주방산업', 5);
       return ytItems.map(function(it){ return { text: '🎥 유튜브 · ' + it.title, url: it.link || null }; });
-    });
+    }});
 
-    // 무작위로 소스 하나를 골라 실행합니다. 결과가 비어 있으면(그날 유튜브 사용량 초과 등)
-    // 조용히 다른 소스를 한 번 더 무작위로 시도해서, 자막이 텅 비는 일을 줄입니다.
+    // 🚀 실시간(일별) 인기 검색어 — 구글 트렌드가 공개로 제공하는 대한민국 RSS 피드로,
+    // API 키나 로그인 없이 무료로 가져올 수 있습니다. (네이버 실시간 검색어는 2021년에
+    // 서비스가 종료되어 더 이상 공식적으로 가져올 방법이 없습니다)
+    sources.push({ key: 'trend_kr', run: async function(){
+      var trendItems = await fetchRssItems('https://trends.google.com/trends/trendingsearches/daily/rss?geo=KR', 10);
+      return trendItems.map(function(it, i){ return { text: '🚀 실시간 검색어 ' + (i+1) + '위 · ' + it.title, url: it.link || null }; });
+    }});
+
+    // 순서를 무작위로 섞은 뒤, "직전 회차와 다른 소스"부터 먼저 시도합니다.
+    // (다른 소스는 전부 비어 있는 등 정말 어쩔 수 없을 때만 직전과 같은 소스를 다시 허용)
     var order = sources.map(function(_, i){ return i; });
     for (var s = order.length - 1; s > 0; s--) {
       var j = Math.floor(Math.random() * (s + 1));
       var tmp = order[s]; order[s] = order[j]; order[j] = tmp;
     }
+    var tryOrder = order.filter(function(i){ return sources[i].key !== lastTickerSourceKey; })
+      .concat(order.filter(function(i){ return sources[i].key === lastTickerSourceKey; }));
+
     var picked = [];
-    for (var oi = 0; oi < order.length && picked.length === 0; oi++) {
-      try { picked = await sources[order[oi]](); } catch(e) { picked = []; }
+    var pickedKey = null;
+    for (var oi = 0; oi < tryOrder.length && picked.length === 0; oi++) {
+      var cand = sources[tryOrder[oi]];
+      try { picked = await cand.run(); } catch(e) { picked = []; }
+      if (picked.length) pickedKey = cand.key;
     }
+    if (pickedKey) lastTickerSourceKey = pickedKey;
+    // 콘솔에서 F12 → Console 탭을 열어두면, 매 갱신마다 실제로 어떤 소스가 뽑혔는지 확인할 수 있습니다.
+    console.log('[자막 티커] 이번 회차 뉴스 소스: ' + (pickedKey || '(모든 소스가 비어 있음)') + ' / 항목 ' + picked.length + '개');
     picked.forEach(function(it){ items.push(it); });
 
     // 📢 광고 설정에 등록된 문구가 있으면(광고 사용함 + 문구 입력됨) 자막 티커에도 항상 함께 표시
+    // (이 항목은 설정에서 직접 입력한 고정 문구라서, 매번 같은 문구가 그대로 나오는 게 정상입니다)
     try {
       var adInfo = (typeof loadAdSettings === 'function') ? loadAdSettings() : null;
       if (adInfo && adInfo.enabled && adInfo.text) {
