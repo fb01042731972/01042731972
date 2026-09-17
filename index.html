@@ -38078,7 +38078,7 @@ document.addEventListener('keydown',function(e){
 
   function ensureSeasonSb(cb){
     if (window.supabase && window.supabase.createClient) {
-      if (!seasonSbClient) seasonSbClient = window.getLeMainClient();
+      if (!seasonSbClient) seasonSbClient = window.getLeBoardClient();
       cb();
       return;
     }
@@ -38087,7 +38087,7 @@ document.addEventListener('keydown',function(e){
     var s = document.createElement('script');
     s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
     s.setAttribute('data-le-season-sb', '1');
-    s.onload = function(){ seasonSbClient = window.getLeMainClient(); cb(); };
+    s.onload = function(){ seasonSbClient = window.getLeBoardClient(); cb(); };
     document.head.appendChild(s);
   }
 
@@ -38341,6 +38341,119 @@ document.addEventListener('keydown',function(e){
   });
 
   window.addEventListener('load', loadCurrentTheme);
+})();
+</script>
+
+<!-- ══════════════════════════════════════════════════════════════
+     📰 실시간 자막 뉴스 티커 (화면 하단 고정)
+     - 🔥 우리 회사 인기 제품: 이 브라우저의 "재고 관리 → 판매처리" 기록에서
+       가장 많이 판매된 제품을 자동 집계 (이 기기에 저장된 데이터 기준)
+     - 🏛 중소기업 지원사업 소식: 중소벤처기업부 공식 RSS(사업공고/보도자료)
+     - 📰 실시간 뉴스: 구글 뉴스 한국 헤드라인 RSS
+     - 외부 RSS는 무료 rss2json.com 변환 서비스를 거쳐 가져오며, 사용량이
+       많으면 일시적으로 응답이 늦거나 비어올 수 있어 실패 시 조용히 건너뜁니다.
+     ══════════════════════════════════════════════════════════════ -->
+<div id="leNewsTicker" style="position:fixed;left:0;right:0;bottom:0;height:34px;background:#0f172a;color:#f8fafc;z-index:9996;overflow:hidden;display:flex;align-items:center;box-shadow:0 -2px 10px rgba(0,0,0,.25);">
+  <span style="flex:none;background:#dc2626;color:#fff;font-size:11px;font-weight:800;padding:4px 10px;height:100%;display:flex;align-items:center;">🔴 LIVE</span>
+  <div style="flex:1;overflow:hidden;position:relative;height:100%;">
+    <div id="leNewsTickerTrack" style="position:absolute;top:0;left:0;height:100%;display:flex;align-items:center;white-space:nowrap;font-size:13px;font-weight:600;">불러오는 중...</div>
+  </div>
+  <button id="leNewsTickerClose" title="자막 뉴스 잠시 닫기" style="flex:none;background:transparent;color:#94a3b8;border:none;font-size:14px;padding:0 10px;height:100%;cursor:pointer;">✕</button>
+</div>
+<style>
+@keyframes leTickerScroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+</style>
+
+<script>
+(function(){
+  var wrap = document.getElementById('leNewsTicker');
+  var track = document.getElementById('leNewsTickerTrack');
+  var closeBtn = document.getElementById('leNewsTickerClose');
+  if (!wrap || !track) return;
+
+  // 티커가 화면 하단에 생기므로, 왼쪽 하단 "배경 테마" 버튼이 겹치지 않도록 위로 띄웁니다.
+  var seasonBtn = document.getElementById('leSeasonBgBtn');
+  if (seasonBtn) seasonBtn.style.bottom = '52px';
+
+  closeBtn.addEventListener('click', function(){
+    wrap.style.display = 'none';
+    if (seasonBtn) seasonBtn.style.bottom = '14px';
+  });
+
+  function getTopSellingProducts(limit){
+    var list = (typeof loadInventory === 'function') ? loadInventory() : [];
+    var map = {};
+    list.filter(function(it){ return it && it.status === 'sold'; }).forEach(function(it){
+      var key = (it.name || '제품').trim();
+      if (!map[key]) map[key] = { name: key, count: 0, amount: 0 };
+      map[key].count += 1;
+      map[key].amount += (it.soldAmount || 0);
+    });
+    return Object.keys(map).map(function(k){ return map[k]; })
+      .sort(function(a,b){ return (b.count - a.count) || (b.amount - a.amount); })
+      .slice(0, limit || 5);
+  }
+
+  function fmtWon(n){ return (n||0).toLocaleString('ko-KR') + '원'; }
+
+  async function fetchRssTitles(rssUrl, limit){
+    try {
+      var res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=' + encodeURIComponent(rssUrl) + '&count=' + (limit || 8));
+      var data = await res.json();
+      if (data && data.status === 'ok' && Array.isArray(data.items)) {
+        return data.items.slice(0, limit || 8).map(function(it){ return (it.title || '').trim(); }).filter(Boolean);
+      }
+    } catch(e) { /* 실패 시 조용히 건너뜀 */ }
+    return [];
+  }
+
+  async function buildTickerItems(){
+    var items = [];
+
+    var top = getTopSellingProducts(5);
+    if (top.length) {
+      top.forEach(function(p, i){
+        items.push('🔥 인기제품 ' + (i+1) + '위 · ' + p.name + ' (' + p.count + '건 판매' + (p.amount ? ', 누적 ' + fmtWon(p.amount) : '') + ')');
+      });
+    } else {
+      items.push('🔥 인기제품: 재고 관리에서 "판매 처리"를 등록하면 자동으로 순위가 표시됩니다');
+    }
+
+    var bizTitles = await fetchRssTitles('https://mss.go.kr/rss/smba/board/310.do', 5); // 중기부 사업공고
+    bizTitles.forEach(function(t){ items.push('🏛 중기부 지원사업 · ' + t); });
+    if (!bizTitles.length) {
+      var newsTitles2 = await fetchRssTitles('https://mss.go.kr/rss/smba/board/86.do', 3); // 보도자료(대체)
+      newsTitles2.forEach(function(t){ items.push('🏛 중기부 소식 · ' + t); });
+    }
+
+    var newsTitles = await fetchRssTitles('https://news.google.com/rss?hl=ko&gl=KR&ceid=KR:ko', 8);
+    newsTitles.forEach(function(t){ items.push('📰 실시간 뉴스 · ' + t); });
+
+    return items;
+  }
+
+  function renderTicker(items){
+    if (!items || !items.length) items = ['🔥 표시할 소식을 불러오지 못했습니다. 잠시 후 자동으로 다시 시도합니다.'];
+    var line = items.join('　　◆　　');
+    // 매끄럽게 반복되도록 내용을 두 번 이어붙입니다.
+    track.textContent = line + '　　◆　　' + line + '　　◆　　';
+    track.style.animation = 'none';
+    void track.offsetWidth; // 강제 리플로우
+    var halfWidth = track.scrollWidth / 2;
+    var pxPerSecond = 70;
+    var duration = Math.max(18, halfWidth / pxPerSecond);
+    track.style.animation = 'leTickerScroll ' + duration + 's linear infinite';
+  }
+
+  async function refreshTicker(){
+    try {
+      var items = await buildTickerItems();
+      renderTicker(items);
+    } catch(e) { /* 조용히 무시하고 다음 주기에 재시도 */ }
+  }
+
+  refreshTicker();
+  setInterval(refreshTicker, 15 * 60 * 1000); // 15분마다 전체 갱신 (외부 RSS 과호출 방지)
 })();
 </script>
 
