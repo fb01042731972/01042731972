@@ -6219,7 +6219,7 @@ window.getLeBoardClient = function(){
 <button onclick="openQuickIntakeModal()" title="전화로 주문 받을 때 상호·주소·물품명만 빠르게 적고, 업체정보 저장+작업지시서 생성+라벨 인쇄까지 한번에" class="no-print text-white font-bold" style="position:fixed;left:22px;bottom:22px;z-index:90;padding:12px 18px;border-radius:9999px;border:none;box-shadow:0 6px 16px rgba(0,0,0,.25);cursor:pointer;font-size:14px;background:#ea580c" onmouseover="this.style.background='#f97316'" onmouseout="this.style.background='#ea580c'">🏷️ 빠른접수</button>
 
 <!-- ════════════════════════ 상단 헤더 바 ════════════════════════ -->
-<div class="max-w-5xl mx-auto bg-white rounded-lg shadow-md mb-4 p-4 no-print" style="position:sticky;top:0;z-index:200">
+<div class="max-w-5xl mx-auto bg-white rounded-lg shadow-md mb-4 p-4 no-print">
   <div class="mb-3">
     <!-- 회사명 영역: 버튼 배치와 완전히 독립. 회사명 자체는 원본 그대로 유지 -->
     <div style="height:31px;display:flex;align-items:center;">
@@ -6349,7 +6349,10 @@ window.getLeBoardClient = function(){
       onkeydown="if(event.key==='Escape'){closeGlobalSearch();}">
     <div id="globalSearchResults" style="display:none;position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:100;max-height:440px;overflow-y:auto"></div>
   </div>
-  <div id="docTabBar" class="flex gap-1 flex-wrap">
+</div>
+<!-- 문서 탭: 스크롤 시 화면에 고정되지 않고 본문과 함께 자연스럽게 흘러감 -->
+<div class="max-w-5xl mx-auto no-print" style="position:static;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.08);border-radius:0 0 10px 10px;">
+  <div id="docTabBar" class="flex gap-1 flex-wrap" style="padding:8px 12px 0 12px;">
     <button id="docTabQuote" onclick="switchDocType('quote')" title="고객에게 보낼 견적서를 작성합니다" class="doc-tab active px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📘 견적서</button>
 
     <button id="docTabOrder" onclick="switchDocType('order')" title="우리 회사가 발주(주문)할 때 쓰는 문서입니다" class="doc-tab px-3 py-2 rounded-t-lg text-sm font-bold whitespace-nowrap">📙 발주서</button>
@@ -28126,8 +28129,11 @@ function buildClassicDocHTML(type) {
   // 모두 이 함수(buildClassicDocHTML)를 그대로 재사용하므로 여기 한 곳만 고치면 셋 다 해결된다.
   const stampImgSrc = localStorage.getItem(K_STAMP);
   const stampPrintSize = getStampSize();
+  // 🆕 도장 이미지는 절대좌표로 셀 위에 "겹쳐서" 표시합니다 — 이렇게 해야 도장 크기를 키워도
+  // 표의 행 높이(칸 크기)가 함께 늘어나며 전체 레이아웃이 무너지는 일 없이, 실제 도장처럼
+  // 성명 글자 옆에 자연스럽게 겹쳐 찍힙니다. 부모 <td>에는 position:relative가 설정되어 있어야 합니다.
   const stampInlineHtml = stampImgSrc
-    ? '<img src="' + stampImgSrc + '" alt="도장" style="width:' + stampPrintSize + 'px;height:' + stampPrintSize + 'px;object-fit:contain;vertical-align:middle;margin-left:6px">'
+    ? '<img src="' + stampImgSrc + '" alt="도장" style="position:absolute;right:4px;top:50%;transform:translateY(-50%);width:' + stampPrintSize + 'px;height:' + stampPrintSize + 'px;object-fit:contain;pointer-events:none;z-index:2">'
     : '';
 
   const partyTableHtml = (label, p, stampHtml) => ''
@@ -28141,7 +28147,7 @@ function buildClassicDocHTML(type) {
         + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc">상호(법인명)</td>'
         + '<td style="border:1px solid #333;padding:4px 6px">' + esc(p.name) + '</td>'
         + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc;width:44px">성명</td>'
-        + '<td style="border:1px solid #333;padding:4px 6px">' + esc(p.ceo) + (stampHtml || '') + '</td>'
+        + '<td style="border:1px solid #333;padding:4px 6px;position:relative;overflow:visible">' + esc(p.ceo) + (stampHtml || '') + '</td>'
       + '</tr>'
       + '<tr>'
         + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc">사업장주소</td>'
@@ -28183,7 +28189,7 @@ function buildClassicDocHTML(type) {
             + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc">상호(법인명)</td>'
             + '<td style="border:1px solid #333;padding:4px 6px">' + esc(sup.name) + '</td>'
             + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc;width:44px">성명</td>'
-            + '<td style="border:1px solid #333;padding:4px 6px">' + esc(sup.ceo) + stampInlineHtml + '</td>'
+            + '<td style="border:1px solid #333;padding:4px 6px;position:relative;overflow:visible">' + esc(sup.ceo) + stampInlineHtml + '</td>'
           + '</tr>'
           + '<tr>'
             + '<td style="border:1px solid #333;padding:4px 6px;background:#f8fafc">사업장주소</td>'
