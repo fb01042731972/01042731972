@@ -33,8 +33,7 @@
       "target": [
         { "target": "nsis", "arch": ["x64"] },
         { "target": "portable", "arch": ["x64"] }
-      ],
-      "icon": "build/icon.ico"
+      ]
     },
     "nsis": {
       "oneClick": false,
@@ -43,8 +42,7 @@
       "createStartMenuShortcut": true
     },
     "linux": {
-      "target": ["AppImage"],
-      "icon": "build/icon.png"
+      "target": ["AppImage"]
     }
   }
 }
