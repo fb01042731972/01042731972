@@ -1,0 +1,2108 @@
+{
+  "캡핑기": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        },
+        {
+          "ch": 1,
+          "state": "ON"
+        },
+        {
+          "ch": 2,
+          "state": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        },
+        {
+          "ch": 2,
+          "state": "ON"
+        },
+        {
+          "ch": 3,
+          "state": "ON"
+        },
+        {
+          "ch": 1,
+          "state": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "시퀀스 4",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "ON"
+        },
+        {
+          "ch": 3,
+          "state": "ON"
+        },
+        {
+          "ch": 4,
+          "state": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 작동",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "ON"
+        },
+        {
+          "ch": 3,
+          "state": "ON"
+        },
+        {
+          "ch": 4,
+          "state": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 8:27:17": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        },
+        {
+          "ch": 2,
+          "state": "ON"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 7,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 5
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 8:27:45": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        },
+        {
+          "ch": 2,
+          "state": "ON"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 8:28:12": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        },
+        {
+          "ch": 2,
+          "state": "ON"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 8:28:29": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        },
+        {
+          "ch": 2,
+          "state": "ON"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 8:28:56": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        },
+        {
+          "ch": 2,
+          "state": "ON"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 8:29:22": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 8:29:56": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 9:37:54": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 9:38:43": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 5,
+          "state": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ],
+  "자동백업 2026. 9. 20. 오후 9:41:49": [
+    {
+      "name": "센서 신호를 받을때  1 타이머 작동",
+      "trigCh": 1,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "광센서 1 타이머 신호 완료",
+      "trigCh": 2,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 2,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "용기 누름 실린더 센서 작동 및 캡핑기 작동",
+      "trigCh": 3,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 6,
+          "state": "BOTH"
+        },
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림센서 작동 신호 받음",
+      "trigCh": 4,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 4,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "캡핑기 내림 2 타이머 신호 완료",
+      "trigCh": 5,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 2,
+          "state": "BOTH"
+        },
+        {
+          "ch": 3,
+          "state": "BOTH"
+        },
+        {
+          "ch": 5,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "올림 SET",
+      "trigCh": 6,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 5,
+          "state": "ON"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 1,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 4,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "1 번 테스트 스위치 캡핑기 내림",
+      "trigCh": 7,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "2번 용기 잡음 실린더 작동",
+      "trigCh": 8,
+      "trigCond": "BOTH",
+      "conds": [
+        {
+          "ch": 4,
+          "state": "BOTH"
+        }
+      ],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    },
+    {
+      "name": "3번 스위치 복원 (테스트)",
+      "trigCh": 9,
+      "trigCond": "BOTH",
+      "conds": [],
+      "steps": [
+        {
+          "relay": 3,
+          "state": "OFF",
+          "delay": 0
+        },
+        {
+          "relay": 2,
+          "state": "OFF",
+          "delay": 0
+        }
+      ]
+    }
+  ]
+}

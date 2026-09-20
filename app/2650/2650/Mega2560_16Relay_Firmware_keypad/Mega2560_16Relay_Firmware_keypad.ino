@@ -22,32 +22,32 @@
      SEQTRIG <idx> <trigSrc> <trigCh> <trigCond> <trigDistMode> <trigDistCm>
                                    -> trigSrc: 0=입력채널 트리거(trigCh=입력채널 1~inCount),
                                       1=초음파 거리 트리거(trigCh=초음파 채널 1~4, trigDistMode:
-                                      0=이하(≤)/1=이상(≥), trigDistCm=목표 거리cm),
-                                      2=로드셀 무게 트리거, 3=키패드 특정 키 트리거(trigCh=키의
-                                      ASCII 코드값 — '0'~'9'=48~57, 'A'~'D'=65~68, '*'=42,'#'=35)
-                                      trigCond(공통): 0=OFF(조건을 벗어나는 순간=키를 뗄 때),
-                                      1=ON(조건에 도달하는 순간=키를 누를 때), 2=BOTH(양쪽 다)
+                                      0=이하(≤)/1=이상(≥), trigDistCm=목표 거리cm)
+                                      trigCond(공통): 0=OFF(조건을 벗어나는 순간), 1=ON(조건에
+                                      도달하는 순간), 2=BOTH(양쪽 다 — 상태가 바뀌는 순간마다 실행)
      SEQSTEP <idx> <si> <type> <target> <state> <delayMs> <steps> <speedPps>
                                    -> type: 0=릴레이 동작(target=릴레이1~16, state=0/1 OFF/ON),
-                                      1=스텝모터 단순 이동(target=스텝모터1~6, steps=±이동
-                                      스텝수(부호=방향), speedPps=이동 속도),
-                                      2=LED 프리셋 문구 표시(target=프리셋 번호 1~8, 7번
-                                      화면에서 SETLEDPRESET으로 미리 등록, state=0(계속 표시)
-                                      /1(정해진 초 동안 표시 후 이전 문구로 복귀), steps=
-                                      state=1일 때 표시할 초),
-                                      3=스텝모터 초음파 자동보정 이동(target=스텝모터1~6,
-                                      steps=±목표 이동거리 mm(부호=방향), speedPps=이동 속도.
-                                      보정용 초음파 채널/mm당 스텝수/허용오차/최대재시도는
-                                      SETSTEPCALIB로 채널별로 미리 저장해둔 값을 그때그때
-                                      사용하며, 이 단계는 보정이 끝날 때까지(성공/포기 모두)
-                                      다음 단계로 넘어가지 않음).
-                                      delayMs=이 단계 실행 후 다음 단계까지 대기 시간(스텝모터
-                                      단순 이동은 이동을 시작만 하고 바로 다음 단계로 넘어가므로,
-                                      이동 완료를 기다리려면 넉넉히 줘야 함. LED·자동보정은
-                                      동작이 끝난 뒤의 "추가" 대기 시간)
+                                      1=스텝모터 이동(target=스텝모터1~6, steps=±이동 스텝수(부호=
+                                      방향), speedPps=이동 속도). delayMs=이 단계 실행 후 다음
+                                      단계까지 대기 시간(스텝모터는 이동을 시작만 하고 바로 다음
+                                      단계로 넘어가므로, 이동 완료를 기다리려면 넉넉히 줘야 함)
      SEQGET?                      -> SEQ <idx> <trigSrc> <trigCh> <trigCond> <trigDistMode>
                                       <trigDistCm> <numSteps> <이름> <type,target,state,delayMs,
                                       steps,speedPps>;... (여러 줄) ... SEQGETDONE
+                                       (추가 조건이 있는 시퀀스는 그 SEQ 줄 바로 다음에 SEQCOND 줄이 하나 더 나옴)
+      SEQCOND <idx> <ON마스크> <OFF마스크>
+                                    -> ★추가 조건(인터록). 시작 조건(SEQTRIG)이 일어나는 "그 순간"에
+                                       입력채널들이 지정한 상태일 때만 시퀀스를 실행한다.
+                                       ON마스크의 1인 비트 = 그 입력채널이 눌려 있어야(ON) 함,
+                                       OFF마스크의 1인 비트 = 그 입력채널이 떼어져 있어야(OFF) 함.
+                                       bit0=입력CH1 ... bit31=입력CH32, 부호 없는 10진수. 모든 조건은
+                                       AND(전부 만족해야 실행). 등록되지 않은 채널(번호>입력채널 개수)이
+                                       조건에 있으면 그 시퀀스는 절대 실행되지 않는다(안전 측).
+                                       두 마스크가 모두 0이면 조건 없음. SEQCLR이 모든 조건을 지운다.
+                                       외장 EEPROM(EXT_COND_START~)에 시퀀스와 별도로 저장되며, 조건 기록이
+                                       손상되면 그 시퀀스는 조건 없이 실행되지 않고 통째로 비활성화된다.
+      SEQCOND?                     -> SEQCOND OK MAXCH 32  (이 펌웨어가 SEQCOND를 지원하는지 확인용.
+                                       아무것도 바꾸지 않음. 웹 페이지가 "보드에 저장" 직전에 사용)
      SETLED <문구>                -> OLED(SSD1306, I2C)에 문구 표시 + EEPROM 저장
      GETLED?                      -> LEDTEXT <문구>
      SETLEDTRIG <입력채널> <조건0/1> <초> <문구>
@@ -57,18 +57,6 @@
                                       <입력채널>에 0을 주면 사용 안 함. 보드(EEPROM)에
                                       저장되어 컴퓨터 없이도 스스로 감시/동작함.
      GETLEDTRIG?                  -> LEDTRIG <입력채널> <조건> <초> <문구>
-     SETLEDPRESET <1~8> <문구>     -> 시퀀스의 "LED 프리셋 문구 표시" 동작에서 쓸 문구를
-                                      번호(1~8)에 저장(EEPROM). 최대 20자.
-     GETLEDPRESET?                -> (여러 줄) LEDPRESET <번호> <문구> ... LEDPRESETDONE
-     LEDPRESETSHOW <1~8> <모드0/1> <초>
-                                   -> 프리셋 문구를 즉시 표시(EEPROM에는 기록 안 함). 모드
-                                      0=계속 표시, 1=<초> 동안만 표시 후 기본 문구로 복귀.
-                                      PC에서 시퀀스를 테스트 실행할 때 사용.
-     SETSTEPCALIB <채널1~6> <보정용초음파채널0~4> <mm당스텝x100> <허용오차mmx10> <최대재시도>
-                                   -> 스텝모터 자동보정 이동(시퀀스 type=3)에 쓸 채널별 설정
-                                      저장(EEPROM). 초음파채널=0이면 그 모터는 자동보정 이동을
-                                      쓸 수 없음(그냥 다음 단계로 건너뜀).
-     GETSTEPCALIB?                -> STEPCALIB 1:ultraCh:stepsPerMmx100:tolMmx10:maxRetry,2:...,...
      SETSTEPPIN <채널1~6> <STEP핀> <DIR핀> <EN핀,0=미사용>
                                    -> 스텝모터 채널 핀 매핑 저장(EEPROM)
      GETSTEPCONFIG?                -> STEPCONFIG 1:step:dir:en,2:...,...
@@ -123,6 +111,8 @@
 #include <EEPROM.h>
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>   // strtol/strtoul (SEQCOND 명령 파싱)
+#include <stdint.h>   // uint32_t (추가 조건 비트마스크)
 #include <limits.h>   // LONG_MIN (로드셀 원시값 읽기 실패 표시용)
 #include <math.h>     // lround, isnan (로드셀 그램 환산·EEPROM 미기록 float 판별용)
 #include <U8g2lib.h>   // 라이브러리 매니저에서 "U8g2"(olikraus) 설치 필요
@@ -150,10 +140,6 @@ void broadcastLine(const String &s){ Serial.println(s); Serial1.println(s); }
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C oled(U8G2_R0, /*reset=*/U8X8_PIN_NONE);
 const int LED_TEXT_MAX = 39; // 널문자 포함 40바이트
 char ledText[LED_TEXT_MAX+1] = "";
-const int LED_PRESET_MAX = 20;   // 프리셋 문구 1개당 최대 글자수(널문자 포함 21바이트)
-const int LED_PRESET_COUNT = 8;  // 시퀀스 "LED 문구 표시" 동작에서 고를 수 있는 프리셋 개수
-                                  // (SRAM 절약을 위해 상주 배열로 두지 않고, 필요할 때만
-                                  //  EEPROM에서 그때그때 읽어와 표시한다 — showLedPreset() 참고)
 
 /* ---------------- LED 자동 알림 문구(입력 신호로 몇 초간 표시 후 원래 문구로 복귀) ---------------- */
 byte ledTrigCh = 0;              // 0=사용 안 함, 1~inCount=입력채널 번호
@@ -249,42 +235,44 @@ const int MAX_LOAD = 4;
 struct LoadCh { byte doutPin, sckPin; long offset; float scale; }; // scale=그램당 원시값 카운트(0이면 미보정)
 LoadCh loads[MAX_LOAD];
 
-/* ---------------- 시퀀스(외장 I2C EEPROM(AT24C256)에 저장, 최대 50개 x 8단계) ----------------
+/* ---------------- 시퀀스(외장 I2C EEPROM(AT24C256)에 저장, 최대 14개 x 12단계) ----------------
    ※ 왜 내장이 아니라 외장인가: 내장 EEPROM(4096바이트)은 이미 다른 설정(릴레이 핀맵·LED 문구 등)과
      공간을 나눠 써야 해서 시퀀스 개수를 많이 늘리기 어려움. 외장 AT24C256(32KB)을 추가로 달면
-     시퀀스 전용 공간을 넉넉히 확보할 수 있음. 다만 메가2560 RAM(8KB) 한도 때문에 50개가
-     "장시간 켜둬도 먹통 없이 안정적으로 도는" 안전선으로 계산된 값임(계산 근거는 대화 참고). */
-const int MAX_SEQ = 20; // 50 -> 20으로 축소: SRAM 부족(95% 사용) 문제 해결을 위해 줄임. 시퀀스가 더 필요하면
-                         // sequences[] 배열 크기가 늘어나 SRAM을 더 쓰게 되므로, 꼭 필요한 만큼만 늘리세요.
-const int MAX_STEPS = 8;
+     시퀀스 전용 공간을 넉넉히 확보할 수 있음. 다만 메가2560 RAM(8KB) 한도 때문에 시퀀스 개수 x
+     단계 수를 마음대로 늘릴 수는 없음("장시간 켜둬도 먹통 없이 안정적으로 도는" 안전선 계산 근거는
+     대화 참고).
+   ※ MAX_SEQ x MAX_STEPS를 바꿀 때 지켜야 할 것:
+     1) sequences[] 배열이 SRAM(8KB)에 통째로 올라가므로, 시퀀스 1개당 RAM 사용량은 대략
+        19 + 9*MAX_STEPS 바이트. 이 값 x MAX_SEQ가 너무 커지면(예전 50개x8단계=SRAM 95%
+        사용) 다른 기능(OLED·시리얼 버퍼 등)과 부딪혀 보드가 먹통이 될 수 있음.
+     2) EXT_REC_LEN(아래)이 EXT_SLOT_SIZE(128바이트)를 넘으면 안 됨 — 넘으면 슬롯 크기 자체를
+        늘려야 하고, 그러면 외장 EEPROM 주소 배치가 바뀌어 기존에 저장해둔 시퀀스가 깨짐.
+        MAX_STEPS=12가 슬롯 128바이트에 예비 공간 없이 정확히 맞아떨어지는 상한값. */
+const int MAX_SEQ = 14; // 20 -> 14로 축소하는 대신 MAX_STEPS를 8 -> 12로 늘림(RAM 사용량은 오히려
+                         // 기존 20x8(1820B)보다 약간 적은 14x12(1778B) 수준으로 유지).
+                         // sequences[] 배열 크기가 늘어나면 SRAM을 더 쓰게 되므로, 꼭 필요한 만큼만 늘리세요.
+const int MAX_STEPS = 12;
 /* type: 0=릴레이 동작(target=릴레이 채널 1~16, state=0/1 OFF/ON, steps/speedPps는 안 씀),
-         1=스텝모터 단순 이동(target=스텝모터 채널 1~6, steps=이동할 스텝 수(부호=방향, 양수=
-         정방향/음수=역방향), speedPps=이동 속도(step/초), state는 안 씀),
-         2=LED 프리셋 문구 표시(target=프리셋 번호 1~8, state=0(계속 표시)/1(정해진 초 동안
-         표시 후 이전 문구로 복귀), steps=state=1일 때 표시할 초, speedPps는 안 씀),
-         3=스텝모터 초음파 자동보정 이동(target=스텝모터 채널 1~6, steps=±목표 이동거리
-         mm(부호=방향), speedPps=이동 속도. 채널별 보정용 초음파/mm당 스텝수/허용오차/
-         최대재시도는 stepCalib[] 설정을 그때그때 사용, state는 안 씀).
-   delayMs는 모든 타입 공통: 이 단계의 동작이 끝난 뒤 다음 단계로 넘어가기 전에 기다리는
-   시간(스텝모터 단순 이동은 이동을 "시작"만 시키고 곧장 다음 단계로 넘어가므로, 이동이
-   끝날 때까지 기다렸다가 다음 단계를 실행하려면 delayMs를 예상 이동 시간(스텝수÷속도×
-   1000ms)보다 넉넉하게 잡아야 한다. LED·자동보정 이동은 동작 자체가 끝날 때까지는 이미
-   내부적으로 기다린 뒤에만 다음 단계로 넘어가므로, delayMs는 그 이후의 "추가" 대기 시간). */
+         1=스텝모터 이동(target=스텝모터 채널 1~6, steps=이동할 스텝 수(부호=방향, 양수=정방향/
+         음수=역방향), speedPps=이동 속도(step/초), state는 안 씀).
+   delayMs는 두 타입 공통: 이 단계를 "시작"한 뒤 다음 단계로 넘어가기 전에 기다리는 시간
+   (스텝모터는 이동을 "시작"만 시키고 곧장 다음 단계로 넘어가므로, 이동이 끝날 때까지
+   기다렸다가 다음 단계를 실행하려면 delayMs를 예상 이동 시간(스텝수÷속도×1000ms)보다
+   넉넉하게 잡아야 한다). */
 struct SeqStep { byte type; byte target; byte state; unsigned int delayMs; int steps; unsigned int speedPps; };
 struct Seq {
-  byte trigSrc;        // 0=입력채널 트리거, 1=초음파 거리 트리거, 2=로드셀 무게 트리거,
-                        // 3=키패드 특정 키 트리거
+  byte trigSrc;        // 0=입력채널 트리거, 1=초음파 거리 트리거, 2=로드셀 무게 트리거
   byte trigCh;         // trigSrc=0: 입력채널 번호(1~inCount, 0=트리거 없음)
                         // trigSrc=1: 초음파 채널 번호(1~MAX_ULTRA, 0=트리거 없음)
                         // trigSrc=2: 로드셀 채널 번호(1~MAX_LOAD, 0=트리거 없음)
-                        // trigSrc=3: 키의 ASCII 코드값(0=트리거 없음)
-  byte trigCond;       // 0=OFF(조건을 벗어나는 순간=trigSrc3이면 키를 뗄 때), 1=ON(조건에
-                        // 도달하는 순간=trigSrc3이면 키를 누를 때), 2=BOTH(양쪽 다)
+  byte trigCond;       // 0=OFF(조건을 벗어나는 순간), 1=ON(조건에 도달하는 순간), 2=BOTH(양쪽 다)
   byte trigDistMode;   // trigSrc=1,2 전용: 0=이하(≤), 1=이상(≥) — trigSrc=0이면 의미 없음
   unsigned int trigDistCm; // trigSrc=1 전용: 목표 거리(cm) / trigSrc=2 전용: 목표 무게(g) — 필드 재사용, trigSrc=0이면 의미 없음
   byte numSteps;
   char name[12];
   SeqStep steps[MAX_STEPS];
+  uint32_t condOn;     // 추가 조건(인터록): 이 비트의 입력채널이 "눌림(ON)"이어야 함(bit0=CH1). 0이면 조건 없음
+  uint32_t condOff;    // 추가 조건(인터록): 이 비트의 입력채널이 "뗌(OFF)"이어야 함
 };
 Seq sequences[MAX_SEQ];
 byte seqLastInputState[MAX_SEQ]; // 255=미초기화(엣지 검출용) — trigSrc=0(입력채널)이든 1(초음파거리
@@ -304,21 +292,8 @@ const unsigned long SEQ_COOLDOWN_MS = 500; // 릴레이 스위칭 노이즈가 �
    "각자" 동시에 진행시키되, 그중 어느 하나라도 같은 릴레이를 동시에 두 시퀀스가 건드리는 것만
    막는다(그건 실제로 위험 — 같은 릴레이에 서로 다른 명령이 겹치면 릴레이가 떨리거나 오동작할 수 있음). */
 const int MAX_ACTIVE_SEQ = 4; // 동시에 진행 가능한 시퀀스 개수(서로 다른 릴레이를 쓴다는 전제하에)
-/* calibPhase 이하 4개 필드는 type=3(스텝모터 자동보정 이동) 단계가 진행 중일 때만 쓰인다.
-   calibPhase: 0=진행 중 아님, 1=이동 시작함·완료/재측정 대기 중.
-   그 외 타입의 단계는 이 필드들을 건드리지 않는다(SRAM을 아끼려고 슬롯당 딱 필요한
-   4바이트만 추가했다 — 목표 mm·mm당 스텝수 등은 매번 SeqStep/stepCalib[]에서 다시 읽음). */
-struct ActiveSeq {
-  int idx; int step; unsigned long dueMs; // idx=-1이면 빈 슬롯
-  byte calibPhase; byte calibRetry; int calibBeforeMm; int8_t calibDirSign;
-};
+struct ActiveSeq { int idx; int step; unsigned long dueMs; }; // idx=-1이면 빈 슬롯
 ActiveSeq activeSeqs[MAX_ACTIVE_SEQ];
-
-/* ---- 스텝모터 채널별 "초음파 자동보정 이동" 설정(SETSTEPCALIB로 저장, EEPROM에 영구 보관) ----
-   9번 화면(스텝모터)의 "자동 보정 이동(초음파 피드백)"과 동일한 항목을 보드에도 저장해두어,
-   컴퓨터 없이 시퀀스(type=3)에서도 그대로 쓸 수 있게 한다. */
-struct StepCalibCfg { byte ultraCh; float stepsPerMm; float tolMm; byte maxRetry; };
-StepCalibCfg stepCalib[MAX_STEPPERS];
 
 
 /* ---------------- 외장 I2C EEPROM(AT24C256) 상태 ----------------
@@ -329,6 +304,9 @@ StepCalibCfg stepCalib[MAX_STEPPERS];
 bool extEepromOK = false;
 bool extBootWarning = false;
 bool extLastWriteOK = true;
+uint32_t condSaveFailMask = 0; // 비트 i=1이면 i번 시퀀스의 추가 조건 기록이 외장 EEPROM에 실패한 상태
+                                // (조건 기록 실패는 인터록이 사라질 수 있는 치명적 오류라, 이후 다른 저장이
+                                //  성공해도 EXTMEM?가 계속 WRITEFAIL을 보고하도록 따로 기억해둔다)
 
 /* ---------------- EEPROM 레이아웃 ----------------
    ※ 릴레이 방식(RELAY_MODE)·LED 설정은 항상 고정 주소를 쓰도록 시퀀스 블록보다
@@ -338,9 +316,7 @@ bool extLastWriteOK = true;
      "active-LOW로 저장해뒀는데 active-HIGH로 잘못 인식"하는 등의 오작동이 있었음.
      이제는 MAX_SEQ를 몇으로 바꾸든 이 값들 주소는 절대 움직이지 않는다.) */
 #define EE_MAGIC        0
-#define EE_MAGIC_VAL    0xAA  // ★ 주소 배치를 바꿨으므로 매직 값도 반드시 함께 올려야 함.
-                              //  0xA9→0xAA: 스텝모터 자동보정 설정(EE_STEP_CALIB)·LED 프리셋
-                              //  문구(EE_LED_PRESET) 저장 공간 추가.
+#define EE_MAGIC_VAL    0xA9  // ★ 주소 배치를 바꿨으므로 매직 값도 반드시 함께 올려야 함.
                               //  0xA8→0xA9: 로드셀(HX711) 핀·보정값 저장 공간(EE_LOAD_*) 추가.
                               // (이전 펌웨어가 이미 0xA5/0xA6/0xA7을 써놓은 보드가 있으므로, 값을
                               //  바꾸지 않으면 loadFromEEPROM()이 "이미 초기화됨"으로 오판해서
@@ -370,8 +346,6 @@ bool extLastWriteOK = true;
 #define EE_LOAD_PINS    181  // 4채널 x 2바이트(dout,sck) = 8 bytes — 고정 주소, 끝: 189
 #define EE_LOAD_OFFSET  189  // 4채널 x 4바이트(long) = 16 bytes — 고정 주소, 끝: 205
 #define EE_LOAD_SCALE   205  // 4채널 x 4바이트(float) = 16 bytes — 고정 주소, 끝: 221
-#define EE_STEP_CALIB   221  // 6채널 x 10바이트(ultraCh1+stepsPerMm4+tolMm4+maxRetry1) = 60 bytes — 끝: 281
-#define EE_LED_PRESET   281  // 8개 x 21바이트(문자열+널, LED_PRESET_MAX=20) = 168 bytes — 끝: 449
 // (시퀀스는 더 이상 내장 EEPROM에 저장하지 않음 — 아래 외장 I2C EEPROM 섹션 참고)
 
 /* ---------------- 외장 I2C EEPROM(AT24C256, 32KB) — 시퀀스 전용 저장소 ----------------
@@ -380,8 +354,8 @@ bool extLastWriteOK = true;
 
    레코드 구조(슬롯당 128바이트 = AT24C256 페이지(64바이트) 2개분):
      [0]trigSrc [1]trigCh [2]trigCond [3]trigDistMode [4..5]trigDistCm [6]numSteps [7..18]name(12)
-     [19..90]steps(8개 x 9바이트: type,target,state,delayMs(2),steps(2),speedPps(2)) [91]checksum
-     [92..127] 예비(미사용)
+     [19..126]steps(12개 x 9바이트: type,target,state,delayMs(2),steps(2),speedPps(2)) [127]checksum
+     (예비 공간 없음 — 12단계가 128바이트 슬롯에 정확히 맞는 최대치)
    → 레코드가 페이지 2개에 걸치므로, I2C 쓰기/읽기는 항상 16바이트씩(64의 약수라 절대 페이지
      경계를 안 넘음) 잘라서 여러 번 나눠 처리한다(extI2cWriteRaw/extI2cReadRaw 참고) — AVR Wire
      라이브러리의 내부 버퍼 한도(보통 32바이트, 주소 2바이트 포함)도 함께 피해가는 크기다.
@@ -391,10 +365,20 @@ bool extLastWriteOK = true;
 #define EXT_EEPROM_ADDR 0x50
 #define EXT_SEQ_START   64   // 0~63번지는 예비(향후 매직/버전 등)로 비워둠
 #define EXT_SLOT_SIZE   128  // 시퀀스 1개당 슬롯 크기(64바이트 페이지 2개, 항상 페이지 정렬 시작)
-#define EXT_REC_LEN     92   // 실제로 쓰는 바이트 수(1+1+1+1+2+1+12 + 8*9 + 체크섬1 = 92, 나머지 36바이트는 예비)
+#define EXT_REC_LEN     128  // 실제로 쓰는 바이트 수(1+1+1+1+2+1+12 + 12*9 + 체크섬1 = 128, 예비 공간 없음
+                              // — MAX_STEPS를 12보다 더 늘리려면 EXT_SLOT_SIZE도 함께 늘려야 함(그러면
+                              // 기존 저장 데이터의 주소 배치가 바뀌어 호환 안 됨))
+#define EXT_COND_START  4096 // 추가 조건(인터록) 기록 영역 시작(시퀀스 영역 뒤, 64바이트 페이지 정렬).
+#define EXT_COND_SLOT   16   // 시퀀스 1개당 조건 기록 슬롯 크기(항상 16바이트 단위 → 페이지 경계 안전)
+                              // 레코드: [0]=0xC5(유효 표시) [1..4]condOn(LE) [5..8]condOff(LE) [9..14]예비(0) [15]체크섬(0~14)
+                              // 시퀀스 본체 슬롯(EXT_SEQ_START~)을 전혀 건드리지 않고 따로 저장하므로, 이 기능을 추가하기
+                              // 전에 저장해둔 시퀀스는 그대로 유효하다(조건 영역이 비어 있으면 "조건 없음").
+#define EXT_COND_MAGIC  0xC5
+static_assert(EXT_SEQ_START + MAX_SEQ*128 <= EXT_COND_START, "MAX_SEQ가 너무 커서 시퀀스 영역이 조건 영역(EXT_COND_START)을 침범합니다");
+static_assert(EXT_COND_START + MAX_SEQ*EXT_COND_SLOT <= 32768, "조건 영역이 AT24C256(32KB)을 넘습니다");
 #define EXT_I2C_CHUNK   16   // 한 번의 I2C 트랜잭션으로 보내는 데이터 바이트 수(64의 약수 → 페이지 경계 안전,
                               // 주소 2바이트를 더해도 AVR Wire 기본 버퍼(약 32바이트) 안에 넉넉히 들어감)
-// 50개 기준 끝 주소: 64 + 50*128 = 6464 / 32768바이트 사용 (여유 많음 — RAM이 진짜 한계)
+// 14개 기준 끝 주소: 64 + 14*128 = 1856 / 32768바이트 사용 (여유 많음 — RAM이 진짜 한계)
 
 bool extI2cWriteRaw(unsigned int addr, const byte* data, byte len){
   unsigned int off = 0;
@@ -475,13 +459,13 @@ void loadDefaults(){
   for(int i=0;i<MAX_SEQ;i++){
     sequences[i].numSteps=0; sequences[i].trigSrc=0; sequences[i].trigCh=0; sequences[i].trigCond=1;
     sequences[i].trigDistMode=0; sequences[i].trigDistCm=10; sequences[i].name[0]=0;
+    sequences[i].condOn=0; sequences[i].condOff=0;
   }
   ledText[0] = 0; // 문구 없음(빈 화면)
   ledTrigCh = 0; ledTrigCond = 1; ledTrigSec = 3; ledTrigText[0] = 0; // 자동 알림 기본값: 사용 안 함
   for(int i=0;i<MAX_STEPPERS;i++){ steppers[i].stepPin=0; steppers[i].dirPin=0; steppers[i].enPin=0; } // 기본값: 전부 미설정
   for(int i=0;i<MAX_ULTRA;i++){ ultras[i].trigPin=0; ultras[i].echoPin=0; } // 기본값: 전부 미설정
   for(int i=0;i<MAX_LOAD;i++){ loads[i].doutPin=0; loads[i].sckPin=0; loads[i].offset=0; loads[i].scale=0; } // 기본값: 전부 미설정/미보정
-  for(int i=0;i<MAX_STEPPERS;i++){ stepCalib[i].ultraCh=0; stepCalib[i].stepsPerMm=100; stepCalib[i].tolMm=2; stepCalib[i].maxRetry=3; } // 기본값: 자동보정 사용 안 함
 }
 
 void saveLedTextToEEPROM(){
@@ -523,33 +507,6 @@ void drawLedTextRaw(const char* txt){
 }
 void drawLedText(){ drawLedTextRaw(ledText); } // 평소(기본) 문구 표시
 
-/* 프리셋 문구(1~8)를 EEPROM에서 그때그때 읽어와 표시한다(SRAM에 상주시키지 않음).
-   timed=false: 계속 표시(다음에 문구가 바뀔 때까지 그대로 유지).
-   timed=true : durSec초 동안만 표시하고, 시간이 지나면 SETLED로 저장해둔 기본 문구로
-                자동 복귀(LED 자동 알림과 같은 타이머를 공유 — 동시에 둘 다 발동하면
-                나중 것이 화면을 차지한다). */
-void showLedPreset(int idx, bool timed, unsigned int durSec){
-  if(idx<1 || idx>LED_PRESET_COUNT) return;
-  char buf[LED_PRESET_MAX+1];
-  unsigned int addr = EE_LED_PRESET + (unsigned int)(idx-1)*(LED_PRESET_MAX+1);
-  bool valid = true;
-  for(int i=0;i<=LED_PRESET_MAX;i++){
-    byte b = EEPROM.read(addr+i);
-    buf[i] = (char)b;
-    if(b==0) break;
-    if(i==LED_PRESET_MAX){ valid=false; buf[0]=0; break; } // 널 종료 없이 끝까지 감 = 손상/미기록
-  }
-  if((unsigned char)buf[0]==0xFF) buf[0]=0;
-  if(!valid || buf[0]==0) return; // 등록 안 된(빈) 프리셋이면 아무것도 하지 않음
-  drawLedTextRaw(buf);
-  if(timed){
-    ledTempActive = true;
-    ledTempEndMs = millis() + (unsigned long)durSec*1000UL;
-  } else {
-    ledTempActive = false; // 계속 표시 — 다음 SETLED/LEDTRIG/다른 프리셋 표시 전까지 그대로 유지
-  }
-}
-
 void saveLedTrigToEEPROM(){
   EEPROM.update(EE_LEDTRIG_CH, ledTrigCh);
   EEPROM.update(EE_LEDTRIG_COND, ledTrigCond);
@@ -585,10 +542,43 @@ void saveSeqToEEPROM(int idx){
     buf[o+7] = sequences[idx].steps[st].speedPps & 0xFF;
     buf[o+8] = (sequences[idx].steps[st].speedPps>>8) & 0xFF;
   }
-  buf[91] = calcChecksum(buf, 91);
+  buf[127] = calcChecksum(buf, 127); // ★ 체크섬은 레코드 맨 끝(127번)에 둔다. 예전엔 MAX_STEPS=8 시절의 91번에 그대로 남아 있어
+                                     //   9번째 단계(steps[8], 91번지)의 type 바이트를 체크섬 값이 덮어쓰고 있었고,
+                                     //   9~12번째 단계는 체크섬 검사 범위 밖이었다.
   unsigned int addr = EXT_SEQ_START + (unsigned int)idx*EXT_SLOT_SIZE;
   bool ok = extEepromWriteVerified(addr, buf, EXT_REC_LEN);
-  extLastWriteOK = ok; // 웹 UI가 EXTMEM?으로 조회해서 실패를 바로 알 수 있게 함
+  extLastWriteOK = ok && (condSaveFailMask == 0); // 웹 UI가 EXTMEM?으로 조회해서 실패를 바로 알 수 있게 함
+}
+
+/* ---------------- 추가 조건(인터록) 저장/읽기 ---------------- */
+void saveCondToEEPROM(int idx){
+  if(!extEepromOK){ extLastWriteOK = false; condSaveFailMask |= (1UL<<idx); return; }
+  byte rec[EXT_COND_SLOT];
+  memset(rec, 0, sizeof(rec));
+  rec[0] = EXT_COND_MAGIC;
+  uint32_t on = sequences[idx].condOn, off = sequences[idx].condOff;
+  for(byte b=0;b<4;b++){ rec[1+b] = (byte)((on >> (8*b)) & 0xFF); rec[5+b] = (byte)((off >> (8*b)) & 0xFF); }
+  rec[EXT_COND_SLOT-1] = calcChecksum(rec, EXT_COND_SLOT-1);
+  bool ok = extEepromWriteVerified(EXT_COND_START + (unsigned int)idx*EXT_COND_SLOT, rec, EXT_COND_SLOT);
+  if(ok) condSaveFailMask &= ~(1UL<<idx); else condSaveFailMask |= (1UL<<idx);
+  extLastWriteOK = ok && (condSaveFailMask == 0);
+}
+/* 부팅 시 idx번 시퀀스의 추가 조건을 읽어 sequences[idx].condOn/condOff에 채운다.
+   반환값 true  = 정상(조건 없음 포함: 영역이 통째로 0xFF이면 이 기능을 쓰기 전에 저장한 시퀀스라 "조건 없음")
+   반환값 false = 통신 실패 또는 기록 손상 → 호출한 쪽이 그 시퀀스를 통째로 비활성화한다
+                  (조건이 깨졌는데 조건 없이 실행되면 인터록이 사라져 위험하므로) */
+bool loadCondFromExt(int idx){
+  sequences[idx].condOn = 0; sequences[idx].condOff = 0;
+  byte rec[EXT_COND_SLOT];
+  if(!extEepromReadRetry(EXT_COND_START + (unsigned int)idx*EXT_COND_SLOT, rec, EXT_COND_SLOT)) return false;
+  bool blank = true;
+  for(byte i=0;i<EXT_COND_SLOT;i++){ if(rec[i]!=0xFF){ blank=false; break; } }
+  if(blank) return true;
+  if(rec[0] != EXT_COND_MAGIC || calcChecksum(rec, EXT_COND_SLOT-1) != rec[EXT_COND_SLOT-1]) return false;
+  uint32_t on = 0, off = 0;
+  for(byte b=0;b<4;b++){ on |= ((uint32_t)rec[1+b]) << (8*b); off |= ((uint32_t)rec[5+b]) << (8*b); }
+  sequences[idx].condOn = on; sequences[idx].condOff = off;
+  return true;
 }
 
 void saveAllToEEPROM(){
@@ -617,12 +607,6 @@ void saveAllToEEPROM(){
     EEPROM.update(EE_LOAD_PINS+i*2+1, loads[i].sckPin);
     EEPROM.put(EE_LOAD_OFFSET+i*4, loads[i].offset);
     EEPROM.put(EE_LOAD_SCALE+i*4, loads[i].scale);
-  }
-  for(int i=0;i<MAX_STEPPERS;i++){
-    EEPROM.update(EE_STEP_CALIB+i*10+0, stepCalib[i].ultraCh);
-    EEPROM.put(EE_STEP_CALIB+i*10+1, stepCalib[i].stepsPerMm);
-    EEPROM.put(EE_STEP_CALIB+i*10+5, stepCalib[i].tolMm);
-    EEPROM.update(EE_STEP_CALIB+i*10+9, stepCalib[i].maxRetry);
   }
 }
 
@@ -653,7 +637,12 @@ void loadFromEEPROM(){
         bool blank = true;
         for(byte i=0;i<EXT_REC_LEN;i++){ if(buf[i]!=0xFF){ blank=false; break; } }
         if(!blank){
-          if(calcChecksum(buf,91) == buf[91]){
+          // 새 형식(체크섬 127번, 전체 127바이트 검사). 예전 펌웨어가 저장한 기록은 체크섬이 91번에 있으므로,
+          // 8단계 이하 시퀀스에 한해 그것도 받아들인다(9단계 이상은 9번째 단계가 이미 깨져 있어 받아들이지 않고
+          // 손상 처리 → 부팅 경고 + 비활성화. 웹에서 "보드에 저장"을 다시 하면 정상화됨).
+          bool recOk = (calcChecksum(buf,127) == buf[127]);
+          if(!recOk && buf[6] <= 8 && calcChecksum(buf,91) == buf[91]) recOk = true;
+          if(recOk){
             sequences[s].trigSrc     = buf[0];
             sequences[s].trigCh      = buf[1];
             sequences[s].trigCond    = buf[2];
@@ -673,7 +662,8 @@ void loadFromEEPROM(){
               sequences[s].steps[st].steps = stepsVal;
               sequences[s].steps[st].speedPps = buf[o+7] | ((unsigned int)buf[o+8] << 8);
             }
-            useEmpty = false;
+            // 추가 조건(인터록) 읽기 — 실패/손상이면 이 시퀀스는 비활성(useEmpty 유지) + 부팅 경고
+            if(loadCondFromExt(s)) useEmpty = false; else extBootWarning = true;
           } else {
             extBootWarning = true; // 통신은 됐지만 체크섬이 틀림 = 실제로 손상된 기록
           }
@@ -685,6 +675,7 @@ void loadFromEEPROM(){
     }
     if(useEmpty){
       sequences[s].numSteps=0; sequences[s].trigSrc=0; sequences[s].trigCh=0; sequences[s].trigCond=1;
+      sequences[s].condOn=0; sequences[s].condOff=0;
       sequences[s].trigDistMode=0; sequences[s].trigDistCm=10; sequences[s].name[0]=0;
     }
   }
@@ -734,16 +725,6 @@ void loadFromEEPROM(){
     EEPROM.get(EE_LOAD_OFFSET+i*4, loads[i].offset);
     EEPROM.get(EE_LOAD_SCALE+i*4, loads[i].scale);
     if(isnan(loads[i].scale)) loads[i].scale = 0; // 미기록(0xFF..) 영역을 float로 읽으면 NaN이 될 수 있음
-  }
-  for(int i=0;i<MAX_STEPPERS;i++){
-    stepCalib[i].ultraCh = EEPROM.read(EE_STEP_CALIB+i*10+0);
-    if(stepCalib[i].ultraCh > MAX_ULTRA) stepCalib[i].ultraCh = 0; // 미기록(0xFF) 등 안전하게 "사용 안 함"
-    EEPROM.get(EE_STEP_CALIB+i*10+1, stepCalib[i].stepsPerMm);
-    if(isnan(stepCalib[i].stepsPerMm) || stepCalib[i].stepsPerMm<=0) stepCalib[i].stepsPerMm = 100;
-    EEPROM.get(EE_STEP_CALIB+i*10+5, stepCalib[i].tolMm);
-    if(isnan(stepCalib[i].tolMm) || stepCalib[i].tolMm<=0) stepCalib[i].tolMm = 2;
-    stepCalib[i].maxRetry = EEPROM.read(EE_STEP_CALIB+i*10+9);
-    if(stepCalib[i].maxRetry > 20) stepCalib[i].maxRetry = 3; // 미기록(0xFF) 등 안전한 기본값
   }
 }
 
@@ -1039,6 +1020,11 @@ void sendSeqGet(){
       if(st < sequences[i].numSteps-1) s += ";";
     }
     replyPort->println(s);
+    if(sequences[i].condOn != 0 || sequences[i].condOff != 0){
+      String c = "SEQCOND ";
+      c += String(i)+" "+String((unsigned long)sequences[i].condOn)+" "+String((unsigned long)sequences[i].condOff);
+      replyPort->println(c);
+    }
   }
   replyPort->println("SEQGETDONE");
 }
@@ -1206,89 +1192,12 @@ void handleCommand(String cmdStr){
     replyPort->println(ledTrigText);
     return;
   }
-  if(strncmp(buf,"LEDPRESETSHOW ",14)==0){
-    // PC(웹 프로그램)에서 시퀀스 테스트 실행("지금 실행" 버튼) 등으로 LED 프리셋 단계를 즉시
-    // 보여줄 때 사용. SETLED와 달리 EEPROM에 아무것도 기록하지 않는다(반복 실행해도 EEPROM
-    // 마모 걱정 없음) — 보드가 시퀀스를 혼자 실행할 때(showLedPreset 직접 호출)와 완전히
-    // 같은 동작을 하도록 그 함수를 그대로 재사용.
-    int idx, mode, sec;
-    if(sscanf(buf+14, "%d %d %d", &idx, &mode, &sec)==3){
-      if(sec<0) sec=0;
-      showLedPreset(idx, mode==1, (unsigned int)sec);
-      replyPort->println("OK");
-    }
-    return;
-  }
-  if(strncmp(buf,"SETLEDPRESET ",13)==0){
-    int idx, n=0;
-    if(sscanf(buf+13, "%d%n", &idx, &n)==1 && idx>=1 && idx<=LED_PRESET_COUNT){
-      const char* textStart = buf+13+n;
-      while(*textStart==' ') textStart++;
-      char tmp[LED_PRESET_MAX+1];
-      strncpy(tmp, textStart, LED_PRESET_MAX);
-      tmp[LED_PRESET_MAX] = 0;
-      unsigned int addr = EE_LED_PRESET + (unsigned int)(idx-1)*(LED_PRESET_MAX+1);
-      for(int i=0;i<=LED_PRESET_MAX;i++){
-        EEPROM.update(addr+i, tmp[i]);
-        if(tmp[i]==0) break;
-      }
-      replyPort->println("OK");
-    }
-    return;
-  }
-  if(strcmp(buf,"GETLEDPRESET?")==0){
-    for(int idx=1; idx<=LED_PRESET_COUNT; idx++){
-      char tmp[LED_PRESET_MAX+1];
-      unsigned int addr = EE_LED_PRESET + (unsigned int)(idx-1)*(LED_PRESET_MAX+1);
-      bool valid = true;
-      for(int i=0;i<=LED_PRESET_MAX;i++){
-        byte b = EEPROM.read(addr+i);
-        tmp[i] = (char)b;
-        if(b==0) break;
-        if(i==LED_PRESET_MAX){ valid=false; tmp[0]=0; break; }
-      }
-      if(!valid || (unsigned char)tmp[0]==0xFF) tmp[0]=0;
-      replyPort->print("LEDPRESET "); replyPort->print(idx); replyPort->print(" ");
-      replyPort->println(tmp);
-    }
-    replyPort->println("LEDPRESETDONE");
-    return;
-  }
-  if(strncmp(buf,"SETSTEPCALIB ",13)==0){
-    // SETSTEPCALIB <채널1~6> <보정용초음파채널0~4> <mm당스텝x100> <허용오차mmx10> <최대재시도>
-    int ch, ultraCh, stepsPerMmX100, tolMmX10, maxRetry;
-    if(sscanf(buf+13, "%d %d %d %d %d", &ch, &ultraCh, &stepsPerMmX100, &tolMmX10, &maxRetry)==5
-       && ch>=1 && ch<=MAX_STEPPERS){
-      stepCalib[ch-1].ultraCh = (ultraCh<0 || ultraCh>MAX_ULTRA) ? 0 : (byte)ultraCh;
-      stepCalib[ch-1].stepsPerMm = (stepsPerMmX100>0) ? (stepsPerMmX100/100.0f) : 100.0f;
-      stepCalib[ch-1].tolMm = (tolMmX10>0) ? (tolMmX10/10.0f) : 2.0f;
-      stepCalib[ch-1].maxRetry = (maxRetry<0) ? 0 : (byte)maxRetry;
-      EEPROM.update(EE_STEP_CALIB+(ch-1)*10+0, stepCalib[ch-1].ultraCh);
-      EEPROM.put(EE_STEP_CALIB+(ch-1)*10+1, stepCalib[ch-1].stepsPerMm);
-      EEPROM.put(EE_STEP_CALIB+(ch-1)*10+5, stepCalib[ch-1].tolMm);
-      EEPROM.update(EE_STEP_CALIB+(ch-1)*10+9, stepCalib[ch-1].maxRetry);
-      replyPort->println("OK");
-    }
-    return;
-  }
-  if(strcmp(buf,"GETSTEPCALIB?")==0){
-    replyPort->print("STEPCALIB ");
-    for(int i=0;i<MAX_STEPPERS;i++){
-      replyPort->print(i+1); replyPort->print(':');
-      replyPort->print(stepCalib[i].ultraCh); replyPort->print(':');
-      replyPort->print((long)round(stepCalib[i].stepsPerMm*100)); replyPort->print(':');
-      replyPort->print((int)round(stepCalib[i].tolMm*10)); replyPort->print(':');
-      replyPort->print(stepCalib[i].maxRetry);
-      if(i<MAX_STEPPERS-1) replyPort->print(',');
-    }
-    replyPort->println();
-    return;
-  }
   if(strcmp(buf,"SEQCLR")==0){
     for(int i=0;i<MAX_SEQ;i++){
       sequences[i].numSteps=0; sequences[i].trigSrc=0; sequences[i].trigCh=0; sequences[i].trigCond=1;
       sequences[i].trigDistMode=0; sequences[i].trigDistCm=10; sequences[i].name[0]=0;
-      saveSeqToEEPROM(i); seqLastInputState[i]=255;
+      sequences[i].condOn=0; sequences[i].condOff=0;
+      saveSeqToEEPROM(i); saveCondToEEPROM(i); seqLastInputState[i]=255; // 추가 조건도 함께 지움(항상 기록: 손상된 기록이 남지 않게)
     }
     replyPort->println("OK");
     return;
@@ -1342,6 +1251,26 @@ void handleCommand(String cmdStr){
     if(sscanf(buf+9,"%d %d",&idx,&count)==2 && idx>=0 && idx<MAX_SEQ){
       sequences[idx].numSteps = count>MAX_STEPS?MAX_STEPS:(count<0?0:count);
       saveSeqToEEPROM(idx);
+      replyPort->println("OK");
+    }
+    return;
+  }
+  if(strcmp(buf,"SEQCOND?")==0){
+    // 펌웨어가 SEQCOND를 지원하는지 확인만 한다(아무것도 바꾸지 않음)
+    replyPort->println("SEQCOND OK MAXCH 32");
+    return;
+  }
+  if(strncmp(buf,"SEQCOND ",8)==0){
+    // SEQCOND <idx> <ON마스크> <OFF마스크>  (bit0=입력CH1 … bit31=입력CH32, 부호 없는 10진수)
+    // sscanf 대신 strtol/strtoul을 쓰는 이유: 32비트 부호 없는 값이라 %lu 지원 여부에 의존하지 않기 위함
+    char *p = buf+8, *e;
+    long idx = strtol(p,&e,10); if(e==p) return; p = e;
+    unsigned long on  = strtoul(p,&e,10); if(e==p) return; p = e;
+    unsigned long off = strtoul(p,&e,10); if(e==p) return;
+    if(idx>=0 && idx<MAX_SEQ){
+      sequences[idx].condOn  = (uint32_t)on;
+      sequences[idx].condOff = (uint32_t)off;
+      saveCondToEEPROM((int)idx);
       replyPort->println("OK");
     }
     return;
@@ -1400,21 +1329,12 @@ void handleCommand(String cmdStr){
     int ch;
     if(sscanf(buf+9,"%d",&ch)==1 && ch>=1 && ch<=MAX_STEPPERS){
       stepperStop(ch);
-      // 이 채널로 "자동보정 이동" 중이던 시퀀스 슬롯이 있으면 함께 취소(위 STEPSTOPALL과 동일한 이유)
-      for(int i=0;i<MAX_ACTIVE_SEQ;i++){
-        if(activeSeqs[i].idx!=-1 && activeSeqs[i].calibPhase==1 && sequences[activeSeqs[i].idx].steps[activeSeqs[i].step].target==ch) activeSeqs[i].idx=-1;
-      }
       replyPort->println("OK");
     }
     return;
   }
   if(strcmp(buf,"STEPSTOPALL")==0){
     for(int i=0;i<MAX_STEPPERS;i++) stepMotion[i].active=false;
-    // 진행 중이던 시퀀스의 "자동보정 이동"(type=3) 단계도 함께 취소 — 안 그러면 방금
-    // 강제로 멈춘 것을 "이동 완료"로 착각해서 거리 재측정 후 스스로 다시 움직여버릴 수 있음
-    for(int i=0;i<MAX_ACTIVE_SEQ;i++){
-      if(activeSeqs[i].idx!=-1 && activeSeqs[i].calibPhase==1) activeSeqs[i].idx=-1;
-    }
     replyPort->println("OK");
     return;
   }
@@ -1512,9 +1432,6 @@ void scanKeypad(){
         broadcastLine("KEY " + String(kpDebounced)); // 비동기 알림이므로 USB·블루투스 양쪽에 모두 전송
         kpSentKey = kpDebounced;
       } else if(kpDebounced == 0){
-        // 키를 뗀 순간: PC 쪽(웹 프로그램)이 "누르고 있는 동안/뗄 때" 조건을 판정할 수 있도록
-        // 별도로 알림(눌린 적이 있었을 때만 — 부팅 직후 등 아무 키도 안 눌린 상태에서는 보내지 않음)
-        if(kpSentKey != 0) broadcastLine("KEYUP");
         kpSentKey = 0;
       }
     }
@@ -1535,14 +1452,13 @@ bool relayBusyInActiveSlots(int relayCh){
   return false;
 }
 /* 위와 동일한 이유로, 같은 스텝모터 채널을 서로 다른 시퀀스가 동시에 움직이려 하는 것만 막는다
-   (릴레이·LED 타입 단계는 무시). 겹치면 모터가 엉뚱한 위치로 움직일 수 있어 위험하다.
-   단순 이동(type=1)과 자동보정 이동(type=3) 둘 다 같은 모터를 쓰므로 함께 검사한다. */
+   (릴레이 타입 단계는 무시). 겹치면 모터가 엉뚱한 위치로 움직일 수 있어 위험하다. */
 bool stepperBusyInActiveSlots(int motorCh){
   for(int i=0;i<MAX_ACTIVE_SEQ;i++){
     if(activeSeqs[i].idx==-1) continue;
     Seq &sq = sequences[activeSeqs[i].idx];
     for(int s=0;s<sq.numSteps;s++){
-      if((sq.steps[s].type==1 || sq.steps[s].type==3) && sq.steps[s].target==motorCh) return true;
+      if(sq.steps[s].type==1 && sq.steps[s].target==motorCh) return true;
     }
   }
   return false;
@@ -1556,14 +1472,12 @@ void startSequence(int idx){
   for(int i=0;i<MAX_ACTIVE_SEQ;i++) if(activeSeqs[i].idx==idx) return; // 같은 시퀀스가 이미 실행 중
   for(int s=0;s<sequences[idx].numSteps;s++){
     SeqStep &sst = sequences[idx].steps[s];
-    if(sst.type==0){ if(relayBusyInActiveSlots(sst.target)) return; }            // 릴레이 충돌 → 건너뜀
-    else if(sst.type==1 || sst.type==3){ if(stepperBusyInActiveSlots(sst.target)) return; } // 스텝모터 충돌 → 건너뜀
-    // type==2(LED 프리셋 표시)는 릴레이·스텝모터를 건드리지 않으므로 충돌 검사 불필요
+    if(sst.type==0){ if(relayBusyInActiveSlots(sst.target)) return; } // 릴레이 충돌 → 건너뜀
+    else { if(stepperBusyInActiveSlots(sst.target)) return; }         // 스텝모터 충돌 → 건너뜀
   }
   for(int i=0;i<MAX_ACTIVE_SEQ;i++){
     if(activeSeqs[i].idx==-1){
       activeSeqs[i].idx=idx; activeSeqs[i].step=0; activeSeqs[i].dueMs=millis(); // 첫 단계는 바로 다음 loop()에서 즉시 실행
-      activeSeqs[i].calibPhase=0; activeSeqs[i].calibRetry=0;
       return;
     }
   }
@@ -1572,52 +1486,12 @@ void startSequence(int idx){
 /* 매 loop()마다 호출: delay() 없이, 슬롯마다 "지금이 다음 단계를 실행할 시각인지"만 확인해서
    그 슬롯만 한 단계씩 진행한다. 대기 중인 슬롯은 아무 일도 안 하고 바로 지나치므로
    키패드/시리얼/다른 입력 감시가 그 사이에도 정상적으로 계속 돈다. */
-/* type=3(자동보정 이동) 단계가 "이동 시작함"인 슬롯을 매 loop()마다 확인해서, 이동이 끝나면
-   그때그때 거리 재측정→판정→(필요하면) 재이동까지 진행한다. 완료(성공/포기)되면 true를
-   반환해서 호출자가 다음 단계로 넘어가게 한다. 아직 진행 중이면 false(이번 loop은 대기만). */
-bool updateCalibStep(int slot){
-  Seq &sq = sequences[activeSeqs[slot].idx];
-  SeqStep &st = sq.steps[activeSeqs[slot].step];
-  int mch = st.target;
-  if(mch<1 || mch>MAX_STEPPERS) return true; // 잘못된 채널 → 그냥 완료 처리하고 다음 단계로
-  if(stepMotion[mch-1].active) return false; // 아직 이동 중 — 이번 loop은 대기만
-
-  StepCalibCfg &cfg = stepCalib[mch-1];
-  int after = readUltraMm(cfg.ultraCh);
-  if(after < 0) return true; // 측정 실패 → 더 진행할 수 없으니 여기서 포기하고 다음 단계로
-
-  int targetMm = abs((int)st.steps);
-  int movedMm = abs(after - activeSeqs[slot].calibBeforeMm);
-  float errMm = (float)targetMm - (float)movedMm;
-  if(fabs(errMm) <= cfg.tolMm) return true;                    // 허용오차 이내 → 성공, 다음 단계로
-  if(activeSeqs[slot].calibRetry >= cfg.maxRetry) return true; // 최대 재시도 도달 → 포기, 다음 단계로
-
-  activeSeqs[slot].calibRetry++;
-  if(errMm < 0) activeSeqs[slot].calibDirSign = -activeSeqs[slot].calibDirSign; // 초과 이동 → 반대 방향으로
-  int remainMm = (int)fabs(errMm);
-  long stepsToSend = lround((double)remainMm * cfg.stepsPerMm) * activeSeqs[slot].calibDirSign;
-  if(stepsToSend==0) return true; // 더 보낼 스텝이 없으면 완료 처리
-  stepperStartMove(mch, stepsToSend, (int)st.speedPps);
-  return false; // 다음 loop부터 다시 이 함수가 이동 완료를 감시
-}
-
 void updateRunningSequences(){
   unsigned long now = millis();
   for(int i=0;i<MAX_ACTIVE_SEQ;i++){
     if(activeSeqs[i].idx==-1) continue;
-    Seq &sq = sequences[activeSeqs[i].idx];
-
-    if(activeSeqs[i].calibPhase==1){
-      // type=3 단계가 이동/판정을 진행 중 — 시간(dueMs)이 아니라 이동 완료 여부로 진행한다
-      if(activeSeqs[i].step >= sq.numSteps){ activeSeqs[i].calibPhase=0; activeSeqs[i].idx=-1; lastSeqRunMs=now; continue; }
-      if(!updateCalibStep(i)) continue; // 아직 진행 중 — 이번 loop은 여기서 끝
-      activeSeqs[i].calibPhase = 0;
-      activeSeqs[i].dueMs = now + sq.steps[activeSeqs[i].step].delayMs;
-      activeSeqs[i].step++;
-      continue;
-    }
-
     if((long)(now - activeSeqs[i].dueMs) < 0) continue; // 아직 이 슬롯의 다음 단계 시각이 안 됨
+    Seq &sq = sequences[activeSeqs[i].idx];
     if(activeSeqs[i].step >= sq.numSteps){
       // 이 슬롯의 모든 단계(와 마지막 단계의 지연 시간까지) 완료
       activeSeqs[i].idx = -1;
@@ -1627,40 +1501,11 @@ void updateRunningSequences(){
     SeqStep &st = sq.steps[activeSeqs[i].step];
     if(st.type==0){
       setRelay(st.target, st.state==1);
-      activeSeqs[i].dueMs = now + st.delayMs;
-      activeSeqs[i].step++;
-    } else if(st.type==1){
+    } else {
       stepperStartMove(st.target, (long)st.steps, (int)st.speedPps); // 이동은 "시작"만 하고 곧장 다음 단계로(완료 대기는 delayMs로 직접 맞춤)
-      activeSeqs[i].dueMs = now + st.delayMs;
-      activeSeqs[i].step++;
-    } else if(st.type==2){
-      showLedPreset(st.target, st.state==1, (unsigned int)st.steps);
-      activeSeqs[i].dueMs = now + st.delayMs;
-      activeSeqs[i].step++;
-    } else { // type==3: 자동보정 이동 시작
-      int mch = st.target;
-      bool started = false;
-      if(mch>=1 && mch<=MAX_STEPPERS && steppers[mch-1].stepPin>0 && steppers[mch-1].dirPin>0){
-        StepCalibCfg &cfg = stepCalib[mch-1];
-        if(cfg.ultraCh>=1 && cfg.ultraCh<=MAX_ULTRA && cfg.stepsPerMm>0){
-          int before = readUltraMm(cfg.ultraCh);
-          if(before>=0){
-            int targetMm = abs((int)st.steps);
-            int8_t dirSign = (st.steps>=0) ? 1 : -1;
-            long stepsToSend = lround((double)targetMm * cfg.stepsPerMm) * dirSign;
-            if(stepsToSend!=0){
-              activeSeqs[i].calibBeforeMm = before;
-              activeSeqs[i].calibDirSign = dirSign;
-              activeSeqs[i].calibRetry = 0;
-              activeSeqs[i].calibPhase = 1;
-              stepperStartMove(mch, stepsToSend, (int)st.speedPps);
-              started = true; // calibPhase=1로 남겨두고, 다음 loop부터 위쪽 분기가 진행을 이어감(step은 아직 증가시키지 않음)
-            }
-          }
-        }
-      }
-      if(!started){ activeSeqs[i].dueMs = now + st.delayMs; activeSeqs[i].step++; } // 설정 미비/측정 실패 → 건너뜀
     }
+    activeSeqs[i].dueMs = now + st.delayMs; // delayMs가 0이면 바로 다음 loop()에서 이 슬롯의 다음 단계 진행
+    activeSeqs[i].step++;
   }
 }
 
@@ -1706,6 +1551,22 @@ void sampleLoadForSequenceTriggers(){
     if(needed[c]) loadSeqLastG[c] = readLoadGrams(c+1, 3); // -9999=응답없음/미설정/미보정
   }
 }
+/* 추가 조건(인터록) 판정: 트리거가 일어난 "그 순간"의 디바운스된 입력 상태(inStableState)로 검사한다.
+   조건 채널은 "상태(레벨)"만 보므로 버튼을 계속 눌러둔 채여도 되고, 조건이 하나라도 안 맞으면 false.
+   등록되지 않은 채널(번호>inCount)이 조건에 있으면 판정할 수 없으므로 안전하게 false(실행 안 함). */
+bool seqCondsOk(int s){
+  uint32_t need = sequences[s].condOn | sequences[s].condOff;
+  if(need == 0) return true;
+  for(byte i=0;i<32;i++){
+    uint32_t bit = 1UL << i;
+    if(!(need & bit)) continue;
+    if(i >= inCount) return false;
+    byte st = inStableState[i];
+    if((sequences[s].condOn  & bit) && st != 1) return false;
+    if((sequences[s].condOff & bit) && st != 0) return false;
+  }
+  return true;
+}
 void updateInputsAndSequences(){
   unsigned long now = millis();
   for(int i=0;i<inCount;i++){
@@ -1736,10 +1597,6 @@ void updateInputsAndSequences(){
       if(g <= -9999) continue; // 아직 측정 전이거나 미설정/미보정 — 이번 판정은 건너뛰고 이전 상태 유지
       bool hit = (sequences[s].trigDistMode==1) ? (g >= (long)sequences[s].trigDistCm) : (g <= (long)sequences[s].trigDistCm);
       cur = hit ? 1 : 0;
-    } else if(sequences[s].trigSrc==3){
-      // 키패드 특정 키 트리거: 지금 눌려 있는 키(kpDebounced)가 이 시퀀스가 지정한 키와
-      // 같으면 "1(켜짐)"인 가상 채널처럼 취급(키패드 사용 안 함이면 항상 0)
-      cur = (kpEnabled && kpDebounced!=0 && (byte)kpDebounced==sequences[s].trigCh) ? 1 : 0;
     } else {
       int ch = sequences[s].trigCh;
       if(ch < 1 || ch > inCount) continue;
@@ -1750,9 +1607,9 @@ void updateInputsAndSequences(){
     if(!coolingDown){
       if(target==2){
         // BOTH: 방향 상관없이 상태가 바뀌는 순간마다 실행(부팅 직후 prev==255일 때는 무시)
-        if(prev!=255 && cur!=prev) startSequence(s);
+        if(prev!=255 && cur!=prev && seqCondsOk(s)) startSequence(s);
       } else if(cur==target && prev!=target){
-        startSequence(s);
+        if(seqCondsOk(s)) startSequence(s); // 조건이 안 맞으면 이번 트리거는 무시(조건을 맞춘 뒤 다시 눌러야 실행)
       }
     }
     seqLastInputState[s] = cur;

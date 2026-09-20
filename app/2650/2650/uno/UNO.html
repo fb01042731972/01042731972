@@ -1,0 +1,911 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>UNO PLC 제어 프로그램</title>
+<style>
+*{box-sizing:border-box}
+body{font-family:Arial,"Malgun Gothic",sans-serif;margin:0;background:#f3f4f6;color:#222}
+header{background:#1f2937;color:#fff;padding:16px 24px;font-size:22px;font-weight:bold;display:flex;align-items:center;gap:12px;flex-wrap:wrap}
+.badge{background:#2563eb;font-size:13px;padding:4px 12px;border-radius:999px}
+.contact{margin-left:auto;font-size:13px;font-weight:normal;color:#cbd5e1}
+.contact a{color:#fff;font-weight:bold;text-decoration:none}
+.foot{max-width:1100px;margin:0 auto;padding:6px 16px 28px;text-align:center;font-size:13px;color:#64748b}
+.foot a{color:#334155;font-weight:bold;text-decoration:none}
+main{max-width:1100px;margin:0 auto;padding:16px}
+.card{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.12);padding:16px 18px;margin-bottom:14px}
+.card h3{margin:0 0 10px;font-size:18px}
+.row{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin:8px 0}
+.row>label{font-weight:bold;min-width:96px}
+.small{font-size:13px;color:#64748b;line-height:1.55}
+.hidden{display:none!important}
+button{background:#2563eb;color:#fff;border:0;border-radius:6px;padding:9px 14px;font-size:14px;cursor:pointer}
+button:hover{filter:brightness(1.1)}
+button:disabled{opacity:.5;cursor:not-allowed}
+button.green{background:#059669}button.red{background:#dc2626}button.gray{background:#64748b}button.light{background:#e5e7eb;color:#222}
+input,select{padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;background:#fff}
+input[type=number]{width:100px}
+.status{font-weight:bold}
+.warn{background:#fef3c7;border:1px solid #f59e0b;border-radius:6px;padding:8px 10px;font-size:13px;margin:8px 0}
+.grid4{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.relayBox,.inBox{border:1px solid #e5e7eb;border-radius:8px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.dot{display:inline-block;width:14px;height:14px;border-radius:50%;background:#cbd5e1;vertical-align:middle;margin-right:6px}
+.dot.on{background:#16a34a;box-shadow:0 0 6px #16a34a}
+.dot.pressed{background:#f59e0b;box-shadow:0 0 6px #f59e0b}
+.seqWrap{display:grid;grid-template-columns:270px 1fr;gap:16px}
+@media(max-width:800px){.seqWrap{grid-template-columns:1fr}}
+.seqItem{display:flex;gap:6px;margin:6px 0;align-items:stretch}
+.seqItem .no{width:34px;text-align:center;border:1px solid #d1d5db;border-radius:6px;padding:8px 0;background:#fff}
+.seqItem .body{flex:1;text-align:left;background:#e5e7eb;color:#222;border-radius:8px;padding:8px 10px;font-size:13px;line-height:1.45}
+.seqItem .body.sel{background:#2563eb;color:#fff}
+.seqItem .body{display:block;word-break:keep-all;overflow-wrap:anywhere;cursor:pointer;border:0;font-family:inherit}
+.sTitle{display:block;font-weight:700;font-size:14px;line-height:1.35;padding-bottom:5px;margin-bottom:5px;border-bottom:1px solid rgba(0,0,0,.12)}
+.seqItem .body.sel .sTitle{border-bottom-color:rgba(255,255,255,.35)}
+.sRow{display:grid;grid-template-columns:40px 1fr;gap:6px;align-items:start;margin-top:4px;font-size:12.5px;line-height:1.4}
+.sLbl{font-size:11px;font-weight:700;opacity:.6;padding-top:1px}
+.sVal{display:block}
+.sVal .ln{display:block;margin-bottom:3px}
+.sVal .ln:last-child{margin-bottom:0}
+.sTag{display:inline-block;font-size:11px;line-height:1.5;padding:0 7px;border-radius:9px;margin-left:0;white-space:nowrap;background:#fff;border:1px solid #cbd5e1;color:#334155}
+.sTag.on{background:#fef3c7;border-color:#fcd34d;color:#92400e}
+.sTag.rOn{background:#dcfce7;border-color:#86efac;color:#166534}
+.sWait{display:block;font-size:11.5px;opacity:.65;padding:0 0 3px 16px}
+.seqItem .body.sel .sTag{background:rgba(255,255,255,.2);border-color:rgba(255,255,255,.55);color:#fff}
+.box{background:#f8fafc;border:1px solid #e5e7eb;border-radius:8px;padding:10px 12px;margin:10px 0}
+.stepRow{display:flex;gap:6px;align-items:center;flex-wrap:wrap;padding:6px 0;border-bottom:1px solid #eef0f3}
+.stepRow.dragOver{background:#dbeafe}
+.handle{cursor:grab;font-size:18px;color:#94a3b8;user-select:none;padding:0 4px}
+.help{background:#f8fafc;border:1px solid #e5e7eb;border-radius:6px;padding:8px 10px;font-size:13px;line-height:1.6;margin:4px 0}
+.q{border-radius:50%;width:24px;height:24px;padding:0;line-height:1}
+#log{background:#0f172a;color:#cbd5e1;font-family:Consolas,monospace;font-size:12px;height:180px;overflow:auto;padding:8px;border-radius:6px;white-space:pre-wrap}
+textarea{padding:8px 10px;border:1px solid #d1d5db;border-radius:6px;font-size:14px;font-family:inherit;resize:vertical}
+</style>
+</head>
+<body>
+<header>UNO PLC 제어 프로그램 <span class="badge">Arduino UNO · 릴레이 4 · 입력 최대 12</span><span class="contact">버그 신고 : <a href="tel:01042731972">010-4273-1972</a> · 이진주방산업</span></header>
+<main>
+
+<!-- 1. 연결 -->
+<div class="card">
+ <h3>1. 연결 · 동작 모드</h3>
+ <div class="row">
+  <button onclick="connectDevice()" class="green">🔌 UNO 연결</button>
+  <button onclick="disconnectDevice()" class="red">연결 해제</button>
+  <span id="status" class="status">● 연결 안 됨</span>
+ </div>
+ <div class="small">Chrome 또는 Edge에서 여세요. 보드에는 <code>UNO_PLC_Firmware.ino</code> <b>v1.1 이상</b>(최신은 v1.7)을 올려야 합니다(115200bps). 연결하면 UNO가 자동으로 재시작되어 약 2초 기다립니다.</div>
+ <div class="row">
+  <label>동작 모드</label>
+  <button class="light" id="modeBtn2" onclick="setMode(2)">2 시퀀스</button>
+  <span id="modeInfo" class="small">모드 확인 전</span>
+ </div>
+ <div class="small">아래 "시퀀스 만들기"를 보드 단독으로 돌리려면 <b>2 시퀀스</b> 모드여야 합니다(이 펌웨어는 이 모드 하나만 지원합니다).</div>
+</div>
+
+<!-- 2. 릴레이 / 입력 -->
+<div class="card">
+ <h3>2. 릴레이 R1~R4 · 입력 CH1~CH12 (실시간)</h3>
+ <div class="small">이름을 적어두면 아래 시퀀스 화면에도 그대로 표시됩니다(이름은 이 컴퓨터 브라우저에만 저장). 기본 배선은 CH1~CH6=핀 7~12, CH7~CH12=핀 2·13·A0~A3이며, 실제로 안 쓰는 채널은 그냥 배선하지 않고 이름도 비워두면 됩니다(안 쓴 입력은 항상 "뗌"으로 보입니다). <b>CH7~CH12는 보드 펌웨어 v1.5 이상</b>이 있어야 동작합니다(v1.4 이하는 CH1~CH6까지만 인식).<br><b>입력 반전</b>: 아무것도 안 달았는데도 항상 "눌림"으로 나오는 채널(예: A0~A3)은 그 채널의 "입력 반전"을 켜세요. 그러면 핀이 <b>HIGH일 때 눌림</b>, LOW일 때 뗌으로 읽습니다(펌웨어 v1.7 이상). 이때 버튼은 GND가 아니라 <b>5V</b> 쪽에 연결해야 하며, 반드시 <b>1kΩ 저항</b>을 직렬로 넣으세요(24V 연결 금지).</div>
+ <div class="grid4" id="relayGrid" style="margin-top:10px"></div>
+ <div class="grid4" id="inGrid" style="margin-top:10px"></div>
+ <div class="row"><label style="min-width:0"><input type="checkbox" id="livePoll" checked onchange="setLive()"> 상태 자동 갱신(0.6초)</label></div>
+</div>
+
+<!-- 3. 시퀀스 -->
+<div class="card">
+ <h3>3. 시퀀스 만들기</h3>
+ <p class="small" style="margin-top:0">스위치 입력(CH1~CH12) → 릴레이를 순서대로 동작시킵니다. 시작 조건 아래의 🔒 <b>추가 조건</b>으로 "다른 버튼이 눌려 있을 때만" 같은 조합 조건도 붙일 수 있습니다.</p>
+
+ <div class="box" style="margin-top:0">
+  <b>💾 프리셋 (이 컴퓨터에 여러 세트 저장)</b>
+  <p class="small">지금 화면의 시퀀스 목록을 이름 붙여 저장해두고, 나중에 원하는 세트를 골라 불러올 수 있습니다. 보드에는 자동으로 반영되지 않으며, 불러온 뒤 아래 "⚡ 전체 시퀀스를 보드에 저장"을 눌러야 보드에 들어갑니다.</p>
+  <div class="row" style="margin:4px 0">
+   <input id="presetName" placeholder="프리셋 이름 (예: 공정 A)" style="flex:1;min-width:160px">
+   <button class="green" onclick="savePreset()">현재 목록 저장</button>
+   <select id="presetSel" style="flex:1;min-width:160px"></select>
+   <button class="gray" onclick="loadPreset()">불러오기</button>
+   <button class="red" onclick="deletePreset()">삭제</button>
+  </div>
+  <div class="row" style="margin:4px 0;border-top:1px solid #e5e7eb;padding-top:8px">
+   <button onclick="exportPresetsFile()">⬇ 파일로 저장(폴더 지정)</button>
+   <button class="gray" onclick="importPresetsFile()">⬆ 파일에서 가져오기</button>
+   <span class="small" id="presetFileInfo"></span>
+  </div>
+  <div class="small">"파일로 저장"은 프리셋 전체를 <code>.json</code> 파일 하나로 내보냅니다(저장할 폴더를 직접 고를 수 있고, 다음 저장부터는 마지막으로 저장한 폴더에서 저장창이 열립니다 — Chrome/Edge). USB·다른 컴퓨터로 옮기거나 백업할 때 사용하세요. "가져오기"로 그 파일을 다시 불러올 수 있습니다.</div>
+ </div>
+
+ <div class="seqWrap">
+  <div>
+   <button class="light" style="width:100%;text-align:left" onclick="newSeq()">＋ 새 시퀀스</button>
+   <div id="seqList"></div>
+   <div id="limitWarn" class="warn hidden"></div>
+  </div>
+  <div>
+   <div class="row">
+    <label>시퀀스 이름</label>
+    <input id="seqName" style="flex:1;min-width:160px" placeholder="예: 충진 시작">
+    <button class="green" onclick="saveSeq()">저장</button>
+    <button class="red" onclick="deleteSeq()">삭제</button>
+   </div>
+   <div class="row">
+    <label>시작 조건(트리거)</label>
+    <select id="trigCh"></select>
+    <select id="trigCond">
+     <option value="ON">누를 때 (눌리는 순간)</option>
+     <option value="OFF">놓을 때 (떼는 순간)</option>
+     <option value="BOTH">양쪽 다 (누름+뗌 둘 다)</option>
+    </select>
+    <button type="button" class="gray q" onclick="document.getElementById('trigHelp').classList.toggle('hidden')">?</button>
+   </div>
+   <div id="trigHelp" class="help hidden">
+    <b>누를 때</b>: 버튼이 눌리는 그 순간 1번만 실행(계속 눌려 있어도 반복 안 됨)<br>
+    <b>놓을 때</b>: 손을 떼는 그 순간 1번만 실행<br>
+    <b>양쪽 다</b>: 누를 때와 뗄 때 둘 다 실행(한 번 왕복에 2번)<br>
+    <b>수동 실행만</b>: 자동 시작 없이 PC의 "지금 실행"으로만 시작
+   </div>
+
+   <div class="box">
+    <div class="row" style="margin-top:0">
+     <b>🔒 추가 조건 (인터록)</b>
+     <button class="gray" onclick="addCond()">＋ 조건 추가</button>
+     <button type="button" class="gray q" onclick="document.getElementById('condHelp').classList.toggle('hidden')">?</button>
+     <span class="small">위 시작 조건이 일어나는 <b>그 순간</b>, 아래 채널들이 모두 지정한 상태일 때만 실행합니다.</span>
+    </div>
+    <div id="condHelp" class="help hidden">예) 시작 조건 CH1 누를 때 + 조건 CH3 눌려 있을 때(ON) → CH3를 누른 채로 CH1을 눌러야만 동작합니다. 조건은 <b>트리거가 일어나는 순간에만</b> 검사하며, 이미 실행이 시작된 뒤에 바뀌어도 중간에 멈추지 않습니다. 최대 4개.<br><b>양쪽 다</b>: 그 채널이 눌려 있든 떼어 있든 상관없이 통과합니다(조건을 지우지 않고 잠시 무력화할 때 사용).</div>
+    <div id="condRows"></div>
+   </div>
+
+   <h3 style="margin:14px 0 4px;font-size:17px">동작 순서 (마우스로 추가 · 순서 변경)</h3>
+   <div class="small">각 줄 왼쪽의 <b>⠿</b>를 누른 채 위/아래로 끌면 순서가 바뀝니다(▲▼ 버튼도 사용 가능). 각 줄은 <b>릴레이 동작 → 지연(ms) 기다림 → 다음 줄</b> 순서로 실행됩니다. 최대 10줄.</div>
+   <div id="stepRows"></div>
+   <div class="row">
+    <button onclick="addStep()">＋ 동작 추가</button>
+    <button class="green" onclick="testRun()">▶ 지금 실행(테스트)</button>
+   </div>
+
+   <p class="small" style="margin-top:14px">※ 아래 "PC 자동 감시"는 <b>이 컴퓨터가 켜져 있고 이 웹페이지가 연결되어 있을 때만</b> 동작하는 테스트용입니다. 컴퓨터 없이 계속 동작시키려면 그 아래 "보드에 저장"을 사용하세요.</p>
+   <div class="row">
+    <label style="min-width:150px">PC 자동 감시 주기(ms)</label>
+    <input id="pollMs" type="number" min="100" value="300">
+    <button class="green" onclick="startMonitor()">▶ PC 자동 감시 시작</button>
+    <button class="red" onclick="stopMonitor()">■ 감시 중지</button>
+    <span id="monStatus" class="small">감시 중지됨</span>
+   </div>
+
+   <div class="box" style="border-top:2px solid #cbd5e1">
+    <b>⚡ 독립 작동 (컴퓨터 없이)</b>
+    <p class="small">위 목록의 <b>저장된 시퀀스 전부</b>를 UNO의 EEPROM에 기록합니다. 저장 후 모드를 <b>2 시퀀스</b>로 두면 컴퓨터를 끄고 전원만 넣어도, 전원을 껐다 켜도 그대로 동작합니다. 한도: <b>시퀀스 12개(펌웨어 v1.6 이상 · v1.5 이하는 6개) · 시퀀스당 조건 4개 · 동작 10줄</b>. 시퀀스 이름은 보드에 저장되지 않습니다(불러올 때 같은 순서의 기존 이름을 씁니다).<br><b>시퀀스가 보드 한도를 넘으면</b> "⬇ 아두이노 업로드용 스케치(.ino)"로 만들어 Arduino IDE로 업로드하세요. 이 방식은 시퀀스 개수 제한이 없고(UNO 메모리 한도 안에서) 컴퓨터 없이 동작하지만, 내용을 바꿀 때마다 다시 만들어 업로드해야 합니다.</p>
+    <div class="row">
+     <button class="green" onclick="pushToBoard()">⚡ 전체 시퀀스를 보드에 저장</button>
+     <button class="gray" onclick="pullFromBoard()">보드에서 불러오기(현재 목록 덮어씀)</button>
+     <button class="gray" onclick="exportCmds()">⬇ 전송될 명령 미리보기(파일)</button>
+     <button onclick="exportSketch()">⬇ 아두이노 업로드용 스케치(.ino) 만들기</button>
+    </div>
+    <div class="small">마지막 버튼은 위 시퀀스 목록을 <b>값까지 코드에 박아 넣은 순수 아두이노 스케치</b>로 만듭니다. 이 페이지·시리얼 연결·UNO PLC 펌웨어 없이, 받은 <code>.ino</code>를 아두이노 IDE에서 직접 업로드하면 전원만으로 동작합니다(핀 번호는 지금 화면에 보이는 D번호 기준).</div>
+    <div id="boardInfo" class="small"></div>
+   </div>
+  </div>
+ </div>
+</div>
+
+
+
+<div class="card">
+ <h3>통신 로그</h3>
+ <div id="log"></div>
+ <div class="row"><button class="gray" onclick="document.getElementById('log').textContent=''">로그 지우기</button></div>
+</div>
+</main>
+<footer class="foot">🛠 버그 신고 : <a href="tel:01042731972">010-4273-1972</a> · 이진주방산업</footer>
+
+<script>
+const N_OUT=4, N_IN=12, MAX_CONDS=4, MAX_STEPS=10;
+const MAX_SEQ_FW16=12, MAX_SEQ_FW15=6;   // 보드에 저장 가능한 시퀀스 수: 펌웨어 v1.6 이상 12개, v1.5 이하 6개
+let port=null, writer=null, reader=null, rxBuf='', waiters=[], chain=Promise.resolve();
+let inPins=[7,8,9,10,11,12,2,13,14,15,16,17], outPins=[3,4,5,6];
+let boardMode=null, fwVer=null;
+const verNum=v=>{ const m=String(v||'').match(/(\d+)\.(\d+)/); return m?(+m[1])*100+(+m[2]):0 };   // '1.6' → 106
+function maxSeq(){ return (fwVer && verNum(fwVer)<106) ? MAX_SEQ_FW15 : MAX_SEQ_FW16 }   // 연결 전/버전 미확인이면 12개 기준
+let relayState=[false,false,false,false], inState=Array(12).fill(0);
+let seqs=[], cur=-1, edConds=[], edSteps=[];
+let names={relay:['','','',''], inp:['','','','','','','','','','','',''], inv:[0,0,0,0,0,0,0,0,0,0,0,0]};   // inv: 입력 반전(1 = 핀이 HIGH일 때 눌림)
+const enc=new TextEncoder();
+const $=id=>document.getElementById(id);
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const sleep=ms=>new Promise(r=>setTimeout(r,ms));
+function log(m){const el=$('log');el.textContent+=new Date().toTimeString().slice(0,8)+' '+m+'\n';el.scrollTop=el.scrollHeight}
+
+/* ---------- 저장 ---------- */
+function loadLocal(){
+ try{seqs=JSON.parse(localStorage.getItem('unoSeqV1')||'[]')}catch(e){seqs=[]}
+ try{
+  const n=JSON.parse(localStorage.getItem('unoNamesV1')||'null');
+  if(n&&n.relay&&n.inp){
+   while(n.relay.length<N_OUT) n.relay.push('');
+   while(n.inp.length<N_IN) n.inp.push('');   // 예전(입력 6개) 저장분을 12개로 확장
+    if(!Array.isArray(n.inv)) n.inv=[];
+    while(n.inv.length<N_IN) n.inv.push(0);
+   names=n;
+  }
+ }catch(e){}
+}
+function saveLocal(){try{localStorage.setItem('unoSeqV1',JSON.stringify(seqs))}catch(e){}}
+function saveNames(){try{localStorage.setItem('unoNamesV1',JSON.stringify(names))}catch(e){}}
+
+/* ---------- 프리셋 (여러 세트 저장) ---------- */
+let presets={};
+function loadPresets(){ try{presets=JSON.parse(localStorage.getItem('unoPresetsV1')||'{}')}catch(e){presets={}} }
+function savePresetsLocal(){ try{localStorage.setItem('unoPresetsV1',JSON.stringify(presets))}catch(e){} }
+function refreshPresetSel(){
+ const sel=$('presetSel'); const cur=sel.value;
+ const names2=Object.keys(presets).sort((a,b)=>a.localeCompare(b,'ko'));
+ sel.innerHTML=names2.length? names2.map(n=>`<option value="${esc(n)}"${n===cur?' selected':''}>${esc(n)} (${presets[n].length}개)</option>`).join('') : '<option value="">저장된 프리셋 없음</option>';
+}
+function savePreset(){
+ const nm=$('presetName').value.trim();
+ if(!nm){alert('프리셋 이름을 입력하세요.');return}
+ if(!seqs.length){alert('저장할 시퀀스가 없습니다. 먼저 시퀀스를 만들고 "저장"을 누르세요.');return}
+ if(presets[nm] && !confirm('"'+nm+'" 프리셋이 이미 있습니다. 덮어쓸까요?')) return;
+ presets[nm]=JSON.parse(JSON.stringify(seqs));
+ savePresetsLocal(); refreshPresetSel(); $('presetSel').value=nm; $('presetName').value='';
+ log('프리셋 저장: '+nm+' ('+seqs.length+'개)');
+}
+function loadPreset(){
+ const nm=$('presetSel').value;
+ if(!nm||!presets[nm]){alert('불러올 프리셋을 먼저 선택하세요.');return}
+ if(seqs.length && !confirm('지금 화면의 시퀀스 목록을 "'+nm+'" 프리셋 내용으로 바꿉니다. 저장하지 않은 변경사항은 사라집니다. 계속할까요?')) return;
+ seqs=JSON.parse(JSON.stringify(presets[nm])); saveLocal(); newSeq(); if(seqs.length) selectSeq(0);
+ log('프리셋 불러옴: '+nm+' ('+seqs.length+'개) — 보드에 반영하려면 "⚡ 전체 시퀀스를 보드에 저장"을 누르세요');
+}
+function deletePreset(){
+ const nm=$('presetSel').value;
+ if(!nm||!presets[nm]){alert('삭제할 프리셋을 먼저 선택하세요.');return}
+ if(!confirm('"'+nm+'" 프리셋을 삭제할까요? (보드나 현재 화면 목록에는 영향 없음)')) return;
+ delete presets[nm]; savePresetsLocal(); refreshPresetSel();
+ log('프리셋 삭제: '+nm);
+}
+/* ---------- 저장 공용: 마지막으로 저장한 폴더를 기억해서 다음 저장창을 그 폴더에서 엽니다 ---------- */
+const SAVE_PICKER_ID='unoSave';   // 같은 id를 쓰는 저장/열기 창은 브라우저가 마지막 폴더를 공유해서 기억
+function idbOpen(){ return new Promise((res,rej)=>{ const r=indexedDB.open('unoFileHandles',1); r.onupgradeneeded=()=>r.result.createObjectStore('h'); r.onsuccess=()=>res(r.result); r.onerror=()=>rej(r.error) }) }
+async function idbGet(k){ try{ const db=await idbOpen(); return await new Promise((res,rej)=>{ const q=db.transaction('h').objectStore('h').get(k); q.onsuccess=()=>res(q.result); q.onerror=()=>rej(q.error) }) }catch(e){ return undefined } }
+async function idbSet(k,v){ try{ const db=await idbOpen(); await new Promise((res,rej)=>{ const t=db.transaction('h','readwrite'); t.objectStore('h').put(v,k); t.oncomplete=res; t.onerror=()=>rej(t.error) }) }catch(e){} }
+/* data를 파일로 저장. 성공 시 {name,picked}, 사용자가 취소하면 null.
+   지원 브라우저(Chrome/Edge)는 저장창이 마지막 저장 폴더에서 열리고, 그 외 브라우저는 일반 다운로드로 대체됩니다. */
+async function saveFileAs(data, suggested, mime, desc, ext){
+ if(window.showSaveFilePicker){
+  try{
+   const opts={id:SAVE_PICKER_ID, suggestedName:suggested, types:[{description:desc,accept:{[mime]:[ext]}}]};
+   const last=await idbGet('lastHandle'); if(last) opts.startIn=last;
+   let handle;
+   try{ handle=await window.showSaveFilePicker(opts) }
+   catch(e){ if(e.name==='AbortError') throw e; delete opts.startIn; handle=await window.showSaveFilePicker(opts) }   // 기억한 폴더가 사라진 경우 재시도
+   const w=await handle.createWritable(); await w.write(data); await w.close();
+   await idbSet('lastHandle',handle);
+   return {name:handle.name,picked:true};
+  }catch(e){
+   if(e.name==='AbortError') return null;   // 사용자가 저장 취소
+   log('파일 저장창을 열 수 없어 기본 다운로드로 대신합니다: '+e.message);
+  }
+ }
+ // 이 API를 지원하지 않는 브라우저용: 일반 다운로드(다운로드 폴더 또는 브라우저 설정 폴더)
+ const a=document.createElement('a');
+ a.href=URL.createObjectURL(new Blob([data],{type:mime}));
+ a.download=suggested; a.click();
+ setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+ return {name:suggested,picked:false};
+}
+
+/* ---------- 프리셋을 실제 파일로 내보내기/가져오기 (폴더 직접 지정) ---------- */
+async function exportPresetsFile(){
+ if(!Object.keys(presets).length){alert('저장된 프리셋이 없습니다. 먼저 "현재 목록 저장"으로 프리셋을 만드세요.');return}
+ const data=JSON.stringify(presets,null,2);
+ const suggested='uno_presets_'+new Date().toISOString().slice(0,10)+'.json';
+ const r=await saveFileAs(data,suggested,'application/json','프리셋 JSON','.json');
+ if(!r) return;
+ $('presetFileInfo').textContent=r.picked?('✅ 저장됨: '+r.name):('다운로드 폴더에 저장됨: '+r.name);
+ log('프리셋 '+Object.keys(presets).length+'개를 파일로 저장: '+r.name);
+}
+async function importPresetsFile(){
+ let text=null, fname='';
+ if(window.showOpenFilePicker){
+  try{
+   const oo={id:SAVE_PICKER_ID,types:[{description:'프리셋 JSON',accept:{'application/json':['.json']}}]}; const lh=await idbGet('lastHandle'); if(lh) oo.startIn=lh;
+   let handle; try{ [handle]=await window.showOpenFilePicker(oo) }catch(e){ if(e.name==='AbortError') throw e; delete oo.startIn; [handle]=await window.showOpenFilePicker(oo) }
+   const file=await handle.getFile(); text=await file.text(); fname=file.name;
+  }catch(e){ if(e.name==='AbortError') return; alert('파일을 열지 못했습니다: '+e.message); return }
+ } else {
+  const inp=document.createElement('input'); inp.type='file'; inp.accept='application/json,.json';
+  text=await new Promise(res=>{
+   inp.onchange=()=>{ const f=inp.files[0]; if(!f){res(null);return} fname=f.name; const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=()=>res(null); r.readAsText(f) };
+   inp.click();
+  });
+  if(text===null) return;
+ }
+ let obj;
+ try{ obj=JSON.parse(text) }catch(e){ alert('올바른 JSON 파일이 아닙니다.'); return }
+ if(!obj || typeof obj!=='object' || Array.isArray(obj)){ alert('프리셋 파일 형식이 아닙니다.'); return }
+ let added=0, overwritten=0;
+ for(const [nm,list] of Object.entries(obj)){
+  if(!Array.isArray(list)) continue;
+  if(presets[nm]) overwritten++; else added++;
+  presets[nm]=list;
+ }
+ if(added+overwritten===0){ alert('이 파일에서 가져올 프리셋을 찾지 못했습니다.'); return }
+ savePresetsLocal(); refreshPresetSel();
+ $('presetFileInfo').textContent='✅ 가져옴: '+fname;
+ log('프리셋 가져옴('+fname+'): 새로 '+added+'개, 덮어씀 '+overwritten+'개');
+ alert('가져오기 완료 — 새로 '+added+'개, 기존 이름 덮어씀 '+overwritten+'개');
+}
+function autoBackup(reason){   // 화면 시퀀스를 "자동백업 ..." 프리셋으로 남기고, 오래된 자동백업은 정리(최근 10개만 유지)
+ if(!seqs.length) return;
+ const bk='자동백업 '+new Date().toLocaleString();
+ presets[bk]=JSON.parse(JSON.stringify(seqs));
+ const autos=Object.keys(presets).filter(n=>n.startsWith('자동백업 ')).sort();
+ while(autos.length>10) delete presets[autos.shift()];
+ savePresetsLocal(); refreshPresetSel();
+ log('↪ '+reason+' 전 자동 백업: "'+bk+'" (프리셋에서 복구 가능)');
+}
+
+/* ---------- 시리얼 ---------- */
+function pushLine(line){
+ if(waiters.length) waiters.shift()(line); else log('RX(비동기): '+line) }
+function waitLine(ms){
+ return new Promise(res=>{
+  const t=setTimeout(()=>{const i=waiters.indexOf(cb); if(i>=0) waiters.splice(i,1); res(null)},ms);
+  const cb=l=>{clearTimeout(t);res(l)};
+  waiters.push(cb);
+ });
+}
+async function readLoop(){
+ const dec=new TextDecoder();
+ while(reader){
+  try{
+   const {value,done}=await reader.read(); if(done) break;
+   rxBuf+=dec.decode(value);
+   let i;
+   while((i=rxBuf.search(/[\r\n]/))>=0){
+    const line=rxBuf.slice(0,i).trim(); rxBuf=rxBuf.slice(i+1);
+    if(line){ pushLine(line); await Promise.resolve() }
+   }
+  }catch(e){break}
+ }
+}
+function enqueue(fn){ const p=chain.then(fn); chain=p.catch(()=>{}); return p }
+/* 응답 1줄을 기다리는 명령 */
+function cmd(text,timeout=500,quiet=true){
+ return enqueue(async()=>{
+  if(!writer) return null;
+  if(!quiet) log('TX: '+text);
+  const w=waitLine(timeout);
+  try{await writer.write(enc.encode(text+'\r\n'))}catch(e){log('TX 오류: '+e.message);return null}
+  const r=await w;
+  if(!quiet) log('RX: '+(r===null?'(타임아웃)':r));
+  return r;
+ });
+}
+/* 응답이 없는 명령(PIN) */
+function send(text){
+ return enqueue(async()=>{
+  if(!writer) return;
+  try{await writer.write(enc.encode(text+'\r\n'))}catch(e){log('TX 오류: '+e.message)}
+ });
+}
+/* endMarker 줄이 나올 때까지 여러 줄 읽기 */
+function cmdMulti(text,end,timeout=2500){
+ return enqueue(async()=>{
+  if(!writer) return null;
+  const lines=[]; const deadline=Date.now()+timeout;
+  let w=waitLine(timeout);
+  try{await writer.write(enc.encode(text+'\r\n'))}catch(e){return null}
+  while(true){
+   const l=await w;
+   if(l===null) return lines.length?lines:null;
+   lines.push(l);
+   if(l.startsWith(end)) return lines;
+   const remain=deadline-Date.now(); if(remain<=0) return lines;
+   w=waitLine(remain);
+  }
+ });
+}
+async function cmdOK(text,timeout=600){
+ for(let k=0;k<2;k++){
+  const r=await cmd(text,timeout);
+  if(r&&r.startsWith('OK')) return r;
+  if(r&&r.startsWith('ERR')){log('⚠ '+text+' → '+r);return null}
+  await sleep(120);
+ }
+ log('⚠ 응답 없음: '+text); return null;
+}
+const connected=()=>!!writer;
+function needConn(){ if(!connected()){alert('먼저 UNO에 연결하세요.');return false} return true }
+
+async function connectDevice(){
+ if(!('serial' in navigator)){alert('이 브라우저는 Web Serial을 지원하지 않습니다. Chrome 또는 Edge를 사용하세요.');return}
+ try{
+  port=await navigator.serial.requestPort();
+  await port.open({baudRate:115200});
+  writer=port.writable.getWriter(); reader=port.readable.getReader();
+  readLoop();
+  $('status').textContent='● 연결됨 — UNO 재시작 대기 중...';
+  log('시리얼 연결. 보드 재시작 대기(약 2초)');
+  await sleep(2200);
+  let id=null;
+  for(let k=0;k<3&&!id;k++){ const r=await cmd('ID?',700); if(r&&r.startsWith('ID ')) id=r }
+  if(!id){ $('status').textContent='● 연결됨 (UNO PLC 응답 없음)'; alert('UNO PLC 펌웨어 응답이 없습니다.\nUNO_PLC_Firmware.ino v1.1 이상이 올라가 있는지 확인하세요.'); return }
+  const m=id.match(/ID\s+(\S+)\s+(\S+)/); fwVer=m?m[2]:null;
+  $('status').textContent='● 연결됨 ('+(m?m[1]+' v'+m[2]:id)+')';
+  if(fwVer && parseFloat(fwVer)<1.1) alert('펌웨어 v'+fwVer+' 입니다. 시퀀스는 v1.1 이상이 필요합니다.');
+  else if(fwVer && parseFloat(fwVer)<1.5) log('ℹ 펌웨어 v'+fwVer+' — CH7~CH12는 v1.5 이상에서만 동작합니다(현재는 CH1~CH6까지만 인식).');
+  if(fwVer && verNum(fwVer)<106) log('ℹ 펌웨어 v'+fwVer+' — 보드에는 시퀀스를 최대 '+MAX_SEQ_FW15+'개까지 저장합니다(v1.6 이상은 '+MAX_SEQ_FW16+'개).');
+  renderSeqList();
+  await loadConfig(); await loadInv(); await refreshMode(); await refreshStatus(); await refreshInputs();
+   if(fwVer && verNum(fwVer)<107 && names.inv.some(v=>v)) log('ℹ 펌웨어 v'+fwVer+' — 입력 반전은 v1.7 이상에서만 적용됩니다(지금은 반전 설정이 보드에 반영되지 않습니다).');
+  log('✅ 연결 완료');
+ }catch(e){log('연결 오류: '+e.message)}
+}
+async function disconnectDevice(){
+ stopMonitor();
+ try{
+  if(reader){try{await reader.cancel()}catch(e){} try{reader.releaseLock()}catch(e){} reader=null}
+  if(writer){try{writer.releaseLock()}catch(e){} writer=null}
+  if(port){await port.close(); port=null}
+ }catch(e){log('해제 오류: '+e.message)}
+ waiters.forEach(w=>w(null)); waiters=[]; rxBuf=''; boardMode=null;
+ $('status').textContent='● 연결 안 됨'; renderMode(); log('연결 해제');
+}
+
+/* ---------- 보드 설정/모드/상태 ---------- */
+/* ---------- 입력 반전 (펌웨어 v1.7 이상) ---------- */
+function syncInvBoxes(){ for(let i=0;i<N_IN;i++){ const c=$('inv'+i); if(c) c.checked=!!names.inv[i] } }
+async function setInv(i,on){
+ const box=$('inv'+i);
+ if(connected()){
+  if(!fwVer || verNum(fwVer)<107){ alert('입력 반전은 보드 펌웨어 v1.7 이상이 필요합니다.\n새 UNO_PLC_Firmware.ino를 업로드한 뒤 사용하세요.'); if(box) box.checked=!on; return }
+  const ok=await cmdOK('SETINV '+(i+1)+' '+(on?1:0));
+  if(!ok){ alert('보드에 입력 반전 설정을 저장하지 못했습니다. (로그 참고)'); if(box) box.checked=!on; return }
+  names.inv[i]=on?1:0; saveNames();
+  log('CH'+(i+1)+' 입력 반전 '+(on?'켬 — 핀이 HIGH일 때 눌림':'끔 — 핀이 LOW일 때 눌림'));
+  await refreshInputs();
+ } else {
+  names.inv[i]=on?1:0; saveNames();
+  log('CH'+(i+1)+' 입력 반전 '+(on?'켬':'끔')+' (보드에 연결하면 보드에 저장된 설정으로 맞춰집니다)');
+ }
+}
+async function loadInv(){
+ if(!fwVer || verNum(fwVer)<107) return;
+ const r=await cmd('GETINV?',600);
+ if(r&&r.startsWith('INV')){ const a=r.slice(4).split(',').map(Number); if(a.length>=N_IN){ names.inv=a.slice(0,N_IN).map(v=>v?1:0); saveNames(); syncInvBoxes() } }
+}
+async function loadConfig(){
+ const r=await cmd('GETCONFIG?',700);
+ if(!r) return;
+ const o=r.match(/OUT\s+(\S+)/), i=r.match(/IN\s+(\S+)/);
+ if(o){ o[1].split(',').forEach(p=>{const [c,pin]=p.split(':').map(Number); if(c>=1&&c<=N_OUT) outPins[c-1]=pin}) }
+ if(i){ i[1].split(',').forEach(p=>{const [c,pin]=p.split(':').map(Number); if(c>=1&&c<=N_IN) inPins[c-1]=pin}) }
+ buildStatic(); renderEditor(); renderSeqList();
+}
+async function refreshMode(){
+ const r=await cmd('GETMODE?',600);
+ if(r&&r.startsWith('MODE')){ boardMode=parseInt(r.split(/\s+/)[1]); renderMode() }
+}
+function renderMode(){
+ const txt=['-','횟수 시퀀스','시퀀스'];
+ { const b=$('modeBtn2'); b.className=(boardMode===2)?'green':'light' }
+ $('modeInfo').textContent=(boardMode===null)?'모드 확인 전':'현재: '+boardMode+' '+txt[boardMode];
+}
+async function setMode(m){
+ if(!needConn()) return;
+ if(boardMode===m) return;
+ if(!confirm('모드를 '+m+'으로 바꾸면 보드가 재시작되고 릴레이가 모두 꺼집니다. 계속할까요?')) return;
+ stopMonitor();
+ const r=await cmd('SETMODE '+m,800,false);
+ await sleep(1200);
+ await refreshMode(); await refreshStatus();
+}
+async function refreshStatus(){
+ const r=await cmd('STATUS?',500);
+ if(r&&r.startsWith('STATUS')){ const a=r.slice(7).split(',').map(Number); a.forEach((v,i)=>{if(i<N_OUT) relayState[i]=!!v}); renderLive() }
+}
+async function refreshInputs(){
+ const r=await cmd('INPUT?',500);
+ if(r&&r.startsWith('INPUT')){ const a=r.slice(6).split(',').map(Number); if(a.length>=N_IN){inState=a.slice(0,N_IN); renderLive(); return a.slice(0,N_IN)} }
+ return null;
+}
+let liveTimer=null;
+function setLive(){
+ if(liveTimer){clearInterval(liveTimer);liveTimer=null}
+ if($('livePoll').checked) liveTimer=setInterval(async()=>{
+  if(!connected()||busy) return;
+  await refreshStatus(); if(!mon.on) await refreshInputs();
+ },600);
+}
+let busy=false;
+
+/* ---------- 이름/라벨 ---------- */
+const rName=i=>'R'+(i+1)+' — D'+outPins[i]+(names.relay[i]?' · '+names.relay[i]:'');
+const cName=i=>'CH'+(i+1)+(names.inp[i]?' ('+names.inp[i]+')':'');
+const cPin=i=>'CH'+(i+1)+' — D'+inPins[i];
+const chRange=()=>Array.from({length:N_IN},(_,i)=>i);
+function buildStatic(){
+ $('relayGrid').innerHTML=[0,1,2,3].map(i=>`<div class="relayBox"><b><span class="dot" id="rd${i}"></span>R${i+1} <span class="small">(D${outPins[i]})</span></b>
+  <input placeholder="이름 (예: 타이머 1)" value="${esc(names.relay[i])}" oninput="names.relay[${i}]=this.value;saveNames();renderEditor();renderSeqList()">
+  <div class="row" style="margin:0"><button class="green" onclick="manual(${i},true)">ON</button><button class="gray" onclick="manual(${i},false)">OFF</button></div></div>`).join('');
+ $('inGrid').innerHTML=chRange().map(i=>`<div class="inBox"><b><span class="dot" id="id${i}"></span>CH${i+1} <span class="small">(D${inPins[i]})</span> <span class="small" id="is${i}"></span></b>
+  <input placeholder="이름 (예: 시작 버튼)" value="${esc(names.inp[i])}" oninput="names.inp[${i}]=this.value;saveNames();renderEditor();renderSeqList()">
+  <label class="small" style="display:flex;gap:6px;align-items:center;cursor:pointer"><input type="checkbox" id="inv${i}" ${names.inv[i]?'checked':''} onchange="setInv(${i},this.checked)">입력 반전 (HIGH일 때 눌림)</label></div>`).join('');
+ renderLive();
+}
+function renderLive(){
+ for(let i=0;i<N_OUT;i++){const d=$('rd'+i); if(d) d.className='dot'+(relayState[i]?' on':'')}
+ for(let i=0;i<N_IN;i++){const d=$('id'+i); if(d) d.className='dot'+(inState[i]?' pressed':''); const t=$('is'+i); if(t) t.textContent=inState[i]?'눌림':'뗌'}
+}
+async function manual(i,on){
+ if(!needConn()) return;
+ await send('PIN '+(i+1)+(on?' ON':' OFF')); relayState[i]=on; renderLive();
+}
+
+/* ---------- 시퀀스 화면 ---------- */
+const condTxt={ON:'누를때',OFF:'뗄때',BOTH:'누를때+뗄때'};
+const stateTxt={ON:'눌림',OFF:'뗌',BOTH:'둘다'};   // 조건 상태 표시 (둘다 = 눌림/뗌 상관없음 → 항상 통과)
+const realConds=s=>(s.conds||[]).filter(c=>c.state!=='BOTH');   // 보드/스케치로 보낼 조건 (둘다 는 항상 참이라 제외)
+function summary(s){
+ let t=(s.name||'(이름 없음)')+' · '+(s.trigCh?cPin(s.trigCh-1)+(names.inp[s.trigCh-1]?' · '+names.inp[s.trigCh-1]:'')+' · '+condTxt[s.trigCond]:'수동 실행만');
+ if(s.conds&&s.conds.length) t+=' + 조건['+s.conds.map(c=>'CH'+c.ch+(names.inp[c.ch-1]?'('+names.inp[c.ch-1]+')':'')+' '+stateTxt[c.state||'ON']).join(' · ')+']';
+ return t;
+}
+function summaryHTML(s){   // 목록 카드용: 이름 / 트리거 / 조건을 줄 나눠서 표시 (파일 내보내기용 summary()는 그대로 사용)
+ const nm=esc(s.name||'(이름 없음)');
+ let trig;
+ if(s.trigCh){
+  const i=s.trigCh-1;
+  trig=`<span class="ln">CH${s.trigCh} · D${inPins[i]}${names.inp[i]?' · '+esc(names.inp[i]):''} <span class="sTag">${condTxt[s.trigCond]}</span></span>`;
+ } else trig='<span class="ln">수동 실행만</span>';
+ let h=`<span class="sTitle">${nm}</span><span class="sRow"><span class="sLbl">트리거</span><span class="sVal">${trig}</span></span>`;
+ if(s.conds&&s.conds.length){
+  h+=`<span class="sRow"><span class="sLbl">조건</span><span class="sVal">`+s.conds.map(c=>{
+   const on=c.state==='ON';
+   return `<span class="ln">CH${c.ch}${names.inp[c.ch-1]?' · '+esc(names.inp[c.ch-1]):''} <span class="sTag${on?' on':''}">${stateTxt[c.state||'ON']}</span></span>`;
+  }).join('')+`</span></span>`;
+ }
+ if(s.steps&&s.steps.length){   // 동작: 릴레이 작동 → (대기) → 다음 릴레이 작동 순서대로 한 줄씩
+  const sec=ms=>(Math.round(ms/10)/100)+'초';
+  const rows=[];
+  s.steps.forEach((t,k)=>{
+   const rn=names.relay[t.relay-1];
+   rows.push(`<span class="ln"><b>${k+1}.</b> R${t.relay}${rn?' · '+esc(rn):''} <span class="sTag${t.state==='ON'?' rOn':''}">${t.state==='ON'?'켬 (ON)':'끔 (OFF)'}</span></span>`);
+   if(t.delay>0 && k<s.steps.length-1) rows.push(`<span class="sWait">↓ ${sec(t.delay)} 기다린 뒤</span>`);
+  });
+  h+=`<span class="sRow"><span class="sLbl">동작</span><span class="sVal">${rows.join('')}</span></span>`;
+ }
+ return h;
+}
+function renderSeqList(){
+ $('seqList').innerHTML=seqs.map((s,i)=>`<div class="seqItem"><div class="no">${i+1}</div><button class="body ${i===cur?'sel':''}" onclick="selectSeq(${i})">${summaryHTML(s)}</button></div>`).join('');
+ const w=$('limitWarn');
+ if(seqs.length>maxSeq()){w.classList.remove('hidden');w.textContent='⚠ 시퀀스가 '+seqs.length+'개입니다. "⚡ 보드에 저장"은 최대 '+maxSeq()+'개까지 가능합니다.'+(maxSeq()<MAX_SEQ_FW16?' (보드 펌웨어를 v1.6 이상으로 올리면 '+MAX_SEQ_FW16+'개까지 가능)':'')+' 그보다 많이 쓰려면 아래 "⬇ 아두이노 업로드용 스케치(.ino)"를 만들어 업로드하세요.'}
+ else w.classList.add('hidden');
+}
+function trigOptions(sel){
+ return '<option value="0"'+(sel==0?' selected':'')+'>수동 실행만 (자동 트리거 없음)</option>'+
+  chRange().map(i=>`<option value="${i+1}"${sel==i+1?' selected':''}>${esc(cPin(i))}${names.inp[i]?' · '+esc(names.inp[i]):''}</option>`).join('');
+}
+function renderEditor(){
+ const tv=$('trigCh').value||0;
+ $('trigCh').innerHTML=trigOptions(+tv);
+ $('condRows').innerHTML=edConds.map((c,i)=>`<div class="row" style="margin:4px 0"><span class="small" style="min-width:48px">조건 ${i+1}</span>
+  <select onchange="edConds[${i}].ch=+this.value">${chRange().map(k=>`<option value="${k+1}"${c.ch==k+1?' selected':''}>${esc(cPin(k))}${names.inp[k]?' · '+esc(names.inp[k]):''}</option>`).join('')}</select>
+  <select onchange="edConds[${i}].state=this.value"><option value="ON"${c.state==='ON'?' selected':''}>눌려 있을 때 (ON)</option><option value="OFF"${c.state==='OFF'?' selected':''}>떼어 있을 때 (OFF)</option><option value="BOTH"${c.state==='BOTH'?' selected':''}>양쪽 다 (누름+뗌 둘 다)</option></select>
+  <button class="red" onclick="edConds.splice(${i},1);renderEditor()">삭제</button></div>`).join('');
+ $('stepRows').innerHTML=edSteps.map((st,i)=>`<div class="stepRow" data-i="${i}" ondragstart="stepDrag(event,${i})" ondragend="this.draggable=false;dragFrom=-1" ondragover="stepOver(event)" ondragleave="this.classList.remove('dragOver')" ondrop="stepDrop(event,${i})">
+  <span class="handle" title="끌어서 순서 변경" onmousedown="this.parentNode.draggable=true" onmouseup="this.parentNode.draggable=false">⠿</span>
+  <span>${i+1}.</span>
+  <select onchange="edSteps[${i}].relay=+this.value">${[0,1,2,3].map(k=>`<option value="${k+1}"${st.relay==k+1?' selected':''}>${esc(rName(k))}</option>`).join('')}</select>
+  <select onchange="edSteps[${i}].state=this.value"><option value="ON"${st.state==='ON'?' selected':''}>ON</option><option value="OFF"${st.state==='OFF'?' selected':''}>OFF</option></select>
+  <span class="small"><b>지연(ms)</b> 그 다음</span>
+  <input type="number" min="0" max="65000" value="${st.delay}" oninput="edSteps[${i}].delay=Math.max(0,Math.min(65000,parseInt(this.value)||0))">
+  <button class="gray" onclick="moveStep(${i},-1)">▲ 위</button><button class="gray" onclick="moveStep(${i},1)">▼ 아래</button>
+  <button class="red" onclick="edSteps.splice(${i},1);renderEditor()">삭제</button></div>`).join('');
+}
+let dragFrom=-1;
+function stepDrag(e,i){dragFrom=i;e.dataTransfer.effectAllowed='move';try{e.dataTransfer.setData('text/plain',String(i))}catch(x){}}
+function stepOver(e){e.preventDefault();e.currentTarget.classList.add('dragOver')}
+function stepDrop(e,to){
+ e.preventDefault(); e.currentTarget.classList.remove('dragOver');
+ if(dragFrom<0||dragFrom===to) {dragFrom=-1;return}
+ const [m]=edSteps.splice(dragFrom,1); edSteps.splice(to,0,m); dragFrom=-1; renderEditor();
+}
+function moveStep(i,d){const j=i+d; if(j<0||j>=edSteps.length) return; [edSteps[i],edSteps[j]]=[edSteps[j],edSteps[i]]; renderEditor()}
+function addCond(){ if(edConds.length>=MAX_CONDS){alert('추가 조건은 최대 '+MAX_CONDS+'개입니다.');return} edConds.push({ch:2,state:'ON'}); renderEditor() }
+function addStep(){ if(edSteps.length>=MAX_STEPS){alert('동작은 시퀀스당 최대 '+MAX_STEPS+'줄입니다(보드 저장 한도).');return} edSteps.push({relay:1,state:'ON',delay:0}); renderEditor() }
+function newSeq(){
+ cur=-1; $('seqName').value=''; $('trigCh').value='0'; $('trigCond').value='ON';
+ edConds=[]; edSteps=[{relay:1,state:'ON',delay:0}]; renderEditor(); $('trigCh').value='0'; renderSeqList();
+}
+function selectSeq(i){
+ cur=i; const s=seqs[i];
+ $('seqName').value=s.name; edConds=JSON.parse(JSON.stringify(s.conds||[])); edSteps=JSON.parse(JSON.stringify(s.steps||[]));
+ renderEditor(); $('trigCh').value=String(s.trigCh); $('trigCond').value=s.trigCond; renderSeqList();
+}
+function readForm(){
+ return {name:$('seqName').value.trim(), trigCh:+$('trigCh').value, trigCond:$('trigCond').value,
+  conds:JSON.parse(JSON.stringify(edConds)), steps:JSON.parse(JSON.stringify(edSteps))};
+}
+function saveSeq(){
+ const s=readForm();
+ if(!s.name) s.name='시퀀스 '+((cur>=0?cur:seqs.length)+1);
+ if(!s.steps.length){alert('동작을 하나 이상 추가하세요.');return}
+ if(cur>=0) seqs[cur]=s; else {seqs.push(s); cur=seqs.length-1}
+ saveLocal(); renderSeqList(); log('시퀀스 저장: '+s.name+' (이 컴퓨터에만 저장됨 — 보드에는 "⚡ 전체 시퀀스를 보드에 저장"을 눌러야 들어갑니다)');
+}
+function deleteSeq(){
+ if(cur<0){newSeq();return}
+ if(!confirm('"'+seqs[cur].name+'" 시퀀스를 삭제할까요?')) return;
+ seqs.splice(cur,1); saveLocal(); newSeq();
+}
+
+/* ---------- 실행 (PC 테스트 / PC 자동 감시) ---------- */
+function interlockOK(s,inp){ return (s.conds||[]).every(c=>c.state==='BOTH'||!!inp[c.ch-1]===(c.state==='ON')) }
+async function runSteps(steps,stopCheck){
+ for(let k=0;k<steps.length;k++){
+  if(stopCheck&&stopCheck()) return;
+  const st=steps[k];
+  await send('PIN '+st.relay+(st.state==='ON'?' ON':' OFF'));
+  relayState[st.relay-1]=(st.state==='ON'); renderLive();
+  if(st.delay>0 && k<steps.length-1) await sleep(st.delay);
+ }
+}
+let testing=false;
+async function testRun(){
+ if(!needConn()) return;
+ const s=readForm(); if(!s.steps.length){alert('동작을 하나 이상 추가하세요.');return}
+ if(testing) return; testing=true; log('테스트 실행 ('+s.steps.length+'줄)');
+ await runSteps(s.steps); testing=false;
+}
+const mon={on:false,prev:null,running:{},timer:null};
+async function startMonitor(){
+ if(!needConn()) return;
+ if(mon.on) return;
+ if(!seqs.length){alert('저장된 시퀀스가 없습니다. 먼저 시퀀스를 만들고 "저장"을 누르세요.');return}
+ if(boardMode===2 && !confirm('보드가 모드 2이면 보드에 이미 저장된 시퀀스도 같이 동작해 같은 동작이 두 번 나갈 수 있습니다.\n그래도 PC 감시를 시작할까요?')) return;
+ mon.on=true; mon.prev=null; mon.running={};
+ $('monStatus').textContent='● PC 감시 중 (이 페이지를 닫으면 멈춥니다)';
+ log('PC 자동 감시 시작');
+ monTick();
+}
+async function monTick(){
+ if(!mon.on) return;
+ const t0=Date.now();
+ const a=await refreshInputs();
+ if(a){
+  if(mon.prev){
+   seqs.forEach((s,i)=>{
+    if(!s.trigCh||mon.running[i]) return;
+    const c=a[s.trigCh-1], p=mon.prev[s.trigCh-1];
+    if(!!c===!!p) return;
+    const fire=c?(s.trigCond==='ON'||s.trigCond==='BOTH'):(s.trigCond==='OFF'||s.trigCond==='BOTH');
+    if(fire && interlockOK(s,a)){
+     mon.running[i]=true; log('▶ 시퀀스 실행: '+s.name);
+     runSteps(s.steps,()=>!mon.on).finally(()=>{mon.running[i]=false});
+    }
+   });
+  }
+  mon.prev=a;
+ }
+ const gap=Math.max(50,(parseInt($('pollMs').value)||300)-(Date.now()-t0));
+ mon.timer=setTimeout(monTick,gap);
+}
+function stopMonitor(){
+ if(!mon.on) return;
+ mon.on=false; clearTimeout(mon.timer); $('monStatus').textContent='감시 중지됨'; log('PC 자동 감시 중지');
+}
+
+/* ---------- 보드 저장 / 불러오기 ---------- */
+function condNum(c){return c==='BOTH'?2:(c==='ON'?1:0)}
+function buildCmds(list){
+ const out=[];
+ list.forEach((s,i)=>{
+  out.push('SEQDEF '+i+' '+s.trigCh+' '+condNum(s.trigCond)+' 1');
+  realConds(s).forEach(c=>out.push('SEQCOND '+i+' '+c.ch+' '+(c.state==='ON'?1:0)));
+  s.steps.forEach(st=>out.push('SEQSTEP '+i+' '+st.relay+' '+(st.state==='ON'?1:0)+' '+st.delay));
+ });
+ return out;
+}
+function canonList(list){
+ return JSON.stringify(list.map(s=>[s.trigCh,condNum(s.trigCond),realConds(s).map(c=>[c.ch,c.state==='ON'?1:0]),s.steps.map(t=>[t.relay,t.state==='ON'?1:0,t.delay])]));
+}
+function checkLimits(list){
+ const errs=[];
+ if(list.length>maxSeq()) errs.push('시퀀스는 최대 '+maxSeq()+'개입니다(현재 '+list.length+'개).'+(maxSeq()<MAX_SEQ_FW16?' 보드 펌웨어를 v1.6 이상으로 올리면 '+MAX_SEQ_FW16+'개까지 가능합니다.':'')+' 그보다 많이 쓰려면 "아두이노 업로드용 스케치(.ino)"를 사용하세요.');
+ list.forEach((s,i)=>{
+  if(!s.steps.length) errs.push('"'+s.name+'": 동작이 없습니다.');
+  if(s.steps.length>MAX_STEPS) errs.push('"'+s.name+'": 동작 '+s.steps.length+'줄 (최대 '+MAX_STEPS+').');
+  if(realConds(s).length>MAX_CONDS) errs.push('"'+s.name+'": 추가 조건 '+realConds(s).length+'개 (최대 '+MAX_CONDS+').');
+ });
+ return errs;
+}
+async function pushToBoard(){
+ if(!needConn()) return;
+ if(fwVer && parseFloat(fwVer)<1.1){alert('펌웨어 v1.1 이상이 필요합니다.');return}
+ const errs=checkLimits(seqs);
+ if(errs.length){alert('보드에 저장할 수 없는 항목이 있습니다:\n\n'+errs.join('\n'));return}
+ if(!seqs.length && !confirm('저장된 시퀀스가 없습니다.\n보드에 저장돼 있던 시퀀스를 모두 지울까요?')) return;
+ autoBackup('보드 저장');
+ stopMonitor(); busy=true; $('boardInfo').textContent='보드에 저장 중...';
+ try{
+  let ok=!!(await cmdOK('SEQCLR'));
+  for(const c of buildCmds(seqs)){ if(!ok) break; ok=!!(await cmdOK(c)) }
+  if(!ok){ await cmd('SEQABORT'); alert('⚠ 저장 중 명령이 실패했습니다. 연결과 펌웨어 버전을 확인하고 다시 시도하세요.\n(로그 참고)'); $('boardInfo').textContent='저장 실패'; return }
+  const r=await cmd('SEQSAVE',6000);   // 12개를 꽉 채워 처음 쓰면 EEPROM 기록에 약 1.6초 걸림
+  if(!r||!r.startsWith('OK')){ log('⚠ SEQSAVE → '+r); alert('⚠ 보드 EEPROM 저장에 실패했습니다.'); $('boardInfo').textContent='저장 실패'; return }
+  const back=await readBoard();
+  if(!back || canonList(back)!==canonList(seqs)){ alert('저장은 끝났지만 보드에서 다시 읽은 내용이 화면과 다릅니다. 다시 저장해 보세요.'); $('boardInfo').textContent='확인 실패'; return }
+  log('✅ 보드 저장 완료: 시퀀스 '+seqs.length+'개 (다시 읽어 확인됨)');
+  $('boardInfo').textContent='✅ 보드에 저장됨 · 시퀀스 '+seqs.length+'개 · '+new Date().toTimeString().slice(0,8);
+  await refreshMode();
+  if(boardMode!==2){
+   if(confirm('저장 완료. 지금 보드 모드는 '+boardMode+'입니다.\n컴퓨터 없이 동작하려면 모드 2(시퀀스)여야 합니다. 지금 모드 2로 바꿀까요?')){
+    busy=false; await setMode(2);
+   }
+  } else alert('보드에 저장되었습니다. 이제 컴퓨터를 꺼도 전원만 있으면 동작합니다.');
+ } finally { busy=false }
+}
+async function readBoard(){
+ const lines=await cmdMulti('SEQGET?','SEQEND',2500);
+ if(!lines||!lines.some(l=>l.startsWith('SEQEND'))) return null;
+ const out=[];
+ for(const l of lines){
+  const p=l.split(/\s+/);
+  if(p[0]==='SEQD'){ out[+p[1]]={name:'',trigCh:+p[2],trigCond:['OFF','ON','BOTH'][+p[3]],conds:[],steps:[]} }
+  else if(p[0]==='SEQC'&&out[+p[1]]) out[+p[1]].conds.push({ch:+p[2],state:+p[3]?'ON':'OFF'});
+  else if(p[0]==='SEQS'&&out[+p[1]]) out[+p[1]].steps.push({relay:+p[2],state:+p[3]?'ON':'OFF',delay:+p[4]});
+ }
+ return out;
+}
+async function pullFromBoard(){
+ if(!needConn()) return;
+ const list=await readBoard();
+ if(!list){alert('보드에서 시퀀스를 읽지 못했습니다. 펌웨어 v1.1 이상인지 확인하세요.');return}
+ if(!list.length){alert('보드에 저장된 시퀀스가 없습니다.');return}
+ if(seqs.length && !confirm('보드의 시퀀스 '+list.length+'개로 화면 목록('+seqs.length+'개)을 바꿉니다. 계속할까요?')) return;
+ autoBackup('불러오기로 덮어쓰기');
+ list.forEach((s,i)=>{ s.name=(seqs[i]&&seqs[i].name)||('시퀀스 '+(i+1)) });
+ seqs=list; saveLocal(); newSeq(); log('✅ 보드에서 시퀀스 '+list.length+'개 불러옴');
+}
+async function exportCmds(){
+ const lines=['# 보드에 저장할 때 실제로 전송되는 명령 (이 파일은 보드에 아무것도 보내지 않습니다)','SEQCLR'];
+ seqs.forEach((s,i)=>lines.push('# '+(i+1)+'. '+summary(s)));
+ lines.push(...buildCmds(seqs),'SEQSAVE');
+ const r=await saveFileAs(lines.join('\r\n'),'uno_sequence_commands.txt','text/plain','텍스트 파일','.txt');
+ if(r) log('명령 파일 저장: '+r.name);
+}
+
+
+/* ---------- 순수 아두이노 스케치 생성 ---------- */
+async function exportSketch(){
+ if(!seqs.length){alert('만들 내용이 없습니다. 시퀀스를 먼저 만들고 "저장"을 누르세요.');return}
+ const bad=seqs.filter(s=>!s.steps.length);
+ if(bad.length){alert('동작이 없는 시퀀스가 있습니다: '+bad.map(s=>s.name).join(', '));return}
+ const cm=t=>String(t).replace(/[\r\n*\/]+/g,' ');
+ const n=seqs.length;
+ const L=[];
+ L.push('// ============================================================');
+ L.push('//  UNO 시퀀스 스케치 (UNO_PLC_Control.html 에서 자동 생성 · 순수 아두이노 업로드용)');
+ L.push('//  생성: '+new Date().toLocaleString()+'   시퀀스 '+n+'개');
+ L.push('//  릴레이 = active-LOW(LOW=ON), 입력 = INPUT_PULLUP(버튼이 GND로 붙으면 "눌림")');
+ L.push('//  전원 투입 후 3초간은 입력을 무시합니다. 시리얼 통신은 사용하지 않습니다.');
+ L.push('// ============================================================');
+ L.push('#define N_OUT 4');
+ L.push('#define N_IN  '+N_IN);
+ L.push('#define N_SEQ '+n);
+ L.push('const bool RELAY_ACTIVE_LOW = true;');
+ L.push('const uint8_t OUT_PIN[N_OUT] = {'+outPins.join(', ')+'};   // R1~R4');
+ L.push('const uint8_t IN_PIN[N_IN]   = {'+inPins.join(', ')+'};   // CH1~CH'+N_IN);
+  L.push('const uint8_t IN_INV[N_IN]   = {'+names.inv.slice(0,N_IN).map(v=>v?1:0).join(', ')+'};   // 1 = 입력 반전(핀이 HIGH일 때 눌림)');
+ L.push('');
+ L.push('#define DEBOUNCE_MS  30UL');
+ L.push('#define BOOT_HOLD_MS 3000UL');
+ L.push('');
+ L.push('struct Step { uint8_t relay; uint8_t on; uint16_t delayMs; };   // 릴레이 동작 후 delayMs 기다린 뒤 다음 줄');
+ L.push('struct Seq  {');
+ L.push('  uint8_t trigCh;    // 0 = 자동 시작 없음, 1~'+N_IN+' = CH');
+ L.push('  uint8_t trigCond;  // 1 = 누를 때, 0 = 놓을 때, 2 = 양쪽');
+ L.push('  uint8_t nConds; uint8_t condCh[4]; uint8_t condOn[4];   // 인터록: 트리거 순간 CH가 눌림(1)/뗌(0)이어야 함');
+ L.push('  uint8_t nSteps; Step steps[10];');
+ L.push('};');
+ L.push('');
+ if(n){
+  L.push('const Seq SEQS[N_SEQ] = {');
+  seqs.forEach((q,i)=>{
+   const cc=[0,0,0,0], co=[0,0,0,0];
+   realConds(q).slice(0,4).forEach((c,k)=>{cc[k]=c.ch; co[k]=c.state==='ON'?1:0});
+   const st=q.steps.slice(0,10).map(t=>'{'+t.relay+','+(t.state==='ON'?1:0)+','+t.delay+'}');
+   L.push('  // '+(i+1)+'. '+cm(summary(q)));
+   L.push('  { '+q.trigCh+', '+condNum(q.trigCond)+', '+Math.min(realConds(q).length,4)+', {'+cc.join(',')+'}, {'+co.join(',')+'}, '+st.length+', { '+st.join(', ')+' } }'+(i<n-1?',':''));
+  });
+  L.push('};');
+ } else L.push('const Seq SEQS[1] = { };   // 시퀀스 없음');
+ L.push('');
+ L.push(String.raw`bool inLast[N_IN], inStable[N_IN];
+unsigned long inChangedAt[N_IN];
+bool sqRun[N_SEQ + 1], sqPrev[N_SEQ + 1];
+uint8_t sqStep[N_SEQ + 1];
+unsigned long sqDue[N_SEQ + 1];
+bool relayOn[N_OUT];
+
+void setRelay(uint8_t ch, bool on) {
+  relayOn[ch - 1] = on;
+  digitalWrite(OUT_PIN[ch - 1], (on == RELAY_ACTIVE_LOW) ? LOW : HIGH);
+}
+
+void updateInputs() {
+  unsigned long now = millis();
+  for (uint8_t i = 0; i < N_IN; i++) {
+    bool raw = ((digitalRead(IN_PIN[i]) == LOW) != (IN_INV[i] != 0));
+    if (raw != inLast[i]) { inLast[i] = raw; inChangedAt[i] = now; }
+    else if (raw != inStable[i] && (now - inChangedAt[i]) >= DEBOUNCE_MS) inStable[i] = raw;
+  }
+}
+
+bool interlockOK(const Seq &S) {
+  for (uint8_t c = 0; c < S.nConds; c++)
+    if (inStable[S.condCh[c] - 1] != (S.condOn[c] != 0)) return false;
+  return true;
+}
+
+void startSeq(uint8_t s) {
+  if (s >= N_SEQ || sqRun[s] || SEQS[s].nSteps == 0) return;
+  sqRun[s] = true; sqStep[s] = 0; sqDue[s] = millis();
+}
+`);
+ L.push(String.raw`
+void setup() {
+  for (uint8_t i = 0; i < N_OUT; i++) {
+    relayOn[i] = false;
+    digitalWrite(OUT_PIN[i], RELAY_ACTIVE_LOW ? HIGH : LOW);   // 먼저 OFF 레벨
+    pinMode(OUT_PIN[i], OUTPUT);
+  }
+  for (uint8_t i = 0; i < N_IN; i++) {
+    pinMode(IN_PIN[i], INPUT_PULLUP);
+    inLast[i] = inStable[i] = ((digitalRead(IN_PIN[i]) == LOW) != (IN_INV[i] != 0));
+    inChangedAt[i] = millis();
+  }
+  for (uint8_t s = 0; s < N_SEQ + 1; s++) { sqRun[s] = false; sqStep[s] = 0; sqPrev[s] = false; }
+}
+
+void loop() {
+  updateInputs();
+  unsigned long now = millis();
+  bool holding = (now < BOOT_HOLD_MS);
+  for (uint8_t s = 0; s < N_SEQ; s++) {
+    const Seq &S = SEQS[s];
+    if (S.trigCh >= 1) {
+      bool cur = inStable[S.trigCh - 1];
+      if (holding) sqPrev[s] = cur;
+      else if (cur != sqPrev[s]) {
+        sqPrev[s] = cur;
+        bool fire = cur ? (S.trigCond == 1 || S.trigCond == 2) : (S.trigCond == 0 || S.trigCond == 2);
+        if (fire && interlockOK(S)) startSeq(s);
+      }
+    }
+    while (sqRun[s] && (long)(now - sqDue[s]) >= 0) {   // 지연이 0이면 같은 순간에 여러 줄이 연달아 실행됨
+      uint8_t r = sqStep[s];
+      setRelay(S.steps[r].relay, S.steps[r].on != 0);
+      sqDue[s] = now + S.steps[r].delayMs;
+      sqStep[s] = r + 1;
+      if (sqStep[s] >= S.nSteps) { sqRun[s] = false; break; }
+      if (S.steps[r].delayMs > 0) break;
+    }
+  }
+}
+`);
+ const r=await saveFileAs(L.join('\r\n'),'uno_sequence.ino','text/plain','아두이노 스케치','.ino');
+ if(r) log('아두이노 스케치 생성: '+r.name+' (시퀀스 '+n+'개)');
+}
+
+/* ---------- 시작 ---------- */
+loadLocal(); buildStatic(); renderMode(); newSeq(); if(seqs.length) selectSeq(0); setLive();
+loadPresets(); refreshPresetSel();
+</script>
+</body>
+</html>
