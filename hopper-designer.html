@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>호퍼 사이즈 설계 · 전개도 · DXF</title>
+<style>
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+  --bg:#eef1f4; --panel:#ffffff; --ink:#1b2530; --mute:#5d6b79; --line:#d5dce3; --grid:#e6ebf0;
+  --accent:#1f5f99; --accent-ink:#ffffff; --cut:#c8322a; --center:#c8322a; --ok:#1d7a46; --warn:#a56100; --bad:#b3261e;
+  --field:#f7f9fb; --ro:#e9edf1;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#12181e; --panel:#1a222a; --ink:#e4e9ee; --mute:#93a1af; --line:#2f3b47; --grid:#232d37;
+    --accent:#5aa2e0; --accent-ink:#0b1116; --cut:#ff6b5e; --center:#ff6b5e; --ok:#55c98a; --warn:#e3a94b; --bad:#ff8a80;
+    --field:#141b21; --ro:#202a33;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#12181e; --panel:#1a222a; --ink:#e4e9ee; --mute:#93a1af; --line:#2f3b47; --grid:#232d37;
+  --accent:#5aa2e0; --accent-ink:#0b1116; --cut:#ff6b5e; --center:#ff6b5e; --ok:#55c98a; --warn:#e3a94b; --bad:#ff8a80;
+  --field:#141b21; --ro:#202a33;
+}
+*,*::before,*::after{box-sizing:inherit}
+html{height:100%;scroll-padding-top:env(safe-area-inset-top,0px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.5 "Noto Sans KR","Malgun Gothic","Apple SD Gothic Neo",system-ui,-apple-system,"Segoe UI",sans-serif;font-variant-numeric:tabular-nums}
+header{padding:16px 20px 8px;display:flex;align-items:baseline;gap:14px;flex-wrap:wrap}
+h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-.01em}
+header .sub{color:var(--mute);font-size:13px}
+.wrap{display:grid;grid-template-columns:340px minmax(0,1fr);gap:14px;padding:8px 20px 28px;max-width:1380px;margin:0 auto}
+@media (max-width:920px){.wrap{grid-template-columns:1fr;padding:8px 12px 24px}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.panel + .panel{margin-top:12px}
+.panel h2{font-size:13.5px;margin:0 0 8px;font-weight:700;color:var(--ink);border-bottom:1px solid var(--line);padding-bottom:6px;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.panel h2 small{font-weight:400;color:var(--mute);font-size:12px}
+.row{display:grid;grid-template-columns:1fr 104px 34px;align-items:center;gap:6px;margin:5px 0}
+.row label{color:var(--ink)}
+.row .u{color:var(--mute);font-size:12px}
+input[type=number],select{width:100%;font:inherit;padding:5px 7px;border:1px solid var(--line);border-radius:4px;background:var(--field);color:var(--ink);text-align:right}
+select{text-align:left}
+input:focus-visible,select:focus-visible,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.row.wide{grid-template-columns:1fr 150px}
+.chk{display:flex;gap:8px;align-items:flex-start;margin:7px 0;color:var(--ink);cursor:pointer}
+.chk input{margin-top:4px}
+.chk small{display:block;color:var(--mute);font-size:12px}
+.hint{color:var(--mute);font-size:12px;margin:2px 0 0}
+.top{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.stat{background:var(--ro);border:1px solid var(--line);border-radius:5px;padding:8px 12px}
+.stat .k{color:var(--mute);font-size:12px}
+.stat .v{font-size:22px;font-weight:700;letter-spacing:-.01em}
+.stat .v span{font-size:13px;font-weight:400;color:var(--mute);margin-left:4px}
+.stat .s{color:var(--mute);font-size:12px}
+.stat.total{border-color:var(--accent)}
+.badge{display:inline-block;padding:1px 8px;border-radius:10px;font-size:12px;background:var(--accent);color:var(--accent-ink);font-weight:600}
+.views{display:grid;grid-template-columns:minmax(0,300px) minmax(0,1fr);gap:12px;margin-top:12px}
+@media (max-width:920px){.views{grid-template-columns:1fr}.top{grid-template-columns:1fr}}
+.svgbox{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:8px;min-width:0}
+.svgbox svg{display:block;width:100%;height:auto}
+.svgbox h2{font-size:13.5px;margin:2px 4px 6px;font-weight:700}
+table{border-collapse:collapse;width:100%;font-size:13px}
+th,td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mute);font-weight:500;font-size:12px}
+.scroll{overflow-x:auto;max-width:100%}
+.checks{list-style:none;margin:0;padding:0}
+.checks li{display:flex;gap:8px;padding:4px 0;border-bottom:1px dashed var(--line)}
+.checks li:last-child{border-bottom:0}
+.mark{font-weight:700;width:1.2em;text-align:center;flex:none}
+.ok .mark{color:var(--ok)} .warn .mark{color:var(--warn)} .bad .mark{color:var(--bad)}
+.actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+button{font:inherit;padding:8px 14px;border-radius:5px;border:1px solid var(--line);background:var(--field);color:var(--ink);cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-weight:600}
+button:disabled{opacity:.5;cursor:not-allowed}
+#status{margin-top:8px;color:var(--mute);font-size:12.5px;min-height:1.4em}
+.hist{max-height:160px;overflow:auto}
+.hist button{display:block;width:100%;text-align:left;margin:0 0 4px;padding:5px 8px;font-size:12.5px}
+.empty{color:var(--mute);padding:18px 6px;text-align:center}
+.formula{color:var(--mute);font-size:12px;line-height:1.6}
+</style>
+</head>
+<body>
+<header>
+  <h1>호퍼 사이즈 설계</h1>
+  <span class="sub">용량 계산 · 두께/연신률 보정 전개 · 레이저 제출용 DXF</span>
+</header>
+
+<div class="wrap">
+  <!-- LEFT: inputs -->
+  <div>
+    <div class="panel">
+      <h2>재질 · 두께</h2>
+      <div class="row wide"><label for="mat">재질</label>
+        <select id="mat">
+          <option value="ss">일반강 (SS400 등)</option>
+          <option value="sts">스테인리스 (STS304)</option>
+          <option value="al">알루미늄</option>
+          <option value="custom">직접 입력</option>
+        </select></div>
+      <div class="row"><label for="t">판 두께 t</label><input id="t" type="number" step="0.1" min="0" value="6"><span class="u">mm</span></div>
+      <div class="row"><label for="k" title="내면에서 중립축까지 거리 ÷ 두께">연신 계수 K</label><input id="k" type="number" step="0.01" min="0" max="1" value="0.45"><span class="u"></span></div>
+      <div class="row"><label for="rho">비중</label><input id="rho" type="number" step="0.01" min="0" value="7.85"><span class="u">g/㎤</span></div>
+      <div class="row wide"><label for="ref">입력 치수 기준</label>
+        <select id="ref">
+          <option value="outer">외경 기준</option>
+          <option value="inner">내경 기준</option>
+          <option value="neutral">중립축 기준</option>
+        </select></div>
+      <p class="hint">K = 내면에서 중립축까지 거리 ÷ 두께 (롤링 0.33~0.5). 현장 실측으로 수정하세요.</p>
+    </div>
+
+    <div class="panel">
+      <h2>원통 <small>높이를 비우면 호퍼만</small></h2>
+      <div class="row"><label for="D">원통 직경</label><input id="D" type="number" step="1" min="0" value="2000"><span class="u">mm</span></div>
+      <div class="row"><label for="H">원통 높이</label><input id="H" type="number" step="1" min="0" value="2000"><span class="u">mm</span></div>
+      <div class="row"><label for="fill">충실률</label><input id="fill" type="number" step="1" min="0" max="100" value="100"><span class="u">%</span></div>
+    </div>
+
+    <div class="panel">
+      <h2>콘 (호퍼) <small>높이를 비우면 원통만</small></h2>
+      <div class="row"><label for="ch">콘 높이</label><input id="ch" type="number" step="1" min="0" value="1500"><span class="u">mm</span></div>
+      <div class="row"><label for="cd">콘 출구 직경</label><input id="cd" type="number" step="1" min="0" value="216"><span class="u">mm</span></div>
+      <p class="hint">콘 상부 직경은 원통 직경과 같습니다.</p>
+    </div>
+
+    <div class="panel">
+      <h2>플랜지 · 링 <small>0 = 자동</small></h2>
+      <label class="chk"><input id="fOutOn" type="checkbox"><span>출구 플랜지 (평판 링)</span></label>
+      <div class="row"><label for="fOutOD">외경</label><input id="fOutOD" type="number" step="1" min="0" value="0"><span class="u">mm</span></div>
+      <div class="row"><label for="fOutID">내경</label><input id="fOutID" type="number" step="1" min="0" value="0"><span class="u">mm</span></div>
+      <div class="row"><label for="fOutT">두께</label><input id="fOutT" type="number" step="0.5" min="0" value="0"><span class="u">mm</span></div>
+      <label class="chk"><input id="fTopOn" type="checkbox"><span>상단 링 (원통 상단)</span></label>
+      <div class="row"><label for="fTopOD">외경</label><input id="fTopOD" type="number" step="1" min="0" value="0"><span class="u">mm</span></div>
+      <div class="row"><label for="fTopID">내경</label><input id="fTopID" type="number" step="1" min="0" value="0"><span class="u">mm</span></div>
+      <div class="row"><label for="fTopT">두께</label><input id="fTopT" type="number" step="0.5" min="0" value="0"><span class="u">mm</span></div>
+      <p class="hint">자동: 내경 = 판 내경, 외경 = 판 외경 + 100, 두께 = 판 두께</p>
+    </div>
+
+    <div class="panel">
+      <h2>전개 · 제출 옵션</h2>
+      <div class="row"><label for="nCyl">원통 분할 수</label><input id="nCyl" type="number" step="1" min="1" max="8" value="2"><span class="u">장</span></div>
+      <div class="row"><label for="nCone">콘 분할 수</label><input id="nCone" type="number" step="1" min="1" max="8" value="2"><span class="u">장</span></div>
+      <div class="row"><label for="gap" title="이음 1곳당 틈새. 용접 갭만큼 각 조각에서 뺍니다">이음 틈새 (용접 갭)</label><input id="gap" type="number" step="0.1" min="0" value="0"><span class="u">mm</span></div>
+      <div class="row"><label for="sw">판재 폭</label><input id="sw" type="number" step="1" min="0" value="2000"><span class="u">mm</span></div>
+      <div class="row"><label for="sl">판재 길이</label><input id="sl" type="number" step="1" min="0" value="6000"><span class="u">mm</span></div>
+      <div class="row"><label for="sm" title="자동 배치 시 판재 가장자리에서 띄울 거리">판재 가장자리 여백</label><input id="sm" type="number" step="1" min="0" value="0"><span class="u">mm</span></div>
+      <label class="chk"><input id="nest" type="checkbox"><span>판재 자동 배치 (네스팅)<small>부품을 판재 규격 안에 나눠 배치. 판재 윤곽은 제출용 해제 시에만 저장</small></span></label>
+      <label class="chk"><input id="safe" type="checkbox" checked><span>외경 치수 초과 금지<small>전개 치수를 내림 처리해 완성 외경이 도면 치수를 넘지 않게 함</small></span></label>
+      <label class="chk"><input id="submit" type="checkbox" checked><span>제출용 (절단선만)<small>글자·치수 없이 CUT 레이어만 저장</small></span></label>
+      <label class="chk"><input id="pi314" type="checkbox"><span>체적 계산에 π=3.14 사용<small>기존 프로그램 결과와 맞출 때</small></span></label>
+    </div>
+
+    <div class="panel">
+      <h2>견적 단가</h2>
+      <div class="row"><label for="pMat">재료 단가</label><input id="pMat" type="number" step="10" min="0" value="1200"><span class="u">원/kg</span></div>
+      <div class="row"><label for="pCut">절단 단가</label><input id="pCut" type="number" step="100" min="0" value="3000"><span class="u">원/m</span></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: results -->
+  <div>
+    <div class="top" id="top"></div>
+    <div class="views">
+      <div class="svgbox"><h2>단면 형상</h2><div id="side"></div></div>
+      <div class="svgbox"><h2>전개도 <span id="modeBadge" class="badge"></span></h2><div id="dev"></div></div>
+    </div>
+
+    <div class="panel" style="margin-top:12px">
+      <h2>전개 치수 <small>보정 적용 후 (mm)</small></h2>
+      <div class="scroll" id="dimTable"></div>
+    </div>
+
+    <div class="panel">
+      <h2>DXF 제출 전 검증</h2>
+      <ul class="checks" id="checks"></ul>
+      <div class="actions">
+        <button class="primary" id="btnDxf">DXF 저장</button>
+        <button id="btnParts">부품별 DXF (ZIP)</button>
+        <button id="btnCopy">DXF 내용 복사</button>
+        <button id="btnQuote">견적서 저장</button>
+      </div>
+      <div id="status"></div>
+    </div>
+
+    <div class="panel">
+      <h2>저장 이력 <small>이 브라우저에 자동 보관</small></h2>
+      <div class="hist" id="hist"></div>
+    </div>
+
+    <div class="panel formula">
+      원통 전개 길이 = π × 중립축 직경, 콘 전개 반경 R = 경사길이 × 중립축 반경 ÷ (반경차), 각도 θ = 360° × 반경차 ÷ 경사길이.<br>
+      콘은 표면에 수직으로 두께를 보정하므로 수평 보정량은 (보정량 ÷ cos 반각)입니다. 레이저 커프(절단 폭)는 DXF에 넣지 않으며 가공처에서 보정합니다.
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+"use strict";
+const $ = id => document.getElementById(id);
+const MATERIALS = {
+  ss:  {k:0.45, rho:7.85},
+  sts: {k:0.45, rho:7.93},
+  al:  {k:0.40, rho:2.70}
+};
+const DEG = Math.PI/180;
+const fmt = (n,d=1) => Number.isFinite(n) ? n.toLocaleString('ko-KR',{minimumFractionDigits:d,maximumFractionDigits:d}) : '-';
+const fl = (x,d) => { const m=Math.pow(10,d); return Math.floor(x*m+1e-7)/m; };
+
+function readInputs(){
+  const g = id => { const v = parseFloat($(id).value); return Number.isFinite(v) ? v : 0; };
+  return {
+    D:g('D'), H:g('H'), fill:$('fill').value===''?100:g('fill'), ch:g('ch'), cd:g('cd'),
+    t:g('t'), K:g('k'), rho:g('rho'), ref:$('ref').value, mat:$('mat').value,
+    nCyl:Math.min(8,Math.max(1,Math.round(g('nCyl'))||1)),
+    nCone:Math.min(8,Math.max(1,Math.round(g('nCone'))||1)),
+    gap:g('gap'), sw:g('sw'), sl:g('sl'), safe:$('safe').checked, submit:$('submit').checked, pi314:$('pi314').checked,
+    pMat:g('pMat'), pCut:g('pCut'), nest:$('nest').checked, sm:g('sm'),
+    fOutOn:$('fOutOn').checked, fOutOD:g('fOutOD'), fOutID:g('fOutID'), fOutT:g('fOutT'),
+    fTopOn:$('fTopOn').checked, fTopOD:g('fTopOD'), fTopID:g('fTopID'), fTopT:g('fTopT')
+  };
+}
+
+/* ---------- geometry helpers ---------- */
+const norm360 = a => ((a%360)+360)%360;
+const pol = (cx,cy,r,a) => [cx + r*Math.cos(a*DEG), cy + r*Math.sin(a*DEG)];
+
+function rectPiece(w,h,layer){
+  return {
+    ents:[
+      {t:'L',x1:0,y1:0,x2:w,y2:0,layer},{t:'L',x1:w,y1:0,x2:w,y2:h,layer},
+      {t:'L',x1:w,y1:h,x2:0,y2:h,layer},{t:'L',x1:0,y1:h,x2:0,y2:0,layer}
+    ],
+    box:{x0:0,y0:0,x1:w,y1:h}
+  };
+}
+function sectorPiece(R1,R2,span,layer){
+  const a0 = 270 - span/2, a1 = 270 + span/2;
+  const ents = [];
+  const p1 = pol(0,0,R1,a0), p2 = pol(0,0,R1,a1), q1 = pol(0,0,R2,a0), q2 = pol(0,0,R2,a1);
+  ents.push({t:'L',x1:q1[0],y1:q1[1],x2:p1[0],y2:p1[1],layer});
+  ents.push({t:'L',x1:q2[0],y1:q2[1],x2:p2[0],y2:p2[1],layer});
+  ents.push({t:'A',cx:0,cy:0,r:R1,a0:norm360(a0),a1:norm360(a1),span,layer});
+  if(R2>0.01) ents.push({t:'A',cx:0,cy:0,r:R2,a0:norm360(a0),a1:norm360(a1),span,layer});
+  const pts=[p1,p2,q1,q2,[0,0]];
+  [0,90,180,270].forEach(ax=>{
+    if(norm360(ax-a0) <= span+1e-9){ pts.push(pol(0,0,R1,ax)); }
+  });
+  const xs=pts.map(p=>p[0]), ys=pts.map(p=>p[1]);
+  return { ents, box:{x0:Math.min(...xs),y0:Math.min(...ys),x1:Math.max(...xs),y1:Math.max(...ys)} };
+}
+function shift(ent,dx,dy){
+  const c = Object.assign({},ent);
+  if(c.t==='L'){c.x1+=dx;c.x2+=dx;c.y1+=dy;c.y2+=dy;}
+  else if(c.t==='A'||c.t==='C'){c.cx+=dx;c.cy+=dy;}
+  else if(c.t==='T'){c.x+=dx;c.y+=dy;}
+  return c;
+}
+function entLen(e){
+  if(e.t==='L') return Math.hypot(e.x2-e.x1,e.y2-e.y1);
+  if(e.t==='A') return e.r*e.span*DEG;
+  if(e.t==='C') return 2*Math.PI*e.r;
+  return 0;
+}
+function circlePiece(OD,ID,layer){
+  const c=OD/2;
+  return { ents:[{t:'C',cx:c,cy:c,r:OD/2,layer},{t:'C',cx:c,cy:c,r:ID/2,layer}], box:{x0:0,y0:0,x1:OD,y1:OD} };
+}
+function rot90(piece){
+  const ents=piece.ents.map(e=>{
+    const c=Object.assign({},e);
+    if(c.t==='L'){ c.x1=-e.y1; c.y1=e.x1; c.x2=-e.y2; c.y2=e.x2; }
+    else{ c.cx=-e.cy; c.cy=e.cx; if(c.t==='A'){ c.a0=norm360(e.a0+90); c.a1=norm360(e.a1+90); } }
+    return c;
+  });
+  const b=piece.box, xs=[-b.y0,-b.y1], ys=[b.x0,b.x1];
+  return {ents, box:{x0:Math.min(...xs),x1:Math.max(...xs),y0:Math.min(...ys),y1:Math.max(...ys)}};
+}
+/* shelf packing on bounding boxes, 90-degree rotation allowed */
+function nestPieces(raw,P){
+  const M=P.sm||0, G=10;
+  const SX=Math.max(P.sw,P.sl), SY=Math.min(P.sw,P.sl);
+  const IX=SX-2*M, IY=SY-2*M;
+  const items=raw.map((r,i)=>{
+    const b=r.piece.box, bw=b.x1-b.x0, bh=b.y1-b.y0;
+    const opts=[{rot:false,w:bw,h:bh},{rot:true,w:bh,h:bw}].filter(o=>o.h<=IY&&o.w<=IX).sort((a,c)=>a.h-c.h);
+    const o=opts[0]||{rot:false,w:bw,h:bh,over:true};
+    return {i,r,o};
+  }).sort((a,b)=>b.o.h-a.o.h||b.o.w-a.o.w);
+  const sheets=[], placed=[];
+  const tryPut=(s,it)=>{
+    for(const sh of s.shelves){
+      if(it.o.h<=sh.h && sh.x+it.o.w<=IX){ const pos={x:sh.x,y:sh.y}; sh.x+=it.o.w+G; return pos; }
+    }
+    if(s.usedY+it.o.h<=IY){
+      const sh={y:s.usedY,h:it.o.h,x:it.o.w+G}; s.shelves.push(sh); s.usedY+=it.o.h+G; return {x:0,y:sh.y};
+    }
+    return null;
+  };
+  items.forEach(it=>{
+    let pos=null, sheet=null;
+    if(!it.o.over){
+      for(const s of sheets){ if(s.over) continue; pos=tryPut(s,it); if(pos){sheet=s;break;} }
+    }
+    if(!pos){
+      sheet={idx:sheets.length,shelves:[],usedY:0,over:!!it.o.over};
+      sheets.push(sheet);
+      pos = it.o.over ? {x:0,y:0} : tryPut(sheet,it);
+    }
+    const piece = it.o.rot ? rot90(it.r.piece) : it.r.piece;
+    placed.push({i:it.i,piece,x:sheet.idx*(SX+300)+M+pos.x,y:M+pos.y});
+  });
+  return {placed, sheets:sheets.map(s=>({x0:s.idx*(SX+300),y0:0,x1:s.idx*(SX+300)+SX,y1:SY})), SX, SY};
+}
+
+/* ---------- main calculation ---------- */
+function calc(){
+  const P = readInputs();
+  const R = {P, err:[], warn:[], pieces:[], ents:[], labels:[]};
+  const piV = P.pi314 ? 3.14 : Math.PI;
+  R.hasCyl  = P.D>0 && P.H>0;
+  R.hasCone = P.D>0 && P.ch>0;
+  if(!R.hasCyl && !R.hasCone) return R;
+
+  const Rr = P.D/2, rr = P.cd/2;
+
+  // volumes (liters)
+  if(R.hasCyl) R.volCyl = piV*Rr*Rr*P.H*(P.fill/100)/1e6;
+  if(R.hasCone){
+    if(rr >= Rr){ R.err.push('콘 출구 직경은 원통 직경보다 작아야 합니다.'); R.hasCone=false; }
+    else R.volCone = piV*P.ch/3*(Rr*Rr+Rr*rr+rr*rr)/1e6;
+  }
+  R.volTotal = (R.volCyl||0)+(R.volCone||0);
+
+  // thickness / neutral-axis offset from the entered reference surface to neutral surface (toward axis = +)
+  const e = P.ref==='outer' ? (1-P.K)*P.t : P.ref==='inner' ? -P.K*P.t : 0;
+  R.e = e;
+
+  // cylinder development
+  if(R.hasCyl){
+    const Dn = P.D - 2*e;
+    let Lc = Math.PI*Dn;
+    if(P.safe) Lc = fl(Lc,1);
+    R.cyl = {Dn, L:Lc, H:P.H, n:P.nCyl, w:(Lc-P.nCyl*P.gap)/P.nCyl};
+    R.cyl.outerAfter = P.ref==='outer' ? (Lc/Math.PI + 2*(1-P.K)*P.t) : null;
+  }
+
+  // cone development
+  if(R.hasCone){
+    const L0 = Math.hypot(P.ch, Rr-rr);
+    const eh = e*L0/P.ch;               // horizontal offset
+    const Rn = Rr - eh;
+    const rn = Math.max(0, rr - eh);
+    const dR = Rn - rn;
+    if(Rn<=0 || dR<=0){ R.err.push('콘 치수가 올바르지 않습니다 (중립축 반경 계산 실패).'); R.hasCone=false; }
+    else{
+      const L = Math.hypot(P.ch, dR);
+      let R1 = L*Rn/dR, R2 = L*rn/dR, th = dR/L*360;
+      if(P.safe){ R1=fl(R1,2); R2=fl(R2,2); th=fl(th,3); }
+      const span = (th - P.nCone*(P.gap/R1)/DEG)/P.nCone;
+      R.cone = {Rn,rn,L,R1,R2,th,n:P.nCone,span,
+        slope: Math.atan2(P.ch, Rr-rr)/DEG, half: Math.atan2(Rr-rr, P.ch)/DEG,
+        arcOut:R1*th*DEG, arcIn:R2*th*DEG};
+      if(rn===0 && rr>0) R.warn.push('콘 출구가 두께 보정으로 0 이하가 되어 정점으로 처리했습니다.');
+    }
+  }
+  if(!R.hasCyl && !R.hasCone) return R;
+
+  // flanges / rings
+  const outerDia = d => P.ref==='outer' ? d : P.ref==='inner' ? d+2*P.t : d+P.t;
+  const innerDia = d => P.ref==='outer' ? d-2*P.t : P.ref==='inner' ? d : d-P.t;
+  R.flanges=[];
+  const mkFl=(on,key,name,d,f)=>{
+    if(!on) return;
+    if(!(d>0)){ R.warn.push(name+': 기준 직경이 없어 만들 수 없습니다.'); return; }
+    const ID = f.id>0 ? f.id : innerDia(d);
+    const OD = f.od>0 ? f.od : outerDia(d)+100;
+    const ft = f.t>0 ? f.t : P.t;
+    if(!(ID>0) || OD<=ID){ R.err.push(`${name}: 외경(${fmt(OD,1)})이 내경(${fmt(ID,1)})보다 커야 합니다.`); return; }
+    R.flanges.push({key,name,OD,ID,t:ft,area:Math.PI/4*(OD*OD-ID*ID)});
+  };
+  mkFl(P.fTopOn,'top','상단 링',P.D,{od:P.fTopOD,id:P.fTopID,t:P.fTopT});
+  mkFl(P.fOutOn,'out','출구 플랜지',R.cone?P.cd:P.D,{od:P.fOutOD,id:P.fOutID,t:P.fOutT});
+
+  // build parts (local coordinates)
+  const raw=[]; const LET='ABCDEFGH';
+  if(R.cyl) for(let i=0;i<R.cyl.n;i++){
+    const a=LET[i], b=LET[(i+1)%R.cyl.n];
+    raw.push({piece:rectPiece(R.cyl.w,R.cyl.H,'CUT'),kind:'cyl',
+      label:`원통 ${i+1}/${R.cyl.n}  ${fmt(R.cyl.w,1)} × ${fmt(R.cyl.H,0)}  이음 ${a}-${b}`,
+      info:`CYL ${i+1}/${R.cyl.n} ${R.cyl.w.toFixed(1)}x${R.cyl.H.toFixed(1)} SEAM ${a}-${b}`});
+  }
+  if(R.cone) for(let i=0;i<R.cone.n;i++){
+    const a=i+1, b=(i+1)%R.cone.n+1;
+    raw.push({piece:sectorPiece(R.cone.R1,R.cone.R2,R.cone.span,'CUT'),kind:'cone',
+      label:`콘 ${i+1}/${R.cone.n}  R${fmt(R.cone.R1,1)} / r${fmt(R.cone.R2,1)}  ${fmt(R.cone.span,2)}°  이음 ${a}-${b}`,
+      info:`CONE ${i+1}/${R.cone.n} R${R.cone.R1.toFixed(1)} r${R.cone.R2.toFixed(1)} ${R.cone.span.toFixed(2)}DEG SEAM ${a}-${b}`});
+  }
+  R.flanges.forEach(f=>raw.push({piece:circlePiece(f.OD,f.ID,'CUT'),kind:'flange',
+    label:`${f.name} Ø${fmt(f.OD,1)} / Ø${fmt(f.ID,1)} t${fmt(f.t,1)}`,
+    info:`FLANGE ${f.key.toUpperCase()} OD${f.OD.toFixed(1)} ID${f.ID.toFixed(1)} T${f.t.toFixed(1)}`}));
+
+  // layout: one row, or nested on sheets
+  let placed=[]; R.sheets=[];
+  if(P.nest && P.sw>0 && P.sl>0){
+    const nr=nestPieces(raw,P); placed=nr.placed; R.sheets=nr.sheets; R.sheetArea=nr.SX*nr.SY;
+  }else{
+    let cx=0;
+    raw.forEach((r,i)=>{ const b=r.piece.box; placed.push({i,piece:r.piece,x:cx,y:0}); cx+=b.x1-b.x0+40; });
+  }
+  placed.sort((a,b)=>a.i-b.i);
+  placed.forEach(pl=>{
+    const r=raw[pl.i], b=pl.piece.box, dx=pl.x-b.x0, dy=pl.y-b.y0;
+    const ents=pl.piece.ents.map(en=>shift(en,dx,dy));
+    const box={x0:pl.x,y0:pl.y,x1:pl.x+(b.x1-b.x0),y1:pl.y+(b.y1-b.y0)};
+    R.pieces.push({label:r.label,info:r.info,kind:r.kind,box,ents,w:box.x1-box.x0,h:box.y1-box.y0});
+    R.ents.push(...ents);
+    R.labels.push({x:(box.x0+box.x1)/2,y:box.y1,text:r.label});
+  });
+
+  // dedupe
+  const seen = new Set(); let dup = 0;
+  R.ents = R.ents.filter(en=>{
+    let k;
+    if(en.t==='L'){ const a=[en.x1,en.y1].map(v=>v.toFixed(3)).join(','), b=[en.x2,en.y2].map(v=>v.toFixed(3)).join(','); k='L'+[a,b].sort().join('|'); }
+    else if(en.t==='C') k='C'+[en.cx,en.cy,en.r].map(v=>v.toFixed(3)).join(',');
+    else k='A'+[en.cx,en.cy,en.r,en.a0,en.a1].map(v=>v.toFixed(3)).join(',');
+    if(seen.has(k)){dup++;return false;} seen.add(k); return true;
+  });
+  R.dup = dup;
+
+  // closure check
+  const cnt = new Map();
+  R.ents.forEach(en=>{
+    if(en.t==='C') return;
+    const ends = en.t==='L' ? [[en.x1,en.y1],[en.x2,en.y2]] : [pol(en.cx,en.cy,en.r,en.a0),pol(en.cx,en.cy,en.r,en.a1)];
+    ends.forEach(p=>{ const k=p[0].toFixed(2)+','+p[1].toFixed(2); cnt.set(k,(cnt.get(k)||0)+1); });
+  });
+  R.open = [...cnt.values()].filter(v=>v!==2).length;
+
+  // metrics
+  R.cutLen = R.ents.reduce((s,en)=>s+entLen(en),0);
+  R.areaCyl  = R.cyl ? R.cyl.n*R.cyl.w*R.cyl.H : 0;
+  R.areaCone = R.cone ? R.cone.n*0.5*R.cone.span*DEG*(R.cone.R1*R.cone.R1 - R.cone.R2*R.cone.R2) : 0;
+  R.area = R.areaCyl + R.areaCone;
+  R.flArea = R.flanges.reduce((a,f)=>a+f.area,0);
+  R.weight = R.area*P.t*P.rho/1e6 + R.flanges.reduce((a,f)=>a+f.area*f.t*P.rho/1e6,0);
+  R.net = R.area + R.flArea;
+  R.util = null;
+  R.costMat = R.weight*P.pMat;
+  R.costCut = R.cutLen/1000*P.pCut;
+  R.fit = R.pieces.map(p=>{
+    const mg = (P.nest ? (P.sm||0) : 0)*2, a=P.sw-mg, b=P.sl-mg;
+    return (p.w<=a&&p.h<=b)||(p.w<=b&&p.h<=a);
+  });
+  if(R.sheets.length && R.fit.every(Boolean)) R.util = R.net/(R.sheets.length*R.sheetArea);
+  return R;
+}
+
+/* ---------- DXF ---------- */
+function buildDXF(R, withInfo){
+  const o=[]; const p=(c,v)=>{o.push(String(c));o.push(String(v));};
+  const f=v=>Number(v).toFixed(6);
+  p(0,'SECTION');p(2,'HEADER');p(9,'$ACADVER');p(1,'AC1009');p(0,'ENDSEC');
+  p(0,'SECTION');p(2,'TABLES');
+  p(0,'TABLE');p(2,'LTYPE');p(70,1);
+  p(0,'LTYPE');p(2,'CONTINUOUS');p(70,0);p(3,'Solid line');p(72,65);p(73,0);p(40,'0.0');
+  p(0,'ENDTAB');
+  const layers=[['CUT',7]]; if(withInfo){ layers.push(['INFO',3]); if(R.sheets&&R.sheets.length) layers.push(['SHEET',8]); }
+  p(0,'TABLE');p(2,'LAYER');p(70,layers.length);
+  layers.forEach(([n,c])=>{p(0,'LAYER');p(2,n);p(70,0);p(62,c);p(6,'CONTINUOUS');});
+  p(0,'ENDTAB');p(0,'ENDSEC');
+  p(0,'SECTION');p(2,'ENTITIES');
+  R.ents.forEach(en=>{
+    if(en.t==='L'){p(0,'LINE');p(8,en.layer);p(10,f(en.x1));p(20,f(en.y1));p(30,'0.0');p(11,f(en.x2));p(21,f(en.y2));p(31,'0.0');}
+    else if(en.t==='C'){p(0,'CIRCLE');p(8,en.layer);p(10,f(en.cx));p(20,f(en.cy));p(30,'0.0');p(40,f(en.r));}
+    else{p(0,'ARC');p(8,en.layer);p(10,f(en.cx));p(20,f(en.cy));p(30,'0.0');p(40,f(en.r));p(50,f(en.a0));p(51,f(en.a1));}
+  });
+  if(withInfo){
+    (R.sheets||[]).forEach(sh=>{
+      [[sh.x0,sh.y0,sh.x1,sh.y0],[sh.x1,sh.y0,sh.x1,sh.y1],[sh.x1,sh.y1,sh.x0,sh.y1],[sh.x0,sh.y1,sh.x0,sh.y0]].forEach(l=>{
+        p(0,'LINE');p(8,'SHEET');p(10,f(l[0]));p(20,f(l[1]));p(30,'0.0');p(11,f(l[2]));p(21,f(l[3]));p(31,'0.0');
+      });
+    });
+    R.pieces.forEach(pc=>{
+      p(0,'TEXT');p(8,'INFO');p(10,f(pc.box.x0));p(20,f(pc.box.y1+15));p(30,'0.0');p(40,'20.0');p(1,pc.info||'PART');
+    });
+  }
+  p(0,'ENDSEC');p(0,'EOF');
+  return o.join('\r\n')+'\r\n';
+}
+
+/* ---------- rendering ---------- */
+function sideSVG(R){
+  const P=R.P;
+  if(!R.hasCyl && !R.hasCone) return '<div class="empty">치수를 입력하세요</div>';
+  const W=280, Hh=340, m=26;
+  const totalH = (R.hasCyl?P.H:0)+(R.hasCone?P.ch:0);
+  const fT=R.flanges.find(f=>f.key==='top'), fO=R.flanges.find(f=>f.key==='out');
+  const maxW=Math.max(P.D,fT?fT.OD:0,fO?fO.OD:0);
+  const s = Math.min((W-2*m-30)/maxW, (Hh-2*m)/totalH);
+  const fth=f=>Math.max(3,f.t*s);
+  const cxp = W/2 - 8;
+  const wD = P.D*s, hC = (R.hasCyl?P.H:0)*s, hK=(R.hasCone?P.ch:0)*s;
+  const wd = (P.cd)*s;
+  let y = m, out='';
+  out += `<line x1="${cxp}" y1="${m-10}" x2="${cxp}" y2="${m+hC+hK+12}" stroke="var(--center)" stroke-width="1" stroke-dasharray="8 3 2 3"/>`;
+  if(R.hasCyl){
+    out += `<rect x="${cxp-wD/2}" y="${y}" width="${wD}" height="${hC}" fill="none" stroke="var(--ink)" stroke-width="1.6"/>`;
+    out += `<text x="${cxp+wD/2+6}" y="${y+hC/2}" font-size="11" fill="var(--mute)" dominant-baseline="middle">H ${fmt(P.H,0)}</text>`;
+    y += hC;
+  }
+  if(R.hasCone){
+    const x1=cxp-wD/2,x2=cxp+wD/2,x3=cxp+wd/2,x4=cxp-wd/2;
+    if(R.hasCyl) out += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="var(--ink)" stroke-width="1.6"/>`;
+    out += `<polyline points="${x1},${y} ${x4},${y+hK} ${x3},${y+hK} ${x2},${y}" fill="none" stroke="var(--ink)" stroke-width="1.6"/>`;
+    if(!R.hasCyl) out += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="var(--ink)" stroke-width="1.6"/>`;
+    out += `<text x="${x2-4}" y="${y+hK/2}" font-size="11" fill="var(--mute)" text-anchor="end" dominant-baseline="middle">${fmt(P.ch,0)}</text>`;
+    out += `<text x="${cxp}" y="${y+hK+16+(fO?fth(fO):0)}" font-size="11" fill="var(--mute)" text-anchor="middle">Ø${fmt(P.cd,0)}</text>`;
+  }
+  if(fT) out += `<rect x="${cxp-fT.OD*s/2}" y="${m-fth(fT)}" width="${fT.OD*s}" height="${fth(fT)}" fill="var(--accent)" opacity=".75"/>`;
+  if(fO) out += `<rect x="${cxp-fO.OD*s/2}" y="${m+hC+hK}" width="${fO.OD*s}" height="${fth(fO)}" fill="var(--accent)" opacity=".75"/>`;
+  out += `<text x="${cxp}" y="${m-12-(fT?fth(fT):0)}" font-size="11" fill="var(--mute)" text-anchor="middle">Ø${fmt(P.D,0)}</text>`;
+  return `<svg viewBox="0 0 ${W} ${Hh}" role="img" aria-label="원통과 콘의 단면 형상">${out}</svg>`;
+}
+
+function devSVG(R){
+  if(!R.pieces.length) return '<div class="empty">전개할 형상이 없습니다</div>';
+  const sh=R.sheets||[];
+  const totalW=Math.max(...R.pieces.map(p=>p.box.x1),...sh.map(x=>x.x1));
+  const maxH=Math.max(...R.pieces.map(p=>p.box.y1),...sh.map(x=>x.y1));
+  const big=Math.max(totalW,maxH), m=big*0.03, fs=big/(sh.length?70:48), lab=fs*2.6;
+  const vx=-m, vy=-(maxH+lab+m), vw=totalW+2*m, vh=maxH+lab+2*m;
+  let out='';
+  const Y=y=>-y;
+  sh.forEach(x=>{ out+=`<rect x="${x.x0}" y="${Y(x.y1)}" width="${x.x1-x.x0}" height="${x.y1-x.y0}" fill="none" stroke="var(--mute)" stroke-width="1" stroke-dasharray="6 4" vector-effect="non-scaling-stroke"/>`; });
+  R.ents.forEach(en=>{
+    if(en.t==='L') out+=`<line x1="${en.x1}" y1="${Y(en.y1)}" x2="${en.x2}" y2="${Y(en.y2)}" stroke="var(--cut)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+    else if(en.t==='C') out+=`<circle cx="${en.cx}" cy="${Y(en.cy)}" r="${en.r}" fill="none" stroke="var(--cut)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+    else{
+      const a=pol(en.cx,en.cy,en.r,en.a0), b=pol(en.cx,en.cy,en.r,en.a1);
+      out+=`<path d="M${a[0]} ${Y(a[1])} A${en.r} ${en.r} 0 ${en.span>180?1:0} 0 ${b[0]} ${Y(b[1])}" fill="none" stroke="var(--cut)" stroke-width="1.6" vector-effect="non-scaling-stroke"/>`;
+    }
+  });
+  if(!sh.length) R.labels.forEach(l=>{
+    out+=`<text x="${l.x}" y="${Y(l.y)-fs*0.8}" font-size="${fs}" fill="var(--mute)" text-anchor="middle">${l.text}</text>`;
+  });
+  else R.pieces.forEach((pc,i)=>{
+    out+=`<text x="${(pc.box.x0+pc.box.x1)/2}" y="${Y((pc.box.y0+pc.box.y1)/2)}" font-size="${fs*1.3}" fill="var(--mute)" text-anchor="middle">${i+1}</text>`;
+  });
+  return `<svg viewBox="${vx} ${vy} ${vw} ${vh}" role="img" aria-label="전개도">${out}</svg>`;
+}
+
+function render(){
+  const R = calc();
+  window.__R = R;
+  const P=R.P;
+
+  // top stats
+  if(!R.hasCyl && !R.hasCone){
+    $('top').innerHTML='<div class="empty" style="grid-column:1/-1">원통 직경과 높이(또는 콘 높이)를 입력하세요.</div>';
+    $('side').innerHTML=''; $('dev').innerHTML=''; $('dimTable').innerHTML=''; $('checks').innerHTML='';
+    $('modeBadge').textContent=''; setButtons(false);
+    return;
+  }
+  const stat=(k,l,m3,cls='')=>`<div class="stat ${cls}"><div class="k">${k}</div><div class="v">${fmt(l,1)}<span>리터</span></div><div class="s">${fmt(m3,3)} m³</div></div>`;
+  $('top').innerHTML =
+    stat('원통 체적', R.volCyl||0, (R.volCyl||0)/1000) +
+    stat('콘 체적', R.volCone||0, (R.volCone||0)/1000) +
+    stat('체적 합', R.volTotal, R.volTotal/1000,'total');
+  $('modeBadge').textContent = R.cyl&&R.cone ? '원통 + 호퍼' : R.cyl ? '원통만' : '호퍼만';
+  $('side').innerHTML = sideSVG(R);
+  $('dev').innerHTML = devSVG(R);
+
+  // dimension table
+  let t='';
+  if(R.cyl){
+    t+=`<table><thead><tr><th>원통</th><th>중립축 직경</th><th>전개 길이(전체)</th><th>높이</th><th>분할</th><th>1장 크기</th></tr></thead><tbody>
+    <tr><td>사각형</td><td>${fmt(R.cyl.Dn,2)}</td><td>${fmt(R.cyl.L,1)}</td><td>${fmt(R.cyl.H,1)}</td><td>${R.cyl.n}</td><td>${fmt(R.cyl.w,1)} × ${fmt(R.cyl.H,1)}</td></tr></tbody></table>`;
+  }
+  if(R.cone){
+    const c=R.cone;
+    t+=`<table style="margin-top:10px"><thead><tr><th>콘</th><th>외측 R</th><th>내측 r</th><th>전개 각도</th><th>경사 길이</th><th>반각 / 경사각</th><th>분할</th><th>1장 각도</th></tr></thead><tbody>
+    <tr><td>부채꼴</td><td>${fmt(c.R1,2)}</td><td>${fmt(c.R2,2)}</td><td>${fmt(c.th,3)}°</td><td>${fmt(c.L,2)}</td><td>${fmt(c.half,2)}° / ${fmt(c.slope,2)}°</td><td>${c.n}</td><td>${fmt(c.span,3)}°</td></tr></tbody></table>`;
+  }
+  if(R.flanges.length){
+    t+=`<table style="margin-top:10px"><thead><tr><th>플랜지 · 링</th><th>외경</th><th>내경</th><th>두께</th><th>면적</th></tr></thead><tbody>`+
+      R.flanges.map(f=>`<tr><td>${f.name}</td><td>${fmt(f.OD,1)}</td><td>${fmt(f.ID,1)}</td><td>${fmt(f.t,1)}</td><td>${fmt(f.area/1e6,4)} ㎡</td></tr>`).join('')+`</tbody></table>`;
+  }
+  t+=`<table style="margin-top:10px"><thead><tr><th>재료 · 견적</th><th>판재 면적</th><th>중량</th><th>절단 길이</th><th>재료비</th><th>절단비</th><th>합계</th></tr></thead><tbody>
+  <tr><td>t=${fmt(P.t,1)}</td><td>${fmt(R.area/1e6,3)} ㎡</td><td>${fmt(R.weight,1)} kg</td><td>${fmt(R.cutLen/1000,2)} m</td><td>${fmt(R.costMat,0)} 원</td><td>${fmt(R.costCut,0)} 원</td><td><b>${fmt(R.costMat+R.costCut,0)} 원</b></td></tr></tbody></table>`;
+  $('dimTable').innerHTML=t;
+
+  // checks
+  const li=(cls,mark,text)=>`<li class="${cls}"><span class="mark">${mark}</span><span>${text}</span></li>`;
+  let c='';
+  R.err.forEach(m=>c+=li('bad','✕',m));
+  R.warn.forEach(m=>c+=li('warn','!',m));
+  c+= R.open===0 ? li('ok','✓','모든 도형이 닫혀 있습니다 (끝점 불일치 없음)') : li('bad','✕',`끝점이 이어지지 않는 지점 ${R.open}곳`);
+  c+= li('ok','✓', R.dup ? `중복선 ${R.dup}개를 제거했습니다` : '중복선 없음');
+  c+= li('ok','✓','원호는 ARC 엔티티로 저장 (직선 근사 없음), 단위 mm, 1:1');
+  R.pieces.forEach((pc,i)=>{
+    c+= li(R.fit[i]?'ok':'warn', R.fit[i]?'✓':'!', `${pc.label} → 외곽 ${fmt(pc.w,1)} × ${fmt(pc.h,1)} ${R.fit[i]?'판재 '+fmt(P.sw,0)+'×'+fmt(P.sl,0)+' 내 배치 가능':'판재 '+fmt(P.sw,0)+'×'+fmt(P.sl,0)+' 초과 → '+(pc.kind==='flange'?'외경을 줄이거나 분할 제작이 필요합니다':'분할 수를 늘리세요')}`);
+  });
+  if(R.cyl && R.cyl.outerAfter!==null && P.safe){
+    c+= li(R.cyl.outerAfter<=P.D+1e-9?'ok':'bad', R.cyl.outerAfter<=P.D+1e-9?'✓':'✕', `완성 외경 ${fmt(R.cyl.outerAfter,2)} ≤ 도면 외경 ${fmt(P.D,2)} (외경 초과 금지 적용)`);
+  }
+  if(R.sheets.length){
+    const ov=R.pieces.some((_,i)=>!R.fit[i]);
+    c+= li(ov?'warn':'ok', ov?'!':'✓', `자동 배치: 판재 ${R.sheets.length}장 (${fmt(Math.max(P.sw,P.sl),0)}×${fmt(Math.min(P.sw,P.sl),0)}), ${R.util!==null?'재료 이용률 '+fmt(R.util*100,1)+'% (외곽 사각형 기준)':'규격을 넘는 부품이 있어 이용률은 표시하지 않습니다'}`);
+  }
+  c+= li('ok','✓',`절단 길이 합계 ${fmt(R.cutLen/1000,3)} m (업체 견적용)`);
+  $('checks').innerHTML=c;
+  setButtons(R.open===0 && R.ents.length>0);
+}
+function setButtons(on){ ['btnDxf','btnParts','btnCopy','btnQuote'].forEach(id=>$(id).disabled=!on); }
+
+/* ---------- save / download ---------- */
+function setStatus(msg,bad){ const s=$('status'); s.textContent=msg; s.style.color = bad?'var(--bad)':'var(--mute)'; }
+function baseName(R){
+  const P=R.P; const parts=['hopper'];
+  parts.push('D'+Math.round(P.D));
+  if(R.cyl) parts.push('H'+Math.round(P.H));
+  if(R.cone) parts.push('C'+Math.round(P.ch));
+  parts.push('t'+String(P.t).replace('.','_'));
+  return parts.join('_');
+}
+async function offerFile(filename, data, mime){
+  let dl=null;
+  try{ dl = window.claude && window.claude.use ? await window.claude.use('downloads') : null; }catch(_){ dl=null; }
+  if(dl){
+    await dl.save({filename, data});
+    return 'saved';
+  }
+  const blob = data instanceof Blob ? data : new Blob([data],{type:mime||'application/octet-stream'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(a.href),4000);
+  return 'saved';
+}
+async function saveDXF(){
+  const R=window.__R; if(!R||!R.ents.length) return;
+  const dxf = buildDXF(R, !R.P.submit);
+  const name = baseName(R);
+  try{
+    try{
+      await offerFile(name+'.dxf', dxf, 'application/dxf');
+      setStatus(name+'.dxf 저장을 요청했습니다.');
+    }catch(err){
+      if(err && err.code==='rejected_extension' && window.JSZip){
+        const z=new JSZip(); z.file(name+'.dxf', dxf);
+        const blob=await z.generateAsync({type:'blob'});
+        await offerFile(name+'.zip', blob, 'application/zip');
+        setStatus(name+'.zip 저장을 요청했습니다. 압축을 풀면 '+name+'.dxf 가 나옵니다 (이 화면에서는 .dxf 직접 저장이 제한됩니다).');
+      }else throw err;
+    }
+    pushHistory(R);
+  }catch(err){
+    if(err && err.code==='declined') setStatus('저장이 취소되었습니다.');
+    else setStatus('저장하지 못했습니다: '+(err && err.message ? err.message : err), true);
+  }
+}
+async function saveParts(){
+  const R=window.__R; if(!R||!R.pieces.length) return;
+  if(!window.JSZip){ setStatus('ZIP 모듈을 불러오지 못했습니다. DXF 저장을 사용하세요.',true); return; }
+  try{
+    const z=new JSZip(), name=baseName(R);
+    R.pieces.forEach((pc,i)=>{
+      const ents=pc.ents.map(en=>shift(en,-pc.box.x0,-pc.box.y0));
+      const one={ents,pieces:[Object.assign({},pc,{box:{x0:0,y0:0,x1:pc.w,y1:pc.h}})]};
+      z.file(`${name}_part${i+1}_${pc.kind==='cyl'?'cyl':'cone'}.dxf`, buildDXF(one,!R.P.submit));
+    });
+    await offerFile(name+'_parts.zip', await z.generateAsync({type:'blob'}), 'application/zip');
+    setStatus(`부품 ${R.pieces.length}개를 개별 DXF로 묶은 ZIP 저장을 요청했습니다.`);
+    pushHistory(R);
+  }catch(err){
+    if(err&&err.code==='declined') setStatus('저장이 취소되었습니다.'); else setStatus('저장하지 못했습니다: '+(err&&err.message?err.message:err), true);
+  }
+}
+async function copyDXF(){
+  const R=window.__R; if(!R||!R.ents.length) return;
+  try{
+    await navigator.clipboard.writeText(buildDXF(R,!R.P.submit));
+    setStatus('DXF 내용을 복사했습니다. 메모장에 붙여넣고 .dxf 로 저장하세요.');
+  }catch(_){ setStatus('복사가 차단되었습니다. DXF 저장 버튼을 사용하세요.', true); }
+}
+function quoteHTML(R){
+  const P=R.P, d=new Date().toLocaleDateString('ko-KR');
+  const rows=[];
+  if(R.cyl) rows.push(['원통', `Ø${fmt(P.D,0)} × H${fmt(P.H,0)}`, `전개 ${fmt(R.cyl.L,1)} × ${fmt(R.cyl.H,0)} (${R.cyl.n}장)`]);
+  if(R.cone) rows.push(['콘(호퍼)', `H${fmt(P.ch,0)} 출구 Ø${fmt(P.cd,0)}`, `R${fmt(R.cone.R1,1)} / r${fmt(R.cone.R2,1)} / ${fmt(R.cone.th,2)}° (${R.cone.n}장)`]);
+  R.flanges.forEach(f=>rows.push([f.name, `Ø${fmt(f.OD,1)} / Ø${fmt(f.ID,1)} t${fmt(f.t,1)}`, '평판 링 1장']));
+  return `<!DOCTYPE html><html lang="ko"><head><meta charset="utf-8"><title>견적서</title>
+<style>body{font-family:"Malgun Gothic","Noto Sans KR",sans-serif;margin:32px;color:#111}h1{font-size:22px}table{border-collapse:collapse;width:100%;margin:12px 0}th,td{border:1px solid #999;padding:6px 10px;text-align:left}th{background:#eee}.r{text-align:right}</style></head><body>
+<h1>호퍼 / 원통 제작 견적서</h1><p>작성일 ${d} · 재질 t${fmt(P.t,1)} (비중 ${P.rho}) · 입력 치수 기준: ${P.ref==='outer'?'외경':P.ref==='inner'?'내경':'중립축'} · K=${P.K}</p>
+<table><tr><th>구분</th><th>규격</th><th>전개</th></tr>${rows.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td></tr>`).join('')}</table>
+<table><tr><th>체적 합</th><td class="r">${fmt(R.volTotal,1)} L (${fmt(R.volTotal/1000,3)} ㎥)</td></tr>
+<tr><th>판재 면적</th><td class="r">${fmt(R.area/1e6,3)} ㎡</td></tr><tr><th>중량</th><td class="r">${fmt(R.weight,1)} kg</td></tr>
+<tr><th>절단 길이</th><td class="r">${fmt(R.cutLen/1000,2)} m</td></tr>${R.sheets.length?`<tr><th>소요 판재</th><td class="r">${R.sheets.length}장 (${fmt(Math.max(P.sw,P.sl),0)}×${fmt(Math.min(P.sw,P.sl),0)})</td></tr>`:''}
+<tr><th>재료비 (${fmt(P.pMat,0)}원/kg)</th><td class="r">${fmt(R.costMat,0)} 원</td></tr>
+<tr><th>절단비 (${fmt(P.pCut,0)}원/m)</th><td class="r">${fmt(R.costCut,0)} 원</td></tr>
+<tr><th>합계 (부가세 별도)</th><td class="r"><b>${fmt(R.costMat+R.costCut,0)} 원</b></td></tr></table>
+<p style="font-size:12px;color:#555">레이저 커프 보정은 가공처에서 적용합니다. 전개 치수는 K값 기준 이론값이며 실제 롤링 결과에 따라 달라질 수 있습니다.</p></body></html>`;
+}
+async function saveQuote(){
+  const R=window.__R; if(!R||!R.ents.length) return;
+  try{ await offerFile(baseName(R)+'_quote.html', quoteHTML(R), 'text/html'); setStatus('견적서 저장을 요청했습니다.'); }
+  catch(err){ if(err&&err.code==='declined') setStatus('저장이 취소되었습니다.'); else setStatus('저장하지 못했습니다: '+(err&&err.message?err.message:err), true); }
+}
+
+/* ---------- history (per browser) ---------- */
+const HKEY='hopper-designer-history-v1';
+function loadHist(){ try{ return JSON.parse(localStorage.getItem(HKEY)||'[]'); }catch(_){ return []; } }
+function pushHistory(R){
+  const inputs={}; ['mat','t','k','rho','ref','D','H','fill','ch','cd','nCyl','nCone','gap','sw','sl','pMat','pCut','fOutOD','fOutID','fOutT','fTopOD','fTopID','fTopT'].forEach(id=>inputs[id]=$(id).value);
+  ['safe','submit','pi314','nest','fOutOn','fTopOn'].forEach(id=>inputs[id]=$(id).checked);
+  const h=loadHist(); h.unshift({ts:Date.now(),name:baseName(R),vol:R.volTotal,inputs});
+  try{ localStorage.setItem(HKEY,JSON.stringify(h.slice(0,12))); }catch(_){}
+  renderHist();
+}
+function renderHist(){
+  const h=loadHist();
+  if(!h.length){ $('hist').innerHTML='<div class="hint">저장하면 여기에 기록됩니다. 항목을 누르면 입력값이 복원됩니다.</div>'; return; }
+  $('hist').innerHTML=h.map((x,i)=>`<button data-i="${i}">${new Date(x.ts).toLocaleString('ko-KR')} · ${x.name} · ${fmt(x.vol,0)} L</button>`).join('');
+  $('hist').querySelectorAll('button').forEach(b=>b.addEventListener('click',()=>{
+    const x=loadHist()[+b.dataset.i]; if(!x) return;
+    Object.keys(x.inputs).forEach(id=>{ const el=$(id); if(!el) return; if(el.type==='checkbox') el.checked=x.inputs[id]; else el.value=x.inputs[id]; });
+    render();
+  }));
+}
+
+/* ---------- wiring ---------- */
+$('mat').addEventListener('change',()=>{
+  const m=MATERIALS[$('mat').value];
+  if(m){ $('k').value=m.k; $('rho').value=m.rho; }
+  render();
+});
+['k','rho'].forEach(id=>$(id).addEventListener('input',()=>{ $('mat').value='custom'; }));
+document.querySelectorAll('input,select').forEach(el=>{
+  el.addEventListener('input',render); el.addEventListener('change',render);
+});
+$('btnDxf').addEventListener('click',saveDXF);
+$('btnParts').addEventListener('click',saveParts);
+$('btnCopy').addEventListener('click',copyDXF);
+$('btnQuote').addEventListener('click',saveQuote);
+renderHist();
+render();
+</script>
+</body>
+</html>

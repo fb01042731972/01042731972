@@ -1,0 +1,19 @@
+{
+  "5구 자동화 충진기": [
+    {
+      "name": "새 시퀀스",
+      "trigType": "channel",
+      "trigCh": 1,
+      "trigCond": "ON",
+      "trigCode": "",
+      "steps": [
+        {
+          "type": "RELAY",
+          "relay": 1,
+          "state": "ON",
+          "delay": 0
+        }
+      ]
+    }
+  ]
+}

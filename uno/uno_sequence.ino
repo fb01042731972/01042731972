@@ -1,5 +1,17 @@
 // ============================================================
-//  UNO PLC 보드 펌웨어  v1.7  (v1.6에 "입력 반전" 추가. v1.6 = 시퀀스 6개→12개, v1.5 = 입력 12채널)
+//  UNO PLC 보드 펌웨어  v1.9.1  (v1.6에 "입력 반전" 추가. v1.6 = 시퀀스 6개→12개, v1.5 = 입력 12채널)
+//    v1.9.1 변경: 릴레이(출력)별로 "출력 반전(A접점/B접점)" 설정 추가 — 릴레이 모듈마다 ON/OFF 신호 극성이
+//               반대인 경우가 있어서(예: active-LOW 모듈 vs active-HIGH 모듈), "■ 테스트 초기화"로
+//               강제 OFF를 보냈을 때 보드에 따라 실제로는 켜지는 것처럼 보이는 문제가 있었습니다.
+//               채널별로 반전을 켜고 끌 수 있게 하여, 보드(릴레이 모듈)가 달라도 웹페이지에서 맞춰 쓸 수 있습니다.
+//               기본값은 전부 반전 없음(기존 방식, active-LOW)이라 예전 보드는 그대로 동작합니다. 설정은 EEPROM 593번대에 저장됩니다.
+//    v1.9 변경: 동작 순서 각 줄을 "지연(ms)" 대신 "조건 대기"(지정 채널이 원하는 상태가 될 때까지 시간제한 없이 대기)로도
+//               쓸 수 있게 SEQSTEP에 선택적 인자(대기채널, 대기상태) 추가. 내부적으로 sd[]의 최상위 비트를 "대기 여부"
+//               플래그로 쓰고(그래서 지연 값은 0~32767ms로 줄었습니다), 남은 하위 비트에 채널·상태를 담습니다.
+//               ("순서대로 실행" SETSEQORDER/GETSEQORDER? 명령은 아직 미구현 — 웹페이지가 이를 감지해 경고만 남기고
+//               나머지 기능은 정상 동작합니다.)
+//    v1.8 변경: 전원 투입 시 릴레이 시작 상태(SETBOOT/GETBOOT) 추가 — 기본은 OFF 시작, 체크한 릴레이만 ON으로 시작.
+//               설정은 EEPROM 490번대에 저장됩니다.
 //    v1.7 변경: 채널별 "입력 반전" 설정 추가 — 반전하면 핀이 HIGH일 때 "눌림"으로 봅니다(기본은 LOW=눌림).
 //               A0~A3 처럼 아무것도 안 달아도 LOW로 읽히는 핀에 5V 접점을 달아 쓸 때 사용. 설정은 EEPROM 590번대에 저장됩니다.
 //    v1.6 변경: 시퀀스 최대 6개 → 12개.  시퀀스 EEPROM 저장 위치를 600번 → 20번으로 옮김(12개가 EE_LCD 자리와 겹치지 않도록).
@@ -26,15 +38,21 @@
 //    STATUS? / INPUT?              → STATUS 0,1,0,0 / INPUT 0,0,1,0,0,0
 //    GETCONFIG? / SETOUT <ch> <pin> / SETIN <ch> <pin>
 //    GETINV? / SETINV <ch> <0|1>   (입력 반전: 1 = 핀이 HIGH일 때 눌림. GETINV? → INV 0,0,1,...  12개)
-//    GETRMODE? / SETRMODE 1        (이 릴레이 보드는 active-LOW 고정)
+//    GETOUTINV? / SETOUTINV <ch> <0|1>   (출력 반전(A접점/B접점): 0=기존 방식(active-LOW), 1=반전(active-HIGH).
+//                                  GETOUTINV? → OUTINV 0,0,0,0  4개. 릴레이 모듈이 반대로 동작하는 보드에서 채널별로 맞춰 씀)
+//    GETRMODE? / SETRMODE 1        (전체 기본값 조회용 — 실제 반전은 이제 GETOUTINV?/SETOUTINV로 채널별 설정)
 //  ── 시퀀스 명령 (모드 2) ──
 //    SEQCLR                        시퀀스 편집 시작 (편집 중에는 시퀀스 동작 일시 정지)
 //    SEQDEF <i> <입력ch> <cond> <enabled>   i = 0~11, 입력ch 0 = 자동 트리거 없음(수동 실행만),
 //                                  cond 1=눌림 0=뗌 2=양쪽
 //    SEQCOND <i> <입력ch> <state>            추가 조건(인터록): 트리거 순간 이 채널이 state(1=눌림 0=뗌)여야 실행. 최대 4개
-//    SEQSTEP <i> <릴레이ch> <state> <지연ms>  동작 1줄: 릴레이 ON(1)/OFF(0) → 지연ms 기다린 뒤 다음 줄. 최대 10줄
+//    SEQSTEP <i> <릴레이ch> <state> <지연ms> [<대기ch> <대기상태>]
+//                                  동작 1줄: 릴레이 ON(1)/OFF(0) → 지연ms(0~32767) 기다린 뒤 다음 줄. 최대 10줄
+//                                  마지막 두 인자(대기ch 1~N_IN, 대기상태 1=눌릴 때까지/0=뗄 때까지)를 주면
+//                                  지연 대신 그 채널이 "새로 그 상태가 될 때까지" 시간제한 없이 기다립니다(v1.9).
 //    SEQSAVE / SEQABORT            EEPROM에 저장 후 적용 / 편집 취소
 //    SEQGET? / SEQSTAT? / SEQRUN <i> / SEQSTOP
+//    SETBOOT <릴레이ch> <0|1> / GETBOOT?   전원 투입 시 시작 상태(1=ON으로 시작). GETBOOT? → BOOT 0,1,0,0 (v1.8)
 //
 //  ── 0.96" OLED (I2C, 128x64) 로 한글 문구 표시 ──
 //    배선: OLED VCC→5V, GND→GND, SCL→A5, SDA→A4  (외부 EEPROM 24LC256도 같은 A4/A5 버스에 함께 연결, 주소 0x50)
@@ -51,7 +69,7 @@
 #include <EEPROM.h>
 #include <Wire.h>
 
-#define FW_VERSION "1.7"
+#define FW_VERSION "1.9.1"
 
 // [추가] OLED(SSD1306)·외장EEPROM(24LC256)은 둘 다 I2C(Wire)로 연결하는 부품인데,
 // 보드마다 실제로 배선했는지가 다릅니다. 컴파일 시 껐다 켰다(재업로드 필요) 하는 대신,
@@ -63,12 +81,16 @@ bool oledEnabled = false;
 // ---------- 하드웨어 ----------
 #define N_OUT 4
 #define N_IN  12
-const bool RELAY_ACTIVE_LOW = true;   // 이 릴레이 보드: LOW = ON
+// [v1.9.1] 예전에는 전체 보드가 고정으로 active-LOW(LOW=ON)였는데, 릴레이 모듈에 따라 반대(active-HIGH)인
+// 경우가 있어서 채널별로 반전을 켜고 끌 수 있게 했습니다. outInvMask의 비트 i가 0(기본)이면 릴레이(i+1)는
+// 예전과 똑같이 active-LOW로 동작(기존 보드는 그대로 호환), 1이면 반전(active-HIGH)으로 동작합니다.
 
 uint8_t outPin[N_OUT] = {3, 4, 5, 6};
 uint8_t inPin[N_IN]   = {7, 8, 9, 10, 11, 12, 2, 13, 14, 15, 16, 17};   // CH1~CH12 (14~17 = A0~A3)
 bool    relayOn[N_OUT];
+uint8_t outInvMask = 0;        // 비트 i = 1 이면 릴레이(i+1)는 반전(active-HIGH: HIGH일 때 ON) — 채널별 출력 반전(A접점/B접점)
 uint16_t inInvMask = 0;       // 비트 i = 1 이면 CH(i+1)은 "핀이 HIGH일 때 눌림"(입력 반전)
+uint8_t  outBootMask = 0;     // 비트 i = 1 이면 릴레이(i+1)은 전원 투입 시 ON으로 시작(기본 0 = OFF로 시작) (v1.8)
 
 // ---------- 동작 모드 ----------
 #define MODE_SEQ     2
@@ -89,7 +111,9 @@ uint8_t runMode = MODE_SEQ;   // 시퀀스 모드 하나만 남음
 // (20~585 : 예전 횟수 시퀀스 설정 자리였고, v1.6부터 아래 EE_SEQ(시퀀스 12개)가 20번부터 사용)
 // (850~875 : 예전 키패드 설정 자리 — 이제 사용하지 않음. 다른 항목 주소는 그대로 유지)
 #define EE_SEQ     20   // [nSeqs][체크섬][시퀀스 데이터...]  (12*39+2 = 470 바이트, 20~489)   ← v1.5 이하는 600번(6개)
+#define EE_BOOT    490  // [마스크][체크] 2바이트 — 전원 투입 시 릴레이 시작 상태 (v1.8)
 #define EE_INV     590  // [마스크 하위][마스크 상위][체크] 3바이트 — 입력 반전 설정 (v1.7)
+#define EE_OUTINV  593  // [마스크][체크] 2바이트 — 출력(릴레이) 반전 설정(v1.9.1). 비트 i=1이면 릴레이(i+1)는 반전(active-HIGH)
 #define EE_SEQ_OLD 600  // v1.5 이하가 시퀀스(최대 6개, 236바이트)를 저장하던 자리 — 부팅 때 내용이 있으면 EE_SEQ로 옮기고 이 자리는 지움
 #define MAX_SEQ_OLD 6
 #define EE_LCD     880  // [magic][n][이벤트8개*4바이트] = 34바이트 (913까지). 이미지 자체는 외부 EEPROM(24LC256)에 저장
@@ -108,7 +132,8 @@ struct SeqDef {
   uint8_t  nSteps;
   uint8_t  cc[MAX_CONDS];       // (입력ch << 1) | state(1=눌림 0=뗌)
   uint8_t  sr[MAX_STEPS];       // (릴레이ch << 1) | state
-  uint16_t sd[MAX_STEPS];       // 이 줄을 실행한 뒤 다음 줄까지 기다리는 시간(ms)
+  uint16_t sd[MAX_STEPS];       // 최상위 비트(0x8000)=1이면 "조건 대기" 줄: 하위 4비트=대기채널-1, 5번째 비트=대기상태(1=눌림)
+                                 // 최상위 비트=0이면 일반 "지연" 줄: 나머지 15비트(0~32767ms)가 다음 줄까지 기다리는 시간 (v1.9)
 };
 SeqDef  seqs[MAX_SEQ];
 uint8_t nSeqs = 0;
@@ -116,6 +141,8 @@ bool    sqRun[MAX_SEQ];
 uint8_t sqStep[MAX_SEQ];
 unsigned long sqDue[MAX_SEQ];
 bool    sqPrev[MAX_SEQ];
+bool    sqCondWait[MAX_SEQ];  // true면 지금 이 줄이 "조건 대기" 중(릴레이 동작은 이미 실행됨) (v1.9)
+bool    sqWaitBase[MAX_SEQ];  // 그 대기를 "시작한 시점"의 채널 상태 — 이미 그 상태였어도 곧장 통과시키지 않고, 실제로 신호가 바뀌어야 다음 줄로 진행
 bool    seqEditing = false;
 unsigned long seqEditLastMs = 0;
 
@@ -136,15 +163,18 @@ bool lineOverflow = false;
 // ============================================================
 static bool validPin(long p) { return p >= 2 && p <= 19; }   // D2~D13, A0~A5(14~19). 0,1은 USB 시리얼용
 
-static void initRelayPin(uint8_t pin) {
-  digitalWrite(pin, RELAY_ACTIVE_LOW ? HIGH : LOW);   // 먼저 OFF 레벨을 깔아두고
-  pinMode(pin, OUTPUT);                               // 그 다음 출력으로 바꿔서 켜졌다 꺼지는 순간 깜빡임을 막음
+static void initRelayPin(uint8_t ch) {                // ch = 1~N_OUT (핀 번호가 아니라 채널로 받아서 그 채널의 반전 설정을 적용)
+  bool inv = ((outInvMask >> (ch - 1)) & 1) != 0;      // 1 = 이 릴레이는 반전(active-HIGH)
+  digitalWrite(outPin[ch - 1], inv ? LOW : HIGH);       // 먼저 OFF 레벨을 깔아두고(반전 없음=HIGH가 OFF, 반전=LOW가 OFF)
+  pinMode(outPin[ch - 1], OUTPUT);                     // 그 다음 출력으로 바꿔서 켜졌다 꺼지는 순간 깜빡임을 막음
 }
 
 static void setRelay(uint8_t ch, bool on) {           // ch = 1~N_OUT
   if (ch < 1 || ch > N_OUT) return;
   relayOn[ch - 1] = on;
-  digitalWrite(outPin[ch - 1], (on == RELAY_ACTIVE_LOW) ? LOW : HIGH);
+  bool inv = ((outInvMask >> (ch - 1)) & 1) != 0;      // 1 = 반전(active-HIGH: 이 채널은 HIGH일 때 ON)
+  bool activeLow = !inv;                                // 반전 안 함(기본) = active-LOW(기존 릴레이 보드 방식)
+  digitalWrite(outPin[ch - 1], (on == activeLow) ? LOW : HIGH);
 }
 
 static void allRelaysOff() {
@@ -201,6 +231,22 @@ static void loadInv() {                               // 입력 반전 설정 �
 static void saveInv() {
   uint8_t lo = (uint8_t)(inInvMask & 0xFF), hi = (uint8_t)(inInvMask >> 8);
   EEPROM.update(EE_INV, lo); EEPROM.update(EE_INV + 1, hi); EEPROM.update(EE_INV + 2, (uint8_t)(lo ^ hi ^ 0x5A));
+}
+static void loadBootMask() {                          // 체크가 안 맞으면(처음 쓰는 보드 등) 전부 OFF로 시작
+  uint8_t m = EEPROM.read(EE_BOOT), chk = EEPROM.read(EE_BOOT + 1);
+  outBootMask = (chk == (uint8_t)(m ^ 0x3C)) ? m : 0;
+}
+static void saveBootMask() {
+  EEPROM.update(EE_BOOT, outBootMask);
+  EEPROM.update(EE_BOOT + 1, (uint8_t)(outBootMask ^ 0x3C));
+}
+static void loadOutInv() {                            // 출력(릴레이) 반전 설정 읽기: 체크가 안 맞으면(처음 쓰는 보드 등) 전부 반전 없음(기존 active-LOW)
+  uint8_t m = EEPROM.read(EE_OUTINV), chk = EEPROM.read(EE_OUTINV + 1);
+  if (chk == (uint8_t)(m ^ 0xA5) && (m >> N_OUT) == 0) outInvMask = m; else outInvMask = 0;
+}
+static void saveOutInv() {
+  EEPROM.update(EE_OUTINV, outInvMask);
+  EEPROM.update(EE_OUTINV + 1, (uint8_t)(outInvMask ^ 0xA5));
 }
 
 static void saveMaps() {
@@ -278,14 +324,18 @@ static bool seqsValid(uint8_t n) {
     for (uint8_t r = 0; r < S.nSteps; r++) {
       uint8_t rl = S.sr[r] >> 1;
       if (rl < 1 || rl > N_OUT) return false;
-      if (S.sd[r] > 65000) return false;
+      if (S.sd[r] & 0x8000) {                                 // "조건 대기" 줄: 대기 채널이 실제 입력 범위 안에 있는지만 확인
+        uint8_t wch = (uint8_t)((S.sd[r] & 0x0F) + 1);
+        if (wch < 1 || wch > N_IN) return false;
+      }
+      // 최상위 비트가 0이면 나머지 15비트가 그대로 지연ms(0~32767)이므로 범위를 벗어날 수 없음
     }
   }
   return true;
 }
 
 static void resetSeqRuntime() {
-  for (uint8_t i = 0; i < MAX_SEQ; i++) { sqRun[i] = false; sqStep[i] = 0; }
+  for (uint8_t i = 0; i < MAX_SEQ; i++) { sqRun[i] = false; sqStep[i] = 0; sqCondWait[i] = false; sqWaitBase[i] = false; }
 }
 
 static void resyncSeqPrev() {                         // 가짜 에지 방지
@@ -335,7 +385,7 @@ static void loadSeqs() {
 
 static void seqStart(uint8_t i) {
   if (i >= nSeqs || sqRun[i] || seqs[i].nSteps == 0) return;
-  sqRun[i] = true; sqStep[i] = 0; sqDue[i] = millis();
+  sqRun[i] = true; sqStep[i] = 0; sqDue[i] = millis(); sqCondWait[i] = false;
 }
 
 static bool seqInterlockOK(const SeqDef &S) {
@@ -362,13 +412,28 @@ static void seqEngine() {
         if (fire && S.enabled && seqInterlockOK(S)) seqStart(i);
       }
     }
-    while (sqRun[i] && (long)(now - sqDue[i]) >= 0) {   // 지연이 0이면 같은 순간에 여러 줄이 연달아 실행됨
+    while (sqRun[i]) {   // 지연이 0이면 같은 순간에 여러 줄이 연달아 실행됨. "조건 대기" 줄은 신호가 바뀔 때까지 여러 loop()에 걸쳐 여기서 멈춤
       uint8_t r = sqStep[i];
-      setRelay(S.sr[r] >> 1, (S.sr[r] & 1) != 0);
-      sqDue[i] = now + S.sd[r];
+      if (sqCondWait[i]) {                                          // 이 줄의 릴레이 동작은 이미 실행됨 — 조건만 확인
+        uint8_t wch = (uint8_t)((S.sd[r] & 0x0F) + 1);
+        bool wantOn = (S.sd[r] & 0x10) != 0;
+        bool curW = inStable[wch - 1];
+        if (curW != wantOn || curW == sqWaitBase[i]) break;         // 아직 조건 안 맞거나, 대기 시작 때와 같은 상태에서 바뀐 적이 없음
+        sqCondWait[i] = false;
+      } else {
+        if ((long)(now - sqDue[i]) < 0) break;                      // 아직 지연 시간이 안 지남
+        setRelay(S.sr[r] >> 1, (S.sr[r] & 1) != 0);
+        if (S.sd[r] & 0x8000) {                                     // 이 줄은 "조건 대기"로 전환(시작 시점 상태를 기록)
+          sqCondWait[i] = true;
+          uint8_t wch = (uint8_t)((S.sd[r] & 0x0F) + 1);
+          sqWaitBase[i] = inStable[wch - 1];
+          break;
+        }
+        sqDue[i] = now + (S.sd[r] & 0x7FFF);
+      }
       sqStep[i] = r + 1;
       if (sqStep[i] >= S.nSteps) { sqRun[i] = false; break; }
-      if (S.sd[r] > 0) break;
+      if ((S.sd[r] & 0x7FFF) > 0) break;
     }
   }
 }
@@ -579,7 +644,7 @@ static void handleLine(char *line) {
   char *p = line;
   char *cmd = tok(&p);
   if (!cmd) return;
-  long a, b, c, d, e;
+  long a, b, c, d, e, f;
 
   if (!strcmp(cmd, "ID?")) { Serial.print(F("ID UNO_PLC ")); Serial.println(F(FW_VERSION)); return; }
   if (!strcmp(cmd, "PING")) { Serial.println(F("PONG")); return; }
@@ -614,10 +679,22 @@ static void handleLine(char *line) {
     return;
   }
 
-  if (!strcmp(cmd, "GETRMODE?")) { Serial.print(F("RMODE ")); Serial.println(RELAY_ACTIVE_LOW ? 1 : 0); return; }
-  if (!strcmp(cmd, "SETRMODE")) {
-    if (parseNum(&p, &a) && a == (RELAY_ACTIVE_LOW ? 1 : 0)) replyOK();
-    else replyErr(F("FIXED_ACTIVE_LOW"));
+  if (!strcmp(cmd, "GETRMODE?")) { Serial.print(F("RMODE ")); Serial.println((outInvMask == 0) ? 1 : 0); return; }   // 참고용: 전 채널이 기본(active-LOW)이면 1. 채널별 반전은 GETOUTINV?/SETOUTINV 사용
+  if (!strcmp(cmd, "SETRMODE")) { replyErr(F("USE_SETOUTINV")); return; }   // v1.9.1부터 채널별 SETOUTINV로 대체됨
+
+  if (!strcmp(cmd, "GETOUTINV?")) {
+    Serial.print(F("OUTINV "));
+    for (uint8_t i = 0; i < N_OUT; i++) { if (i) Serial.print(','); Serial.print((outInvMask >> i) & 1); }
+    Serial.println();
+    return;
+  }
+  if (!strcmp(cmd, "SETOUTINV")) {                    // SETOUTINV <ch> <0|1>  (0=기존 방식·active-LOW, 1=반전·active-HIGH)
+    if (!parseNum(&p, &a) || !parseNum(&p, &b) || a < 1 || a > N_OUT || (b != 0 && b != 1)) { replyErr(F("ARGS")); return; }
+    uint8_t ch = (uint8_t)a;
+    if (b) outInvMask |= (uint8_t)(1u << (ch - 1)); else outInvMask &= (uint8_t)~(1u << (ch - 1));
+    saveOutInv();
+    setRelay(ch, relayOn[ch - 1]);                    // 지금 ON/OFF 상태는 유지한 채 새 반전 설정에 맞춰 핀 레벨만 다시 씀
+    replyOK();
     return;
   }
 
@@ -638,9 +715,10 @@ static void handleLine(char *line) {
     if (pinUsedByOther((uint8_t)b, isOut, i)) { replyErr(F("PIN_IN_USE")); return; }
     if (isOut) {
       if (outPin[i] != b) {
-        digitalWrite(outPin[i], RELAY_ACTIVE_LOW ? HIGH : LOW);   // 예전 핀은 OFF 레벨로
+        bool invOld = ((outInvMask >> i) & 1) != 0;
+        digitalWrite(outPin[i], invOld ? LOW : HIGH);   // 예전 핀은 OFF 레벨로(채널별 반전 설정 반영)
         outPin[i] = (uint8_t)b;
-        initRelayPin(outPin[i]);
+        initRelayPin((uint8_t)a);
         setRelay((uint8_t)a, relayOn[i]);
         saveMaps();
       }
@@ -672,6 +750,21 @@ static void handleLine(char *line) {
     inChangedAt[i] = millis();
     resyncSeqPrev();
     lcdResyncPrev();
+    replyOK();
+    return;
+  }
+
+  if (!strcmp(cmd, "GETBOOT?")) {                     // 전원 투입 시 릴레이 시작 상태 (v1.8)
+    Serial.print(F("BOOT "));
+    for (uint8_t i = 0; i < N_OUT; i++) { if (i) Serial.print(','); Serial.print((outBootMask >> i) & 1); }
+    Serial.println();
+    return;
+  }
+  if (!strcmp(cmd, "SETBOOT")) {                      // SETBOOT <릴레이ch> <0|1>
+    if (!parseNum(&p, &a) || !parseNum(&p, &b) || a < 1 || a > N_OUT || (b != 0 && b != 1)) { replyErr(F("ARGS")); return; }
+    uint8_t i = (uint8_t)(a - 1);
+    if (b) outBootMask |= (uint8_t)(1u << i); else outBootMask &= (uint8_t)~(1u << i);
+    saveBootMask();
     replyOK();
     return;
   }
@@ -793,17 +886,26 @@ static void handleLine(char *line) {
     replyOK();
     return;
   }
-  if (!strcmp(cmd, "SEQSTEP")) {
+  if (!strcmp(cmd, "SEQSTEP")) {                      // SEQSTEP <i> <릴레이ch> <state> <지연ms> [<대기ch> <대기상태>]
     if (!seqEditing) { replyErr(F("NOT_EDITING")); return; }
     seqEditLastMs = millis();
     if (!parseNum(&p, &a) || !parseNum(&p, &b) || !parseNum(&p, &c) || !parseNum(&p, &d)
-        || a < 0 || a >= nSeqs || b < 1 || b > N_OUT || (c != 0 && c != 1) || d < 0 || d > 65000) {
+        || a < 0 || a >= nSeqs || b < 1 || b > N_OUT || (c != 0 && c != 1) || d < 0) {
       replyErr(F("ARGS")); return;
     }
     SeqDef &S = seqs[a];
     if (S.nSteps >= MAX_STEPS) { replyErr(F("FULL")); return; }
+    bool hasWait = parseNum(&p, &e) && parseNum(&p, &f);   // 뒤에 두 숫자가 더 있으면 "조건 대기" 줄 (v1.9)
+    uint16_t sdVal;
+    if (hasWait) {
+      if (e < 1 || e > N_IN || (f != 0 && f != 1)) { replyErr(F("ARGS")); return; }
+      sdVal = (uint16_t)(0x8000 | (uint16_t)((e - 1) & 0x0F) | (f ? 0x10 : 0));
+    } else {
+      if (d > 32767) { replyErr(F("ARGS")); return; }
+      sdVal = (uint16_t)d;
+    }
     S.sr[S.nSteps] = (uint8_t)((b << 1) | c);
-    S.sd[S.nSteps] = (uint16_t)d;
+    S.sd[S.nSteps] = sdVal;
     S.nSteps++;
     replyOK();
     return;
@@ -838,7 +940,14 @@ static void handleLine(char *line) {
       }
       for (uint8_t r = 0; r < S.nSteps; r++) {
         Serial.print(F("SEQS ")); Serial.print(i); Serial.print(' ');
-        Serial.print(S.sr[r] >> 1); Serial.print(' '); Serial.print(S.sr[r] & 1); Serial.print(' '); Serial.println(S.sd[r]);
+        Serial.print(S.sr[r] >> 1); Serial.print(' '); Serial.print(S.sr[r] & 1); Serial.print(' ');
+        if (S.sd[r] & 0x8000) {                       // "조건 대기" 줄: 지연은 0으로, 뒤에 대기채널·대기상태를 덧붙여 응답 (v1.9)
+          uint8_t wch = (uint8_t)((S.sd[r] & 0x0F) + 1);
+          bool wantOn = (S.sd[r] & 0x10) != 0;
+          Serial.print(0); Serial.print(' '); Serial.print(wch); Serial.print(' '); Serial.println(wantOn ? 1 : 0);
+        } else {
+          Serial.println(S.sd[r] & 0x7FFF);
+        }
       }
     }
     Serial.println(F("SEQEND"));
@@ -896,7 +1005,10 @@ void setup() {
   Serial.println(F("BOOT"));         // 진단용: 웹페이지 통신 로그에 BOOT → READY 가 보이면 정상 시작
   loadConfig();
   loadInv();                  // 입력 반전 설정(없으면 모두 0)
-  for (uint8_t i = 0; i < N_OUT; i++) { relayOn[i] = false; initRelayPin(outPin[i]); }
+  loadBootMask();              // 전원 투입 시 시작 상태(없으면 모두 OFF) (v1.8)
+  loadOutInv();                // 출력(릴레이) 반전 설정(없으면 모두 0 = 기존 active-LOW) (v1.9.1)
+  for (uint8_t i = 0; i < N_OUT; i++) { relayOn[i] = false; initRelayPin(i + 1); }
+  for (uint8_t i = 0; i < N_OUT; i++) { if ((outBootMask >> i) & 1) setRelay(i + 1, true); }
   for (uint8_t i = 0; i < N_IN; i++) {
     pinMode(inPin[i], INPUT_PULLUP);
     inLast[i] = inStable[i] = pinPressed(i);

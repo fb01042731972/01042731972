@@ -6,6 +6,9 @@
      PIN <2자리채널> ON/OFF        -> 릴레이 출력
      STATUS?                      -> STATUS 1,0,...  (16개)
      SETOUT <2자리채널> <핀>       -> 출력 핀 매핑 저장
+     SETBOOT <채널1~16> <0|1>      -> 전원 투입 시 이 릴레이의 시작 상태 저장(1=ON으로 시작,
+                                      0=OFF로 시작·기본값). EEPROM에 즉시 저장되어 전원을 껐다 켜도 유지됨.
+     GETBOOT?                     -> BOOT 0,0,...  (16개, 1=전원 투입 시 ON으로 시작)
      GETCONFIG?                   -> CONFIG OUT 1:54,...,16:69 IN 1:24,...
      SETIN <2자리채널> <핀>        -> 입력 핀 매핑 저장
      INPUT?                       -> INPUT 1,0,...   (입력채널 개수만큼)
@@ -25,15 +28,19 @@
                                       0=이하(≤)/1=이상(≥), trigDistCm=목표 거리cm)
                                       trigCond(공통): 0=OFF(조건을 벗어나는 순간), 1=ON(조건에
                                       도달하는 순간), 2=BOTH(양쪽 다 — 상태가 바뀌는 순간마다 실행)
-     SEQSTEP <idx> <si> <type> <target> <state> <delayMs> <steps> <speedPps>
+     SEQSTEP <idx> <si> <type> <target> <state> <delayMs> <steps> <speedPps> [<waitCh> <waitOn>]
                                    -> type: 0=릴레이 동작(target=릴레이1~16, state=0/1 OFF/ON),
                                       1=스텝모터 이동(target=스텝모터1~6, steps=±이동 스텝수(부호=
                                       방향), speedPps=이동 속도). delayMs=이 단계 실행 후 다음
                                       단계까지 대기 시간(스텝모터는 이동을 시작만 하고 바로 다음
-                                      단계로 넘어가므로, 이동 완료를 기다리려면 넉넉히 줘야 함)
+                                      단계로 넘어가므로, 이동 완료를 기다리려면 넉넉히 줘야 함).
+                                      waitCh(선택, 기본 0)>=1이면 delayMs 대신 그 입력채널이
+                                      waitOn(1=눌림/0=뗌) 상태가 될 때까지 "무한 대기"(타임아웃
+                                      없음)한 뒤 다음 단계로 넘어감(구버전 웹페이지처럼 8개
+                                      인자만 보내도 그대로 동작 — waitCh=0으로 처리됨)
      SEQGET?                      -> SEQ <idx> <trigSrc> <trigCh> <trigCond> <trigDistMode>
                                       <trigDistCm> <numSteps> <이름> <type,target,state,delayMs,
-                                      steps,speedPps>;... (여러 줄) ... SEQGETDONE
+                                      steps,speedPps,waitCh,waitOn>;... (여러 줄) ... SEQGETDONE
                                        (추가 조건이 있는 시퀀스는 그 SEQ 줄 바로 다음에 SEQCOND 줄이 하나 더 나옴)
       SEQCOND <idx> <ON마스크> <OFF마스크>
                                     -> ★추가 조건(인터록). 시작 조건(SEQTRIG)이 일어나는 "그 순간"에
@@ -48,6 +55,10 @@
                                        손상되면 그 시퀀스는 조건 없이 실행되지 않고 통째로 비활성화된다.
       SEQCOND?                     -> SEQCOND OK MAXCH 32  (이 펌웨어가 SEQCOND를 지원하는지 확인용.
                                        아무것도 바꾸지 않음. 웹 페이지가 "보드에 저장" 직전에 사용)
+     SETSEQORDER <0/1>            -> 🔢 "목록 순서대로만 실행": 1이면 시퀀스가 목록 순서
+                                       (내용 있는 것만 1→2→…→마지막→다시 처음)대로만 트리거를
+                                       받는다. 1번이 끝나야 2번이 트리거될 수 있음. EEPROM 저장.
+     GETSEQORDER?                 -> SEQORDER <0/1>
      SETLED <문구>                -> OLED(SSD1306, I2C)에 문구 표시 + EEPROM 저장
      GETLED?                      -> LEDTEXT <문구>
      SETLEDTRIG <입력채널> <조건0/1> <초> <문구>
@@ -106,6 +117,18 @@
      생기는 가상 COM 포트를 웹 프로그램에서 그대로 선택하면 되며(통신 속도는 모듈 기본값인
      9600으로), USB를 뽑아도(외부 전원만 있으면) 무선으로 계속 조작할 수 있다. 자세한 배선/
      설정은 아래 Serial1.begin() 옆 주석 참고.
+   ※ 와이파이(무선) 연결: USB(Serial)·블루투스(Serial1) 외에 Serial2(핀 16=TX2/17=RX2)에도
+     똑같은 명령을 받고 응답한다. 메가2560 자체에는 와이파이가 없으므로, 이 핀에 별도의
+     "ESP32_WiFi_Bridge.ino"(동봉) 펌웨어를 올린 ESP32 보드를 UART로 연결해서 와이파이
+     ↔ 시리얼 변환을 맡긴다(ESP32는 그냥 선 4개로 연결되는 브리지일 뿐, 릴레이 로직과는
+     무관 — 이 메가2560 펌웨어는 Serial2로 들어오는 게 USB인지 와이파이인지 신경쓰지 않음).
+     웹 프로그램에서 ESP32가 알려주는 IP 주소를 입력하고 "와이파이 연결"을 누르면 된다.
+     통신 속도는 아래 Serial2.begin()과 ESP32 쪽 스케치가 115200으로 서로 맞춰져 있다.
+     배선: 메가2560 TX2(16) → ESP32 RX2(GPIO16), 메가2560 RX2(17) ← ESP32 TX2(GPIO17),
+     GND 공통 연결 필수. ★주의: 메가2560은 5V 로직, ESP32는 3.3V 로직이라 메가2560→ESP32
+     방향(TX2→RX2)은 반드시 저항 분배기 등으로 3.3V로 낮춰서 연결할 것(안 그러면 ESP32
+     입력 핀이 손상될 수 있음). ESP32→메가2560 방향(TX2→RX2)은 3.3V 신호를 메가2560이
+     HIGH로 인식하므로 그냥 연결해도 된다.
    =========================================================*/
 
 #include <EEPROM.h>
@@ -128,13 +151,14 @@
    HC-05/HC-06 공장 기본 보드레이트는 보통 9600이라 아래 Serial1.begin()도 9600으로 맞췄다 —
    AT 명령으로 모듈 보드레이트를 바꿨다면 이 숫자도 함께 바꿔야 한다(웹 페이지의 "통신 속도"
    드롭다운에서도 그 값을 선택해서 연결해야 함).
-   USB와 블루투스 중 어느 쪽으로 명령이 들어왔든, 그 명령에 대한 응답은 항상 같은 포트로
-   돌아가야 하므로(안 그러면 엉뚱한 쪽이 응답을 받아가 버림), 지금 처리 중인 명령이 들어온
-   포트를 replyPort가 가리키게 해서 handleCommand()와 그 안의 모든 응답 함수가 이 포인터로
-   응답을 보내게 했다. 다만 KEY(키패드 눌림) 같은 "보드가 스스로 보내는" 비동기 알림은 어느
-   쪽이 요청한 게 아니므로 두 포트 모두에 똑같이 내보낸다(broadcastLine 참고). */
+   USB·블루투스·와이파이(Serial2, ESP32 브리지) 중 어느 쪽으로 명령이 들어왔든, 그 명령에
+   대한 응답은 항상 같은 포트로 돌아가야 하므로(안 그러면 엉뚱한 쪽이 응답을 받아가 버림),
+   지금 처리 중인 명령이 들어온 포트를 replyPort가 가리키게 해서 handleCommand()와 그 안의
+   모든 응답 함수가 이 포인터로 응답을 보내게 했다. 다만 KEY(키패드 눌림) 같은 "보드가
+   스스로 보내는" 비동기 알림은 어느 쪽이 요청한 게 아니므로 세 포트 모두에 똑같이
+   내보낸다(broadcastLine 참고). */
 Stream* replyPort = &Serial;
-void broadcastLine(const String &s){ Serial.println(s); Serial1.println(s); }
+void broadcastLine(const String &s){ Serial.println(s); Serial1.println(s); Serial2.println(s); }
 
 /* ---------------- OLED 문구판(128x64 SSD1306, I2C) ---------------- */
 U8G2_SSD1306_128X64_NONAME_F_HW_I2C oled(U8G2_R0, /*reset=*/U8X8_PIN_NONE);
@@ -158,6 +182,8 @@ bool relayActiveLow = false; // 릴레이 보드 종류(웹페이지 "릴레이 
                               // false=active-HIGH(LOW가 꺼짐), true=active-LOW(HIGH가 꺼짐)
                               // 이 값을 몰라서 예전 코드는 전원 켤 때 무조건 LOW로 써서
                               // active-LOW 보드에서는 부팅하자마자 릴레이가 전부 켜지는 문제가 있었음
+uint16_t bootRelayMask = 0;  // 비트 i=1이면 R(i+1)은 전원 투입 시 ON으로 시작(기본 0 = 전부 OFF로 시작).
+                              // 웹페이지 릴레이 박스의 "전원 투입 시 ON으로 시작" 체크박스와 동기화(EEPROM 저장)
 
 /* 논리적 ON/OFF(on=true면 "동작 중")를 relayActiveLow 설정에 맞는 실제 핀 레벨(HIGH/LOW)로 변환.
    "PC로 수동 조작"이든 "PC 없이 보드 혼자 시퀀스 실행"이든 릴레이를 켜고 끄는 자리는 반드시
@@ -243,11 +269,15 @@ LoadCh loads[MAX_LOAD];
      대화 참고).
    ※ MAX_SEQ x MAX_STEPS를 바꿀 때 지켜야 할 것:
      1) sequences[] 배열이 SRAM(8KB)에 통째로 올라가므로, 시퀀스 1개당 RAM 사용량은 대략
-        19 + 9*MAX_STEPS 바이트. 이 값 x MAX_SEQ가 너무 커지면(예전 50개x8단계=SRAM 95%
-        사용) 다른 기능(OLED·시리얼 버퍼 등)과 부딪혀 보드가 먹통이 될 수 있음.
-     2) EXT_REC_LEN(아래)이 EXT_SLOT_SIZE(128바이트)를 넘으면 안 됨 — 넘으면 슬롯 크기 자체를
+        19 + 11*MAX_STEPS 바이트(조건 대기 필드 2개 추가로 9→11바이트/단계). 이 값 x MAX_SEQ가
+        너무 커지면(예전 50개x8단계=SRAM 95% 사용) 다른 기능(OLED·시리얼 버퍼 등)과 부딪혀
+        보드가 먹통이 될 수 있음.
+     2) EXT_REC_LEN(아래)이 EXT_SLOT_SIZE(192바이트)를 넘으면 안 됨 — 넘으면 슬롯 크기 자체를
         늘려야 하고, 그러면 외장 EEPROM 주소 배치가 바뀌어 기존에 저장해둔 시퀀스가 깨짐.
-        MAX_STEPS=12가 슬롯 128바이트에 예비 공간 없이 정확히 맞아떨어지는 상한값. */
+     ※ "조건 대기(waitCh/waitOn)" 기능 추가로 단계당 9→11바이트가 되면서 슬롯이 기존 128바이트를
+        넘어(152바이트) 192바이트(64바이트 페이지 3개)로 늘렸다 — 이 때문에 EE_MAGIC_VAL을 올려서
+        이 펌웨어를 처음 올리는 순간 한 번, 예전 슬롯 배치로 저장돼 있던 시퀀스는 초기화된다
+        (웹페이지에서 "전체 시퀀스를 보드에 저장"을 한 번만 다시 눌러주면 됨). */
 const int MAX_SEQ = 14; // 20 -> 14로 축소하는 대신 MAX_STEPS를 8 -> 12로 늘림(RAM 사용량은 오히려
                          // 기존 20x8(1820B)보다 약간 적은 14x12(1778B) 수준으로 유지).
                          // sequences[] 배열 크기가 늘어나면 SRAM을 더 쓰게 되므로, 꼭 필요한 만큼만 늘리세요.
@@ -255,11 +285,14 @@ const int MAX_STEPS = 12;
 /* type: 0=릴레이 동작(target=릴레이 채널 1~16, state=0/1 OFF/ON, steps/speedPps는 안 씀),
          1=스텝모터 이동(target=스텝모터 채널 1~6, steps=이동할 스텝 수(부호=방향, 양수=정방향/
          음수=역방향), speedPps=이동 속도(step/초), state는 안 씀).
-   delayMs는 두 타입 공통: 이 단계를 "시작"한 뒤 다음 단계로 넘어가기 전에 기다리는 시간
-   (스텝모터는 이동을 "시작"만 시키고 곧장 다음 단계로 넘어가므로, 이동이 끝날 때까지
+   delayMs는 두 타입 공통: waitCh==0일 때만 쓰며, 이 단계를 "시작"한 뒤 다음 단계로 넘어가기 전에
+   기다리는 시간(스텝모터는 이동을 "시작"만 시키고 곧장 다음 단계로 넘어가므로, 이동이 끝날 때까지
    기다렸다가 다음 단계를 실행하려면 delayMs를 예상 이동 시간(스텝수÷속도×1000ms)보다
-   넉넉하게 잡아야 한다). */
-struct SeqStep { byte type; byte target; byte state; unsigned int delayMs; int steps; unsigned int speedPps; };
+   넉넉하게 잡아야 한다).
+   waitCh: 0이면 delayMs 방식(지연). 1~inCount이면 "조건 대기" — 이 단계 실행 후 그 입력채널이
+   waitOn(1=눌림/0=뗌) 상태가 될 때까지 시간제한 없이 기다렸다가 다음 단계로 넘어간다(delayMs는
+   이때 무시). */
+struct SeqStep { byte type; byte target; byte state; unsigned int delayMs; int steps; unsigned int speedPps; byte waitCh; byte waitOn; };
 struct Seq {
   byte trigSrc;        // 0=입력채널 트리거, 1=초음파 거리 트리거, 2=로드셀 무게 트리거
   byte trigCh;         // trigSrc=0: 입력채널 번호(1~inCount, 0=트리거 없음)
@@ -292,8 +325,15 @@ const unsigned long SEQ_COOLDOWN_MS = 500; // 릴레이 스위칭 노이즈가 �
    "각자" 동시에 진행시키되, 그중 어느 하나라도 같은 릴레이를 동시에 두 시퀀스가 건드리는 것만
    막는다(그건 실제로 위험 — 같은 릴레이에 서로 다른 명령이 겹치면 릴레이가 떨리거나 오동작할 수 있음). */
 const int MAX_ACTIVE_SEQ = 4; // 동시에 진행 가능한 시퀀스 개수(서로 다른 릴레이를 쓴다는 전제하에)
-struct ActiveSeq { int idx; int step; unsigned long dueMs; }; // idx=-1이면 빈 슬롯
+struct ActiveSeq { int idx; int step; unsigned long dueMs; bool waiting; }; // idx=-1이면 빈 슬롯. waiting=true면
+                                                                             // dueMs(시간)가 아니라 방금 실행한
+                                                                             // 단계의 waitCh 조건이 충족되길 기다리는 중
 ActiveSeq activeSeqs[MAX_ACTIVE_SEQ];
+/* "목록 순서대로만 실행" 모드(웹페이지 9번 화면 체크박스, SETSEQORDER로 보드에 반영).
+   켜져 있으면 트리거 조건이 맞아도 seqOrderIdx번 시퀀스만 시작될 수 있고, 그 시퀀스가
+   끝나야 목록의 다음(내용이 있는) 시퀀스로 넘어간다. 마지막까지 끝나면 다시 처음부터. */
+bool seqOrderMode = false;
+int  seqOrderIdx  = 0;
 
 
 /* ---------------- 외장 I2C EEPROM(AT24C256) 상태 ----------------
@@ -316,7 +356,9 @@ uint32_t condSaveFailMask = 0; // 비트 i=1이면 i번 시퀀스의 추가 조�
      "active-LOW로 저장해뒀는데 active-HIGH로 잘못 인식"하는 등의 오작동이 있었음.
      이제는 MAX_SEQ를 몇으로 바꾸든 이 값들 주소는 절대 움직이지 않는다.) */
 #define EE_MAGIC        0
-#define EE_MAGIC_VAL    0xA9  // ★ 주소 배치를 바꿨으므로 매직 값도 반드시 함께 올려야 함.
+#define EE_MAGIC_VAL    0xAA  // ★ 주소 배치를 바꿨으므로 매직 값도 반드시 함께 올려야 함.
+                              //  0xA9→0xAA: 시퀀스 단계에 "조건 대기(waitCh/waitOn)" 필드 추가로
+                              //  외장 EEPROM 슬롯 크기가 128→192바이트로 늘어남(EXT_SLOT_SIZE 참고).
                               //  0xA8→0xA9: 로드셀(HX711) 핀·보정값 저장 공간(EE_LOAD_*) 추가.
                               // (이전 펌웨어가 이미 0xA5/0xA6/0xA7을 써놓은 보드가 있으므로, 값을
                               //  바꾸지 않으면 loadFromEEPROM()이 "이미 초기화됨"으로 오판해서
@@ -346,17 +388,21 @@ uint32_t condSaveFailMask = 0; // 비트 i=1이면 i번 시퀀스의 추가 조�
 #define EE_LOAD_PINS    181  // 4채널 x 2바이트(dout,sck) = 8 bytes — 고정 주소, 끝: 189
 #define EE_LOAD_OFFSET  189  // 4채널 x 4바이트(long) = 16 bytes — 고정 주소, 끝: 205
 #define EE_LOAD_SCALE   205  // 4채널 x 4바이트(float) = 16 bytes — 고정 주소, 끝: 221
+#define EE_BOOT_MASK    221  // [마스크 하위][마스크 상위][체크] 3바이트 — 전원 투입 시 릴레이 시작 상태, 끝: 224
+#define EE_SEQ_ORDER    224  // [값][체크] 2바이트 — "목록 순서대로만 실행" 모드(0/1), 끝: 226
+                              // (비트 i=1이면 R(i+1)은 시작할 때 ON. 예전 펌웨어가 써놓은 적 없는 자리라
+                              //  체크값이 안 맞으면 안전하게 0=전부 OFF로 시작 처리)
 // (시퀀스는 더 이상 내장 EEPROM에 저장하지 않음 — 아래 외장 I2C EEPROM 섹션 참고)
 
 /* ---------------- 외장 I2C EEPROM(AT24C256, 32KB) — 시퀀스 전용 저장소 ----------------
    배선: 칩의 VCC/GND + SDA→메가2560 20번, SCL→메가2560 21번 (OLED와 같은 I2C 버스에 병렬 연결)
    주소 점퍼(A0/A1/A2) 전부 미연결 시 기본 주소 0x50 (OLED SSD1306의 0x3C와 겹치지 않음)
 
-   레코드 구조(슬롯당 128바이트 = AT24C256 페이지(64바이트) 2개분):
+   레코드 구조(슬롯당 192바이트 = AT24C256 페이지(64바이트) 3개분):
      [0]trigSrc [1]trigCh [2]trigCond [3]trigDistMode [4..5]trigDistCm [6]numSteps [7..18]name(12)
-     [19..126]steps(12개 x 9바이트: type,target,state,delayMs(2),steps(2),speedPps(2)) [127]checksum
-     (예비 공간 없음 — 12단계가 128바이트 슬롯에 정확히 맞는 최대치)
-   → 레코드가 페이지 2개에 걸치므로, I2C 쓰기/읽기는 항상 16바이트씩(64의 약수라 절대 페이지
+     [19..150]steps(12개 x 11바이트: type,target,state,delayMs(2),steps(2),speedPps(2),waitCh,waitOn)
+     [151]checksum (예비 공간 40바이트 — 12단계가 192바이트 슬롯에 여유를 두고 들어감)
+   → 레코드가 페이지 3개에 걸치므로, I2C 쓰기/읽기는 항상 16바이트씩(64의 약수라 절대 페이지
      경계를 안 넘음) 잘라서 여러 번 나눠 처리한다(extI2cWriteRaw/extI2cReadRaw 참고) — AVR Wire
      라이브러리의 내부 버퍼 한도(보통 32바이트, 주소 2바이트 포함)도 함께 피해가는 크기다.
      매 쓰기마다 재시도(최대 3회)+되읽어 비교(verify), 매 읽기마다 체크섬 검증까지 하므로,
@@ -364,21 +410,22 @@ uint32_t condSaveFailMask = 0; // 비트 i=1이면 i번 시퀀스의 추가 조�
      자동으로 "빈 시퀀스" 취급되어 트리거되지 않음). */
 #define EXT_EEPROM_ADDR 0x50
 #define EXT_SEQ_START   64   // 0~63번지는 예비(향후 매직/버전 등)로 비워둠
-#define EXT_SLOT_SIZE   128  // 시퀀스 1개당 슬롯 크기(64바이트 페이지 2개, 항상 페이지 정렬 시작)
-#define EXT_REC_LEN     128  // 실제로 쓰는 바이트 수(1+1+1+1+2+1+12 + 12*9 + 체크섬1 = 128, 예비 공간 없음
-                              // — MAX_STEPS를 12보다 더 늘리려면 EXT_SLOT_SIZE도 함께 늘려야 함(그러면
-                              // 기존 저장 데이터의 주소 배치가 바뀌어 호환 안 됨))
+#define EXT_SLOT_SIZE   192  // 시퀀스 1개당 슬롯 크기(64바이트 페이지 3개, 항상 페이지 정렬 시작)
+                             // — 조건 대기(waitCh/waitOn) 필드 추가로 128 -> 192로 늘림(아래 EXT_REC_LEN 참고)
+#define EXT_REC_LEN     152  // 실제로 쓰는 바이트 수(1+1+1+1+2+1+12 + 12*11 + 체크섬1 = 152, 나머지
+                              // 40바이트는 예비 공간 — MAX_STEPS를 더 늘리려면 EXT_SLOT_SIZE도 함께
+                              // 늘려야 함(그러면 기존 저장 데이터의 주소 배치가 바뀌어 호환 안 됨))
 #define EXT_COND_START  4096 // 추가 조건(인터록) 기록 영역 시작(시퀀스 영역 뒤, 64바이트 페이지 정렬).
 #define EXT_COND_SLOT   16   // 시퀀스 1개당 조건 기록 슬롯 크기(항상 16바이트 단위 → 페이지 경계 안전)
                               // 레코드: [0]=0xC5(유효 표시) [1..4]condOn(LE) [5..8]condOff(LE) [9..14]예비(0) [15]체크섬(0~14)
                               // 시퀀스 본체 슬롯(EXT_SEQ_START~)을 전혀 건드리지 않고 따로 저장하므로, 이 기능을 추가하기
                               // 전에 저장해둔 시퀀스는 그대로 유효하다(조건 영역이 비어 있으면 "조건 없음").
 #define EXT_COND_MAGIC  0xC5
-static_assert(EXT_SEQ_START + MAX_SEQ*128 <= EXT_COND_START, "MAX_SEQ가 너무 커서 시퀀스 영역이 조건 영역(EXT_COND_START)을 침범합니다");
+static_assert(EXT_SEQ_START + MAX_SEQ*EXT_SLOT_SIZE <= EXT_COND_START, "MAX_SEQ가 너무 커서 시퀀스 영역이 조건 영역(EXT_COND_START)을 침범합니다");
 static_assert(EXT_COND_START + MAX_SEQ*EXT_COND_SLOT <= 32768, "조건 영역이 AT24C256(32KB)을 넘습니다");
 #define EXT_I2C_CHUNK   16   // 한 번의 I2C 트랜잭션으로 보내는 데이터 바이트 수(64의 약수 → 페이지 경계 안전,
                               // 주소 2바이트를 더해도 AVR Wire 기본 버퍼(약 32바이트) 안에 넉넉히 들어감)
-// 14개 기준 끝 주소: 64 + 14*128 = 1856 / 32768바이트 사용 (여유 많음 — RAM이 진짜 한계)
+// 14개 기준 끝 주소: 64 + 14*192 = 2752 / 32768바이트 사용 (여유 많음 — RAM이 진짜 한계)
 
 bool extI2cWriteRaw(unsigned int addr, const byte* data, byte len){
   unsigned int off = 0;
@@ -466,6 +513,44 @@ void loadDefaults(){
   for(int i=0;i<MAX_STEPPERS;i++){ steppers[i].stepPin=0; steppers[i].dirPin=0; steppers[i].enPin=0; } // 기본값: 전부 미설정
   for(int i=0;i<MAX_ULTRA;i++){ ultras[i].trigPin=0; ultras[i].echoPin=0; } // 기본값: 전부 미설정
   for(int i=0;i<MAX_LOAD;i++){ loads[i].doutPin=0; loads[i].sckPin=0; loads[i].offset=0; loads[i].scale=0; } // 기본값: 전부 미설정/미보정
+  bootRelayMask = 0; // 기본값: 전원 투입 시 전부 OFF로 시작
+  seqOrderMode = false; seqOrderIdx = 0; // 기본값: "순서대로 실행" 꺼짐
+}
+
+void saveBootMask(){
+  byte lo=(byte)(bootRelayMask & 0xFF), hi=(byte)(bootRelayMask >> 8);
+  EEPROM.update(EE_BOOT_MASK, lo);
+  EEPROM.update(EE_BOOT_MASK+1, hi);
+  EEPROM.update(EE_BOOT_MASK+2, (byte)(lo ^ hi ^ 0x5A));
+}
+void loadBootMask(){
+  byte lo=EEPROM.read(EE_BOOT_MASK), hi=EEPROM.read(EE_BOOT_MASK+1), chk=EEPROM.read(EE_BOOT_MASK+2);
+  uint16_t m = (uint16_t)lo | ((uint16_t)hi << 8);
+  if(chk == (byte)(lo ^ hi ^ 0x5A) && (m >> TOTAL_RELAYS) == 0) bootRelayMask = m; else bootRelayMask = 0;
+}
+/* "몇 번 시퀀스부터 다시 시작할지" — 목록에서 내용이 있는(numSteps>0) 다음 슬롯을 찾는다.
+   from 자신은 검사하지 않고 from+1부터 한 바퀴 돌며 찾으므로, 슬롯이 하나뿐이면 그 슬롯 자신으로 되돌아온다.
+   아무 시퀀스도 없으면 from을 그대로 돌려준다(호출부에서 안전하게 처리). */
+int nextSeqOrderIdx(int from){
+  for(int k=1;k<=MAX_SEQ;k++){
+    int idx=(from+k)%MAX_SEQ;
+    if(sequences[idx].numSteps>0) return idx;
+  }
+  return from;
+}
+int firstSeqOrderIdx(){
+  for(int idx=0;idx<MAX_SEQ;idx++) if(sequences[idx].numSteps>0) return idx;
+  return 0;
+}
+void saveSeqOrderToEEPROM(){
+  EEPROM.update(EE_SEQ_ORDER, seqOrderMode ? 1 : 0);
+  EEPROM.update(EE_SEQ_ORDER+1, (byte)((seqOrderMode?1:0) ^ 0x5A));
+}
+void loadSeqOrderMode(){
+  byte v=EEPROM.read(EE_SEQ_ORDER), chk=EEPROM.read(EE_SEQ_ORDER+1);
+  // 이 값을 저장한 적 없는 이전 펌웨어의 보드는 미기록(0xFF)이므로 기본값(꺼짐)으로 동작
+  seqOrderMode = (chk == (byte)(v ^ 0x5A)) ? (v != 0) : false;
+  seqOrderIdx = seqOrderMode ? firstSeqOrderIdx() : 0;
 }
 
 void saveLedTextToEEPROM(){
@@ -530,7 +615,7 @@ void saveSeqToEEPROM(int idx){
   buf[6] = sequences[idx].numSteps;
   for(int c=0;c<12;c++) buf[7+c] = sequences[idx].name[c];
   for(int st=0;st<MAX_STEPS;st++){
-    int o = 19+st*9;
+    int o = 19+st*11;
     buf[o+0] = sequences[idx].steps[st].type;
     buf[o+1] = sequences[idx].steps[st].target;
     buf[o+2] = sequences[idx].steps[st].state;
@@ -541,10 +626,13 @@ void saveSeqToEEPROM(int idx){
     buf[o+6] = (byte)((stepsVal>>8) & 0xFF);
     buf[o+7] = sequences[idx].steps[st].speedPps & 0xFF;
     buf[o+8] = (sequences[idx].steps[st].speedPps>>8) & 0xFF;
+    buf[o+9] = sequences[idx].steps[st].waitCh;
+    buf[o+10] = sequences[idx].steps[st].waitOn;
   }
-  buf[127] = calcChecksum(buf, 127); // ★ 체크섬은 레코드 맨 끝(127번)에 둔다. 예전엔 MAX_STEPS=8 시절의 91번에 그대로 남아 있어
+  buf[151] = calcChecksum(buf, 151); // ★ 체크섬은 레코드 맨 끝(151번)에 둔다. 예전엔 MAX_STEPS=8 시절의 91번에 그대로 남아 있어
                                      //   9번째 단계(steps[8], 91번지)의 type 바이트를 체크섬 값이 덮어쓰고 있었고,
-                                     //   9~12번째 단계는 체크섬 검사 범위 밖이었다.
+                                     //   9~12번째 단계는 체크섬 검사 범위 밖이었다. (그 이후 128바이트 슬롯에서는
+                                     //   127번, 조건 대기 필드 추가로 단계당 11바이트가 되면서 다시 151번으로 이동)
   unsigned int addr = EXT_SEQ_START + (unsigned int)idx*EXT_SLOT_SIZE;
   bool ok = extEepromWriteVerified(addr, buf, EXT_REC_LEN);
   extLastWriteOK = ok && (condSaveFailMask == 0); // 웹 UI가 EXTMEM?으로 조회해서 실패를 바로 알 수 있게 함
@@ -592,6 +680,7 @@ void saveAllToEEPROM(){
   for(int i=0;i<MAX_SEQ;i++) saveSeqToEEPROM(i);
   saveLedTextToEEPROM();
   EEPROM.update(EE_RELAY_MODE, relayActiveLow ? 1 : 0);
+  saveBootMask();
   saveLedTrigToEEPROM();
   for(int i=0;i<MAX_STEPPERS;i++){
     EEPROM.update(EE_STEP_PINS+i*3+0, steppers[i].stepPin);
@@ -608,6 +697,7 @@ void saveAllToEEPROM(){
     EEPROM.put(EE_LOAD_OFFSET+i*4, loads[i].offset);
     EEPROM.put(EE_LOAD_SCALE+i*4, loads[i].scale);
   }
+  saveSeqOrderToEEPROM();
 }
 
 void loadFromEEPROM(){
@@ -637,11 +727,10 @@ void loadFromEEPROM(){
         bool blank = true;
         for(byte i=0;i<EXT_REC_LEN;i++){ if(buf[i]!=0xFF){ blank=false; break; } }
         if(!blank){
-          // 새 형식(체크섬 127번, 전체 127바이트 검사). 예전 펌웨어가 저장한 기록은 체크섬이 91번에 있으므로,
-          // 8단계 이하 시퀀스에 한해 그것도 받아들인다(9단계 이상은 9번째 단계가 이미 깨져 있어 받아들이지 않고
-          // 손상 처리 → 부팅 경고 + 비활성화. 웹에서 "보드에 저장"을 다시 하면 정상화됨).
-          bool recOk = (calcChecksum(buf,127) == buf[127]);
-          if(!recOk && buf[6] <= 8 && calcChecksum(buf,91) == buf[91]) recOk = true;
+          // 체크섬은 151번(전체 151바이트 검사). EE_MAGIC_VAL을 올릴 때마다(이 형식이 바뀔 때) 이
+          // 펌웨어를 처음 올리는 순간 EEPROM 전체가 기본값으로 재초기화되므로, 예전 형식(128바이트
+          // 슬롯, 체크섬 127번)의 기록을 여기서 받아들일 필요는 없다 — 항상 이 형식만 존재한다.
+          bool recOk = (calcChecksum(buf,151) == buf[151]);
           if(recOk){
             sequences[s].trigSrc     = buf[0];
             sequences[s].trigCh      = buf[1];
@@ -653,7 +742,7 @@ void loadFromEEPROM(){
             for(int c=0;c<12;c++) sequences[s].name[c] = buf[7+c];
             sequences[s].name[11] = 0;
             for(int st=0; st<MAX_STEPS; st++){
-              int o = 19+st*9;
+              int o = 19+st*11;
               sequences[s].steps[st].type = buf[o+0];
               sequences[s].steps[st].target = buf[o+1];
               sequences[s].steps[st].state = buf[o+2];
@@ -661,6 +750,8 @@ void loadFromEEPROM(){
               int16_t stepsVal = (int16_t)(buf[o+5] | ((unsigned int)buf[o+6] << 8));
               sequences[s].steps[st].steps = stepsVal;
               sequences[s].steps[st].speedPps = buf[o+7] | ((unsigned int)buf[o+8] << 8);
+              sequences[s].steps[st].waitCh = buf[o+9];
+              sequences[s].steps[st].waitOn = buf[o+10];
             }
             // 추가 조건(인터록) 읽기 — 실패/손상이면 이 시퀀스는 비활성(useEmpty 유지) + 부팅 경고
             if(loadCondFromExt(s)) useEmpty = false; else extBootWarning = true;
@@ -692,6 +783,8 @@ void loadFromEEPROM(){
   if((unsigned char)ledText[0]==0xFF) ledText[0]=0;
   // 이 값을 저장한 적 없는 이전 펌웨어의 보드는 미기록(0xFF)이므로 기본값(active-HIGH, false)으로 동작
   relayActiveLow = (EEPROM.read(EE_RELAY_MODE) == 1);
+  loadBootMask(); // 전원 투입 시 릴레이 시작 상태(저장한 적 없는 보드는 안전하게 전부 OFF로 시작)
+  loadSeqOrderMode(); // "목록 순서대로만 실행" 모드(저장한 적 없는 보드는 안전하게 꺼짐으로 시작)
   // LED 자동 알림(트리거) 설정 - 이 기능을 저장한 적 없는 이전 펌웨어의 보드는
   // 미기록 영역(0xFF)일 수 있으므로, 그런 경우 "사용 안 함"으로 안전하게 초기화한다.
   ledTrigCh = EEPROM.read(EE_LEDTRIG_CH);
@@ -731,9 +824,10 @@ void loadFromEEPROM(){
 /* ================= 핀 초기화 ================= */
 void applyOutPinModes(){
   for(int i=0;i<TOTAL_RELAYS;i++){
-    pinMode(outPins[i], OUTPUT);
-    digitalWrite(outPins[i], relayPhysLevel(false)); // 보드 종류에 맞는 안전한 OFF 레벨로 시작
-    relayState[i] = 0;
+    bool on = ((bootRelayMask >> i) & 1) != 0;
+    digitalWrite(outPins[i], relayPhysLevel(on)); // 먼저 최종 상태(on/off)의 레벨을 깔아두고
+    pinMode(outPins[i], OUTPUT);                  // 그 다음 출력으로 바꿔서, 중간에 반대 상태로 깜빡이는 것을 막음
+    relayState[i] = on ? 1 : 0;
   }
 }
 void applyInPinModes(){
@@ -1016,7 +1110,8 @@ void sendSeqGet(){
     for(int st=0; st<sequences[i].numSteps; st++){
       s += String(sequences[i].steps[st].type)+","+String(sequences[i].steps[st].target)+","
          + String(sequences[i].steps[st].state)+","+String(sequences[i].steps[st].delayMs)+","
-         + String(sequences[i].steps[st].steps)+","+String(sequences[i].steps[st].speedPps);
+         + String(sequences[i].steps[st].steps)+","+String(sequences[i].steps[st].speedPps)+","
+         + String(sequences[i].steps[st].waitCh)+","+String(sequences[i].steps[st].waitOn);
       if(st < sequences[i].numSteps-1) s += ";";
     }
     replyPort->println(s);
@@ -1199,6 +1294,8 @@ void handleCommand(String cmdStr){
       sequences[i].condOn=0; sequences[i].condOff=0;
       saveSeqToEEPROM(i); saveCondToEEPROM(i); seqLastInputState[i]=255; // 추가 조건도 함께 지움(항상 기록: 손상된 기록이 남지 않게)
     }
+    seqOrderIdx = 0; // 시퀀스를 전부 지웠으므로 "순서대로 실행" 포인터도 처음으로
+    for(int i=0;i<MAX_ACTIVE_SEQ;i++) activeSeqs[i].idx=-1; // 실행 중이던 슬롯도 정리(지운 시퀀스를 계속 돌리지 않게)
     replyPort->println("OK");
     return;
   }
@@ -1220,16 +1317,18 @@ void handleCommand(String cmdStr){
     return;
   }
   if(strncmp(buf,"SEQSTEP ",8)==0){
-    // SEQSTEP <idx> <si> <type:0=릴레이|1=스텝모터> <target> <state> <delayMs> <steps> <speedPps>
-    int idx,si,type,target,state,delayMs,steps,speedPps;
-    if(sscanf(buf+8,"%d %d %d %d %d %d %d %d",&idx,&si,&type,&target,&state,&delayMs,&steps,&speedPps)==8
-       && idx>=0 && idx<MAX_SEQ && si>=0 && si<MAX_STEPS){
+    // SEQSTEP <idx> <si> <type:0=릴레이|1=스텝모터> <target> <state> <delayMs> <steps> <speedPps> [<waitCh> <waitOn>]
+    int idx,si,type,target,state,delayMs,steps,speedPps,waitCh=0,waitOn=0;
+    int n = sscanf(buf+8,"%d %d %d %d %d %d %d %d %d %d",&idx,&si,&type,&target,&state,&delayMs,&steps,&speedPps,&waitCh,&waitOn);
+    if((n==10 || n==8) && idx>=0 && idx<MAX_SEQ && si>=0 && si<MAX_STEPS){
       sequences[idx].steps[si].type=(byte)type;
       sequences[idx].steps[si].target=(byte)target;
       sequences[idx].steps[si].state=(byte)state;
       sequences[idx].steps[si].delayMs=(unsigned int)delayMs;
       sequences[idx].steps[si].steps=steps;
       sequences[idx].steps[si].speedPps=(unsigned int)speedPps;
+      sequences[idx].steps[si].waitCh=(byte)(waitCh<0?0:waitCh); // 8개 인자만 온 구버전 웹페이지는 waitCh=0(지연 방식)으로 처리
+      sequences[idx].steps[si].waitOn=(byte)(waitOn?1:0);
       saveSeqToEEPROM(idx);
       replyPort->println("OK");
     }
@@ -1290,6 +1389,38 @@ void handleCommand(String cmdStr){
   if(strcmp(buf,"GETRMODE?")==0){
     replyPort->print("RMODE ");
     replyPort->println(relayActiveLow ? 1 : 0);
+    return;
+  }
+  if(strncmp(buf,"SETSEQORDER ",12)==0){
+    // SETSEQORDER <0|1>  1=시퀀스가 목록 순서(1→2→…→다시 1)대로만 트리거를 받도록 잠금
+    int m;
+    if(sscanf(buf+12,"%d",&m)==1){
+      seqOrderMode = (m != 0);
+      seqOrderIdx = seqOrderMode ? firstSeqOrderIdx() : 0; // 켤 때마다 목록 맨 앞(내용 있는 첫 슬롯)부터 다시 시작
+      saveSeqOrderToEEPROM();
+      replyPort->println("OK");
+    }
+    return;
+  }
+  if(strcmp(buf,"GETSEQORDER?")==0){
+    replyPort->print("SEQORDER ");
+    replyPort->println(seqOrderMode ? 1 : 0);
+    return;
+  }
+  if(strncmp(buf,"SETBOOT ",8)==0){
+    // SETBOOT <ch 1~16> <0|1>  1=전원 투입 시 이 릴레이를 ON으로 시작(기본 0=OFF로 시작)
+    int ch,on;
+    if(sscanf(buf+8,"%d %d",&ch,&on)==2 && ch>=1 && ch<=TOTAL_RELAYS && (on==0||on==1)){
+      if(on) bootRelayMask |= ((uint16_t)1 << (ch-1)); else bootRelayMask &= ~((uint16_t)1 << (ch-1));
+      saveBootMask();
+      replyPort->println("OK");
+    }
+    return;
+  }
+  if(strcmp(buf,"GETBOOT?")==0){
+    replyPort->print("BOOT ");
+    for(int i=0;i<TOTAL_RELAYS;i++){ replyPort->print((bootRelayMask>>i)&1); if(i<TOTAL_RELAYS-1) replyPort->print(','); }
+    replyPort->println();
     return;
   }
   if(strncmp(buf,"SETSTEPPIN ",11)==0){
@@ -1477,7 +1608,7 @@ void startSequence(int idx){
   }
   for(int i=0;i<MAX_ACTIVE_SEQ;i++){
     if(activeSeqs[i].idx==-1){
-      activeSeqs[i].idx=idx; activeSeqs[i].step=0; activeSeqs[i].dueMs=millis(); // 첫 단계는 바로 다음 loop()에서 즉시 실행
+      activeSeqs[i].idx=idx; activeSeqs[i].step=0; activeSeqs[i].dueMs=millis(); activeSeqs[i].waiting=false; // 첫 단계는 바로 다음 loop()에서 즉시 실행
       return;
     }
   }
@@ -1485,17 +1616,29 @@ void startSequence(int idx){
 }
 /* 매 loop()마다 호출: delay() 없이, 슬롯마다 "지금이 다음 단계를 실행할 시각인지"만 확인해서
    그 슬롯만 한 단계씩 진행한다. 대기 중인 슬롯은 아무 일도 안 하고 바로 지나치므로
-   키패드/시리얼/다른 입력 감시가 그 사이에도 정상적으로 계속 돈다. */
+   키패드/시리얼/다른 입력 감시가 그 사이에도 정상적으로 계속 돈다.
+   waiting=true인 슬롯은 "조건 대기" 중 — 방금 실행한 단계(step-1)의 waitCh가 waitOn 상태가
+   될 때까지 시간제한 없이 기다리며, dueMs(시간)는 이 동안 아예 보지 않는다. */
 void updateRunningSequences(){
   unsigned long now = millis();
   for(int i=0;i<MAX_ACTIVE_SEQ;i++){
     if(activeSeqs[i].idx==-1) continue;
-    if((long)(now - activeSeqs[i].dueMs) < 0) continue; // 아직 이 슬롯의 다음 단계 시각이 안 됨
     Seq &sq = sequences[activeSeqs[i].idx];
+    if(activeSeqs[i].waiting){
+      SeqStep &wst = sq.steps[activeSeqs[i].step-1]; // 방금 실행해서 대기 조건을 건 단계
+      if(wst.waitCh>=1 && wst.waitCh<=inCount && inStableState[wst.waitCh-1]==wst.waitOn){
+        activeSeqs[i].waiting=false; activeSeqs[i].dueMs=now; // 조건 충족 → 다음 loop()에서 바로 다음 단계 진행
+      }
+      continue; // 조건이 아직 안 맞으면(또는 방금 충족돼서 넘어가는 이번 loop()에는) 여기서 끝 — 시간 검사 안 함
+    }
+    if((long)(now - activeSeqs[i].dueMs) < 0) continue; // 아직 이 슬롯의 다음 단계 시각이 안 됨
     if(activeSeqs[i].step >= sq.numSteps){
       // 이 슬롯의 모든 단계(와 마지막 단계의 지연 시간까지) 완료
+      int finishedIdx = activeSeqs[i].idx;
       activeSeqs[i].idx = -1;
       lastSeqRunMs = now;
+      // "순서대로 실행" 중이고 방금 끝난 시퀀스가 지금 차례였다면, 목록의 다음(내용 있는) 시퀀스로 넘어간다
+      if(seqOrderMode && finishedIdx==seqOrderIdx) seqOrderIdx = nextSeqOrderIdx(finishedIdx);
       continue;
     }
     SeqStep &st = sq.steps[activeSeqs[i].step];
@@ -1504,8 +1647,12 @@ void updateRunningSequences(){
     } else {
       stepperStartMove(st.target, (long)st.steps, (int)st.speedPps); // 이동은 "시작"만 하고 곧장 다음 단계로(완료 대기는 delayMs로 직접 맞춤)
     }
-    activeSeqs[i].dueMs = now + st.delayMs; // delayMs가 0이면 바로 다음 loop()에서 이 슬롯의 다음 단계 진행
     activeSeqs[i].step++;
+    if(st.waitCh>=1 && st.waitCh<=inCount){
+      activeSeqs[i].waiting = true; // 조건 대기로 전환 — 다음 단계 진행은 이 조건이 충족된 뒤(위 waiting 분기가 담당)
+    } else {
+      activeSeqs[i].dueMs = now + st.delayMs; // delayMs가 0이면 바로 다음 loop()에서 이 슬롯의 다음 단계 진행
+    }
   }
 }
 
@@ -1576,6 +1723,9 @@ void updateInputsAndSequences(){
   }
   sampleUltraForSequenceTriggers();
   sampleLoadForSequenceTriggers();
+  // 지금 "순서대로 실행" 차례인 슬롯이 어느새 빈 시퀀스가 됐다면(SEQCOUNT로 지워짐 등)
+  // 다음 내용 있는 슬롯으로 스스로 넘어가 영원히 멈춰있지 않게 한다.
+  if(seqOrderMode && sequences[seqOrderIdx].numSteps==0) seqOrderIdx = nextSeqOrderIdx(seqOrderIdx);
   bool coolingDown = (now - lastSeqRunMs < SEQ_COOLDOWN_MS); // 방금 실행 직후 노이즈 안정 대기
   for(int s=0;s<MAX_SEQ;s++){
     if(sequences[s].numSteps==0 || sequences[s].trigCh==0) continue;
@@ -1604,12 +1754,13 @@ void updateInputsAndSequences(){
     }
     int target = sequences[s].trigCond; // 0=OFF, 1=ON, 2=BOTH(양쪽 다)
     int prev = seqLastInputState[s];
+    bool orderOK = !seqOrderMode || (s==seqOrderIdx); // "순서대로 실행" 중이면 지금 차례인 시퀀스만 시작 허용
     if(!coolingDown){
       if(target==2){
         // BOTH: 방향 상관없이 상태가 바뀌는 순간마다 실행(부팅 직후 prev==255일 때는 무시)
-        if(prev!=255 && cur!=prev && seqCondsOk(s)) startSequence(s);
+        if(prev!=255 && cur!=prev && seqCondsOk(s) && orderOK) startSequence(s);
       } else if(cur==target && prev!=target){
-        if(seqCondsOk(s)) startSequence(s); // 조건이 안 맞으면 이번 트리거는 무시(조건을 맞춘 뒤 다시 눌러야 실행)
+        if(seqCondsOk(s) && orderOK) startSequence(s); // 조건이 안 맞거나 순서가 아니면 이번 트리거는 무시
       }
     }
     seqLastInputState[s] = cur;
@@ -1643,6 +1794,9 @@ void setup(){
                          // 대부분 모듈의 공장 기본 보드레이트가 9600이라 이렇게 맞춤 —
                          // AT 명령으로 모듈 보드레이트를 바꿨다면 이 숫자도 같이 바꿀 것.
                          // 웹 페이지에서 이 포트로 연결할 때도 "통신 속도"를 9600으로 선택해야 함.
+  Serial2.begin(115200); // 와이파이 브리지용 ESP32(핀 16=TX2/17=RX2)와 직접 배선한 UART라
+                         // 모듈 기본값에 맞출 필요 없이 USB와 동일한 115200으로 맞춤 —
+                         // ESP32_WiFi_Bridge.ino 쪽 Serial2.begin()도 반드시 같은 값이어야 함.
   for(int i=0;i<MAX_ACTIVE_SEQ;i++) activeSeqs[i].idx=-1; // 실행 중 슬롯 전부 비움
   Wire.begin(); // 외장 I2C EEPROM(AT24C256) 통신을 위해 loadFromEEPROM()보다 먼저 초기화해야 함
   loadFromEEPROM();
@@ -1686,11 +1840,13 @@ void setup(){
 
 String rxLine = "";   // USB(Serial)로 들어오는 줄 버퍼
 String rxLine1 = "";  // 블루투스(Serial1)로 들어오는 줄 버퍼
+String rxLine2 = "";  // 와이파이 브리지(ESP32, Serial2)로 들어오는 줄 버퍼
 
 void loop(){
-  // 1) 시리얼 명령 처리(비블로킹, 한 줄씩) — USB(Serial)와 블루투스(Serial1) 둘 다 감시.
-  //    어느 쪽에서 들어온 명령이든 replyPort를 그 포트로 맞춰준 뒤 처리해서, 응답이
-  //    명령을 보낸 쪽으로 그대로 돌아가게 한다(엉뚱한 포트로 응답이 새는 것을 방지).
+  // 1) 시리얼 명령 처리(비블로킹, 한 줄씩) — USB(Serial)·블루투스(Serial1)·와이파이
+  //    브리지(Serial2) 세 포트 모두 감시. 어느 쪽에서 들어온 명령이든 replyPort를 그
+  //    포트로 맞춰준 뒤 처리해서, 응답이 명령을 보낸 쪽으로 그대로 돌아가게 한다
+  //    (엉뚱한 포트로 응답이 새는 것을 방지).
   while(Serial.available() > 0){
     char c = Serial.read();
     if(c == '\n'){
@@ -1711,6 +1867,17 @@ void loop(){
     } else if(c != '\r'){
       rxLine1 += c;
       if(rxLine1.length() > 90) rxLine1 = ""; // 이상 입력 방지
+    }
+  }
+  while(Serial2.available() > 0){
+    char c = Serial2.read();
+    if(c == '\n'){
+      rxLine2.trim();
+      if(rxLine2.length() > 0){ replyPort = &Serial2; handleCommand(rxLine2); }
+      rxLine2 = "";
+    } else if(c != '\r'){
+      rxLine2 += c;
+      if(rxLine2.length() > 90) rxLine2 = ""; // 이상 입력 방지
     }
   }
 
