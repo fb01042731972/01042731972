@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>고스톱</title>
+<style>
+  :root{
+    --felt-1:#0d5c34;
+    --felt-2:#0a4b2a;
+    --rail:#5c2a1a;
+    --rail-light:#7a3b24;
+    --gold:#e8c15c;
+    --gwang:#f4d35e;
+    --gwang-dark:#c9962b;
+    --yeol:#3f9142;
+    --yeol-dark:#2c6b2e;
+    --tti-hong:#c0392b;
+    --tti-cho:#d97a2b;
+    --tti-cheong:#2e6fb0;
+    --tti-plain:#7a5c8c;
+    --pi:#f2f0ea;
+    --pi-line:#b9b3a4;
+    --ink:#1c1c1c;
+    --paper:#fbf8f2;
+    --panel:#123d27;
+    --panel-line:#1f6b45;
+  }
+  *{box-sizing:border-box;}
+  html,body{
+    height:100%; margin:0;
+    font-family:"Malgun Gothic","Apple SD Gothic Neo","Noto Sans KR",sans-serif;
+    background:#07140d;
+    color:var(--paper);
+    overflow:hidden;
+  }
+  #app{
+    position:relative;
+    width:100%; height:100vh;
+    background:
+      radial-gradient(ellipse at 50% 40%, var(--felt-1) 0%, var(--felt-2) 70%),
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.015) 0 2px, transparent 2px 6px);
+    display:flex; flex-direction:column;
+    border:14px solid var(--rail);
+    border-image: linear-gradient(180deg, var(--rail-light), var(--rail)) 1;
+    box-shadow: inset 0 0 60px rgba(0,0,0,0.55);
+  }
+
+  /* ---------- header ---------- */
+  #topbar{
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 16px;
+    background:linear-gradient(180deg, rgba(0,0,0,0.35), transparent);
+    flex:0 0 auto;
+    z-index:5;
+  }
+  #topbar .brand{
+    font-size:15px; font-weight:700; letter-spacing:2px; color:var(--gold);
+    text-shadow:0 1px 2px rgba(0,0,0,0.6);
+  }
+  #newgame-btn{
+    background:linear-gradient(180deg,#3a7a4c,#215c33);
+    border:1px solid #1a4a28; color:#eafff0;
+    padding:6px 14px; border-radius:6px; font-size:12px; cursor:pointer;
+    box-shadow:0 2px 0 rgba(0,0,0,0.3);
+  }
+  #newgame-btn:hover{ filter:brightness(1.1); }
+  #mute-btn{
+    background:linear-gradient(180deg,#3a5a7a,#21395c);
+    border:1px solid #1a2a4a; color:#eaf0ff;
+    padding:6px 12px; border-radius:6px; font-size:14px; cursor:pointer;
+    box-shadow:0 2px 0 rgba(0,0,0,0.3);
+  }
+  #mute-btn:hover{ filter:brightness(1.1); }
+
+  /* ---------- player badges ---------- */
+  .player-badge{
+    display:flex; align-items:center; gap:8px;
+    background:rgba(0,0,0,0.32);
+    border:1px solid rgba(255,255,255,0.12);
+    border-radius:10px; padding:6px 10px;
+    font-size:12px; min-width:150px;
+  }
+  .player-badge .avatar{
+    width:30px; height:30px; border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    font-size:16px; flex:0 0 auto;
+  }
+  .avatar.ai{ background:#8a4b6b; }
+  .avatar.me{ background:#3f7ab0; }
+  .player-badge .name{ font-weight:700; color:var(--gold); }
+  .player-badge .sub{ opacity:0.8; font-size:11px; }
+  .score-pill{
+    margin-left:auto; background:rgba(0,0,0,0.4);
+    padding:2px 8px; border-radius:10px; font-weight:700; color:#ffe08a;
+    font-size:12px;
+  }
+
+  /* ---------- middle table ---------- */
+  #table{
+    flex:1 1 auto;
+    position:relative;
+    display:flex; flex-direction:column;
+    align-items:center; justify-content:center;
+    gap:10px;
+    padding:6px 10px;
+    min-height:0;
+  }
+
+  .row-hand-ai, .row-hand-me{
+    display:flex; justify-content:center; gap:4px; flex-wrap:wrap;
+    min-height:64px;
+  }
+
+  #ai-area, #me-area{
+    display:flex; flex-direction:column; align-items:center; gap:4px;
+    flex:0 0 auto;
+  }
+  #ai-area{ padding-top:4px; }
+
+  .captured-strip{
+    display:flex; gap:6px; align-items:flex-start; flex-wrap:wrap;
+    max-width:640px; justify-content:center;
+    min-height:30px;
+  }
+  .captured-group{
+    display:flex; align-items:center; background:rgba(0,0,0,0.22);
+    border-radius:8px; padding:3px 5px; gap:2px;
+  }
+  .captured-group .glabel{ font-size:9px; color:#dcd6c5; margin-right:3px; }
+  .captured-group .mini{ margin-left:-16px; }
+  .captured-group .mini:first-child{ margin-left:0; }
+
+  #middle-zone{
+    display:flex; align-items:center; justify-content:center;
+    gap:24px; flex:0 0 auto;
+    padding:8px 0;
+  }
+  #floor{
+    display:grid; grid-template-columns:repeat(4, 46px);
+    gap:6px;
+    background:rgba(0,0,0,0.15);
+    border:1px dashed rgba(255,255,255,0.18);
+    border-radius:10px; padding:8px;
+    min-height:130px; align-content:start;
+  }
+  #deck-area{
+    display:flex; flex-direction:column; align-items:center; gap:6px;
+  }
+  #deck-pile{
+    width:52px; height:74px; border-radius:6px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.5);
+    position:relative; overflow:hidden;
+  }
+  #deck-pile svg{ width:100%; height:100%; display:block; }
+  #deck-count{
+    font-size:11px; color:#e8dcc0; background:rgba(0,0,0,0.4);
+    padding:2px 8px; border-radius:8px;
+  }
+
+  /* ---------- cards ---------- */
+  .card{
+    width:52px; height:74px; border-radius:6px;
+    box-shadow:0 2px 4px rgba(0,0,0,0.5);
+    position:relative; flex:0 0 auto;
+    user-select:none; overflow:hidden;
+    transition:transform .12s ease, box-shadow .12s ease;
+  }
+  .card svg{ width:100%; height:100%; display:block; }
+  .card.mini{ width:24px; height:34px; border-radius:3px; box-shadow:none; }
+
+  .card.playable{ cursor:pointer; }
+  .card.playable:hover{ transform:translateY(-8px); box-shadow:0 8px 12px rgba(0,0,0,0.6); }
+  .card.selectable{ cursor:pointer; outline:3px solid #ffe066; animation:pulse 1s infinite; }
+  @keyframes pulse{ 0%,100%{ box-shadow:0 0 0 0 rgba(255,224,102,0.6);} 50%{ box-shadow:0 0 0 6px rgba(255,224,102,0);} }
+  .card.dim{ opacity:0.55; }
+
+  /* ---------- bottom message / controls ---------- */
+  #footer{
+    flex:0 0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    padding:8px 16px 12px;
+    gap:10px;
+  }
+  #message{
+    flex:1; background:rgba(0,0,0,0.35); border-radius:8px;
+    padding:8px 12px; font-size:13px; min-height:16px;
+    border:1px solid rgba(255,255,255,0.1);
+  }
+  #turn-indicator{
+    font-size:11px; padding:4px 10px; border-radius:12px; font-weight:700;
+  }
+  .turn-me{ background:#2e6fb0; }
+  .turn-ai{ background:#8a4b6b; }
+
+  /* ---------- modal ---------- */
+  .overlay{
+    position:absolute; inset:0; background:rgba(0,0,0,0.55);
+    display:flex; align-items:center; justify-content:center; z-index:50;
+  }
+  .modal{
+    background:var(--paper); color:#222; border-radius:14px;
+    padding:22px 26px; max-width:340px; text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,0.5);
+  }
+  .modal h2{ margin:0 0 8px; font-size:19px; color:#8a2020; }
+  .modal p{ font-size:13px; line-height:1.6; margin:6px 0 16px; color:#444; }
+  .modal .score-big{ font-size:34px; font-weight:800; color:#1c6b3a; margin:6px 0; }
+  .modal-btns{ display:flex; gap:10px; justify-content:center; }
+  .modal-btns button{
+    padding:9px 18px; border-radius:8px; border:none; cursor:pointer;
+    font-size:14px; font-weight:700;
+  }
+  .btn-go{ background:#c0392b; color:#fff; }
+  .btn-stop{ background:#2e6fb0; color:#fff; }
+  .btn-ok{ background:#3a7a4c; color:#fff; }
+  .hidden{ display:none !important; }
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="topbar">
+    <div class="brand">🀄 고 스 톱</div>
+    <div style="display:flex;gap:8px;">
+      <button id="mute-btn" title="소리 켜기/끄기">🔊</button>
+      <button id="newgame-btn">새 게임</button>
+    </div>
+  </div>
+
+  <div id="table">
+    <div id="ai-area">
+      <div class="player-badge">
+        <div class="avatar ai">🙎‍♂️</div>
+        <div>
+          <div class="name">손님 (랜덤 AI)</div>
+          <div class="sub">패 <span id="ai-hand-count">10</span>장</div>
+        </div>
+        <div class="score-pill">획득 <span id="ai-score">0</span>점</div>
+      </div>
+      <div class="row-hand-ai" id="ai-hand"></div>
+      <div class="captured-strip" id="ai-captured"></div>
+    </div>
+
+    <div id="middle-zone">
+      <div id="floor"></div>
+      <div id="deck-area">
+        <div id="deck-pile"></div>
+        <div id="deck-count">남은 20장</div>
+      </div>
+    </div>
+
+    <div id="me-area">
+      <div class="captured-strip" id="me-captured"></div>
+      <div class="row-hand-me" id="me-hand"></div>
+      <div class="player-badge">
+        <div class="avatar me">😊</div>
+        <div>
+          <div class="name">나</div>
+          <div class="sub">패 <span id="me-hand-count">10</span>장</div>
+        </div>
+        <div class="score-pill">획득 <span id="me-score">0</span>점</div>
+      </div>
+    </div>
+  </div>
+
+  <div id="footer">
+    <span id="turn-indicator" class="turn-me">내 차례</span>
+    <div id="message">카드를 시작합니다...</div>
+  </div>
+
+  <div id="modal-root"></div>
+</div>
+
+<script>
+/* ============ 효과음 (Web Audio API 합성, 외부 음원 없음) ============ */
+const SFX = (function(){
+  let ctx = null;
+  let muted = false;
+
+  function ensureCtx(){
+    if(!ctx){
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(AC) ctx = new AC();
+    }
+    if(ctx && ctx.state === 'suspended') ctx.resume();
+    return ctx;
+  }
+
+  function tone(freq, start, dur, type, peakGain, glideTo){
+    const c = ensureCtx();
+    if(!c || muted) return;
+    const osc = c.createOscillator();
+    const gain = c.createGain();
+    osc.type = type || 'sine';
+    osc.frequency.setValueAtTime(freq, c.currentTime + start);
+    if(glideTo) osc.frequency.exponentialRampToValueAtTime(glideTo, c.currentTime + start + dur);
+    gain.gain.setValueAtTime(0.0001, c.currentTime + start);
+    gain.gain.exponentialRampToValueAtTime(peakGain || 0.18, c.currentTime + start + 0.012);
+    gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + start + dur);
+    osc.connect(gain).connect(c.destination);
+    osc.start(c.currentTime + start);
+    osc.stop(c.currentTime + start + dur + 0.02);
+  }
+
+  function noiseBurst(start, dur, peakGain, filterFreq){
+    const c = ensureCtx();
+    if(!c || muted) return;
+    const bufSize = Math.floor(c.sampleRate * dur);
+    const buf = c.createBuffer(1, bufSize, c.sampleRate);
+    const data = buf.getChannelData(0);
+    for(let i=0;i<bufSize;i++){ data[i] = (Math.random()*2-1) * (1 - i/bufSize); }
+    const src = c.createBufferSource();
+    src.buffer = buf;
+    const filt = c.createBiquadFilter();
+    filt.type = 'bandpass';
+    filt.frequency.value = filterFreq || 1800;
+    const gain = c.createGain();
+    gain.gain.setValueAtTime(peakGain || 0.3, c.currentTime + start);
+    gain.gain.exponentialRampToValueAtTime(0.0001, c.currentTime + start + dur);
+    src.connect(filt).connect(gain).connect(c.destination);
+    src.start(c.currentTime + start);
+  }
+
+  return {
+    unlock(){ ensureCtx(); },
+    setMuted(v){ muted = v; },
+    isMuted(){ return muted; },
+
+    /* 카드를 바닥에 낼 때 (매칭 안 됨) - 짧은 탁 소리 */
+    place(){
+      noiseBurst(0, 0.07, 0.35, 2200);
+      tone(180, 0, 0.06, 'triangle', 0.12);
+    },
+    /* 카드 획득(짝 맞음) - 밝은 두 음 */
+    capture(){
+      noiseBurst(0, 0.06, 0.28, 2400);
+      tone(660, 0.02, 0.11, 'triangle', 0.16);
+      tone(880, 0.09, 0.14, 'triangle', 0.14);
+    },
+    /* 싹쓸이 - 상승 아르페지오 */
+    sweep(){
+      [523,659,784,1047].forEach((f,i)=>tone(f, i*0.07, 0.16, 'triangle', 0.15));
+    },
+    /* 따닥(연속 획득) */
+    ttadak(){
+      tone(740, 0, 0.1, 'square', 0.1);
+      tone(740, 0.11, 0.1, 'square', 0.1);
+    },
+    /* 고 선언 */
+    go(){
+      tone(440, 0, 0.09, 'sawtooth', 0.12, 660);
+      tone(660, 0.1, 0.14, 'sawtooth', 0.14, 880);
+    },
+    /* 스톱 선언 */
+    stop(){
+      tone(520, 0, 0.16, 'sine', 0.14, 300);
+    },
+    /* 버튼 클릭 */
+    click(){
+      tone(900, 0, 0.04, 'square', 0.06);
+    },
+    /* 승리 */
+    win(){
+      [523,659,784,1047,1319].forEach((f,i)=>tone(f, i*0.1, 0.22, 'triangle', 0.17));
+    },
+    /* 패배 */
+    lose(){
+      [440,392,330,262].forEach((f,i)=>tone(f, i*0.14, 0.26, 'sine', 0.14));
+    },
+    /* 무승부/나가리 */
+    draw(){
+      tone(392, 0, 0.14, 'sine', 0.12);
+      tone(392, 0.18, 0.18, 'sine', 0.1);
+    },
+  };
+})();
+
+</script>
+<script>
+(function(){
+"use strict";
+
+/* ============ 카드 일러스트 (SVG) ============ */
+// 카드 일러스트 생성 라이브러리 v3
+// 검정 배경 + 굵은 빨강 테두리 + 원색 일러스트의 전통 화투 스타일 (오리지널 드로잉)
+// viewBox: 0 0 100 140
+
+function svgWrap(inner) {
+  return `<svg viewBox="0 0 100 140" xmlns="http://www.w3.org/2000/svg">${inner}</svg>`;
+}
+
+/* ---------- 공용 도형 헬퍼 (베지어 기반) ---------- */
+function petalPath(cx, cy, length, width, angleDeg, color, opacity) {
+  const op = opacity != null ? opacity : 1;
+  return `<path d="M0 0 C ${-width} ${-length*0.28} ${-width*0.85} ${-length*0.82} 0 ${-length} C ${width*0.85} ${-length*0.82} ${width} ${-length*0.28} 0 0 Z" fill="${color}" fill-opacity="${op}" transform="translate(${cx} ${cy}) rotate(${angleDeg})"/>`;
+}
+function flowerBezier(cx, cy, petalColor, centerColor, len, wid, count) {
+  count = count || 5;
+  let s = '';
+  for (let i = 0; i < count; i++) {
+    const ang = i * (360 / count) + (count === 5 ? -6 : 0);
+    s += petalPath(cx, cy, len, wid, ang, petalColor);
+  }
+  s += `<circle cx="${cx}" cy="${cy}" r="${len * 0.26}" fill="${centerColor}"/>`;
+  return s;
+}
+function leafPath(cx, cy, length, width, angleDeg, color) {
+  return `<g transform="translate(${cx} ${cy}) rotate(${angleDeg})">
+    <path d="M0 0 C ${-width} ${-length*0.22} ${-width*0.75} ${-length*0.8} 0 ${-length} C ${width*0.75} ${-length*0.8} ${width} ${-length*0.22} 0 0 Z" fill="${color}"/>
+  </g>`;
+}
+function branch(x1, y1, x2, y2, color, w, curve) {
+  curve = curve == null ? 6 : curve;
+  return `<path d="M${x1} ${y1} Q${(x1+x2)/2+curve} ${(y1+y2)/2} ${x2} ${y2}" stroke="${color}" stroke-width="${w||2.2}" fill="none" stroke-linecap="round"/>`;
+}
+
+/* 검정 배경 위에서 잘 보이도록 밝고 채도 높은 팔레트 사용 */
+const INK = '#f4efe0';      // 배경 위 잔가지/줄기용 밝은 아이보리
+const LEAFC = '#3fae4a';    // 밝은 잎 녹색
+const LEAFC2 = '#2f8d3d';
+
+/* ---------- 월별 기본 문양(초목) : 검정 배경용 밝은 색상 ---------- */
+const MONTH_MOTIF = {
+  1: () => `  <!-- 소나무 -->
+    ${branch(50,122,44,56,'#e8c15c',4.4,-4)}
+    ${branch(47,90,24,60,'#e8c15c',3.2,-8)}
+    ${branch(53,80,76,50,'#e8c15c',3.2,8)}
+    <g>
+      ${leafPath(26,58,18,7,-96,LEAFC)}${leafPath(30,54,18,7,-70,LEAFC2)}${leafPath(20,46,15,6,-118,LEAFC)}
+      ${leafPath(70,42,18,7,74,LEAFC)}${leafPath(76,38,18,7,100,LEAFC2)}${leafPath(62,32,15,6,50,LEAFC)}
+      ${leafPath(38,30,16,6,-84,LEAFC2)}${leafPath(46,24,15,6,-60,LEAFC)}
+    </g>`,
+  2: () => `  <!-- 매화 -->
+    ${branch(18,126,38,70,'#d9a35c',3.2,-8)}
+    ${branch(38,90,66,44,'#d9a35c',2.6,10)}
+    ${branch(44,72,28,50,'#d9a35c',2.2,-6)}
+    ${flowerBezier(66,36,'#ff7fae','#ffe27a',11,5.6,5)}
+    ${flowerBezier(44,48,'#ff7fae','#ffe27a',9,4.6,5)}
+    ${flowerBezier(30,64,'#ff9dc2','#ffe27a',8,4,5)}
+    ${flowerBezier(78,26,'#ff7fae','#ffe27a',8,4,5)}`,
+  3: () => `  <!-- 벚꽃 -->
+    ${branch(16,120,34,62,'#d9a35c',3.2,-8)}
+    ${branch(34,84,66,36,'#d9a35c',2.6,10)}
+    ${flowerBezier(60,30,'#ffb0d0','#fff3b0',13,6.4,5)}
+    ${flowerBezier(38,50,'#ffb0d0','#fff3b0',10,5,5)}
+    ${flowerBezier(74,48,'#ff9dc4','#fff3b0',9,4.4,5)}
+    ${flowerBezier(24,62,'#ffc0dc','#fff3b0',8,4,5)}
+    ${flowerBezier(52,16,'#ff9dc4','#fff3b0',8,4,5)}`,
+  4: () => `  <!-- 흑싸리 -->
+    ${branch(50,124,50,36,'#dfdfdf',3.6,0)}
+    ${branch(50,94,26,62,'#dfdfdf',2.6,-6)}
+    ${branch(50,78,76,54,'#dfdfdf',2.6,6)}
+    ${branch(50,56,30,38,'#dfdfdf',2.2,-4)}
+    <g fill="#6b7a5a">
+      ${leafPath(26,60,17,7.5,-100,'#7a8a68')}${leafPath(76,53,17,7.5,96,'#7a8a68')}
+      ${leafPath(30,38,14,6.4,-88,'#8a9a76')}${leafPath(50,34,14,6.4,-100,'#7a8a68')}
+    </g>`,
+  5: () => `  <!-- 창포(난초) -->
+    <g fill="none" stroke="#4fce6a" stroke-width="3.4" stroke-linecap="round">
+      <path d="M30 128 C20 90 38 56 20 26"/>
+      <path d="M42 128 C36 84 56 62 46 22"/>
+      <path d="M56 128 C64 88 46 60 62 28"/>
+      <path d="M68 128 C74 92 58 66 78 36"/>
+    </g>
+    ${flowerBezier(18,24,'#c48bff','#fff3b0',8,4,3)}
+    ${flowerBezier(64,24,'#d19cff','#fff3b0',8,4,3)}`,
+  6: () => `  <!-- 모란 -->
+    ${branch(50,128,50,86,'#4fce6a',3.4,0)}
+    <g>
+      ${petalPath(50,58,19,12.5,0,'#ff5c96')}
+      ${petalPath(50,58,19,12.5,60,'#ff85ae')}
+      ${petalPath(50,58,19,12.5,120,'#ff5c96')}
+      ${petalPath(50,58,19,12.5,-60,'#ff85ae')}
+      ${petalPath(50,58,19,12.5,-120,'#ff5c96')}
+      ${petalPath(50,58,19,12.5,180,'#ffa6c4')}
+      <circle cx="50" cy="58" r="9" fill="#ffe27a"/>
+    </g>
+    ${leafPath(30,90,16,7.5,-110,'#3fae4a')}${leafPath(70,90,16,7.5,110,'#3fae4a')}`,
+  7: () => `  <!-- 싸리(홍) -->
+    ${branch(50,124,50,36,'#4fce6a',3.4,0)}
+    ${branch(50,94,26,62,'#4fce6a',2.6,-6)}
+    ${branch(50,78,76,54,'#4fce6a',2.6,6)}
+    <g>
+      ${leafPath(26,60,16,7.5,-100,'#3fae4a')}${leafPath(76,53,16,7.5,96,'#3fae4a')}
+      ${leafPath(30,38,14,6.4,-88,'#4fbd5a')}${leafPath(50,34,14,6.4,-100,'#3fae4a')}
+    </g>
+    ${flowerBezier(30,56,'#ff8fb8','#fff3d6',4,2.2,5)}
+    ${flowerBezier(72,50,'#ff8fb8','#fff3d6',4,2.2,5)}
+    ${flowerBezier(48,30,'#ff8fb8','#fff3d6',3.6,2,5)}`,
+  8: () => `  <!-- 억새(공산) -->
+    <g stroke="#e0c98a" stroke-width="2.4" fill="none" stroke-linecap="round">
+      <path d="M30 130 C22 86 38 56 16 20"/>
+      <path d="M46 130 C46 84 58 54 40 14"/>
+      <path d="M62 130 C64 88 52 58 70 22"/>
+      <path d="M76 130 C78 92 66 62 86 30"/>
+    </g>
+    <g fill="#f2e3b0">
+      ${leafPath(16,18,13,3.6,-30,'#f2e3b0')}
+      ${leafPath(40,12,13,3.6,-6,'#ecd89e')}
+      ${leafPath(70,20,13,3.6,26,'#f2e3b0')}
+    </g>`,
+  9: () => `  <!-- 국화 -->
+    ${branch(50,128,50,92,'#4fce6a',3.4,0)}
+    ${flowerBezier(50,62,'#ffe066','#ff9d2f',17,5.2,10)}
+    ${leafPath(32,98,13,6.4,-110,'#3fae4a')}${leafPath(68,98,13,6.4,110,'#3fae4a')}`,
+  10: () => `  <!-- 단풍 -->
+    ${branch(50,130,50,90,'#e0a05a',3.4,0)}
+    <g fill="#ff6a2f">
+      <path d="M50 56 C55 63 62 65 71 60 C66 67 66 74 73 81 C64 78 59 83 59 92 C54 85 50 85 45 92 C45 83 41 78 32 81 C39 74 39 67 34 60 C43 65 50 63 50 56 Z"/>
+    </g>
+    <g fill="#ffb03f">
+      <path d="M76 34 C79 38 84 39 89 36 C87 40 87 44 91 48 C86 47 84 49 84 55 C81 51 79 51 77 55 C77 49 75 47 70 48 C74 44 74 40 71 36 C76 39 79 38 76 34 Z"/>
+    </g>`,
+  11: () => `  <!-- 오동 -->
+    <g fill="#3fae4a">
+      ${leafPath(32,54,26,18,-16,'#3fae4a')}
+      ${leafPath(68,54,26,18,16,'#3fae4a')}
+      ${leafPath(50,44,24,17,0,'#4fbd5a')}
+    </g>
+    <g fill="#c48bff">
+      ${petalPath(40,124,17,4.4,180,'#c48bff')}
+      ${petalPath(50,128,19,4.8,180,'#d19cff')}
+      ${petalPath(60,124,17,4.4,180,'#c48bff')}
+    </g>`,
+  12: () => `  <!-- 버드나무(비) -->
+    ${branch(50,32,50,20,'#e8c15c',4.2,0)}
+    <g stroke="#4fce6a" stroke-width="2.2" fill="none" stroke-linecap="round">
+      <path d="M40 28 C36 60 30 90 26 124"/>
+      <path d="M50 28 C48 62 46 92 44 128"/>
+      <path d="M60 28 C62 60 66 90 70 122"/>
+      <path d="M68 30 C72 58 78 86 84 116"/>
+    </g>`,
+};
+
+/* ---------- 열끗(동물/사물) 아이콘 (밝은 색상) ---------- */
+function birdShape(color) {
+  return `<g fill="${color}"><path d="M6 8 Q0 2 -6 6 Q-2 0 -8 -4 Q0 -6 6 -2 Q12 -6 18 -2 Q12 0 14 6 Q8 2 6 8 Z"/></g>`;
+}
+const YEOL_ICON = {
+  2: (cx,cy)=>`<g transform="translate(${cx} ${cy}) scale(1.15)">${birdShape('#9fd35c')}</g>`,
+  4: (cx,cy)=>`<g transform="translate(${cx} ${cy}) scale(1.15)">${birdShape('#dfe4e8')}</g>`,
+  5: (cx,cy)=>`<g transform="translate(${cx-16} ${cy})">
+      <path d="M0 14 Q16 -6 32 14" stroke="#e0a862" stroke-width="3.6" fill="none"/>
+      <line x1="4" y1="8" x2="4" y2="16" stroke="#e0a862" stroke-width="2.6"/>
+      <line x1="16" y1="0" x2="16" y2="16" stroke="#e0a862" stroke-width="2.6"/>
+      <line x1="28" y1="8" x2="28" y2="16" stroke="#e0a862" stroke-width="2.6"/>
+    </g>`,
+  6: (cx,cy)=>`<g transform="translate(${cx} ${cy}) scale(1.1)">
+      <path d="M0 0 C-14 -14 -18 4 -2 4 Z" fill="#ff8f3f"/>
+      <path d="M0 0 C14 -14 18 4 2 4 Z" fill="#ffab5e"/>
+      <path d="M0 4 C-12 10 -14 20 -1 12 Z" fill="#ff6a2f"/>
+      <path d="M0 4 C12 10 14 20 1 12 Z" fill="#ff8f3f"/>
+      <line x1="0" y1="-2" x2="0" y2="14" stroke="#fff3d6" stroke-width="1.6"/>
+    </g>`,
+  7: (cx,cy)=>`<g transform="translate(${cx} ${cy}) scale(1.2)">
+      <ellipse cx="0" cy="0" rx="14" ry="8" fill="#b98a5c"/>
+      <ellipse cx="-13" cy="-4" rx="5" ry="4" fill="#b98a5c"/>
+      <polygon points="-18,-4 -22,-6 -18,-1" fill="#f4efe0"/>
+      <rect x="-2" y="7" width="2.4" height="7" fill="#b98a5c"/>
+      <rect x="4" y="7" width="2.4" height="7" fill="#b98a5c"/>
+    </g>`,
+  8: (cx,cy)=>`<g transform="translate(${cx} ${cy})" stroke="#f4efe0" stroke-width="2.2" fill="none" stroke-linecap="round">
+      <path d="M-16 4 Q-8 -6 0 2 Q8 -8 16 2"/>
+    </g>`,
+  9: (cx,cy)=>`<g transform="translate(${cx} ${cy})">
+      <path d="M-9 -8 L9 -8 L6 8 L-6 8 Z" fill="#e8b04f"/>
+      <ellipse cx="0" cy="-8" rx="9" ry="3" fill="#ffd57a"/>
+      <rect x="-2.4" y="8" width="4.8" height="5" fill="#e8b04f"/>
+      <rect x="-8" y="12" width="16" height="3" fill="#e8b04f"/>
+    </g>`,
+  10: (cx,cy)=>`<g transform="translate(${cx} ${cy}) scale(1.1)">
+      <ellipse cx="0" cy="2" rx="13" ry="8" fill="#e0a862"/>
+      <path d="M-9 -4 L-13 -14" stroke="#b9823f" stroke-width="2.2"/>
+      <path d="M-9 -4 L-4 -15" stroke="#b9823f" stroke-width="2.2"/>
+      <ellipse cx="10" cy="-2" rx="4" ry="3" fill="#e0a862"/>
+      <ellipse cx="-3" cy="2" rx="2" ry="1.6" fill="#fff"/>
+      <ellipse cx="6" cy="6" rx="2" ry="1.6" fill="#fff"/>
+    </g>`,
+  12: (cx,cy)=>`<g transform="translate(${cx} ${cy}) scale(1.15)">
+      <path d="M0 0 Q-4 -6 -12 -4 Q-4 -2 -2 4 Q2 -6 12 -8 Q2 -4 0 0 Z" fill="#dfe4e8"/>
+    </g>`,
+};
+
+/* ---------- 광(光) 아이콘 ---------- */
+const GWANG_ICON = {
+  1: (cx,cy)=>`<g transform="translate(${cx} ${cy})">
+      <circle cx="18" cy="-24" r="10" fill="#ff4438"/>
+      ${birdShape('#f4efe0')}
+    </g>`,
+  3: (cx,cy)=>`<g transform="translate(${cx} ${cy-6})">
+      <rect x="-22" y="-6" width="44" height="20" fill="#ff4438"/>
+      <rect x="-22" y="-6" width="44" height="5" fill="#f4efe0"/>
+      <rect x="-22" y="9" width="44" height="5" fill="#f4efe0"/>
+      <circle cx="0" cy="4" r="6" fill="#f4efe0"/>
+    </g>`,
+  8: (cx,cy)=>`<circle cx="${cx}" cy="${cy-30}" r="17" fill="#fff3d6" stroke="#e8c15c" stroke-width="1.4"/>`,
+  11: (cx,cy)=>`<g transform="translate(${cx} ${cy-30})">
+      <path d="M-17 6 Q-11 -11 0 -4 Q11 -11 17 6 Q6 0 0 9 Q-6 0 -17 6 Z" fill="#ff4438"/>
+      <path d="M0 9 L0 22" stroke="#ff4438" stroke-width="2.6"/>
+    </g>`,
+  12: (cx,cy)=>`<g transform="translate(${cx-4} ${cy-14})">
+      <path d="M-15 6 Q0 -15 15 6 Z" fill="#f4efe0"/>
+      <line x1="0" y1="6" x2="0" y2="26" stroke="#dfe4e8" stroke-width="2.6"/>
+      <line x1="-16" y1="30" x2="-10" y2="40" stroke="#6fb0e0" stroke-width="1.8"/>
+      <line x1="-4" y1="32" x2="2" y2="42" stroke="#6fb0e0" stroke-width="1.8"/>
+      <line x1="8" y1="30" x2="14" y2="40" stroke="#6fb0e0" stroke-width="1.8"/>
+    </g>`,
+};
+
+/* ---------- 띠 리본 ---------- */
+const TTI_COLOR = { hongdan:'#e8342a', chodan:'#e88a2a', cheongdan:'#3a86d6', plain:'#c9c9c9' };
+const TTI_CHAR = { hongdan:'홍', chodan:'초', cheongdan:'청', plain:'띠' };
+const FONT_STACK = "'Malgun Gothic','Apple SD Gothic Neo','Noto Sans KR','Noto Sans CJK KR','NanumGothic',sans-serif";
+function ribbon(tag, cx, cy) {
+  const color = TTI_COLOR[tag] || '#c9c9c9';
+  const ch = TTI_CHAR[tag] || '';
+  const textColor = tag === 'plain' ? '#2a2a2a' : '#fdf6e3';
+  return `<g transform="translate(${cx} ${cy})">
+    <rect x="-14" y="-25" width="28" height="50" rx="4" fill="${color}"/>
+    <rect x="-14" y="-25" width="28" height="50" rx="4" fill="none" stroke="#fff" stroke-width="1" opacity="0.6"/>
+    <text x="0" y="6" font-size="14" fill="${textColor}" text-anchor="middle" font-family="${FONT_STACK}" font-weight="800">${ch}</text>
+  </g>`;
+}
+
+/* ---------- 카드 뒷면 패턴 ---------- */
+function cardBackSVG() {
+  let diamonds = '';
+  for (let row = 0; row < 8; row++) {
+    for (let col = 0; col < 5; col++) {
+      const offset = (row % 2) * 10;
+      const x = col * 20 + offset;
+      const y = row * 18;
+      diamonds += `<path d="M${x} ${y-9} L${x+9} ${y} L${x} ${y+9} L${x-9} ${y} Z" fill="none" stroke="#ff9d8a" stroke-width="1" opacity="0.35"/>`;
+    }
+  }
+  return svgWrap(`
+    <rect x="0" y="0" width="100" height="140" fill="#1a1a1a"/>
+    <rect x="5" y="6" width="90" height="128" fill="#c81e1e"/>
+    <g>${diamonds}</g>
+    <rect x="5" y="6" width="90" height="128" fill="none" stroke="#fff3d6" stroke-width="1.6" opacity="0.9"/>
+    <circle cx="50" cy="70" r="19" fill="#1a1a1a" stroke="#fff3d6" stroke-width="1.8"/>
+    <text x="50" y="77" font-size="18" fill="#fff3d6" text-anchor="middle" font-family="${FONT_STACK}" font-weight="800">花</text>
+    <rect x="1" y="1" width="98" height="138" rx="6" fill="none" stroke="#c81e1e" stroke-width="4"/>
+  `);
+}
+
+/* ---------- 카드 전체 SVG 조립 ---------- */
+function buildCardSVG(card) {
+  let inner = `<rect x="0" y="0" width="100" height="140" fill="#111"/>`;
+  inner += `<rect x="4" y="4" width="92" height="132" rx="4" fill="#000"/>`;
+  inner += MONTH_MOTIF[card.month] ? MONTH_MOTIF[card.month]() : '';
+
+  if (card.type === 'gwang' && GWANG_ICON[card.month]) {
+    inner += GWANG_ICON[card.month](50, 78);
+  }
+  if (card.type === 'yeol' && YEOL_ICON[card.month]) {
+    inner += YEOL_ICON[card.month](58, 96);
+  }
+  if (card.type === 'tti') {
+    inner += ribbon(card.tag, 74, 108);
+  }
+  if (card.type === 'pi' && card.piValue === 2) {
+    inner += `<circle cx="76" cy="112" r="10" fill="#000" stroke="#fff3d6" stroke-width="1.8"/>
+      <text x="76" y="117" font-size="12" fill="#fff3d6" text-anchor="middle" font-weight="800">2</text>`;
+  }
+
+  const TYPE_BADGE_COLOR = { gwang:'#ffcf4a', yeol:'#5fd66a', tti: TTI_COLOR[card.tag] || '#c9c9c9', pi:'#cfd2d6' };
+  const TYPE_BADGE_LABEL = { gwang:'광', yeol:'열', tti:'띠', pi:'피' };
+  const badgeTextColor = (card.type === 'gwang' || card.type === 'yeol' || card.type === 'pi' || card.tag === 'plain') ? '#1a1a1a' : '#fdf6e3';
+  inner += `<circle cx="14" cy="15" r="11" fill="#fff3d6" stroke="#c81e1e" stroke-width="1.8"/>
+    <text x="14" y="20" font-size="13" fill="#c81e1e" text-anchor="middle" font-family="${FONT_STACK}" font-weight="800">${card.month}</text>`;
+  inner += `<rect x="4" y="118" width="21" height="16" rx="4" fill="${TYPE_BADGE_COLOR[card.type]}"/>
+    <text x="14.5" y="129.5" font-size="10.5" fill="${badgeTextColor}" text-anchor="middle" font-family="${FONT_STACK}" font-weight="800">${TYPE_BADGE_LABEL[card.type]}</text>`;
+  inner += `<rect x="1" y="1" width="98" height="138" rx="6" fill="none" stroke="#c81e1e" stroke-width="4"/>`;
+  return svgWrap(inner);
+}
+
+/* ============ 데이터 정의 ============ */
+const MONTH_NAME = {1:'1월',2:'2월',3:'3월',4:'4월',5:'5월',6:'6월',7:'7월',8:'8월',9:'9월',10:'10월',11:'11월',12:'12월'};
+const MONTH_DEFS = [
+  { m:1,  cards:['gwang','hongdan','pi','pi'] },
+  { m:2,  cards:['yeol','hongdan','pi','pi'] },
+  { m:3,  cards:['gwang','hongdan','pi','pi'] },
+  { m:4,  cards:['yeol','chodan','pi','pi'] },
+  { m:5,  cards:['yeol','chodan','pi','pi'] },
+  { m:6,  cards:['yeol','cheongdan','pi','pi'] },
+  { m:7,  cards:['yeol','chodan','pi','pi'] },
+  { m:8,  cards:['gwang','yeol','pi','pi'] },
+  { m:9,  cards:['yeol','cheongdan','pi','ssangpi'] },
+  { m:10, cards:['yeol','cheongdan','pi','pi'] },
+  { m:11, cards:['gwang','tti','pi','ssangpi'] },
+  { m:12, cards:['gwang','yeol','tti','pi'] },
+];
+const GODORI_MONTHS = [2,4,8];
+const TAG_LABEL = { hongdan:'홍단', chodan:'초단', cheongdan:'청단', bigwang:'비광' };
+const TYPE_LABEL = { gwang:'광', yeol:'열끗', tti:'띠', pi:'피' };
+
+function buildDeck(){
+  const deck=[]; let id=0;
+  for(const {m,cards} of MONTH_DEFS){
+    cards.forEach(raw=>{
+      let type=raw, piValue=1, tag=null;
+      if(['hongdan','chodan','cheongdan'].includes(raw)){ type='tti'; tag=raw; }
+      if(raw==='ssangpi'){ type='pi'; piValue=2; }
+      if(raw==='tti' && tag===null) tag='plain';
+      if(raw==='gwang' && m===12) tag='bigwang';
+      deck.push({id:id++, month:m, type, tag, piValue});
+    });
+  }
+  return deck;
+}
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){
+    const j=Math.floor(Math.random()*(i+1));
+    [a[i],a[j]]=[a[j],a[i]];
+  }
+  return a;
+}
+
+function calcScore(captured){
+  const gwang = captured.filter(c=>c.type==='gwang');
+  const yeol  = captured.filter(c=>c.type==='yeol');
+  const tti   = captured.filter(c=>c.type==='tti');
+  const pi    = captured.filter(c=>c.type==='pi');
+  const piTotal = pi.reduce((s,c)=>s+c.piValue,0);
+  let score=0; const detail=[];
+
+  if(gwang.length===5){ score+=15; detail.push('오광 +15'); }
+  else if(gwang.length===4){ score+=4; detail.push('사광 +4'); }
+  else if(gwang.length===3){
+    const hasBi = gwang.some(c=>c.tag==='bigwang');
+    score += hasBi?2:3; detail.push((hasBi?'삼광(비광) +2':'삼광 +3'));
+  }
+  if(yeol.length>=5){ const pt=yeol.length-4; score+=pt; detail.push(`열끗 ${yeol.length}장 +${pt}`); }
+  const hasGodori = GODORI_MONTHS.every(m=>yeol.some(c=>c.month===m));
+  if(hasGodori){ score+=5; detail.push('고도리 +5'); }
+
+  if(tti.length>=5){ const pt=tti.length-4; score+=pt; detail.push(`띠 ${tti.length}장 +${pt}`); }
+  ['hongdan','chodan','cheongdan'].forEach(tag=>{
+    const cnt = tti.filter(c=>c.tag===tag).length;
+    if(cnt>=3){ score+=3; detail.push(`${TAG_LABEL[tag]} +3`); }
+  });
+
+  if(piTotal>=10){ const pt=piTotal-9; score+=pt; detail.push(`피 ${piTotal}장 +${pt}`); }
+
+  return {score, detail, gwangCount:gwang.length, yeolCount:yeol.length, ttiCount:tti.length, piTotal};
+}
+
+/* ============ 게임 상태 ============ */
+let state = null;
+
+function newGame(){
+  const deck = shuffle(buildDeck());
+  const meHand  = deck.splice(0,10);
+  const aiHand  = deck.splice(0,10);
+  const floor   = deck.splice(0,8);
+  state = {
+    deck, floor, meHand, aiHand,
+    meCaptured:[], aiCaptured:[],
+    meGo:0, aiGo:0,
+    turn:'me',
+    pendingChoice:null, // { owner, playedCard, matches, fromDraw }
+    gameOver:false,
+    message:'내 차례입니다. 낼 카드를 선택하세요.',
+  };
+  render();
+}
+
+function log(msg){ state.message = msg; }
+
+/* ============ 카드 매칭 처리 ============ */
+// 반환: {captured:[...], swept:bool} 혹은 null(선택 대기 필요)
+function resolvePlay(owner, card, isFromDraw, forcedChoiceId){
+  const floor = state.floor;
+  const matches = floor.filter(f=>f.month===card.month);
+
+  if(matches.length===0){
+    floor.push(card);
+    return {captured:[], swept:false, placed:true};
+  }
+  if(matches.length===1){
+    removeFromFloor(matches[0].id);
+    return {captured:[card, matches[0]], swept:false};
+  }
+  if(matches.length===2){
+    let chosen;
+    if(forcedChoiceId!=null){
+      chosen = matches.find(m=>m.id===forcedChoiceId);
+    } else if(owner==='ai'){
+      chosen = matches[Math.floor(Math.random()*matches.length)];
+    } else {
+      // 사람 선택 필요 -> 대기 상태 반환
+      return {needChoice:true, matches};
+    }
+    removeFromFloor(chosen.id);
+    return {captured:[card, chosen], swept:false};
+  }
+  // matches.length === 3 : 싹쓸이
+  matches.forEach(m=>removeFromFloor(m.id));
+  return {captured:[card, ...matches], swept:true};
+}
+function removeFromFloor(id){
+  state.floor = state.floor.filter(c=>c.id!==id);
+}
+
+/* 한 턴 전체 처리: 손패 카드 1장 -> 매칭 -> 더미에서 1장 뽑기 -> 매칭 */
+function playTurn(owner, handCard, opts){
+  opts = opts || {};
+  const capturedAll = [];
+  let sweepCount = 0;
+  let captureCount = 0;
+
+  // 1) 손패 카드
+  const r1 = resolvePlay(owner, handCard, false, opts.firstChoiceId);
+  if(r1.needChoice){
+    state.pendingChoice = { stage:1, owner, playedCard:handCard, matches:r1.matches, opts };
+    render();
+    return;
+  }
+  if(r1.captured.length){ capturedAll.push(...r1.captured); captureCount++; if(r1.swept) sweepCount++; }
+
+  // 2) 더미에서 뽑기
+  let drawnCard = null;
+  if(state.deck.length>0){
+    drawnCard = state.deck.pop();
+    const r2 = resolvePlay(owner, drawnCard, true, opts.secondChoiceId);
+    if(r2.needChoice){
+      // 1단계 결과 반영 후, 2단계 선택 대기
+      finalizeCaptures(owner, capturedAll);
+      state.pendingChoice = { stage:2, owner, playedCard:drawnCard, matches:r2.matches, opts, priorCaptureCount:captureCount, priorSweep:sweepCount };
+      render();
+      return;
+    }
+    if(r2.captured.length){ capturedAll.push(...r2.captured); captureCount++; if(r2.swept) sweepCount++; }
+  }
+
+  finalizeCaptures(owner, capturedAll);
+  finishTurnMessages(owner, captureCount, sweepCount, capturedAll.length>0);
+  afterTurn(owner);
+}
+
+function finalizeCaptures(owner, cards){
+  if(!cards.length) return;
+  if(owner==='me') state.meCaptured.push(...cards);
+  else state.aiCaptured.push(...cards);
+}
+
+function finishTurnMessages(owner, captureCount, sweepCount, anyCaptured){
+  const who = owner==='me' ? '내가' : '손님이';
+  if(sweepCount>0){ log(`${who} 싹쓸이! 바닥 카드를 모두 가져왔습니다.`); SFX.sweep(); }
+  else if(captureCount>=2){ log(`${who} 따닥! 연속으로 카드를 가져왔습니다.`); SFX.ttadak(); }
+  else if(anyCaptured){ log(`${who} 카드를 획득했습니다.`); SFX.capture(); }
+  else { log(`${who} 카드를 냈지만 짝이 없어 바닥에 놓였습니다.`); SFX.place(); }
+}
+
+/* 선택(2장 매칭) 응답 처리 */
+function resolvePendingChoice(chosenId){
+  const pc = state.pendingChoice;
+  state.pendingChoice = null;
+  if(pc.stage===1){
+    playTurn(pc.owner, pc.playedCard, Object.assign({}, pc.opts, {firstChoiceId:chosenId}));
+  } else {
+    // stage 2: 두번째 카드(더미) 선택
+    const chosen = pc.matches.find(m=>m.id===chosenId);
+    removeFromFloor(chosen.id);
+    const captured = [pc.playedCard, chosen];
+    finalizeCaptures(pc.owner, captured);
+    const totalCaptureCount = pc.priorCaptureCount + 1;
+    finishTurnMessages(pc.owner, totalCaptureCount, pc.priorSweep, true);
+    afterTurn(pc.owner);
+  }
+}
+
+/* 턴 종료 후 처리: Go/Stop 체크, 다음 턴, 게임 종료 체크 */
+function afterTurn(owner){
+  const hand = owner==='me' ? state.meHand : state.aiHand;
+  const handEmpty = hand.length===0 && state.deck.length===0; // 더 낼 카드/뽑을 카드 없음 근사치
+  const bothHandsEmpty = state.meHand.length===0 && state.aiHand.length===0;
+
+  const capturedPile = owner==='me' ? state.meCaptured : state.aiCaptured;
+  const {score} = calcScore(capturedPile);
+
+  if(bothHandsEmpty){
+    endGame(null); // 나가리 혹은 마지막 상태로 비교
+    return;
+  }
+
+  if(score>=3){
+    if(owner==='me'){
+      state.pendingGoStop = true;
+      render();
+      return; // 사용자의 고/스톱 클릭을 기다림
+    } else {
+      // AI는 완전 랜덤으로 고/스톱 결정
+      const aiGoes = Math.random() < 0.5;
+      if(aiGoes){
+        state.aiGo++;
+        log(`손님이 ${score}점으로 "고"를 외쳤습니다! (총 ${state.aiGo}고)`);
+        switchTurn(owner);
+      } else {
+        endGame('ai-stop');
+        return;
+      }
+    }
+  } else {
+    switchTurn(owner);
+  }
+}
+
+function switchTurn(owner){
+  state.turn = owner==='me' ? 'ai' : 'me';
+  render();
+  if(state.turn==='ai' && !state.gameOver){
+    setTimeout(aiTakeTurn, 850);
+  }
+}
+
+function playerChooseGoStop(choice){
+  const {score} = calcScore(state.meCaptured);
+  if(choice==='go'){
+    state.meGo++;
+    state.pendingGoStop=false;
+    log(`"고"를 외쳤습니다! (총 ${state.meGo}고) 현재 ${score}점`);
+    SFX.go();
+    switchTurn('me');
+  } else {
+    state.pendingGoStop=false;
+    SFX.stop();
+    endGame('me-stop');
+  }
+}
+
+function aiTakeTurn(){
+  if(state.gameOver) return;
+  const hand = state.aiHand;
+  if(hand.length===0){
+    afterTurn('ai');
+    return;
+  }
+  const idx = Math.floor(Math.random()*hand.length);
+  const card = hand.splice(idx,1)[0];
+  playTurn('ai', card, {});
+}
+
+/* 사람이 손패 클릭 */
+function playerPlayCard(cardId){
+  if(state.turn!=='me' || state.pendingChoice || state.pendingGoStop || state.gameOver) return;
+  const idx = state.meHand.findIndex(c=>c.id===cardId);
+  if(idx===-1) return;
+  const card = state.meHand.splice(idx,1)[0];
+  playTurn('me', card, {});
+}
+
+/* ============ 게임 종료 ============ */
+function endGame(reason){
+  state.gameOver = true;
+  const meRes = calcScore(state.meCaptured);
+  const aiRes = calcScore(state.aiCaptured);
+  let meFinal = meRes.score;
+  let aiFinal = aiRes.score;
+
+  // 상대가 고를 외쳤다가 못 이기면, 이긴 사람에게 고 횟수만큼 보너스(간단 고박 규칙)
+  let winner = null;
+  if(meFinal===0 && aiFinal===0){
+    winner = 'draw-nagari';
+  } else if(meFinal>=3 || aiFinal>=3 || reason==='me-stop' || reason==='ai-stop'){
+    if(meFinal>aiFinal){
+      winner='me'; meFinal += state.aiGo;
+    } else if(aiFinal>meFinal){
+      winner='ai'; aiFinal += state.meGo;
+    } else {
+      winner='draw';
+    }
+  } else {
+    winner = 'draw-nagari';
+  }
+
+  state.finalResult = { meFinal, aiFinal, winner, meRes, aiRes };
+  if(winner==='me') SFX.win();
+  else if(winner==='ai') SFX.lose();
+  else SFX.draw();
+  render();
+}
+
+/* ============ 렌더링 ============ */
+function cardClass(c, extra){
+  const cls=['card'];
+  if(c.type==='tti') cls.push('tti', c.tag||'plain');
+  else cls.push(c.type);
+  if(c.type==='pi' && c.piValue===2) cls.push('ssangpi');
+  if(extra) cls.push(extra);
+  return cls.join(' ');
+}
+function makeCardEl(c, {mini, playable, selectable, onClick}={}){
+  const el = document.createElement('div');
+  el.className = 'card' + (mini?' mini':'') + (playable?' playable':'') + (selectable?' selectable':'');
+  el.innerHTML = buildCardSVG(c);
+  if(onClick) el.addEventListener('click', onClick);
+  return el;
+}
+function groupForStrip(captured){
+  const groups = [
+    {key:'gwang', label:'광'},
+    {key:'yeol', label:'열끗'},
+    {key:'tti', label:'띠'},
+    {key:'pi', label:'피'},
+  ];
+  return groups.map(g=>({...g, cards:captured.filter(c=>c.type===g.key)})).filter(g=>g.cards.length);
+}
+
+function render(){
+  if(!state) return;
+  // 손패
+  const meHandEl = document.getElementById('me-hand');
+  meHandEl.innerHTML='';
+  state.meHand.forEach(c=>{
+    const playable = state.turn==='me' && !state.pendingChoice && !state.pendingGoStop && !state.gameOver;
+    meHandEl.appendChild(makeCardEl(c, {playable, onClick:()=>playerPlayCard(c.id)}));
+  });
+
+  const aiHandEl = document.getElementById('ai-hand');
+  aiHandEl.innerHTML='';
+  state.aiHand.forEach(()=>{
+    const back = document.createElement('div');
+    back.className='card';
+    back.innerHTML = cardBackSVG();
+    aiHandEl.appendChild(back);
+  });
+
+  document.getElementById('me-hand-count').textContent = state.meHand.length;
+  document.getElementById('ai-hand-count').textContent = state.aiHand.length;
+
+  // 바닥
+  const floorEl = document.getElementById('floor');
+  floorEl.innerHTML='';
+  const pc = state.pendingChoice;
+  state.floor.forEach(c=>{
+    let selectable=false;
+    if(pc && pc.owner==='me' && pc.matches.some(m=>m.id===c.id)) selectable=true;
+    floorEl.appendChild(makeCardEl(c, {selectable, onClick: selectable? ()=>resolvePendingChoice(c.id): null}));
+  });
+
+  // 더미
+  document.getElementById('deck-count').textContent = `남은 ${state.deck.length}장`;
+  document.getElementById('deck-pile').style.visibility = state.deck.length? 'visible':'hidden';
+  document.getElementById('deck-pile').innerHTML = state.deck.length ? cardBackSVG() : '';
+
+  // 획득패
+  renderCapturedStrip('me-captured', state.meCaptured);
+  renderCapturedStrip('ai-captured', state.aiCaptured);
+
+  const meScore = calcScore(state.meCaptured).score;
+  const aiScore = calcScore(state.aiCaptured).score;
+  document.getElementById('me-score').textContent = meScore;
+  document.getElementById('ai-score').textContent = aiScore;
+
+  // 턴 표시
+  const ti = document.getElementById('turn-indicator');
+  if(state.gameOver){ ti.textContent='게임 종료'; ti.className=''; }
+  else if(pc){ ti.textContent = pc.owner==='me' ? '카드를 선택하세요' : '손님 선택 중...'; ti.className='turn-me'; }
+  else if(state.pendingGoStop){ ti.textContent='고 / 스톱 선택'; ti.className='turn-me'; }
+  else { ti.textContent = state.turn==='me' ? '내 차례' : '손님 차례'; ti.className = state.turn==='me' ? 'turn-me':'turn-ai'; }
+
+  document.getElementById('message').textContent = state.message;
+
+  renderModal();
+}
+
+function renderCapturedStrip(elId, captured){
+  const el = document.getElementById(elId);
+  el.innerHTML='';
+  groupForStrip(captured).forEach(g=>{
+    const wrap = document.createElement('div');
+    wrap.className='captured-group';
+    const label = document.createElement('span');
+    label.className='glabel';
+    label.textContent = `${g.label} ${g.cards.length}`;
+    wrap.appendChild(label);
+    g.cards.forEach(c=>wrap.appendChild(makeCardEl(c,{mini:true})));
+    el.appendChild(wrap);
+  });
+}
+
+function renderModal(){
+  const root = document.getElementById('modal-root');
+  root.innerHTML='';
+
+  if(state.pendingGoStop){
+    const {score} = calcScore(state.meCaptured);
+    const overlay = document.createElement('div');
+    overlay.className='overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>고 / 스톱</h2>
+        <p>현재 <b>${score}점</b>을 획득했습니다.<br>계속해서 점수를 올리시겠습니까?</p>
+        <div class="modal-btns">
+          <button class="btn-go" id="btn-go">고! (Go)</button>
+          <button class="btn-stop" id="btn-stop">스톱 (Stop)</button>
+        </div>
+      </div>`;
+    root.appendChild(overlay);
+    document.getElementById('btn-go').onclick=()=>{ SFX.click(); playerChooseGoStop('go'); };
+    document.getElementById('btn-stop').onclick=()=>{ SFX.click(); playerChooseGoStop('stop'); };
+    return;
+  }
+
+  if(state.gameOver && state.finalResult){
+    const r = state.finalResult;
+    let title, bodyHtml;
+    if(r.winner==='draw-nagari'){
+      title='나가리';
+      bodyHtml=`<p>양쪽 모두 3점을 넘기지 못해 승부가 나지 않았습니다.</p>
+        <p>나: ${r.meRes.score}점 / 손님: ${r.aiRes.score}점</p>`;
+    } else if(r.winner==='draw'){
+      title='무승부';
+      bodyHtml=`<p>나: ${r.meFinal}점 / 손님: ${r.aiFinal}점</p>`;
+    } else if(r.winner==='me'){
+      title='승리! 🎉';
+      bodyHtml=`<div class="score-big">${r.meFinal}점</div>
+        <p>손님: ${r.aiFinal}점<br>${state.aiGo>0?`(손님의 ${state.aiGo}고 보너스 포함)`:''}</p>
+        <p style="font-size:11px;color:#777;">${r.meRes.detail.join(' · ')||'-'}</p>`;
+    } else {
+      title='패배 😢';
+      bodyHtml=`<div class="score-big" style="color:#a5231a;">${r.aiFinal}점</div>
+        <p>나: ${r.meFinal}점<br>${state.meGo>0?`(나의 ${state.meGo}고 보너스가 손님에게 적용됨)`:''}</p>
+        <p style="font-size:11px;color:#777;">${r.aiRes.detail.join(' · ')||'-'}</p>`;
+    }
+    const overlay = document.createElement('div');
+    overlay.className='overlay';
+    overlay.innerHTML = `
+      <div class="modal">
+        <h2>${title}</h2>
+        ${bodyHtml}
+        <div class="modal-btns">
+          <button class="btn-ok" id="btn-restart">새 게임</button>
+        </div>
+      </div>`;
+    root.appendChild(overlay);
+    document.getElementById('btn-restart').onclick = ()=>{ SFX.click(); newGame(); };
+    return;
+  }
+}
+
+document.getElementById('newgame-btn').addEventListener('click', ()=>{ SFX.click(); newGame(); });
+
+const muteBtn = document.getElementById('mute-btn');
+muteBtn.addEventListener('click', ()=>{
+  const nowMuted = !SFX.isMuted();
+  SFX.setMuted(nowMuted);
+  muteBtn.textContent = nowMuted ? '🔇' : '🔊';
+});
+// 브라우저 자동재생 정책 대응: 첫 클릭에서 오디오 컨텍스트 활성화
+document.addEventListener('click', ()=>SFX.unlock(), {once:true});
+
+newGame();
+})();
+</script>
+</body>
+</html>
