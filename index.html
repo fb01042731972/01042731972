@@ -8160,6 +8160,7 @@ window.getLeBoardClient = function(){
       <button onclick="closePersonalCalendar()" style="border:none;background:none;font-size:20px;color:#9ca3af;cursor:pointer;line-height:1">✕</button>
     </div>
 
+    <div id="calSharedStatus" style="font-size:11px;margin-bottom:6px;color:#6b7280">공용 일정 서버에 연결 중...</div>
     <div class="flex justify-between items-center mb-2">
       <button onclick="calShiftMonth(-1)" class="add-btn" style="margin-top:0">◀ 이전달</button>
       <div id="calMonthLabel" class="text-base font-bold text-gray-700"></div>
@@ -29967,6 +29968,8 @@ function _calPlainFetch(input, init) {
 function _calClient() {
   try {
     if (!window.supabase || !window.supabase.createClient) return null;
+    // 잘 동작하는 공용 게시판과 똑같은 연결을 우선 사용
+    if (window.getLeBoardClient) { const bc = window.getLeBoardClient(); if (bc) return bc; }
     if (!window._leCalClient) {
       window._leCalClient = window.supabase.createClient('https://yzgmqbnrsylxrwokrjii.supabase.co', 'sb_publishable_s-xgGybt-6N5RLqn_8r6Bw_nRF5yIHG', {
         auth: { storageKey: 'le-cal-auth', persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
@@ -30050,12 +30053,26 @@ function _calApplyChanges(ins, upd, del) {
     calRefreshShared();
   })();
 }
+function _calSetStatus(ok, msg) {
+  const el = document.getElementById('calSharedStatus');
+  if (!el) return;
+  el.style.color = ok ? '#059669' : '#dc2626';
+  el.textContent = msg;
+}
 async function calRefreshShared() {
   const c = _calClient();
-  if (!c) return;
-  const r = await c.from(CAL_SHARED_TABLE).select('*').order('date', { ascending: true });
-  if (r.error) { console.error('공용 일정 불러오기 실패:', (r.error.code || '') + ' ' + (r.error.message || JSON.stringify(r.error))); return; }
+  if (!c) { _calSetStatus(false, '⚠️ 서버 연결 준비가 안 됐습니다. 인터넷 연결을 확인하고 새로고침(Ctrl+F5)하세요.'); return; }
+  let r;
+  try { r = await c.from(CAL_SHARED_TABLE).select('*').order('date', { ascending: true }); }
+  catch (err) { r = { error: { message: String(err && err.message || err) } }; }
+  if (r.error) {
+    const msg = (r.error.code || '') + ' ' + (r.error.message || JSON.stringify(r.error));
+    console.error('공용 일정 불러오기 실패:', msg);
+    _calSetStatus(false, '⚠️ 공용 일정 연결 실패: ' + msg.trim() + '  (이 문구를 그대로 알려주세요)');
+    return;
+  }
   _calCache = (r.data || []).map(_calRowToEv);
+  _calSetStatus(true, '✅ 공용 일정 연결됨 · 전체 ' + _calCache.length + '건');
   try {
     const open = id => { const m = document.getElementById(id); return m && !m.classList.contains('hidden'); };
     if (open('personalCalModal')) renderPersonalCalendar(); else if (typeof updateCalendarBadge === 'function') updateCalendarBadge();
@@ -30112,7 +30129,7 @@ async function calMigrateLegacy() {
       try { _calClient().channel('cal_shared_room').on('postgres_changes', { event: '*', schema: 'public', table: CAL_SHARED_TABLE }, () => calRefreshShared()).subscribe(); } catch(e) {}
       setInterval(calRefreshShared, 60000);
       setTimeout(calMigrateLegacy, 1500);
-    } else if (++tries > 60) clearInterval(t);
+    } else if (++tries > 60) { clearInterval(t); _calSetStatus(false, '⚠️ 서버 연결 라이브러리를 불러오지 못했습니다. 인터넷/보안 프로그램을 확인하고 새로고침하세요.'); }
   }, 500);
 })();
 const K_CAL_CATEGORIES = 'PERSONAL_SCHEDULE_CATEGORIES_V1';
