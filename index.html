@@ -2313,6 +2313,57 @@ window.getLeBoardClient = function(){
     document.getElementById('leChatBody').style.display = 'flex';
   };
 
+  // ── 서버 기록(chat_messages + chat_read_state) 기준으로 안읽음 숫자를 다시 계산 ──
+  // 기존에는 '창을 열어둔 동안 실시간으로 받은 메시지'만 숫자에 반영되어,
+  // 창을 닫았거나 접속 안 한 사이에 온 메시지(파일 포함)는 숫자가 뜨지 않았음.
+  function leChatRecomputeUnread(){
+    try {
+      const me = leChatNorm(leChatNickname);
+      if (!me) return;
+      const map = leChatConvUnreadMap();
+      const counts = {};
+      leChatMsgCache.forEach(function(m){
+        if (leChatNorm(m.sender) === me) return;           // 내가 보낸 건 제외
+        const key = leChatConvKeyOf(m);
+        const rs = leChatReadState[key];
+        const lastRead = rs && rs[leChatNickname];
+        if (!lastRead) return;                              // 읽음 기록이 없는 방은 기존 값 유지
+        if (new Date(m.created_at) > new Date(lastRead)) counts[key] = (counts[key] || 0) + 1;
+      });
+      Object.keys(leChatReadState).forEach(function(key){
+        const rs = leChatReadState[key];
+        if (!rs || !rs[leChatNickname]) return;
+        const viewing = (leChatViewMode === 'thread' && leChatActiveConv === key);
+        const n = viewing ? 0 : (counts[key] || 0);
+        if (n > 0) map[key] = n; else delete map[key];
+      });
+      leChatSaveConvUnreadMap(map);
+      leChatRenderConvList();
+      const total = Object.keys(map).reduce(function(a, k){ return a + (map[k] || 0); }, 0);
+      const win = document.getElementById('leChatWindow');
+      const badge = document.getElementById('leChatUnreadBadge');
+      if (win && badge && win.style.display !== 'flex') {   // 채팅창이 닫혀 있으면 우측 하단 버튼에 숫자 표시
+        leChatUnreadCount = total;
+        if (total > 0) { badge.style.display = 'block'; badge.innerText = total; leChatStartBlink(); }
+        else { badge.style.display = 'none'; badge.innerText = '0'; }
+      }
+    } catch(e) { console.warn('[leChat] 안읽음 계산 실패', e); }
+  }
+
+  // 채팅창을 한 번도 안 열어도, 로그인 후 백그라운드로 채팅에 연결해 안읽음 숫자/알림을 받도록 함
+  (function leChatBackgroundBoot(){
+    let tries = 0, done = false;
+    const timer = setInterval(function(){
+      if (done || ++tries > 120) { clearInterval(timer); return; }
+      let pwOk = false;
+      try { pwOk = sessionStorage.getItem('jinjoo_pw_ok') === '1'; } catch(e) {}
+      if (!pwOk || typeof leChatInit !== 'function') return;
+      done = true; clearInterval(timer);
+      const hasId = leSafeGet('leChatNickname') || leSafeGet(LE_GUEST_TOKEN_KEY);
+      if (hasId) { try { leChatInit(); } catch(e) { console.warn('[leChat] 백그라운드 연결 실패', e); } }
+    }, 1500);
+  })();
+
   function leChatStart(){
     document.getElementById('leChatBody').style.display = 'flex';
     loadSupabaseLib(function(){
@@ -2324,12 +2375,13 @@ window.getLeBoardClient = function(){
       // 브라우저를 꺼둔 상태에서도 알림을 받을 수 있도록 푸시 구독 시도 (조용히, 실패해도 무방)
       if (typeof lePushRegister === 'function') lePushRegister(true);
       leChatRefreshAvatarCache().then(function(){
-        leChatLoadHistory();
+        const histP = leChatLoadHistory();
         leChatLoadBoardLive();
         leChatSubscribeBoardLive();
         leChatSubscribe();
-        leChatLoadReadState().then(function(){
+        Promise.all([histP, leChatLoadReadState()]).then(function(){
           leChatSubscribeReadState();
+          leChatRecomputeUnread(); // 접속 안 한 동안 온 메시지도 서버 기준으로 안읽음 숫자 계산
           if (leChatViewMode === 'thread' && leChatActiveConv !== null) leChatRenderThread(leChatActiveConv);
         });
       });
@@ -2471,15 +2523,15 @@ window.getLeBoardClient = function(){
       let query = supaClient
         .from('chat_messages')
         .select('*')
-        .order('created_at', { ascending: true })
-        .limit(200);
+        .order('created_at', { ascending: false })  // 최신 메시지부터 가져온다 (기존: 오래된 200개만 가져오는 버그)
+        .limit(1000);
       // 서버에서도 미리 걸러서 가져옴 (아래 leChatIsVisibleToMe로 한 번 더 안전하게 걸러냄)
       if (nick) {
         query = query.or('receiver.is.null,receiver.eq."' + nick + '",sender.eq."' + nick + '"');
       }
       const { data, error } = await query;
       if (error) throw error;
-      leChatMsgCache = (data||[]).filter(leChatIsVisibleToMe);
+      leChatMsgCache = (data||[]).slice().reverse().filter(leChatIsVisibleToMe); // 최신순으로 받았으므로 다시 시간순으로 뒤집기
       leChatRenderConvList();
       if (leChatViewMode === 'thread' && leChatActiveConv !== null) {
         leChatRenderThread(leChatActiveConv);
