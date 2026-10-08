@@ -30050,7 +30050,10 @@ function _calApplyChanges(ins, upd, del) {
       }
       for (const o of ownDel) {
         const r = await c.rpc('cal_delete_own', { p_id: o.id, p_key: _calOwnerKey() });
-        if (r.error || r.data === false) { fail = true; console.error(r.error); if (r.error) showToast('⚠️ 서버에 cal_delete_own 함수가 없으면 SQL 설치가 필요합니다.'); }
+        if (r.error || r.data === false) {
+          fail = true; console.error(r.error);
+          alert('본인 일정 삭제 실패\n' + (r.error ? ((r.error.code || '') + ' ' + (r.error.message || '') + '\n\n→ cal_delete_own.sql 을 Supabase SQL Editor에서 실행했는지 확인하세요.') : '서버가 작성자 키 불일치로 거부했습니다. (다른 PC/브라우저에서 쓴 일정이면 본인으로 인식되지 않습니다.)'));
+        }
       }
       if (okOtherDel.length) {
         const r = await c.rpc('cal_delete_many', { p_ids: okOtherDel.map(x => x.id), p_pin: _calAdminPin });
