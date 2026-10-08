@@ -29953,7 +29953,29 @@ function calGetAuthor() {
   return a;
 }
 function _calSafeLink(u) { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : ''; }
-function _calClient() { try { return window.getLeBoardClient ? window.getLeBoardClient() : null; } catch(e) { return null; } }
+// 일부 환경(확장 프로그램 등)이 fetch를 가로채 Headers 객체를 postMessage로 넘기다 DataCloneError가 나는 경우가 있어,
+// 일정 전용 클라이언트는 헤더를 일반 객체로 바꿔서 보냅니다.
+function _calPlainFetch(input, init) {
+  init = init ? Object.assign({}, init) : {};
+  if (init.headers) {
+    const h = {};
+    try { new Headers(init.headers).forEach((v, k) => { h[k] = v; }); } catch(e) { Object.assign(h, init.headers); }
+    init.headers = h;
+  }
+  return fetch(input, init);
+}
+function _calClient() {
+  try {
+    if (!window.supabase || !window.supabase.createClient) return null;
+    if (!window._leCalClient) {
+      window._leCalClient = window.supabase.createClient('https://yzgmqbnrsylxrwokrjii.supabase.co', 'sb_publishable_s-xgGybt-6N5RLqn_8r6Bw_nRF5yIHG', {
+        auth: { storageKey: 'le-cal-auth', persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+        global: { fetch: _calPlainFetch }
+      });
+    }
+    return window._leCalClient;
+  } catch(e) { return null; }
+}
 function _calRowToEv(r) {
   return { id: r.id, date: r.date, endDate: r.end_date || '', time: r.time || '', title: r.title || '', memo: r.memo || '',
            link: r.link || '', type: r.type || '', author: r.author || '', ownerHash: r.owner_hash || '', createdAt: r.created_at };
@@ -30083,7 +30105,7 @@ async function calMigrateLegacy() {
   }
   let tries = 0;
   const t = setInterval(async () => {
-    if (window.supabase && window.getLeBoardClient && window.jinjooSha256Hex && _calClient()) {
+    if (window.supabase && window.jinjooSha256Hex && _calClient()) {
       clearInterval(t);
       _calMyHash = await window.jinjooSha256Hex(_calOwnerKey());
       await calRefreshShared();
@@ -30296,8 +30318,8 @@ function renderPersonalCalendar() {
       const alarmCls = (ev.alarm && ev.time) ? ' cal-evtag-alarm' : '';
       const alarmIcon = (ev.alarm && ev.time) ? '🔔 ' : '';
       const isRange = ev.endDate && ev.endDate > ev.date;
-      const rangeTitle = isRange ? `${escQ(ev.title)} (${ev.date} ~ ${ev.endDate})` : escQ(ev.title);
-      tags += `<span class="cal-evtag${alarmCls}" style="background:${calTypeColor(ev.type)}" title="${rangeTitle}" onclick="event.stopPropagation();calStartEditEvent('${ev.id}')">${alarmIcon}${escQ(ev.title)}</span>`;
+      const rangeTitle = (isRange ? `${escQ(ev.title)} (${ev.date} ~ ${ev.endDate})` : escQ(ev.title)) + (ev.author ? ` — 작성자: ${escQ(ev.author)}` : '');
+      tags += `<span class="cal-evtag${alarmCls}" style="background:${calTypeColor(ev.type)}" title="${rangeTitle}" onclick="event.stopPropagation();calStartEditEvent('${ev.id}')">${alarmIcon}${escQ(ev.title)}${ev.author ? ` <span style="opacity:.85;font-size:.85em">· ${escQ(ev.author)}</span>` : ''}</span>`;
     });
     if (evs.length > shown.length) {
       tags += `<span class="cal-evtag-more">+${evs.length - shown.length}건 더</span>`;
