@@ -2520,18 +2520,37 @@ window.getLeBoardClient = function(){
     if (listBox) listBox.innerHTML = '<div style="color:#94a3b8;text-align:center;padding:20px;">불러오는 중...</div>';
     try {
       const nick = leChatNickname || '';
-      let query = supaClient
-        .from('chat_messages')
-        .select('*')
-        .order('created_at', { ascending: false })  // 최신 메시지부터 가져온다 (기존: 오래된 200개만 가져오는 버그)
-        .limit(1000);
-      // 서버에서도 미리 걸러서 가져옴 (아래 leChatIsVisibleToMe로 한 번 더 안전하게 걸러냄)
-      if (nick) {
-        query = query.or('receiver.is.null,receiver.eq."' + nick + '",sender.eq."' + nick + '"');
-      }
-      const { data, error } = await query;
-      if (error) throw error;
-      leChatMsgCache = (data||[]).slice().reverse().filter(leChatIsVisibleToMe); // 최신순으로 받았으므로 다시 시간순으로 뒤집기
+      // 닉네임을 or() 문자열에 끼워 넣으면 특수문자/표기 차이로 조건이 어긋날 수 있어서,
+      // 조건별로 따로 조회한 뒤 합친다. (전체 공개 / 나에게 온 것 / 내가 보낸 것)
+      const mk = function(){
+        return supaClient.from('chat_messages').select('*')
+          .order('created_at', { ascending: false }).limit(1000);
+      };
+      const jobs = [ mk().is('receiver', null), mk().eq('receiver', '') ];
+      if (nick) { jobs.push(mk().eq('receiver', nick)); jobs.push(mk().eq('sender', nick)); }
+      const results = await Promise.all(jobs);
+      const okResults = results.filter(function(r){ return !r.error; });
+      if (!okResults.length) throw results[0].error;
+      const byKey = {};
+      okResults.forEach(function(r){
+        (r.data || []).forEach(function(m){
+          const k = (m.id != null) ? ('id' + m.id) : (m.sender + '|' + m.created_at + '|' + (m.content || '') + '|' + (m.file_url || ''));
+          byKey[k] = m;
+        });
+      });
+      const data = Object.keys(byKey).map(function(k){ return byKey[k]; })
+        .sort(function(a, b){ return new Date(b.created_at) - new Date(a.created_at); });
+      leChatMsgCache = data.slice().reverse().filter(leChatIsVisibleToMe); // 최신순으로 받았으므로 다시 시간순으로 뒤집기
+      // [진단] 최근 글 50건 중 내 화면에 안 들어온 글이 있는지 확인 (원인 파악용)
+      try {
+        const allR = await supaClient.from('chat_messages').select('id,sender,receiver,created_at,file_name')
+          .order('created_at', { ascending: false }).limit(50);
+        const hidden = [];
+        if (!allR.error) {
+          (allR.data || []).forEach(function(m){ if (!byKey['id' + m.id]) hidden.push(m); });
+        }
+        window._leChatDiag = { total: allR.error ? null : (allR.data || []).length, hidden: hidden, err: allR.error ? (allR.error.message || String(allR.error)) : '' };
+      } catch(de) { window._leChatDiag = { total: null, hidden: [], err: String(de && de.message || de) }; }
       leChatRenderConvList();
       if (leChatViewMode === 'thread' && leChatActiveConv !== null) {
         leChatRenderThread(leChatActiveConv);
@@ -2686,7 +2705,24 @@ window.getLeBoardClient = function(){
           '</div>' +
         '</div>'
       );
-    }).join('');
+    }).join('') + (
+      '<div style="padding:10px 12px;font-size:10.5px;color:#94a3b8;text-align:center;line-height:1.6;">' +
+      '서버에서 불러온 메시지 ' + leChatMsgCache.length + '건' +
+      (function(){
+        const d = window._leChatDiag;
+        if (!d) return '';
+        if (d.err) return '<br>[진단] 전체 조회 실패: ' + leChatEscape(d.err);
+        let h = '<br>[진단] 최근 ' + d.total + '건 중 내 화면에 안 보이는 글 ' + d.hidden.length + '건';
+        d.hidden.slice(0, 5).forEach(function(m){
+          h += '<br>· ' + leChatEscape(m.sender || '?') + ' → ' + (m.receiver ? ('받는사람 "' + leChatEscape(m.receiver) + '"') : '전체') +
+               ' (' + new Date(m.created_at).toLocaleString('ko-KR', { month:'numeric', day:'numeric', hour:'2-digit', minute:'2-digit' }) + ')' +
+               (m.file_name ? ' 📎' : '');
+        });
+        return h;
+      })() +
+      (leChatMsgCache.length === 0 ? '<br>※ 0건이면 Supabase chat_messages 테이블의 SELECT(읽기) 권한(RLS)을 확인해주세요' : '') +
+      '</div>'
+    );
     leChatRenderFriendList();
   }
 
@@ -3760,6 +3796,49 @@ window.getLeBoardClient = function(){
       const files = e.dataTransfer && e.dataTransfer.files;
       if (!files || !files.length) return;
       leChatUploadFiles(files);
+    });
+  })();
+
+  // 📋 캡처/복사한 이미지·파일을 Ctrl+V(붙여넣기)로 바로 전송
+  // - 채팅창 안(입력창 등)에 포커스가 있을 때 동작
+  // - 글자(텍스트)가 함께 복사된 경우(엑셀/웹페이지 복사 등)는 기존처럼 일반 붙여넣기로 둠
+  (function setupLeChatPaste(){
+    document.addEventListener('paste', function(e){
+      try {
+        const win = document.getElementById('leChatWindow');
+        if (!win || win.style.display !== 'flex') return;
+        if (!e.target || !win.contains(e.target)) return;
+        const cd = e.clipboardData;
+        if (!cd) return;
+        const text = cd.getData && cd.getData('text/plain');
+        if (text && text.trim()) return;
+        const files = [];
+        if (cd.items && cd.items.length) {
+          for (let i = 0; i < cd.items.length; i++) {
+            const it = cd.items[i];
+            if (it.kind === 'file') { const f = it.getAsFile(); if (f) files.push(f); }
+          }
+        }
+        if (!files.length && cd.files && cd.files.length) {
+          for (let i = 0; i < cd.files.length; i++) files.push(cd.files[i]);
+        }
+        if (!files.length) return;
+        e.preventDefault();
+        const pad = function(n){ return String(n).padStart(2, '0'); };
+        const d = new Date();
+        const stamp = d.getFullYear() + pad(d.getMonth()+1) + pad(d.getDate()) + '_' + pad(d.getHours()) + pad(d.getMinutes()) + pad(d.getSeconds());
+        (async function(){
+          for (let i = 0; i < files.length; i++) {
+            let f = files[i];
+            // 스크린샷은 이름이 'image.png'로 오므로 시각이 들어간 이름으로 바꿔서 올림
+            if (/^image\.[a-z0-9]+$/i.test(f.name || '') || !f.name) {
+              const ext = ((f.type || 'image/png').split('/')[1] || 'png').replace('jpeg', 'jpg');
+              f = new File([f], 'capture_' + stamp + (files.length > 1 ? '_' + (i+1) : '') + '.' + ext, { type: f.type || 'image/png' });
+            }
+            await leChatUploadFile(f);
+          }
+        })();
+      } catch(err) { console.warn('[leChat] 붙여넣기 처리 실패', err); }
     });
   })();
 
