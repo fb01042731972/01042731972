@@ -3807,7 +3807,11 @@ window.getLeBoardClient = function(){
       try {
         const win = document.getElementById('leChatWindow');
         if (!win || win.style.display !== 'flex') return;
-        if (!e.target || !win.contains(e.target)) return;
+        // 채팅창 안에 포커스가 있거나, 포커스가 어떤 입력칸에도 없는 상태(빈 화면 클릭 후)면 채팅으로 붙여넣기
+        const t = e.target;
+        const inChat = !!(t && win.contains(t));
+        const editableElsewhere = !!(t && t.closest && t.closest('input, textarea, select, [contenteditable="true"]'));
+        if (!inChat && editableElsewhere) return;
         const cd = e.clipboardData;
         if (!cd) return;
         const text = cd.getData && cd.getData('text/plain');
