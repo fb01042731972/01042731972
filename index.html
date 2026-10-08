@@ -8251,6 +8251,10 @@ window.getLeBoardClient = function(){
           <div class="quote-label">링크(선택) <span class="font-normal text-gray-400">— https:// 주소만 (파일/사진 첨부는 불가)</span></div>
           <input id="calEv_link" class="inp" maxlength="500" placeholder="예: https://...">
         </div>
+        <div id="calEv_pwWrap">
+          <div class="quote-label">삭제 비밀번호 <span class="font-normal text-red-500">(필수)</span> <span class="font-normal text-gray-400">— 나중에 이 일정을 지울 때 필요합니다</span></div>
+          <input id="calEv_delPw" class="inp" maxlength="30" autocomplete="off" placeholder="삭제할 때 쓸 비밀번호를 정하세요">
+        </div>
       </div>
       <div class="flex justify-end gap-2 mt-1">
         <button id="calEv_deleteBtn" onclick="calDeleteEvent(document.getElementById('calEv_editId').value)" class="hidden text-xs font-bold px-4 py-1.5 rounded" style="background:#fff;color:#ef4444;border:1px solid #fecaca;cursor:pointer">삭제</button>
@@ -30038,7 +30042,8 @@ function _calApplyChanges(ins, upd, del) {
   if (del.length && !okDel.length) denied.push('삭제는 비밀번호 확인 후에만');
   const author = ins.length ? calGetAuthor() : '';
   const _newPws = {};
-  ins.forEach(e => { const p = prompt('이 일정의 삭제 비밀번호를 정하세요.\n(나중에 이 일정을 지울 때 필요합니다. 비워두면 이 PC에서만 삭제 가능)'); if (p) _newPws[e.id] = p; });
+  ins.forEach(e => { if (window._calPendingPw) _newPws[e.id] = window._calPendingPw; });
+  window._calPendingPw = '';
   ins.forEach(e => { e.author = author; e.ownerHash = _calMyHash; e.createdAt = new Date().toISOString(); _calCache.push(Object.assign({}, e)); });
   okUpd.forEach(e => { const i = _calCache.findIndex(x => x.id === e.id); if (i > -1) _calCache[i] = Object.assign({}, _calCache[i], e); });
   okDel.forEach(o => { _calCache = _calCache.filter(x => x.id !== o.id); });
@@ -30436,6 +30441,11 @@ function calSaveEvent() {
   if (endDateRaw && endDateRaw < date) { showToast('⚠️ 종료일은 시작일(일자)보다 빠를 수 없습니다.'); return; }
   const endDate = (endDateRaw && endDateRaw > date) ? endDateRaw : '';
 
+  if (!editId) {
+    const _pw = (document.getElementById('calEv_delPw').value || '').trim();
+    if (!_pw) { showToast('⚠️ 삭제 비밀번호를 입력해 주세요.'); document.getElementById('calEv_delPw').focus(); return; }
+    window._calPendingPw = _pw;
+  }
   const list = loadPersonalSchedule();
   // 저장(수정 포함) 시점에는 알림을 새로 계산할 수 있도록 발동 상태를 초기화
   if (editId) {
@@ -30467,6 +30477,7 @@ function calStartEditEvent(id) {
   document.getElementById('calEv_alarm').checked = !!ev.alarm;
   calRenderTypeSelect(ev.type);
   document.getElementById('calFormTitle').textContent = '일정 수정';
+  document.getElementById('calEv_pwWrap').style.display = 'none';
   document.getElementById('calEv_saveBtn').textContent = '확인';
   document.getElementById('calEv_deleteBtn').classList.remove('hidden');
   const m = document.getElementById('calEventFormModal');
@@ -30484,6 +30495,8 @@ function calCancelEditEvent() {
   document.getElementById('calEv_alarm').checked = false;
   calRenderTypeSelect();
   document.getElementById('calFormTitle').textContent = '새 일정';
+  document.getElementById('calEv_delPw').value = '';
+  document.getElementById('calEv_pwWrap').style.display = '';
   document.getElementById('calEv_saveBtn').textContent = '확인';
   document.getElementById('calEv_deleteBtn').classList.add('hidden');
 }
