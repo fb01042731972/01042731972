@@ -8156,7 +8156,7 @@ window.getLeBoardClient = function(){
 <div id="personalCalModal" class="hidden no-print" style="position:fixed;inset:0;background:rgba(15,23,42,.45);z-index:1200;align-items:center;justify-content:center;padding:16px" onclick="if(event.target===this) closePersonalCalendar()">
   <div style="background:#fff;border-radius:10px;max-width:1120px;width:96vw;max-height:96vh;overflow-y:auto;padding:20px;box-shadow:0 20px 50px rgba(0,0,0,.25)">
     <div class="flex justify-between items-center mb-3">
-      <div class="text-sm font-bold text-gray-800">📅 일정 관리 <span class="text-xs font-normal text-gray-400">— 회사 모임, 거래처 방문 등 개인 일정 (견적서와 무관)</span></div>
+      <div class="text-sm font-bold text-gray-800">📅 일정 관리 <span class="text-xs font-normal text-gray-400">— 전 직원 공용 일정 · 글/링크만 등록 · 수정은 작성자 본인, 삭제는 관리자만 · 1년 지난 일정은 자동 삭제</span></div>
       <button onclick="closePersonalCalendar()" style="border:none;background:none;font-size:20px;color:#9ca3af;cursor:pointer;line-height:1">✕</button>
     </div>
 
@@ -8205,7 +8205,7 @@ window.getLeBoardClient = function(){
       <div class="calform-row">
         <div>
           <div class="quote-label">제목</div>
-          <input id="calEv_title" class="inp" placeholder="예: 거래처 A 방문" onkeydown="if(event.key==='Enter'){calSaveEvent();}">
+          <input id="calEv_title" class="inp" maxlength="100" placeholder="예: 거래처 A 방문" onkeydown="if(event.key==='Enter'){calSaveEvent();}">
         </div>
       </div>
       <div class="calform-row">
@@ -8242,7 +8242,13 @@ window.getLeBoardClient = function(){
       <div class="calform-row">
         <div>
           <div class="quote-label">내용(선택)</div>
-          <textarea id="calEv_memo" class="inp" rows="4" placeholder="예: 미팅 장소, 준비물 등" style="resize:vertical"></textarea>
+          <textarea id="calEv_memo" class="inp" rows="4" maxlength="1000" placeholder="예: 미팅 장소, 준비물 등" style="resize:vertical"></textarea>
+        </div>
+      </div>
+      <div class="calform-row">
+        <div>
+          <div class="quote-label">링크(선택) <span class="font-normal text-gray-400">— https:// 주소만 (파일/사진 첨부는 불가)</span></div>
+          <input id="calEv_link" class="inp" maxlength="500" placeholder="예: https://...">
         </div>
       </div>
       <div class="flex justify-end gap-2 mt-1">
@@ -29911,15 +29917,182 @@ const K_PERSONAL_SCHEDULE = 'PERSONAL_SCHEDULE_V1';
 let calViewYear, calViewMonth;   // 현재 달력이 보여주고 있는 연/월 (month: 0~11)
 let calSelectedDate = '';        // 선택된 날짜 (YYYY-MM-DD)
 
+// ── 공용 일정: 서버(Supabase shared_schedule)에 저장되어 전 직원이 같이 봅니다. ──
+//   · 글/링크만 저장(첨부 없음) · 누구나 등록 · 수정은 작성자 본인만 · 삭제는 관리자만
+//   · 견적/작업현황/빠른접수가 자동 등록하는 일정과 알림 설정은 이 PC에만 보관됩니다.
+const CAL_SHARED_TABLE = 'shared_schedule';
+const K_CAL_ALARM_LOCAL = 'CAL_ALARM_LOCAL_V1';
+const K_CAL_OWNER_KEY = 'CAL_OWNER_KEY_V1';
+const K_CAL_AUTHOR = 'CAL_AUTHOR_V1';
+const K_CAL_MIGRATED = 'CAL_SHARED_MIGRATED_V1';
+const CAL_SHARED_FIELDS = ['date','endDate','time','title','memo','link','type'];
+let _calCache = [];
+let _calMyHash = '';
+let _calAdminPin = '';
+let _calAdminTimer = null;
+
+function _calLocalOnly(ev) { return !!ev && (/^cal_(wb|qi|quote)_/.test(String(ev.id)) || ev.type === 'workboard' || ev.type === 'shipping'); }
+function _calReadLocal() { try { const v = JSON.parse(localStorage.getItem(K_PERSONAL_SCHEDULE)); return Array.isArray(v) ? v : []; } catch(e) { return []; } }
+function _calReadAlarmMap() { try { return JSON.parse(localStorage.getItem(K_CAL_ALARM_LOCAL)) || {}; } catch(e) { return {}; } }
+function _calOwnerKey() {
+  let k = '';
+  try { k = localStorage.getItem(K_CAL_OWNER_KEY) || ''; } catch(e) {}
+  if (!k) {
+    k = Array.from(crypto.getRandomValues(new Uint8Array(16))).map(b => b.toString(16).padStart(2, '0')).join('');
+    try { localStorage.setItem(K_CAL_OWNER_KEY, k); } catch(e) {}
+  }
+  return k;
+}
+function calGetAuthor() {
+  let a = '';
+  try { a = localStorage.getItem(K_CAL_AUTHOR) || localStorage.getItem('board_author') || ''; } catch(e) {}
+  if (!a) {
+    a = (prompt('일정 작성자 이름(닉네임)을 입력하세요. 수정 시 본인 확인에 쓰이진 않고 표시용입니다.') || '').trim().slice(0, 20) || '익명';
+  }
+  try { localStorage.setItem(K_CAL_AUTHOR, a); } catch(e) {}
+  return a;
+}
+function _calSafeLink(u) { u = String(u || '').trim(); return /^https?:\/\//i.test(u) ? u : ''; }
+function _calClient() { try { return window.getLeBoardClient ? window.getLeBoardClient() : null; } catch(e) { return null; } }
+function _calRowToEv(r) {
+  return { id: r.id, date: r.date, endDate: r.end_date || '', time: r.time || '', title: r.title || '', memo: r.memo || '',
+           link: r.link || '', type: r.type || '', author: r.author || '', ownerHash: r.owner_hash || '', createdAt: r.created_at };
+}
+function _calEvToRow(ev) {
+  return { id: ev.id, date: ev.date, end_date: ev.endDate || null, time: ev.time || null,
+           title: String(ev.title || '').slice(0, 100), memo: String(ev.memo || '').slice(0, 1000) || null,
+           link: _calSafeLink(ev.link).slice(0, 500) || null, type: ev.type || null };
+}
+function calCanEdit(ev) { return !ev || _calLocalOnly(ev) || (!!_calMyHash && ev.ownerHash === _calMyHash); }
+
 function loadPersonalSchedule() {
-  try {
-    const v = JSON.parse(localStorage.getItem(K_PERSONAL_SCHEDULE));
-    return Array.isArray(v) ? v : [];
-  } catch(e) { return []; }
+  const alarms = _calReadAlarmMap();
+  const shared = _calCache.map(e => Object.assign({ alarm: false, alarmFired: false, snoozeUntil: null }, e, alarms[e.id] || {}));
+  const local = _calReadLocal().filter(e => e && _calLocalOnly(e));
+  return shared.concat(local).map(e => Object.assign({}, e));
 }
 function savePersonalSchedule(list) {
-  localStorage.setItem(K_PERSONAL_SCHEDULE, JSON.stringify(list));
+  list = Array.isArray(list) ? list : [];
+  const sharedIds = new Set(_calCache.map(e => e.id));
+  // 이 PC 전용 일정 + 아직 공용으로 올리지 않은 예전 일정은 localStorage에 그대로 보존
+  const legacy = _calReadLocal().filter(e => e && !_calLocalOnly(e) && !sharedIds.has(e.id));
+  try { localStorage.setItem(K_PERSONAL_SCHEDULE, JSON.stringify(list.filter(_calLocalOnly).concat(legacy))); } catch(e) {}
+  // 알림 상태는 개인별(이 PC)로만 저장
+  const am = {};
+  list.forEach(e => { if (!_calLocalOnly(e) && (e.alarm || e.alarmFired || e.snoozeUntil)) am[e.id] = { alarm: !!e.alarm, alarmFired: !!e.alarmFired, snoozeUntil: e.snoozeUntil || null }; });
+  try { localStorage.setItem(K_CAL_ALARM_LOCAL, JSON.stringify(am)); } catch(e) {}
+  // 공용 일정 변경분만 서버로
+  const shared = list.filter(e => !_calLocalOnly(e));
+  const oldMap = new Map(_calCache.map(e => [e.id, e]));
+  const newIds = new Set(shared.map(e => e.id));
+  const ins = [], upd = [], del = [];
+  shared.forEach(e => {
+    const o = oldMap.get(e.id);
+    if (!o) ins.push(e);
+    else if (CAL_SHARED_FIELDS.some(f => String(o[f] || '') !== String(e[f] || ''))) upd.push(e);
+  });
+  oldMap.forEach((o, id) => { if (!newIds.has(id)) del.push(o); });
+  if (ins.length || upd.length || del.length) _calApplyChanges(ins, upd, del);
 }
+function _calApplyChanges(ins, upd, del) {
+  const denied = [];
+  const okUpd = upd.filter(e => { const o = _calCache.find(x => x.id === e.id); const ok = calCanEdit(o); if (!ok) denied.push('수정은 작성자 본인만'); return ok; });
+  const okDel = _calAdminPin ? del : [];
+  if (del.length && !_calAdminPin) denied.push('삭제는 관리자만');
+  const author = ins.length ? calGetAuthor() : '';
+  ins.forEach(e => { e.author = author; e.ownerHash = _calMyHash; e.createdAt = new Date().toISOString(); _calCache.push(Object.assign({}, e)); });
+  okUpd.forEach(e => { const i = _calCache.findIndex(x => x.id === e.id); if (i > -1) _calCache[i] = Object.assign({}, _calCache[i], e); });
+  okDel.forEach(o => { _calCache = _calCache.filter(x => x.id !== o.id); });
+  if (denied.length) showToast('⚠️ ' + denied[0] + ' 가능합니다.');
+  (async () => {
+    const c = _calClient();
+    if (!c) { showToast('⚠️ 서버에 연결되지 않아 공용 일정에 반영하지 못했습니다.'); return; }
+    let fail = false;
+    try {
+      if (ins.length) {
+        const rows = ins.map(e => Object.assign(_calEvToRow(e), { author: e.author, owner_hash: _calMyHash }));
+        const r = await c.from(CAL_SHARED_TABLE).insert(rows);
+        if (r.error) { fail = true; console.error(r.error); }
+      }
+      for (const e of okUpd) {
+        const p = _calEvToRow(e);
+        const r = await c.rpc('cal_update', { p_id: p.id, p_key: _calOwnerKey(), p_date: p.date, p_end: p.end_date, p_time: p.time, p_title: p.title, p_memo: p.memo, p_link: p.link, p_type: p.type });
+        if (r.error || r.data === false) { fail = true; console.error(r.error); }
+      }
+      if (okDel.length) {
+        const r = await c.rpc('cal_delete_many', { p_ids: okDel.map(x => x.id), p_pin: _calAdminPin });
+        if (r.error || r.data === false) { fail = true; _calAdminPin = ''; console.error(r.error); }
+      }
+    } catch (err) { fail = true; console.error(err); }
+    if (fail) showToast('⚠️ 공용 일정 저장에 실패해 서버 내용으로 다시 불러옵니다.');
+    calRefreshShared();
+  })();
+}
+async function calRefreshShared() {
+  const c = _calClient();
+  if (!c) return;
+  const r = await c.from(CAL_SHARED_TABLE).select('*').order('date', { ascending: true });
+  if (r.error) { console.error('공용 일정 불러오기 실패:', (r.error.code || '') + ' ' + (r.error.message || JSON.stringify(r.error))); return; }
+  _calCache = (r.data || []).map(_calRowToEv);
+  try {
+    const open = id => { const m = document.getElementById(id); return m && !m.classList.contains('hidden'); };
+    if (open('personalCalModal')) renderPersonalCalendar(); else if (typeof updateCalendarBadge === 'function') updateCalendarBadge();
+    if (open('calDayDetailModal')) renderCalDayDetailModal();
+  } catch (e) { console.error(e); }
+}
+async function calAdminGate() {
+  if (_calAdminPin) return true;
+  const pw = prompt('삭제는 관리자만 가능합니다. 관리자 비밀번호를 입력하세요.');
+  if (pw === null) return false;
+  const h = await window.jinjooSha256Hex(pw);
+  if (h !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return false; }
+  _calAdminPin = pw;
+  clearTimeout(_calAdminTimer);
+  _calAdminTimer = setTimeout(() => { _calAdminPin = ''; }, 10 * 60 * 1000);
+  return true;
+}
+let _calMigrateAsked = false;
+async function calMigrateLegacy() {
+  if (_calMigrateAsked || localStorage.getItem(K_CAL_MIGRATED) === '1') return;
+  _calMigrateAsked = true;
+  const all = _calReadLocal();
+  const legacy = all.filter(e => e && !_calLocalOnly(e));
+  if (!legacy.length) { localStorage.setItem(K_CAL_MIGRATED, '1'); return; }
+  if (!confirm('이 PC에 저장된 기존 일정 ' + legacy.length + '건을 공용 일정으로 올릴까요?\n(올리면 전 직원이 볼 수 있습니다. 취소하면 이 PC에 그대로 남고 다음에 다시 묻습니다.)')) return;
+  const c = _calClient();
+  const author = calGetAuthor();
+  const rows = legacy.map(e => Object.assign(_calEvToRow(e), { author, owner_hash: _calMyHash }));
+  const r = await c.from(CAL_SHARED_TABLE).upsert(rows, { onConflict: 'id', ignoreDuplicates: true });
+  if (r.error) { showToast('⚠️ 기존 일정 이전에 실패했습니다. (' + r.error.message + ')'); return; }
+  const am = _calReadAlarmMap();
+  legacy.forEach(e => { if (e.alarm || e.alarmFired || e.snoozeUntil) am[e.id] = { alarm: !!e.alarm, alarmFired: !!e.alarmFired, snoozeUntil: e.snoozeUntil || null }; });
+  try {
+    localStorage.setItem('PERSONAL_SCHEDULE_V1_BACKUP', JSON.stringify(all));
+    localStorage.setItem(K_CAL_ALARM_LOCAL, JSON.stringify(am));
+    localStorage.setItem(K_PERSONAL_SCHEDULE, JSON.stringify(all.filter(_calLocalOnly)));
+    localStorage.setItem(K_CAL_MIGRATED, '1');
+  } catch(e) {}
+  showToast('✅ 기존 일정 ' + legacy.length + '건을 공용 일정으로 올렸습니다.');
+  calRefreshShared();
+}
+(function calInitShared() {
+  if (!window.supabase && !document.querySelector('script[src*="supabase-js"]')) {
+    const s = document.createElement('script');
+    s.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+    document.head.appendChild(s);
+  }
+  let tries = 0;
+  const t = setInterval(async () => {
+    if (window.supabase && window.getLeBoardClient && window.jinjooSha256Hex && _calClient()) {
+      clearInterval(t);
+      _calMyHash = await window.jinjooSha256Hex(_calOwnerKey());
+      await calRefreshShared();
+      try { _calClient().channel('cal_shared_room').on('postgres_changes', { event: '*', schema: 'public', table: CAL_SHARED_TABLE }, () => calRefreshShared()).subscribe(); } catch(e) {}
+      setInterval(calRefreshShared, 60000);
+      setTimeout(calMigrateLegacy, 1500);
+    } else if (++tries > 60) clearInterval(t);
+  }, 500);
+})();
 const K_CAL_CATEGORIES = 'PERSONAL_SCHEDULE_CATEGORIES_V1';
 const CAL_DEFAULT_CATEGORIES = [
   { id:'meeting',  label:'🤝 회사 모임',   color:'#146C8E' },
@@ -30043,6 +30216,7 @@ function openPersonalCalendar() {
   m.style.display = 'flex';
   calCancelEditEvent();
   renderPersonalCalendar();
+  calRefreshShared();
 }
 function closePersonalCalendar() {
   const m = document.getElementById('personalCalModal');
@@ -30160,10 +30334,11 @@ function renderCalDayEventList() {
       <div>
         <span style="font-weight:700;color:${calTypeColor(ev.type)}">${ev.time ? escQ(ev.time) : '종일'}</span>
         &nbsp;·&nbsp;<span style="color:${calTypeColor(ev.type)}">${calTypeLabel(ev.type)}</span>
-        &nbsp;<b>${escQ(ev.title)}</b>
+        &nbsp;<b>${escQ(ev.title)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
         ${isRange ? `<span style="color:#f97316;font-weight:700;font-size:11px;margin-left:4px">📅 ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</span>` : ''}
         ${(ev.alarm && ev.time) ? `<span style="color:#ef4444;font-weight:700;font-size:11px;margin-left:4px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</span>` : ''}
         ${ev.memo ? `<div class="text-[11px] text-gray-400">${escQ(ev.memo)}</div>` : ''}
+        ${_calSafeLink(ev.link) ? `<div class="text-[11px]"><a href="${escQ(_calSafeLink(ev.link))}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">🔗 링크 열기</a></div>` : ''}
       </div>
       <div class="flex gap-2" style="flex-shrink:0">
         <button class="add-btn" style="margin-top:0;padding:2px 8px" onclick="calStartEditEvent('${ev.id}')">✏️ 수정</button>
@@ -30179,6 +30354,8 @@ function calSaveEvent() {
   const time = document.getElementById('calEv_time').value;
   const title = document.getElementById('calEv_title').value.trim();
   const memo = document.getElementById('calEv_memo').value.trim();
+  let link = (document.getElementById('calEv_link').value || '').trim();
+  if (link && !/^https?:\/\//i.test(link)) link = 'https://' + link;
   const type = document.getElementById('calEv_type').value;
   const editId = document.getElementById('calEv_editId').value;
   const alarm = document.getElementById('calEv_alarm').checked;
@@ -30193,10 +30370,10 @@ function calSaveEvent() {
   // 저장(수정 포함) 시점에는 알림을 새로 계산할 수 있도록 발동 상태를 초기화
   if (editId) {
     const idx = list.findIndex(ev => ev.id === editId);
-    if (idx > -1) list[idx] = Object.assign({}, list[idx], { date, endDate, time, title, memo, type, alarm, alarmFired: false, snoozeUntil: null });
+    if (idx > -1) list[idx] = Object.assign({}, list[idx], { date, endDate, time, title, memo, link, type, alarm, alarmFired: false, snoozeUntil: null });
     showToast('✅ 일정이 수정되었습니다.');
   } else {
-    list.push({ id: 'cal_' + Date.now(), date, endDate, time, title, memo, type, alarm, alarmFired: false, snoozeUntil: null, createdAt: new Date().toISOString() });
+    list.push({ id: 'cal_' + Date.now(), date, endDate, time, title, memo, link, type, alarm, alarmFired: false, snoozeUntil: null, createdAt: new Date().toISOString() });
     showToast(alarm ? '✅ 일정이 추가되었습니다. (🔔 알림 설정됨)' : (endDate ? `✅ 일정이 추가되었습니다. (${date} ~ ${endDate} 기간 전체 표시됨)` : '✅ 일정이 추가되었습니다.'));
   }
   savePersonalSchedule(list);
@@ -30209,6 +30386,8 @@ function calSaveEvent() {
 function calStartEditEvent(id) {
   const ev = loadPersonalSchedule().find(e => e.id === id);
   if (!ev) return;
+  if (!calCanEdit(ev)) { showToast('⚠️ 수정은 작성자 본인만 가능합니다.' + (ev.author ? ' (작성자: ' + ev.author + ')' : '')); return; }
+  document.getElementById('calEv_link').value = ev.link || '';
   document.getElementById('calEv_editId').value = ev.id;
   document.getElementById('calEv_date').value = ev.date;
   document.getElementById('calEv_endDate').value = ev.endDate || '';
@@ -30231,14 +30410,17 @@ function calCancelEditEvent() {
   document.getElementById('calEv_time').value = '';
   document.getElementById('calEv_title').value = '';
   document.getElementById('calEv_memo').value = '';
+  document.getElementById('calEv_link').value = '';
   document.getElementById('calEv_alarm').checked = false;
   calRenderTypeSelect();
   document.getElementById('calFormTitle').textContent = '새 일정';
   document.getElementById('calEv_saveBtn').textContent = '확인';
   document.getElementById('calEv_deleteBtn').classList.add('hidden');
 }
-function calDeleteEvent(id) {
+async function calDeleteEvent(id) {
   if (!id) return;
+  const _ev = loadPersonalSchedule().find(e => e.id === id);
+  if (_ev && !_calLocalOnly(_ev) && !(await calAdminGate())) return;
   if (!confirm('이 일정을 삭제하시겠습니까?')) return;
   const list = loadPersonalSchedule().filter(ev => ev.id !== id);
   savePersonalSchedule(list);
@@ -30287,10 +30469,11 @@ function renderCalDayDetailModal() {
       <div>
         <span style="font-weight:700;color:${calTypeColor(ev.type)}">${ev.time ? escQ(ev.time) : '종일'}</span>
         &nbsp;·&nbsp;<span style="color:${calTypeColor(ev.type)}">${calTypeLabel(ev.type)}</span><br>
-        <b style="font-size:13px">${escQ(ev.title)}</b>
+        <b style="font-size:13px">${escQ(ev.title)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
         ${isRange ? `<div style="color:#f97316;font-weight:700;font-size:11px;margin-top:2px">📅 기간: ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</div>` : ''}
         ${(ev.alarm && ev.time) ? `<div style="color:#ef4444;font-weight:700;font-size:11px;margin-top:2px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</div>` : ''}
         ${ev.memo ? `<div class="text-[11px] text-gray-500 mt-1" style="white-space:pre-wrap">${escQ(ev.memo)}</div>` : ''}
+        ${_calSafeLink(ev.link) ? `<div class="text-[11px]"><a href="${escQ(_calSafeLink(ev.link))}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">🔗 링크 열기</a></div>` : ''}
       </div>
       <div class="flex gap-2" style="flex-shrink:0">
         <button class="add-btn" style="margin-top:0;padding:2px 8px" onclick="closeCalDayDetailModal();calStartEditEvent('${ev.id}')">✏️ 수정</button>
