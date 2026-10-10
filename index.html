@@ -8164,6 +8164,13 @@ window.getLeBoardClient = function(){
     </div>
 
     <div id="calSharedStatus" style="font-size:11px;margin-bottom:6px;color:#6b7280">공용 일정 서버에 연결 중...</div>
+    <div style="position:relative;margin-bottom:8px">
+      <div style="display:flex;gap:6px;align-items:center">
+        <input id="calSearchInput" class="inp" style="flex:1;margin-bottom:0;padding:7px 10px;font-size:12.5px" placeholder="🔎 일정 검색 — 제목, 메모, 작성자, 날짜(예: 2026-10)" oninput="calSearchSchedule()" onkeydown="if(event.key==='Escape'){calSearchClear();}">
+        <button type="button" id="calSearchUnlockBtn" class="add-btn" style="margin-top:0;white-space:nowrap" onclick="calSearchUnlock()" title="잠긴 일정(빠른접수·견적서) 내용까지 검색하려면 비밀번호를 입력하세요">🔒 잠금 내용 포함</button>
+      </div>
+      <div id="calSearchResults" style="display:none;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 8px 20px rgba(0,0,0,.12);max-height:260px;overflow-y:auto"></div>
+    </div>
     <div class="flex justify-between items-center mb-2">
       <button onclick="calShiftMonth(-1)" class="add-btn" style="margin-top:0">◀ 이전달</button>
       <div id="calMonthLabel" class="text-base font-bold text-gray-700"></div>
@@ -28825,6 +28832,35 @@ function getDocKeyValue(type, fields) {
   const cfg = getDocConfig(type);
   return (fields[cfg.prefix+'_num']||'').trim();
 }
+// 📋 견적서를 "거래내역으로 등록"하면 일정관리(공용 달력)에 자동 등록 — 내용은 비밀번호(CAL_QUOTE_PW)로만 열람
+async function registerQuoteCalendarEvent(record) {
+  try {
+    if (!record || record.type !== 'quote') return;
+    const rows = (record.rows || []).filter(r => r && r.name && String(r.name).trim());
+    const items = rows.slice(0, 5).map(r => String(r.name).trim() + (r.qty ? ' × ' + r.qty : '')).join(', ') + (rows.length > 5 ? ' 외 ' + (rows.length - 5) + '건' : '');
+    const detail = [
+      record.num ? `견적번호: ${record.num}` : '',
+      record.partyName ? `거래처: ${record.partyName}` : '',
+      items ? `품목: ${items}` : '',
+      record.total ? `합계: ${record.total}` : '',
+      record.balanceText ? `잔금: ${record.balanceText}` : ''
+    ].filter(Boolean).join('\n');
+    let lockTag = '';
+    if (detail && window.crypto && crypto.subtle) lockTag = '\n[[LOCK:' + await calEncryptDetail(detail, CAL_QUOTE_PW) + ']]';
+    if (!lockTag) return; // 암호화 불가 시 내용이 노출되지 않도록 등록하지 않음
+    const list = loadPersonalSchedule();
+    list.push({
+      id: 'cal_qts_' + record.id,
+      date: todayLocalISO(), time: '', title: '📋 견적서 🔒',
+      memo: '견적서 작성 시 자동 등록됨 (내용은 비밀번호로 열람)' + lockTag,
+      type: 'quotecal', alarm: false, alarmFired: false, snoozeUntil: null,
+      createdAt: new Date().toISOString()
+    });
+    savePersonalSchedule(list);
+    if (typeof updateCalendarBadge === 'function') updateCalendarBadge();
+  } catch (e) { console.error('견적서 → 일정 자동등록 실패:', e); }
+}
+
 function saveHistorySnapshot(type, manual, sessionKey) {
   // sessionKey: historyEditRecordId/historyAutosaveRecordId를 어떤 "키"로 추적할지 지정합니다.
   // 기본값은 type 그대로(일반적인 견적서/발주서/거래명세표 작성 세션)이지만, 빠른접수처럼
@@ -28968,8 +29004,10 @@ function saveHistorySnapshot(type, manual, sessionKey) {
       updatedAt: now,
       revisions
     };
+    const _isNewRecord = idx < 0;
     if(idx >= 0) list[idx] = record; else list.push(record);
     saveHistoryListToStorage(list);
+    if (_isNewRecord && type === 'quote' && sessionKey !== 'quote_quickIntake') registerQuoteCalendarEvent(record);
     // 내역서에서 불러온 수정 모드가 아니라면, 이번 작성 세션 동안의 자동저장이 계속 같은
     // 새 기록을 이어서 갱신하도록 방금 저장/추가된 기록의 id를 세션값으로 기억해 둠.
     if (!historyEditRecordId[sessionKey]) historyAutosaveRecordId[sessionKey] = record.id;
@@ -30189,6 +30227,7 @@ const CAL_DEFAULT_CATEGORIES = [
   { id:'personal', label:'📌 개인 일정',   color:'#d97706' }
 ];
 const CAL_INTAKE_CATEGORY = { id:'intake', label:'🏷️ 접수/출고', color:'#ea580c' };
+const CAL_QUOTE_CATEGORY = { id:'quotecal', label:'📋 견적서', color:'#2563eb' };
 function loadCalCategories() {
   let out = null;
   try {
@@ -30197,6 +30236,7 @@ function loadCalCategories() {
   } catch(e) {}
   if (!out) out = CAL_DEFAULT_CATEGORIES.slice();
   if (!out.some(c => c.id === 'intake')) out = out.concat([CAL_INTAKE_CATEGORY]);
+  if (!out.some(c => c.id === 'quotecal')) out = out.concat([CAL_QUOTE_CATEGORY]);
   return out;
 }
 function saveCalCategories(list) {
@@ -30312,6 +30352,7 @@ function openPersonalCalendar() {
   calRefreshShared();
 }
 function closePersonalCalendar() {
+  _calSearchPws = []; { const b = document.getElementById('calSearchUnlockBtn'); if (b) { b.textContent = '🔒 잠금 내용 포함'; b.style.color = ''; } } calSearchClear();
   const m = document.getElementById('personalCalModal');
   m.classList.add('hidden');
   m.style.display = 'none';
@@ -30497,7 +30538,7 @@ function renderCalDayEventList() {
         &nbsp;<b style="cursor:pointer" onclick="calShowEventDetail('${ev.id}')">${escQ(ev.title)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
         ${isRange ? `<span style="color:#f97316;font-weight:700;font-size:11px;margin-left:4px">📅 ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</span>` : ''}
         ${(ev.alarm && ev.time) ? `<span style="color:#ef4444;font-weight:700;font-size:11px;margin-left:4px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</span>` : ''}
-        ${calMemoPublic(ev.memo) ? `<div class="text-[11px] text-gray-400">${escQ(calMemoPublic(ev.memo))}</div>` : ''}${calMemoLock(ev.memo) ? `<div class="text-[11px] text-gray-400">🔒 접수 내용은 일정을 눌러 비밀번호로 열람</div>` : ''}
+        ${calMemoPublic(ev.memo) ? `<div class="text-[11px] text-gray-400">${escQ(calMemoPublic(ev.memo))}</div>` : ''}${calMemoLock(ev.memo) ? `<div class="text-[11px] text-gray-400">🔒 내용은 일정을 눌러 비밀번호로 열람</div>` : ''}
         ${_calSafeLink(ev.link) ? `<div class="text-[11px]"><a href="${escQ(_calSafeLink(ev.link))}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">🔗 링크 열기</a></div>` : ''}
       </div>
       <div class="flex gap-2" style="flex-shrink:0">
@@ -30554,6 +30595,7 @@ function calSaveEvent() {
 // 🔒 일정 상세정보(주소·연락처) 비밀번호 열람 — 공용 서버에는 암호문만 저장됩니다.
 // ※ 비밀번호는 이 파일 안에 들어 있어, 강력한 보안이 아니라 "일반 직원이 바로 못 보게 하는" 잠금 용도입니다.
 const CAL_DETAIL_PW = '0077';
+const CAL_QUOTE_PW = '0066'; // 견적서 일정 열람 비밀번호
 const CAL_LOCK_RE = /\n?\[\[LOCK:([A-Za-z0-9+\/=]+)\]\]/;
 function calMemoPublic(memo) { return String(memo || '').replace(CAL_LOCK_RE, '').trim(); }
 function calMemoLock(memo) { const m = String(memo || '').match(CAL_LOCK_RE); return m ? m[1] : ''; }
@@ -30580,7 +30622,7 @@ async function calUnlockDetail(id) {
   const ev = loadPersonalSchedule().find(e => e.id === id);
   const lock = ev ? calMemoLock(ev.memo) : '';
   if (!lock) return;
-  const pw = prompt('빠른접수 내용 열람 비밀번호를 입력하세요.');
+  const pw = prompt('열람 비밀번호를 입력하세요.');
   if (pw === null) return;
   try {
     const txt = await calDecryptDetail(lock, pw.trim());
@@ -30614,7 +30656,7 @@ function calShowEventDetail(id) {
       row('날짜', escQ(ev.date) + (isRange ? ' ~ ' + escQ(ev.endDate) : '')) +
       row('시간', ev.time ? escQ(ev.time) : '종일') +
       row('안내', calMemoPublic(ev.memo) ? escQ(calMemoPublic(ev.memo)) : '') +
-      (calMemoLock(ev.memo) ? '<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12.5px"><div style="flex:0 0 64px;color:#9ca3af;font-weight:700">상세</div><div id="calLockBox" style="flex:1"><button class="add-btn" style="margin-top:0" onclick="calUnlockDetail(\'' + ev.id + '\')">🔒 비밀번호로 열람 (빠른접수 내용)</button></div></div>' : '') +
+      (calMemoLock(ev.memo) ? '<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12.5px"><div style="flex:0 0 64px;color:#9ca3af;font-weight:700">상세</div><div id="calLockBox" style="flex:1"><button class="add-btn" style="margin-top:0" onclick="calUnlockDetail(\'' + ev.id + '\')">🔒 비밀번호로 열람 (' + (ev.type === 'quotecal' ? '견적서' : '빠른접수') + ' 내용)</button></div></div>' : '') +
       row('링크', link ? '<a href="' + escQ(link) + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">🔗 링크 열기</a>' : '') +
       row('작성자', ev.author ? escQ(ev.author) : '') +
       row('알림', (ev.alarm && ev.time) ? '🔔 켜짐' + (ev.alarmFired ? ' (알림완료)' : '') : '') +
@@ -30625,6 +30667,67 @@ function calShowEventDetail(id) {
     '</div>';
   document.body.appendChild(m);
 }
+// 🔎 일정관리 검색 — 제목·메모·작성자·날짜·분류 검색. 잠긴 일정(빠른접수/견적서)의 내용은
+//    "🔒 잠금 내용 포함"에서 비밀번호를 입력한 경우에만 검색에 포함됩니다(이 화면을 닫으면 해제).
+let _calSearchPws = [];
+let _calSearchTimer = null;
+function calSearchClear() {
+  const i = document.getElementById('calSearchInput'); if (i) i.value = '';
+  const r = document.getElementById('calSearchResults'); if (r) { r.style.display = 'none'; r.innerHTML = ''; }
+}
+async function calSearchUnlock() {
+  const pw = prompt('잠금 내용 검색을 위한 비밀번호를 입력하세요.\n(빠른접수 / 견적서 비밀번호 중 해당하는 것)');
+  if (pw === null) return;
+  const p = pw.trim();
+  const locked = loadPersonalSchedule().filter(e => calMemoLock(e.memo));
+  let ok = false;
+  for (const e of locked) { try { await calDecryptDetail(calMemoLock(e.memo), p); ok = true; break; } catch (x) {} }
+  if (!ok) { alert(locked.length ? '비밀번호가 일치하지 않습니다.' : '잠긴 일정이 아직 없습니다.'); return; }
+  if (!_calSearchPws.includes(p)) _calSearchPws.push(p);
+  const b = document.getElementById('calSearchUnlockBtn'); if (b) { b.textContent = '🔓 잠금 내용 포함 중'; b.style.color = '#059669'; }
+  calSearchSchedule();
+}
+function calSearchSchedule() {
+  clearTimeout(_calSearchTimer);
+  _calSearchTimer = setTimeout(_calDoSearch, 150);
+}
+async function _calDoSearch() {
+  const box = document.getElementById('calSearchResults');
+  const kw = (document.getElementById('calSearchInput').value || '').trim().toLowerCase();
+  if (!kw) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const list = loadPersonalSchedule();
+  const hits = [];
+  for (const ev of list) {
+    const hay = [ev.title, calMemoPublic(ev.memo), ev.author, ev.date, ev.endDate, calTypeLabel(ev.type)].join(' ').toLowerCase();
+    let matched = hay.includes(kw), secret = '';
+    const lock = calMemoLock(ev.memo);
+    if (lock && _calSearchPws.length) {
+      for (const pw of _calSearchPws) {
+        try { secret = await calDecryptDetail(lock, pw); break; } catch (x) {}
+      }
+      if (secret && secret.toLowerCase().includes(kw)) matched = true; else if (!matched) secret = '';
+    }
+    if (matched) hits.push({ ev, secret: (secret && secret.toLowerCase().includes(kw)) ? secret : '' });
+  }
+  hits.sort((a, b) => String(b.ev.date).localeCompare(String(a.ev.date)));
+  if (!hits.length) { box.innerHTML = '<div class="text-center text-gray-400" style="font-size:12px;padding:14px">검색 결과가 없습니다.' + ((list.some(e => calMemoLock(e.memo)) && !_calSearchPws.length) ? '<br><span style="font-size:11px">빠른접수·견적서 내용은 "🔒 잠금 내용 포함"에서 비밀번호를 입력해야 검색됩니다.</span>' : '') + '</div>'; box.style.display = 'block'; return; }
+  box.innerHTML = hits.slice(0, 30).map(({ ev, secret }) =>
+    '<div style="padding:8px 12px;border-bottom:1px solid #f1f5f9;cursor:pointer" onclick="calSearchGo(\'' + ev.id + '\')">' +
+      '<div style="font-size:12px;font-weight:700;color:#1f2937"><span style="color:' + calTypeColor(ev.type) + '">' + escQ(calTypeLabel(ev.type)) + '</span> · ' + escQ(ev.title) + '</div>' +
+      '<div style="font-size:11px;color:#6b7280">' + escQ(ev.date) + (ev.endDate && ev.endDate > ev.date ? ' ~ ' + escQ(ev.endDate) : '') + (ev.time ? ' ' + escQ(ev.time) : '') + (ev.author ? ' · ✍ ' + escQ(ev.author) : '') + '</div>' +
+      (secret ? '<div style="font-size:11px;color:#374151;white-space:pre-wrap;margin-top:2px">' + escQ(secret) + '</div>' : '') +
+    '</div>').join('') + (hits.length > 30 ? '<div style="padding:6px;text-align:center;font-size:11px;color:#9ca3af">상위 30건만 표시됩니다 (총 ' + hits.length + '건)</div>' : '');
+  box.style.display = 'block';
+}
+function calSearchGo(id) {
+  const ev = loadPersonalSchedule().find(e => e.id === id);
+  if (!ev || !ev.date) return;
+  const [y, m] = ev.date.split('-').map(Number);
+  calViewYear = y; calViewMonth = m - 1; calSelectedDate = ev.date;
+  renderPersonalCalendar();
+  calShowEventDetail(id);
+}
+
 function calStartEditEvent(id) {
   const ev = loadPersonalSchedule().find(e => e.id === id);
   if (!ev) return;
