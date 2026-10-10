@@ -39392,5 +39392,128 @@ document.addEventListener('keydown',function(e){
 })();
 </script>
 
+<!-- 📻 미니 라디오 (작업 중 듣기용) : 작은 아이콘 하나, 눌러야 열림, 드래그로 이동 가능 -->
+<div id="leRadio" class="no-print" style="position:fixed;z-index:9995;left:50%;bottom:44px;font-family:inherit;">
+  <button id="leRadioBtn" title="라디오" style="width:28px;height:28px;border-radius:50%;border:none;background:rgba(15,58,77,.55);color:#fff;font-size:14px;line-height:28px;padding:0;cursor:pointer;opacity:.6;touch-action:none;">📻</button>
+  <div id="leRadioPanel" style="display:none;position:absolute;bottom:34px;left:-110px;width:260px;background:#fff;border:1px solid #e3e9e8;border-radius:10px;box-shadow:0 6px 20px rgba(15,40,50,.2);padding:8px;font-size:12px;color:#1B2A31;">
+    <div style="display:flex;align-items:center;gap:6px;margin-bottom:6px;">
+      <button id="leRadioPlay" style="width:26px;height:26px;border-radius:50%;border:none;background:#146C8E;color:#fff;font-size:11px;cursor:pointer;">▶</button>
+      <div id="leRadioStat" style="flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#64748b;">채널을 선택하세요</div>
+      <input id="leRadioVol" type="range" min="0" max="100" value="60" style="width:56px;" title="볼륨">
+    </div>
+    <div id="leRadioList" style="max-height:200px;overflow:auto;border-top:1px solid #eef2f1;"></div>
+    <div id="leRadioYt" style="display:none;margin-top:6px;"></div>
+    <div style="display:flex;gap:4px;margin-top:6px;">
+      <input id="leRadioName" placeholder="이름" style="width:56px;border:1px solid #cbd5e1;border-radius:5px;padding:3px 4px;font-size:11px;">
+      <input id="leRadioUrl" placeholder="주소(방송/유튜브)" style="flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:5px;padding:3px 4px;font-size:11px;">
+      <button id="leRadioAdd" style="border:none;background:#EAF4F6;color:#146C8E;border-radius:5px;padding:0 7px;font-weight:700;cursor:pointer;">+</button>
+    </div>
+  </div>
+  <audio id="leRadioAudio" preload="none"></audio>
+</div>
+<script>
+(function(){
+  var KEY='le_radio_v1', $=function(i){return document.getElementById(i);};
+  var BASE=[
+    {n:'KBS 1라디오 (AM)', u:'http://serpent0.duckdns.org:8088/kbs1radio.pls'},
+    {n:'KBS 해피FM·2라디오 (AM)', u:'http://serpent0.duckdns.org:8088/kbs2radio.pls'},
+    {n:'KBS 클래식FM', u:'http://serpent0.duckdns.org:8088/kbsfm.pls'},
+    {n:'KBS 쿨FM', u:'http://serpent0.duckdns.org:8088/kbs2fm.pls'},
+    {n:'MBC 표준FM (AM)', u:'http://serpent0.duckdns.org:8088/mbcsfm.pls'},
+    {n:'MBC FM4U', u:'http://serpent0.duckdns.org:8088/mbcfm.pls'},
+    {n:'SBS 파워FM', u:'http://serpent0.duckdns.org:8088/sbsfm.pls'},
+    {n:'SBS 러브FM', u:'http://serpent0.duckdns.org:8088/sbs2fm.pls'},
+    {n:'EBS FM', u:'https://ebsonair.ebs.co.kr/fmradiofamilypc/familypc1m/playlist.m3u8'},
+    {n:'EBS 1라디오 (AM)', u:'https://ebsonair.ebs.co.kr/groundwavefamilypc/familypc1m/playlist.m3u8'},
+    {n:'EBS 2라디오', u:'https://ebsonair.ebs.co.kr/ebs2familypc/familypc1m/playlist.m3u8'},
+    {n:'▶ Lofi Girl 24시간 (유튜브)', u:'https://www.youtube.com/watch?v=jfKfPfyJRdk'},
+    {n:'▶ Chillhop 카페음악 24시간 (유튜브)', u:'https://www.youtube.com/watch?v=5yx6BWlEVcY'},
+    {n:'SomaFM Groove Salad', u:'https://ice1.somafm.com/groovesalad-128-mp3'},
+    {n:'SomaFM Lush', u:'https://ice1.somafm.com/lush-128-mp3'},
+    {n:'Radio Paradise', u:'https://stream.radioparadise.com/mp3-128'}
+  ];
+  var st={custom:[],last:'',vol:60,x:null,y:null};
+  try{ var s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) st=Object.assign(st,s); }catch(e){}
+  function save(){ try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){} }
+  var box=$('leRadio'), btn=$('leRadioBtn'), panel=$('leRadioPanel'), au=$('leRadioAudio'), hls=null, cur=null;
+  au.volume=st.vol/100; $('leRadioVol').value=st.vol;
+
+  function place(){ // 저장된 위치 복원(화면 밖이면 보정)
+    if(st.x==null) { if(innerWidth<640){box.style.left='auto';box.style.right='84px';box.style.bottom='78px';} return; }
+    var x=Math.min(Math.max(0,st.x),innerWidth-32), y=Math.min(Math.max(0,st.y),innerHeight-32);
+    box.style.left=x+'px'; box.style.top=y+'px'; box.style.bottom='auto'; box.style.right='auto';
+    panel.style.bottom='auto'; panel.style.top=(y>innerHeight/2?'':'34px');
+    if(y>innerHeight/2){panel.style.top='auto';panel.style.bottom='34px';}
+    panel.style.left=(x>innerWidth-250?'-212px':(x<120?'0px':'-110px'));
+  }
+  place(); addEventListener('resize',place);
+
+  // 드래그(5px 넘게 움직이면 이동, 아니면 클릭=열기/닫기)
+  var d=null;
+  btn.addEventListener('pointerdown',function(e){var r=box.getBoundingClientRect();d={sx:e.clientX,sy:e.clientY,ox:r.left,oy:r.top,m:false};btn.setPointerCapture(e.pointerId);});
+  btn.addEventListener('pointermove',function(e){ if(!d)return; var dx=e.clientX-d.sx, dy=e.clientY-d.sy;
+    if(!d.m && Math.hypot(dx,dy)>5) d.m=true;
+    if(d.m){ st.x=d.ox+dx; st.y=d.oy+dy; place(); } });
+  btn.addEventListener('pointerup',function(){ if(!d)return; if(d.m) save(); else panel.style.display=panel.style.display==='block'?'none':'block'; d=null; });
+  btn.addEventListener('mouseenter',function(){btn.style.opacity=1;}); btn.addEventListener('mouseleave',function(){ if(au.paused) btn.style.opacity=.6; });
+
+  function stat(t){ $('leRadioStat').textContent=t; }
+  function playing(on){ $('leRadioPlay').textContent=on?'❚❚':'▶'; btn.style.opacity=on?1:.6; btn.style.background=on?'rgba(20,108,142,.95)':'rgba(15,58,77,.55)'; }
+  var ytOn=false, yt=$('leRadioYt');
+  function ytSrc(u){ var m=/(?:youtu\.be\/|[?&]v=|\/live\/|\/embed\/|\/shorts\/)([\w-]{11})/.exec(u);
+    if(m) return 'https://www.youtube-nocookie.com/embed/'+m[1]+'?autoplay=1&rel=0&playsinline=1';
+    m=/[?&]list=([\w-]+)/.exec(u); return m?'https://www.youtube-nocookie.com/embed/videoseries?list='+m[1]+'&autoplay=1&playsinline=1':null; }
+  function stop(){ if(hls){hls.destroy();hls=null;} au.pause(); yt.innerHTML=''; yt.style.display='none'; ytOn=false; playing(false); }
+  function fail(u){ stat(location.protocol==='https:'&&/^http:/i.test(u)?'이 페이지(https)에서 http 방송이 차단됨':'재생 실패: 주소 확인 필요'); playing(false); }
+  function resolve(u,cb){ if(!/\.pls(\?|$)/i.test(u)) return cb(u);
+    fetch(u).then(function(r){return r.text();}).then(function(t){var m=/^File1=(.+)$/mi.exec(t);cb(m?m[1].trim():u);}).catch(function(){cb(u);}); }
+  function play(ch){
+    stop(); cur=ch; st.last=ch.u; save(); render();
+    var ys=ytSrc(ch.u);
+    if(ys){ yt.innerHTML='<iframe src="'+ys+'" allow="autoplay; encrypted-media; picture-in-picture" referrerpolicy="strict-origin-when-cross-origin" style="width:100%;aspect-ratio:16/9;border:0;border-radius:6px;background:#000;"></iframe>'; yt.style.display='block'; ytOn=true; stat('▶ '+ch.n); playing(true); return; }
+    stat('연결 중… '+ch.n);
+    resolve(ch.u,function(u){
+      if(cur!==ch) return;
+      function go(){ au.play().then(function(){stat('▶ '+ch.n);playing(true);}).catch(function(){fail(u);}); }
+      if(/\.m3u8(\?|$)/i.test(u) && !au.canPlayType('application/vnd.apple.mpegurl')){
+        loadHls(function(ok){
+          if(!ok){stat('HLS 로드 실패(인터넷 확인)');return;}
+          hls=new Hls(); hls.loadSource(u); hls.attachMedia(au);
+          hls.on(Hls.Events.ERROR,function(_,dt){ if(dt.fatal) fail(u); });
+          go();
+        });
+      } else { au.src=u; go(); }
+    });
+  }
+  function loadHls(cb){
+    if(window.Hls) return cb(true);
+    var s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/hls.js@1.5.17/dist/hls.min.js';
+    s.onload=function(){cb(!!window.Hls);}; s.onerror=function(){cb(false);}; document.head.appendChild(s);
+  }
+  au.addEventListener('error',function(){ if(cur&&au.src) fail(au.src); });
+
+  function render(){
+    var l=$('leRadioList'); l.innerHTML='';
+    BASE.map(function(c){return{n:c.n,u:c.u,b:1};}).concat(st.custom.map(function(c,i){return{n:c.n,u:c.u,i:i};})).forEach(function(c){
+      var r=document.createElement('div');
+      r.style.cssText='display:flex;align-items:center;padding:5px 4px;cursor:pointer;border-radius:5px;'+(cur&&cur.u===c.u?'background:#EAF4F6;font-weight:700;':'');
+      var t=document.createElement('span'); t.style.cssText='flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;'; t.textContent=c.n; r.appendChild(t);
+      if(!c.b){ var x=document.createElement('span'); x.textContent='✕'; x.style.cssText='color:#94a3b8;padding:0 4px;'; x.onclick=function(e){e.stopPropagation(); st.custom.splice(c.i,1); save(); render();}; r.appendChild(x); }
+      r.onclick=function(){ play({n:c.n,u:c.u}); };
+      l.appendChild(r);
+    });
+  }
+  $('leRadioPlay').onclick=function(){ if(!au.paused||ytOn) stop(); else if(cur) play(cur); else { var all=BASE.concat(st.custom); play(all.filter(function(c){return c.u===st.last;})[0]||all[0]); } };
+  $('leRadioVol').oninput=function(){ st.vol=+this.value; au.volume=st.vol/100; save(); };
+  $('leRadioAdd').onclick=function(){
+    var n=$('leRadioName').value.trim(), u=$('leRadioUrl').value.trim();
+    if(!/^https?:\/\//i.test(u)){ stat('주소는 http(s)로 시작해야 합니다'); return; }
+    st.custom.push({n:n||'내 채널',u:u}); save(); $('leRadioName').value=''; $('leRadioUrl').value=''; render();
+  };
+  document.addEventListener('pointerdown',function(e){ if(panel.style.display==='block' && !box.contains(e.target)) panel.style.display='none'; });
+  render();
+})();
+</script>
+
 </body>
 </html>
