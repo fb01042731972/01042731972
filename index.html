@@ -24764,19 +24764,24 @@ function ensureShipCalCategory() {
 async function registerQuickIntakeShippingSchedule(opts) {
   const { name, item, qty, shipAt, addr, tel, memo, alreadyTrackedByQuote } = opts || {};
   const label = [name, item].filter(Boolean).join(' - ') + (qty ? ` (${qty}개)` : '');
-  let intakeMemo = ['빠른접수로 자동 등록됨', memo ? `메모: ${memo}` : ''].filter(Boolean).join('\n');
-  // 주소·연락처는 비밀번호로만 열람되도록 암호화해서 첨부 (서버에는 암호문만 저장)
+  // 일정관리(전 직원 공용)에는 빠른접수 내용을 그대로 올리지 않습니다.
+  // 상호·물품·수량·메모·주소·연락처는 모두 암호화해서 첨부하고, 비밀번호로만 열람됩니다.
+  const detail = [label ? `접수: ${label}` : '', memo ? `메모: ${memo}` : '', addr ? `주소: ${addr}` : '', tel ? `연락처: ${tel}` : ''].filter(Boolean).join('\n');
+  let lockTag = '';
   try {
-    const detail = [addr ? `주소: ${addr}` : '', tel ? `연락처: ${tel}` : ''].filter(Boolean).join('\n');
-    if (detail && window.crypto && crypto.subtle) intakeMemo += '\n[[LOCK:' + await calEncryptDetail(detail, CAL_DETAIL_PW) + ']]';
-  } catch (e) { console.error('상세정보 암호화 실패(주소·연락처는 일정에 넣지 않음):', e); }
+    if (detail && window.crypto && crypto.subtle) lockTag = '\n[[LOCK:' + await calEncryptDetail(detail, CAL_DETAIL_PW) + ']]';
+  } catch (e) { console.error('빠른접수 암호화 실패:', e); }
+  // 암호화에 실패하면 내용은 올리지 않고 접수 사실만 남깁니다.
+  const intakeMemo = '빠른접수로 자동 등록됨 (내용은 비밀번호로 열람)' + lockTag;
+  const titleOrder = '🏷️ 접수 🔒';
+  const titleShip = '🚚 출고예정 🔒';
   try {
     
     const today = todayLocalISO();
     const list = loadPersonalSchedule();
     list.push({
       id: 'cal_qis_order_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      date: today, time: '', title: `🏷️ 접수: ${label}`,
+      date: today, time: '', title: titleOrder,
       memo: intakeMemo, type: 'intake', alarm: false, alarmFired: false, snoozeUntil: null,
       createdAt: new Date().toISOString()
     });
@@ -24785,7 +24790,7 @@ async function registerQuickIntakeShippingSchedule(opts) {
     const shipTime = shipAt.length >= 16 ? shipAt.slice(11, 16) : '09:00';
     list.push({
       id: 'cal_qis_ship_' + Date.now() + '_' + Math.random().toString(36).slice(2, 6),
-      date: shipDate, time: shipTime, title: `🚚 출고예정: ${label}`,
+      date: shipDate, time: shipTime, title: titleShip,
       memo: intakeMemo, type: 'intake', alarm: true, alarmFired: false, snoozeUntil: null,
       createdAt: new Date().toISOString()
     });
@@ -30492,7 +30497,7 @@ function renderCalDayEventList() {
         &nbsp;<b style="cursor:pointer" onclick="calShowEventDetail('${ev.id}')">${escQ(ev.title)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
         ${isRange ? `<span style="color:#f97316;font-weight:700;font-size:11px;margin-left:4px">📅 ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</span>` : ''}
         ${(ev.alarm && ev.time) ? `<span style="color:#ef4444;font-weight:700;font-size:11px;margin-left:4px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</span>` : ''}
-        ${calMemoPublic(ev.memo) ? `<div class="text-[11px] text-gray-400">${escQ(calMemoPublic(ev.memo))}</div>` : ''}${calMemoLock(ev.memo) ? `<div class="text-[11px] text-gray-400">🔒 상세정보(주소·연락처)는 일정을 눌러 비밀번호로 열람</div>` : ''}
+        ${calMemoPublic(ev.memo) ? `<div class="text-[11px] text-gray-400">${escQ(calMemoPublic(ev.memo))}</div>` : ''}${calMemoLock(ev.memo) ? `<div class="text-[11px] text-gray-400">🔒 접수 내용은 일정을 눌러 비밀번호로 열람</div>` : ''}
         ${_calSafeLink(ev.link) ? `<div class="text-[11px]"><a href="${escQ(_calSafeLink(ev.link))}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">🔗 링크 열기</a></div>` : ''}
       </div>
       <div class="flex gap-2" style="flex-shrink:0">
@@ -30575,7 +30580,7 @@ async function calUnlockDetail(id) {
   const ev = loadPersonalSchedule().find(e => e.id === id);
   const lock = ev ? calMemoLock(ev.memo) : '';
   if (!lock) return;
-  const pw = prompt('상세정보(주소·연락처) 열람 비밀번호를 입력하세요.');
+  const pw = prompt('빠른접수 내용 열람 비밀번호를 입력하세요.');
   if (pw === null) return;
   try {
     const txt = await calDecryptDetail(lock, pw.trim());
@@ -30608,8 +30613,8 @@ function calShowEventDetail(id) {
       row('분류', escQ(calTypeLabel(ev.type))) +
       row('날짜', escQ(ev.date) + (isRange ? ' ~ ' + escQ(ev.endDate) : '')) +
       row('시간', ev.time ? escQ(ev.time) : '종일') +
-      row('메모', calMemoPublic(ev.memo) ? escQ(calMemoPublic(ev.memo)) : '') +
-      (calMemoLock(ev.memo) ? '<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12.5px"><div style="flex:0 0 64px;color:#9ca3af;font-weight:700">상세</div><div id="calLockBox" style="flex:1"><button class="add-btn" style="margin-top:0" onclick="calUnlockDetail(\'' + ev.id + '\')">🔒 비밀번호로 열람 (주소·연락처)</button></div></div>' : '') +
+      row('안내', calMemoPublic(ev.memo) ? escQ(calMemoPublic(ev.memo)) : '') +
+      (calMemoLock(ev.memo) ? '<div style="display:flex;gap:8px;margin-bottom:6px;font-size:12.5px"><div style="flex:0 0 64px;color:#9ca3af;font-weight:700">상세</div><div id="calLockBox" style="flex:1"><button class="add-btn" style="margin-top:0" onclick="calUnlockDetail(\'' + ev.id + '\')">🔒 비밀번호로 열람 (빠른접수 내용)</button></div></div>' : '') +
       row('링크', link ? '<a href="' + escQ(link) + '" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">🔗 링크 열기</a>' : '') +
       row('작성자', ev.author ? escQ(ev.author) : '') +
       row('알림', (ev.alarm && ev.time) ? '🔔 켜짐' + (ev.alarmFired ? ' (알림완료)' : '') : '') +
@@ -31618,7 +31623,9 @@ function fireScheduleAlarm(ev) {
   document.getElementById('scheduleAlarmTitle').textContent = ev.title;
   const wd = (() => { try { const [y,m,d] = ev.date.split('-').map(Number); return ['일','월','화','수','목','금','토'][new Date(y,m-1,d).getDay()]; } catch(e){ return ''; } })();
   document.getElementById('scheduleAlarmMeta').textContent = `${ev.date}(${wd}) ${ev.time} · ${calTypeLabel(ev.type)}`;
-  document.getElementById('scheduleAlarmMemo').textContent = ev.memo || '';
+  document.getElementById('scheduleAlarmMemo').textContent = calMemoPublic(ev.memo);
+  { const _lk = calMemoLock(ev.memo);
+    if (_lk) calDecryptDetail(_lk, CAL_DETAIL_PW).then(t => { if (_scheduleAlarmCurrentId === ev.id) document.getElementById('scheduleAlarmMemo').textContent = t; }).catch(() => {}); }
   const m = document.getElementById('scheduleAlarmOverlay');
   m.classList.remove('hidden');
   m.style.display = 'flex';
