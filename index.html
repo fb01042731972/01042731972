@@ -24699,6 +24699,20 @@ function submitQuickIntake() {
       if (numEl) numEl.value = generateDocNumber('Q'); // 항상 새 번호 — 기존 견적번호와 절대 겹치지 않음
       const toNameEl = document.getElementById('q_to_name');
       if (toNameEl) toNameEl.value = name;
+      // 🛠 연락처 저장 오류 수정: 예전에는 수신처 이름만 채우고 전화·주소·이메일 칸은 견적서 화면에
+      // 남아 있던 "이전 업체" 값 그대로 거래내역 등록(→ 연락처 자동저장)에 쓰였습니다.
+      // 그래서 엉뚱한 업체(전화번호가 같은 업체)에 이름이 덮어써지거나, 전화·주소가 빈 중복 연락처가
+      // 따로 생기는 문제가 있었습니다. 지금은 이번 접수의 전화·주소를 그대로 넣고, 이 견적 번호를
+      // 위에서 저장한 연락처에 미리 연결해 같은 업체 1건으로만 갱신되게 합니다.
+      { const _t = document.getElementById('q_to_tel'); if (_t) _t.value = tel; }
+      { const _a = document.getElementById('q_to_addr'); if (_a) _a.value = addr; }
+      { const _e = document.getElementById('q_to_email'); if (_e) _e.value = (contact && contact.email) || ''; }
+      try {
+        if (contact && contact.id && typeof saveDocContactMap === 'function') {
+          const _qKey = getDocKeyValue('quote', collectSectionFields('quoteSection'));
+          if (_qKey) { const _dm = loadDocContactMap(); _dm['quote:' + _qKey] = contact.id; saveDocContactMap(_dm); }
+        }
+      } catch (e) { console.error('견적-연락처 연결 실패:', e); }
       const shipEl = document.getElementById('q_shipAt');
       if (shipEl) shipEl.value = shipAt || '';
       renderQuoteTable();
