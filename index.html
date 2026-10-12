@@ -30842,7 +30842,17 @@ function calSaveEvent() {
 // 🔒 일정 상세정보(주소·연락처) 비밀번호 열람 — 공용 서버에는 암호문만 저장됩니다.
 // ※ 비밀번호는 이 파일 안에 들어 있어, 강력한 보안이 아니라 "일반 직원이 바로 못 보게 하는" 잠금 용도입니다.
 const CAL_DETAIL_PW = '0077';
-const CAL_QUOTE_PW = '0066'; // 견적서 일정 열람 비밀번호
+const CAL_QUOTE_PW = CAL_DETAIL_PW; // 견적서 일정도 접수와 동일한 비밀번호(0077)로 통일
+const CAL_QUOTE_PW_LEGACY = '0066'; // 통일 이전에 만들어진 견적서 일정 호환용
+// 🕒 한 번 비밀번호를 맞게 입력하면 3시간 동안 다시 묻지 않음 (만료 후 재입력하면 다시 3시간)
+const CAL_UNLOCK_MS = 3 * 60 * 60 * 1000;
+const CAL_UNLOCK_KEY = 'calDetailUnlockUntil';
+function calUnlockActive() {
+  try { return Number(localStorage.getItem(CAL_UNLOCK_KEY) || 0) > Date.now(); } catch (e) { return false; }
+}
+function calUnlockExtend() {
+  try { localStorage.setItem(CAL_UNLOCK_KEY, String(Date.now() + CAL_UNLOCK_MS)); } catch (e) {}
+}
 const CAL_LOCK_RE = /\n?\[\[LOCK:([A-Za-z0-9+\/=]+)\]\]/;
 function calMemoPublic(memo) { return String(memo || '').replace(CAL_LOCK_RE, '').trim(); }
 function calMemoLock(memo) { const m = String(memo || '').match(CAL_LOCK_RE); return m ? m[1] : ''; }
@@ -30860,6 +30870,13 @@ async function calEncryptDetail(text, pw) {
   return btoa(bin);
 }
 async function calDecryptDetail(b64, pw) {
+  try { return await _calDecryptRaw(b64, pw); }
+  catch (e) {
+    if (pw === CAL_DETAIL_PW) return await _calDecryptRaw(b64, CAL_QUOTE_PW_LEGACY);
+    throw e;
+  }
+}
+async function _calDecryptRaw(b64, pw) {
   const bin = atob(b64); const all = new Uint8Array(bin.length);
   for (let i = 0; i < bin.length; i++) all[i] = bin.charCodeAt(i);
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(0, 12) }, await _calDetailKey(pw), all.slice(12));
@@ -30869,13 +30886,43 @@ async function calUnlockDetail(id) {
   const ev = loadPersonalSchedule().find(e => e.id === id);
   const lock = ev ? calMemoLock(ev.memo) : '';
   if (!lock) return;
-  const pw = prompt('열람 비밀번호를 입력하세요.');
-  if (pw === null) return;
+  let pw;
+  if (calUnlockActive()) pw = CAL_DETAIL_PW;
+  else { pw = prompt('열람 비밀번호를 입력하세요.'); if (pw === null) return; pw = pw.trim(); }
   try {
-    const txt = await calDecryptDetail(lock, pw.trim());
+    const txt = await calDecryptDetail(lock, pw);
+    if (!calUnlockActive()) calUnlockExtend();
     const box = document.getElementById('calLockBox');
-    if (box) { box.style.cssText = 'white-space:pre-wrap;word-break:break-word;color:#374151;font-size:12.5px'; box.textContent = txt; }
+    if (box) {
+      box.style.cssText = 'color:#374151;font-size:12.5px';
+      box.textContent = '';
+      const t = document.createElement('div');
+      t.style.cssText = 'white-space:pre-wrap;word-break:break-word';
+      t.textContent = txt;
+      box.appendChild(t);
+      // 📋 견적서 일정이면 실제로 보낸 견적서를 견적서 화면에서 바로 열람할 수 있는 버튼 제공
+      if (ev.type === 'quotecal' && String(ev.id).indexOf('cal_qts_') === 0) {
+        const b = document.createElement('button');
+        b.className = 'add-btn';
+        b.style.cssText = 'margin-top:8px';
+        b.textContent = '📄 견적서 열기';
+        b.onclick = function () { calOpenQuoteFromEvent(ev.id); };
+        box.appendChild(b);
+      }
+    }
   } catch (e) { alert('비밀번호가 일치하지 않습니다.'); }
+}
+// 📄 일정에 연결된 견적서(거래내역)를 견적서 화면으로 불러와 열람
+function calOpenQuoteFromEvent(evId) {
+  const hid = String(evId).replace('cal_qts_', '');
+  const rec = loadHistory().find(h => h.id === hid);
+  if (!rec) { showToast('연결된 견적서를 찾을 수 없습니다. (삭제되었을 수 있습니다)'); return; }
+  loadHistoryRecord(hid);
+  // 불러오기를 확인(수락)한 경우에만 일정 팝업/달력을 닫고 견적서 화면으로 이동
+  if (typeof historyEditRecordId !== 'undefined' && historyEditRecordId[rec.type] === rec.id) {
+    const d = document.getElementById('calDetailModal'); if (d) d.remove();
+    if (typeof closePersonalCalendar === 'function') closePersonalCalendar();
+  }
 }
 
 // 📅 일정 클릭 시 상세 정보 팝업 (누구나 열람 가능, 수정은 작성자 본인만)
@@ -30913,6 +30960,7 @@ function calShowEventDetail(id) {
       '</div>' +
     '</div>';
   document.body.appendChild(m);
+  if (calMemoLock(ev.memo) && calUnlockActive()) calUnlockDetail(ev.id);
 }
 // 🔎 일정관리 검색 — 제목·메모·작성자·날짜·분류 검색. 잠긴 일정(빠른접수/견적서)의 내용은
 //    "🔒 잠금 내용 포함"에서 비밀번호를 입력한 경우에만 검색에 포함됩니다(이 화면을 닫으면 해제).
@@ -30923,13 +30971,14 @@ function calSearchClear() {
   const r = document.getElementById('calSearchResults'); if (r) { r.style.display = 'none'; r.innerHTML = ''; }
 }
 async function calSearchUnlock() {
-  const pw = prompt('잠금 내용 검색을 위한 비밀번호를 입력하세요.\n(빠른접수 / 견적서 비밀번호 중 해당하는 것)');
-  if (pw === null) return;
-  const p = pw.trim();
+  let p;
+  if (calUnlockActive()) p = CAL_DETAIL_PW;
+  else { const pw = prompt('잠금 내용 검색을 위한 비밀번호를 입력하세요.'); if (pw === null) return; p = pw.trim(); }
   const locked = loadPersonalSchedule().filter(e => calMemoLock(e.memo));
   let ok = false;
   for (const e of locked) { try { await calDecryptDetail(calMemoLock(e.memo), p); ok = true; break; } catch (x) {} }
   if (!ok) { alert(locked.length ? '비밀번호가 일치하지 않습니다.' : '잠긴 일정이 아직 없습니다.'); return; }
+  if (!calUnlockActive()) calUnlockExtend();
   if (!_calSearchPws.includes(p)) _calSearchPws.push(p);
   const b = document.getElementById('calSearchUnlockBtn'); if (b) { b.textContent = '🔓 잠금 내용 포함 중'; b.style.color = '#059669'; }
   calSearchSchedule();
