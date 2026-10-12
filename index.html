@@ -29080,9 +29080,14 @@ function getDocKeyValue(type, fields) {
   return (fields[cfg.prefix+'_num']||'').trim();
 }
 // 📋 견적서를 "거래내역으로 등록"하면 일정관리(공용 달력)에 자동 등록 — 내용은 비밀번호(CAL_QUOTE_PW)로만 열람
-async function registerQuoteCalendarEvent(record) {
+async function registerQuoteCalendarEvent(record, isNew) {
   try {
     if (!record || record.type !== 'quote') return;
+    const evId = 'cal_qts_' + record.id;
+    // 이미 등록된 일정이 있으면 내용(견적서 전체)만 최신으로 갱신 — 작성자 본인 PC에서만 가능
+    const existing = loadPersonalSchedule().find(e => e.id === evId);
+    if (!existing && !isNew) return;
+    if (existing && !calCanEdit(existing)) return;
     const rows = (record.rows || []).filter(r => r && r.name && String(r.name).trim());
     const items = rows.slice(0, 5).map(r => String(r.name).trim() + (r.qty ? ' × ' + r.qty : '')).join(', ') + (rows.length > 5 ? ' 외 ' + (rows.length - 5) + '건' : '');
     const detail = [
@@ -29092,17 +29097,30 @@ async function registerQuoteCalendarEvent(record) {
       record.total ? `합계: ${record.total}` : '',
       record.balanceText ? `잔금: ${record.balanceText}` : ''
     ].filter(Boolean).join('\n');
-    let lockTag = '';
-    if (detail && window.crypto && crypto.subtle) lockTag = '\n[[LOCK:' + await calEncryptDetail(detail, CAL_QUOTE_PW) + ']]';
-    if (!lockTag) return; // 암호화 불가 시 내용이 노출되지 않도록 등록하지 않음
+    if (!detail || !(window.crypto && crypto.subtle)) return; // 암호화 불가 시 내용이 노출되지 않도록 등록하지 않음
+    // 🗂 견적서 전체(입력칸 + 품목표)를 압축해 같은 잠금(암호문) 안에 함께 넣음 → 어느 PC에서든 그대로 열람
+    let plain = detail;
+    const snapB64 = await calPackQuoteSnapshot(record);
+    if (snapB64) {
+      const tryMemo = '\n[[LOCK:' + await calEncryptDetail(detail + CAL_SNAP_MARK + snapB64, CAL_QUOTE_PW) + ']]';
+      if (tryMemo.length + 80 <= CAL_QUOTE_MEMO_MAX) plain = detail + CAL_SNAP_MARK + snapB64;
+      else showToast('⚠️ 견적서가 너무 커서 일정에는 요약만 저장했습니다. (다른 PC에서는 전체 열람 불가)');
+    }
+    const lockTag = '\n[[LOCK:' + await calEncryptDetail(plain, CAL_QUOTE_PW) + ']]';
+    const memo = '견적서 작성 시 자동 등록됨 (내용은 비밀번호로 열람)' + lockTag;
     const list = loadPersonalSchedule();
-    list.push({
-      id: 'cal_qts_' + record.id,
-      date: todayLocalISO(), time: '', title: '📋 견적서 🔒',
-      memo: '견적서 작성 시 자동 등록됨 (내용은 비밀번호로 열람)' + lockTag,
-      type: 'quotecal', alarm: false, alarmFired: false, snoozeUntil: null,
-      createdAt: new Date().toISOString()
-    });
+    const i = list.findIndex(e => e.id === evId);
+    if (i > -1) {
+      list[i] = Object.assign({}, list[i], { memo });
+    } else {
+      list.push({
+        id: evId,
+        date: todayLocalISO(), time: '', title: '📋 견적서 🔒',
+        memo,
+        type: 'quotecal', alarm: false, alarmFired: false, snoozeUntil: null,
+        createdAt: new Date().toISOString()
+      });
+    }
     savePersonalSchedule(list);
     if (typeof updateCalendarBadge === 'function') updateCalendarBadge();
   } catch (e) { console.error('견적서 → 일정 자동등록 실패:', e); }
@@ -29254,7 +29272,7 @@ function saveHistorySnapshot(type, manual, sessionKey) {
     const _isNewRecord = idx < 0;
     if(idx >= 0) list[idx] = record; else list.push(record);
     saveHistoryListToStorage(list);
-    if (_isNewRecord && type === 'quote' && sessionKey !== 'quote_quickIntake') registerQuoteCalendarEvent(record);
+    if (type === 'quote' && sessionKey !== 'quote_quickIntake') registerQuoteCalendarEvent(record, _isNewRecord);
     // 내역서에서 불러온 수정 모드가 아니라면, 이번 작성 세션 동안의 자동저장이 계속 같은
     // 새 기록을 이어서 갱신하도록 방금 저장/추가된 기록의 id를 세션값으로 기억해 둠.
     if (!historyEditRecordId[sessionKey]) historyAutosaveRecordId[sessionKey] = record.id;
@@ -30296,7 +30314,7 @@ function _calRowToEv(r) {
 }
 function _calEvToRow(ev) {
   return { id: ev.id, date: ev.date, end_date: ev.endDate || null, time: ev.time || null,
-           title: String(ev.title || '').slice(0, 100), memo: String(ev.memo || '').slice(0, 1000) || null,
+           title: String(ev.title || '').slice(0, 100), memo: String(ev.memo || '').slice(0, ev.type === 'quotecal' ? CAL_QUOTE_MEMO_MAX : 1000) || null,
            link: _calSafeLink(ev.link).slice(0, 500) || null, type: ev.type || null };
 }
 function calCanEdit(ev) { return !ev || _calLocalOnly(ev) || (!!_calMyHash && ev.ownerHash === _calMyHash); }
@@ -30879,6 +30897,38 @@ async function _calDecryptRaw(b64, pw) {
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(0, 12) }, await _calDetailKey(pw), all.slice(12));
   return new TextDecoder().decode(pt);
 }
+// 🗂 견적서 전체 스냅샷(일정 잠금 안에 함께 저장) — 압축(gzip) 후 base64
+const CAL_SNAP_MARK = '\n[[QSNAP]]';
+const CAL_QUOTE_MEMO_MAX = 200000; // 견적서 일정 메모 최대 길이(암호문 포함)
+async function _calB64FromBytes(u8) { let bin = ''; const CH = 0x8000; for (let i = 0; i < u8.length; i += CH) bin += String.fromCharCode.apply(null, u8.subarray(i, i + CH)); return btoa(bin); }
+function _calBytesFromB64(b64) { const bin = atob(b64); const u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); return u8; }
+async function calPackQuoteSnapshot(record) {
+  try {
+    const obj = { v: 1, type: 'quote', num: record.num || '', date: record.date || '', partyName: record.partyName || '',
+      supplierName: record.supplierName || '', total: record.total || '', balanceText: record.balanceText || '',
+      fields: record.fields || {}, rows: record.rows || [] };
+    const bytes = new TextEncoder().encode(JSON.stringify(obj));
+    if (typeof CompressionStream !== 'undefined') {
+      const cs = new Response(new Blob([bytes]).stream().pipeThrough(new CompressionStream('gzip')));
+      return 'z:' + await _calB64FromBytes(new Uint8Array(await cs.arrayBuffer()));
+    }
+    return 'r:' + await _calB64FromBytes(bytes);
+  } catch (e) { console.error('견적서 스냅샷 생성 실패:', e); return ''; }
+}
+async function calUnpackQuoteSnapshot(tagged) {
+  try {
+    const kind = tagged.slice(0, 2), u8 = _calBytesFromB64(tagged.slice(2));
+    let out = u8;
+    if (kind === 'z:') out = new Uint8Array(await new Response(new Blob([u8]).stream().pipeThrough(new DecompressionStream('gzip'))).arrayBuffer());
+    return JSON.parse(new TextDecoder().decode(out));
+  } catch (e) { console.error('견적서 스냅샷 해석 실패:', e); return null; }
+}
+// 복호화된 텍스트를 "사람이 읽는 요약"과 "견적서 전체 데이터"로 분리
+function calSplitSnap(txt) {
+  txt = String(txt || '');
+  const i = txt.indexOf(CAL_SNAP_MARK);
+  return i < 0 ? { text: txt, snap: '' } : { text: txt.slice(0, i), snap: txt.slice(i + CAL_SNAP_MARK.length).trim() };
+}
 async function calUnlockDetail(id) {
   const ev = loadPersonalSchedule().find(e => e.id === id);
   const lock = ev ? calMemoLock(ev.memo) : '';
@@ -30887,7 +30937,9 @@ async function calUnlockDetail(id) {
   if (calUnlockActive()) pw = CAL_DETAIL_PW;
   else { pw = prompt('열람 비밀번호를 입력하세요.'); if (pw === null) return; pw = pw.trim(); }
   try {
-    const txt = await calDecryptDetail(lock, pw);
+    const _full = await calDecryptDetail(lock, pw);
+    const _sp = calSplitSnap(_full);
+    const txt = _sp.text;
     if (!calUnlockActive()) calUnlockExtend();
     const box = document.getElementById('calLockBox');
     if (box) {
@@ -30903,19 +30955,53 @@ async function calUnlockDetail(id) {
         b.className = 'add-btn';
         b.style.cssText = 'margin-top:8px';
         b.textContent = '📄 견적서 열기';
-        b.onclick = function () { calOpenQuoteFromEvent(ev.id); };
+        const _nm = (txt.match(/견적번호:\s*(.+)/) || [])[1] || '';
+        b.onclick = function () { calOpenQuoteFromEvent(ev.id, _nm.trim(), _sp.snap); };
         box.appendChild(b);
+        // 일정을 눌러 열람에 성공하면 견적서 작성 화면이 바로 열림(전체 내용이 일정에 저장된 경우)
+        if (_sp.snap) calOpenQuoteFromEvent(ev.id, _nm.trim(), _sp.snap);
       }
     }
   } catch (e) { alert('비밀번호가 일치하지 않습니다.'); }
 }
-// 📄 일정에 연결된 견적서(거래내역)를 견적서 화면으로 불러와 열람
-function calOpenQuoteFromEvent(evId) {
+// 📄 일정에 연결된 견적서를 견적서 작성 화면으로 열람
+//   1순위: 일정에 함께 저장된 견적서 전체(어느 PC/브라우저에서든 열림)
+//   2순위(예전 일정): 이 PC 거래내역에서 같은 견적을 찾아 열기
+async function calOpenQuoteFromEvent(evId, num, snapTagged) {
+  if (snapTagged) {
+    const snap = await calUnpackQuoteSnapshot(snapTagged);
+    if (snap && snap.type === 'quote' && Array.isArray(snap.rows)) {
+      const label = '견적서 [' + (snap.num || num || '') + ']';
+      if (!confirm(label + ' 내용을 견적서 작성 화면으로 불러옵니다.\n현재 작성 중인 견적서 화면 내용은 덮어씌워집니다. 계속할까요?')) return;
+      quoteRows = JSON.parse(JSON.stringify(snap.rows));
+      Object.keys(snap.fields || {}).forEach(fid => {
+        const el = document.getElementById(fid);
+        if (!el) return;
+        if (el.type === 'checkbox') el.checked = snap.fields[fid]; else el.value = snap.fields[fid];
+      });
+      renderQuoteTable();
+      // 다른 PC에서 연 견적서는 이 PC 거래내역과 연결하지 않음 → "🗂 거래내역으로 등록" 시 새 기록으로 저장
+      historyEditRecordId.quote = null;
+      historyAutosaveRecordId.quote = null;
+      switchDocType('quote');
+      scheduleDraftSave();
+      showToast('견적서 [' + (snap.num || num || '') + '] 내용을 일정에서 불러왔습니다.');
+      const d = document.getElementById('calDetailModal'); if (d) d.remove();
+      if (typeof closePersonalCalendar === 'function') closePersonalCalendar();
+      return;
+    }
+  }
   const hid = String(evId).replace('cal_qts_', '');
-  const rec = loadHistory().find(h => h.id === hid);
-  if (!rec) { showToast('연결된 견적서를 찾을 수 없습니다. (삭제되었을 수 있습니다)'); return; }
-  loadHistoryRecord(hid);
-  // 불러오기를 확인(수락)한 경우에만 일정 팝업/달력을 닫고 견적서 화면으로 이동
+  const hist = loadHistory();
+  let rec = hist.find(h => h.id === hid);
+  if (!rec && num) rec = hist.find(h => h.type === 'quote' && (h.num === num || h.key === num));
+  if (!rec) {
+    alert('이 일정에는 견적서 전체 내용이 저장되어 있지 않고, 이 PC(브라우저)의 거래내역에서도 견적서' + (num ? ' [' + num + ']' : '') + '를 찾을 수 없습니다.\n\n'
+      + '· 이 일정은 견적서 전체 저장 기능이 적용되기 전에 만들어진 것입니다.\n'
+      + '· 견적서를 작성한 PC에서 해당 견적서를 불러와 "🗂 거래내역으로 등록"을 다시 누르면 일정에 전체 내용이 저장됩니다.');
+    return;
+  }
+  loadHistoryRecord(rec.id);
   if (typeof historyEditRecordId !== 'undefined' && historyEditRecordId[rec.type] === rec.id) {
     const d = document.getElementById('calDetailModal'); if (d) d.remove();
     if (typeof closePersonalCalendar === 'function') closePersonalCalendar();
@@ -30996,7 +31082,7 @@ async function _calDoSearch() {
     const lock = calMemoLock(ev.memo);
     if (lock && _calSearchPws.length) {
       for (const pw of _calSearchPws) {
-        try { secret = await calDecryptDetail(lock, pw); break; } catch (x) {}
+        try { secret = calSplitSnap(await calDecryptDetail(lock, pw)).text; break; } catch (x) {}
       }
       if (secret && secret.toLowerCase().includes(kw)) matched = true; else if (!matched) secret = '';
     }
@@ -32021,7 +32107,7 @@ function fireScheduleAlarm(ev) {
   document.getElementById('scheduleAlarmMeta').textContent = `${ev.date}(${wd}) ${ev.time} · ${calTypeLabel(ev.type)}`;
   document.getElementById('scheduleAlarmMemo').textContent = calMemoPublic(ev.memo);
   { const _lk = calMemoLock(ev.memo);
-    if (_lk) calDecryptDetail(_lk, CAL_DETAIL_PW).then(t => { if (_scheduleAlarmCurrentId === ev.id) document.getElementById('scheduleAlarmMemo').textContent = t; }).catch(() => {}); }
+    if (_lk) calDecryptDetail(_lk, CAL_DETAIL_PW).then(t => { if (_scheduleAlarmCurrentId === ev.id) document.getElementById('scheduleAlarmMemo').textContent = calSplitSnap(t).text; }).catch(() => {}); }
   const m = document.getElementById('scheduleAlarmOverlay');
   m.classList.remove('hidden');
   m.style.display = 'flex';
