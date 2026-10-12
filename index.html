@@ -31230,14 +31230,14 @@ function renderCalDayDetailModal() {
     const isRange = ev.endDate && ev.endDate > ev.date;
     return `
     <div class="cal-evrow" style="align-items:flex-start">
-      <div>
+      <div style="cursor:pointer;min-width:0" title="클릭하면 상세 내용을 봅니다" onclick="calShowEventDetail('${ev.id}')">
         <span style="font-weight:700;color:${calTypeColor(ev.type)}">${ev.time ? escQ(ev.time) : '종일'}</span>
         &nbsp;·&nbsp;<span style="color:${calTypeColor(ev.type)}">${calTypeLabel(ev.type)}</span><br>
         <b style="font-size:13px">${escQ(ev.title)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
         ${isRange ? `<div style="color:#f97316;font-weight:700;font-size:11px;margin-top:2px">📅 기간: ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</div>` : ''}
         ${(ev.alarm && ev.time) ? `<div style="color:#ef4444;font-weight:700;font-size:11px;margin-top:2px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</div>` : ''}
-        ${ev.memo ? `<div class="text-[11px] text-gray-500 mt-1" style="white-space:pre-wrap">${escQ(ev.memo)}</div>` : ''}
-        ${_calSafeLink(ev.link) ? `<div class="text-[11px]"><a href="${escQ(_calSafeLink(ev.link))}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline">🔗 링크 열기</a></div>` : ''}
+        ${calMemoPublic(ev.memo) ? `<div class="text-[11px] text-gray-500 mt-1" style="white-space:pre-wrap">${escQ(calMemoPublic(ev.memo))}</div>` : ''}${calMemoLock(ev.memo) ? `<div class="text-[11px] text-gray-400">🔒 내용은 일정을 눌러 비밀번호로 열람</div>` : ''}
+        ${_calSafeLink(ev.link) ? `<div class="text-[11px]"><a href="${escQ(_calSafeLink(ev.link))}" target="_blank" rel="noopener noreferrer" style="color:#2563eb;text-decoration:underline" onclick="event.stopPropagation()">🔗 링크 열기</a></div>` : ''}
       </div>
       <div class="flex gap-2" style="flex-shrink:0">
         <button class="add-btn" style="margin-top:0;padding:2px 8px" onclick="closeCalDayDetailModal();calStartEditEvent('${ev.id}')">✏️ 수정</button>
