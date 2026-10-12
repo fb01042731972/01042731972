@@ -30844,15 +30844,12 @@ function calSaveEvent() {
 const CAL_DETAIL_PW = '0077';
 const CAL_QUOTE_PW = CAL_DETAIL_PW; // 견적서 일정도 접수와 동일한 비밀번호(0077)로 통일
 const CAL_QUOTE_PW_LEGACY = '0066'; // 통일 이전에 만들어진 견적서 일정 호환용
-// 🕒 한 번 비밀번호를 맞게 입력하면 3시간 동안 다시 묻지 않음 (만료 후 재입력하면 다시 3시간)
+// 🕒 한 번 비밀번호를 맞게 입력하면 3시간 동안 다시 묻지 않음 (만료 후 재입력하면 다시 3시간, 새로고침 시 즉시 잠김)
 const CAL_UNLOCK_MS = 3 * 60 * 60 * 1000;
-const CAL_UNLOCK_KEY = 'calDetailUnlockUntil';
-function calUnlockActive() {
-  try { return Number(localStorage.getItem(CAL_UNLOCK_KEY) || 0) > Date.now(); } catch (e) { return false; }
-}
-function calUnlockExtend() {
-  try { localStorage.setItem(CAL_UNLOCK_KEY, String(Date.now() + CAL_UNLOCK_MS)); } catch (e) {}
-}
+// ※ 메모리(변수)에만 보관 → 새로고침하거나 페이지를 닫으면 자동으로 다시 잠깁니다.
+let _calUnlockUntil = 0;
+function calUnlockActive() { return _calUnlockUntil > Date.now(); }
+function calUnlockExtend() { _calUnlockUntil = Date.now() + CAL_UNLOCK_MS; }
 const CAL_LOCK_RE = /\n?\[\[LOCK:([A-Za-z0-9+\/=]+)\]\]/;
 function calMemoPublic(memo) { return String(memo || '').replace(CAL_LOCK_RE, '').trim(); }
 function calMemoLock(memo) { const m = String(memo || '').match(CAL_LOCK_RE); return m ? m[1] : ''; }
