@@ -29101,7 +29101,21 @@ async function registerQuoteCalendarEvent(record, isNew) {
     // 🗂 견적서 전체(입력칸 + 품목표)를 압축해 같은 잠금(암호문) 안에 함께 넣음 → 어느 PC에서든 그대로 열람
     let plain = detail;
     const snapB64 = await calPackQuoteSnapshot(record);
+    // ① 우선 별도 테이블(shared_quote_snap)에 저장 → 일정 목록은 요약만 받아 가벼움
+    // ② 테이블이 아직 없거나 저장에 실패하면 예전처럼 일정 메모 안에 함께 넣음(호환)
+    let snapSaved = false;
     if (snapB64) {
+      try {
+        const c = _calClient();
+        if (c) {
+          const enc = await calEncryptDetail(snapB64, CAL_QUOTE_PW);
+          const r = await c.rpc('quote_snap_put', { p_id: evId, p_key: _calOwnerKey(), p_snap: enc });
+          snapSaved = !r.error && r.data === true;
+          if (!snapSaved) console.warn('견적서 전체 저장(테이블) 실패 → 메모에 포함:', r.error || r.data);
+        }
+      } catch (e) { console.warn('견적서 전체 저장(테이블) 예외 → 메모에 포함:', e); }
+    }
+    if (snapB64 && !snapSaved) {
       const tryMemo = '\n[[LOCK:' + await calEncryptDetail(detail + CAL_SNAP_MARK + snapB64, CAL_QUOTE_PW) + ']]';
       if (tryMemo.length + 80 <= CAL_QUOTE_MEMO_MAX) plain = detail + CAL_SNAP_MARK + snapB64;
       else showToast('⚠️ 견적서가 너무 커서 일정에는 요약만 저장했습니다. (다른 PC에서는 전체 열람 불가)');
@@ -30923,6 +30937,15 @@ async function calUnpackQuoteSnapshot(tagged) {
     return JSON.parse(new TextDecoder().decode(out));
   } catch (e) { console.error('견적서 스냅샷 해석 실패:', e); return null; }
 }
+// 별도 테이블(shared_quote_snap)에서 견적서 전체 스냅샷을 가져와 복호화 (없으면 '')
+async function calFetchQuoteSnap(evId, pw) {
+  try {
+    const c = _calClient(); if (!c) return '';
+    const r = await c.from('shared_quote_snap').select('snap').eq('id', evId).maybeSingle();
+    if (r.error || !r.data || !r.data.snap) return '';
+    return await calDecryptDetail(r.data.snap, pw);
+  } catch (e) { console.warn('견적서 전체 불러오기 실패:', e); return ''; }
+}
 // 복호화된 텍스트를 "사람이 읽는 요약"과 "견적서 전체 데이터"로 분리
 function calSplitSnap(txt) {
   txt = String(txt || '');
@@ -30940,6 +30963,8 @@ async function calUnlockDetail(id) {
     const _full = await calDecryptDetail(lock, pw);
     const _sp = calSplitSnap(_full);
     const txt = _sp.text;
+    let _snap = _sp.snap;
+    if (!_snap && ev.type === 'quotecal' && String(ev.id).indexOf('cal_qts_') === 0) _snap = await calFetchQuoteSnap(ev.id, pw);
     if (!calUnlockActive()) calUnlockExtend();
     const box = document.getElementById('calLockBox');
     if (box) {
@@ -30956,10 +30981,10 @@ async function calUnlockDetail(id) {
         b.style.cssText = 'margin-top:8px';
         b.textContent = '📄 견적서 열기';
         const _nm = (txt.match(/견적번호:\s*(.+)/) || [])[1] || '';
-        b.onclick = function () { calOpenQuoteFromEvent(ev.id, _nm.trim(), _sp.snap); };
+        b.onclick = function () { calOpenQuoteFromEvent(ev.id, _nm.trim(), _snap); };
         box.appendChild(b);
         // 일정을 눌러 열람에 성공하면 견적서 작성 화면이 바로 열림(전체 내용이 일정에 저장된 경우)
-        if (_sp.snap) calOpenQuoteFromEvent(ev.id, _nm.trim(), _sp.snap);
+        if (_snap) calOpenQuoteFromEvent(ev.id, _nm.trim(), _snap);
       }
     }
   } catch (e) { alert('비밀번호가 일치하지 않습니다.'); }
