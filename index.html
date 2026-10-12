@@ -39028,12 +39028,12 @@ document.addEventListener('keydown',function(e){
      ══════════════════════════════════════════════════════════════ -->
 <div id="leSeasonBgLayer" style="position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden;"></div>
 
-<button id="leSeasonBgBtn" title="배경 테마 설정 (관리자 전용)" style="position:fixed;left:14px;bottom:14px;z-index:9997;width:44px;height:44px;border-radius:50%;background:#146C8E;color:#fff;border:none;box-shadow:0 3px 10px rgba(0,0,0,.28);cursor:pointer;font-size:19px;line-height:44px;">🎨</button>
+<button id="leSeasonBgBtn" title="배경 테마 · 소리 설정" style="position:fixed;left:14px;bottom:14px;z-index:9997;width:44px;height:44px;border-radius:50%;background:#146C8E;color:#fff;border:none;box-shadow:0 3px 10px rgba(0,0,0,.28);cursor:pointer;font-size:19px;line-height:44px;">🎨</button>
 
 <div id="leSeasonBgModal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(15,23,42,.55);align-items:center;justify-content:center;padding:16px;">
   <div style="background:#fff;border-radius:14px;max-width:440px;width:100%;padding:22px;max-height:90vh;overflow-y:auto;">
     <div style="font-weight:800;font-size:15px;margin-bottom:6px;color:#1B2A31;">🎨 배경 테마 설정</div>
-    <div style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:16px;">여기서 바꾸면 접속한 모든 직원 화면 배경이 동일하게 바뀝니다. 누구나 자유롭게 바꿀 수 있어요.</div>
+    <div style="font-size:12px;color:#64748b;line-height:1.6;margin-bottom:16px;">여기서 고른 테마와 소리 설정은 <b>내 화면에만</b> 적용됩니다. 전체 직원 기본값은 맨 아래 관리자 버튼으로 정합니다.</div>
 
     <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">🤖 자동 (날씨·시간 연동)</div>
     <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px;">
@@ -39063,8 +39063,28 @@ document.addEventListener('keydown',function(e){
     </div>
     <div id="leSeasonAutoStatus" style="font-size:11px;color:#8b5cf6;margin:-8px 0 14px;display:none;">🤖 자동 모드: 현재 위치의 실시간 날씨를 확인해 배경을 고르고 있어요...</div>
 
+    <div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-bottom:14px;">
+      <div style="font-size:13px;font-weight:800;color:#1B2A31;margin-bottom:6px;">🔊 환경 소리 (코드로 만든 합성음)</div>
+      <div style="font-size:11px;color:#64748b;line-height:1.6;margin-bottom:8px;">'🌇 시간·기온 연동 하늘' 테마에서 시각·날씨에 맞게 가끔 들립니다. 밤엔 귀뚜라미·개구리, 아침엔 참새, 낮엔 차 경적·기차, 비 오는 날엔 조용한 빗소리. 소리 파일을 쓰지 않아 용량이 늘지 않습니다.</div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#334155;cursor:pointer;"><input type="checkbox" id="leSndToggle" style="width:18px;height:18px;"> 소리 켜기</label>
+      <div style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px;color:#475569;">볼륨 <input type="range" id="leSndVol" min="0" max="100" step="1" style="flex:1;"><span id="leSndVolText" style="width:30px;text-align:right;font-weight:700;">60</span></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
+        <button class="le-snd-prev" data-snd="cricket" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">귀뚜라미</button>
+        <button class="le-snd-prev" data-snd="frog" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">개구리</button>
+        <button class="le-snd-prev" data-snd="sparrow" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">참새</button>
+        <button class="le-snd-prev" data-snd="horn" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">차 경적</button>
+        <button class="le-snd-prev" data-snd="train" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">기차</button>
+        <button class="le-snd-prev" data-snd="rain" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">빗소리</button>
+      </div>
+      <div id="leSndMsg" style="font-size:11px;color:#8b5cf6;line-height:1.5;margin-bottom:8px;"></div>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;">
+        <button id="leSndFollowAdmin" style="padding:7px 11px;border:1px solid #cbd5e1;border-radius:8px;background:#fff;color:#334155;font-size:11px;font-weight:700;cursor:pointer;">↩ 내 설정 지우고 관리자 기본값 따르기</button>
+        <button id="leSndAdminApply" style="padding:7px 11px;border:1px solid #fdba74;border-radius:8px;background:#fff7ed;color:#c2410c;font-size:11px;font-weight:700;cursor:pointer;">👑 관리자: 지금 설정을 전체 직원 기본값으로</button>
+      </div>
+    </div>
+
     <div style="border-top:1px solid #e5e7eb;padding-top:14px;">
-      <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">직접 이미지 · GIF · 동영상 업로드</div>
+      <div style="font-size:12px;font-weight:700;color:#475569;margin-bottom:6px;">👑 직접 이미지 · GIF · 동영상 업로드 (관리자 · 전체 직원에게 적용)</div>
       <input type="file" id="leSeasonUploadInput" accept="image/*,video/mp4,video/webm" style="width:100%;font-size:12px;">
       <div id="leSeasonUploadStatus" style="font-size:11px;color:#94a3b8;margin-top:6px;">업로드하면 '커스텀' 배경으로 저장되어 전체 화면 뒤에 표시됩니다. (이미지는 자동으로 용량을 줄여 올려요. 동영상은 되도록 10MB 이하로 짧게 올려주세요 — 용량이 크면 버벅일 수 있어요)</div>
     </div>
@@ -39113,8 +39133,220 @@ document.addEventListener('keydown',function(e){
     if (stormRAF) { cancelAnimationFrame(stormRAF); stormRAF = 0; }
     if (stormOnResize) { window.removeEventListener('resize', stormOnResize); stormOnResize = null; }
   }
-  function clearLayer(){ stopStorm(); layer.innerHTML=''; layer.style.background=''; layer.style.backgroundImage=''; layer.style.backgroundSize=''; layer.style.backgroundPosition=''; }
+  function clearLayer(){ stopStorm(); skyInfo = null; layer.innerHTML=''; layer.style.background=''; layer.style.backgroundImage=''; layer.style.backgroundSize=''; layer.style.backgroundPosition=''; }
 
+
+  // ── 🔊 시간 연동 환경 소리 (오디오 파일 없이 브라우저가 코드로 직접 합성 → 용량 증가 없음) ──
+  //  · '시간·기온 연동 하늘' 테마일 때만 동작: 밤=귀뚜라미(+가끔 개구리), 아침=가끔 참새,
+  //    낮=아주 가끔 차 경적·기차, 비 오는 날=가끔 아주 조용한 빗소리
+  //  · 내 설정(소리 켜기/끄기, 볼륨, 테마)은 이 브라우저에만 저장되고, 설정하지 않으면 관리자 기본값을 따름
+  var SND_KEY = 'leSeasonPersonal_v1';
+  var personal = { theme: null, sound: null, vol: 60 };
+  try {
+    var pj = JSON.parse(localStorage.getItem(SND_KEY) || 'null');
+    if (pj) {
+      if (pj.theme) personal.theme = pj.theme;
+      if (typeof pj.sound === 'boolean') personal.sound = pj.sound;
+      if (typeof pj.vol === 'number') personal.vol = Math.max(0, Math.min(100, pj.vol));
+    }
+  } catch(e) {}
+  function savePersonal(){ try { localStorage.setItem(SND_KEY, JSON.stringify(personal)); } catch(e) {} }
+  var adminCfg = { theme: null, image_url: null, sound: false };
+  var skyInfo = null;                       // 하늘 테마가 켜져 있을 때만 값이 있음 (시각·날씨 정보)
+  var actx = null, comp = null, master = null, noiseBuf = null, brownBuf = null;
+  var sndNext = {}, cricketNext = [0, 0, 0];
+
+  function sndWanted(){ return personal.sound !== null ? personal.sound : !!adminCfg.sound; }
+  function setVol(){ if (master) master.gain.value = Math.pow(personal.vol / 100, 1.6); }
+
+  function ensureAudio(){
+    var AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return false;
+    if (!actx) { try { actx = new AC(); } catch(e) { return false; } }
+    if (!comp) { comp = actx.createDynamicsCompressor(); comp.connect(actx.destination); }
+    if (!master) { master = actx.createGain(); master.connect(comp); setVol(); }
+    if (actx.state === 'suspended') { try { var p = actx.resume(); if (p && p.catch) p.catch(function(){}); } catch(e) {} }
+    return true;
+  }
+  function stopSound(){
+    if (master) { try { master.disconnect(); } catch(e) {} master = null; }  // 이미 예약된 소리도 즉시 조용해짐
+    sndNext = {}; cricketNext = [0, 0, 0];
+    if (actx && actx.state === 'running') { try { actx.suspend(); } catch(e) {} }
+  }
+  function applySound(){
+    if (sndWanted()) ensureAudio(); else stopSound();
+    updateSoundUi();
+  }
+  // 브라우저 정책상 화면을 한 번 클릭/터치해야 소리가 시작됩니다.
+  ['pointerdown', 'keydown', 'touchstart'].forEach(function(ev){
+    document.addEventListener(ev, function(){ if (sndWanted()) ensureAudio(); }, { passive: true });
+  });
+
+  function getNoise(){
+    if (!noiseBuf) {
+      var n = actx.sampleRate * 2, b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0);
+      for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
+      noiseBuf = b;
+    }
+    return noiseBuf;
+  }
+  function getBrown(){
+    if (!brownBuf) {
+      var n = actx.sampleRate * 4, b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0), last = 0;
+      for (var i = 0; i < n; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
+      brownBuf = b;
+    }
+    return brownBuf;
+  }
+
+  // 기본 톤: 주파수 f0→f1 로 변하는 소리 하나 (att=서서히 커지는 시간, rel=서서히 작아지는 시간)
+  function tone(type, f0, f1, t, dur, vol, att, rel, dest, lp){
+    var o = actx.createOscillator(); o.type = type;
+    o.frequency.setValueAtTime(f0, t);
+    if (f1 !== f0) o.frequency.linearRampToValueAtTime(f1, t + dur);
+    var g = actx.createGain();
+    g.gain.setValueAtTime(0.0001, t);
+    g.gain.linearRampToValueAtTime(vol, t + att);
+    g.gain.setValueAtTime(vol, t + Math.max(att, dur - rel));
+    g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    if (lp) { var f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); f.connect(g); }
+    else o.connect(g);
+    g.connect(dest); o.start(t); o.stop(t + dur + 0.03);
+  }
+  function clack(t, amp, dest){  // 철로 이음매 "덜컹"
+    var s = actx.createBufferSource(); s.buffer = getNoise();
+    var bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700 + Math.random() * 300; bp.Q.value = 1.1;
+    var g = actx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(amp, t + 0.006); g.gain.linearRampToValueAtTime(0.0001, t + 0.09);
+    s.connect(bp); bp.connect(g); g.connect(dest); s.start(t, Math.random() * 1.5, 0.12);
+  }
+
+  function cricketChirp(t, f, v){            // 귀뚜라미: 높은 소리 4번 짧게 "찌르르르"
+    if (!master) return;
+    for (var i = 0; i < 4; i++) tone('sine', f, f, t + i * 0.045, 0.03, v, 0.006, 0.02, master);
+  }
+  function sparrow(t){                        // 참새: 짧은 "짹짹" 여러 번
+    if (!master) return;
+    var n = 4 + Math.floor(Math.random() * 5), base = 3200 + Math.random() * 900, tt = t;
+    for (var i = 0; i < n; i++) {
+      var f0 = base * (0.9 + Math.random() * 0.3), up = Math.random() < 0.5;
+      tone('sine', f0, f0 * (up ? 1.35 : 0.75), tt, 0.05 + Math.random() * 0.04, 0.07, 0.008, 0.04, master);
+      tt += 0.09 + Math.random() * 0.12;
+    }
+  }
+  function frog(t){                           // 개구리: 낮은 "개굴개굴"
+    if (!master) return;
+    var n = 3 + Math.floor(Math.random() * 4), f = 170 + Math.random() * 60;
+    for (var i = 0; i < n; i++) {
+      var s = t + i * 0.16;
+      var o = actx.createOscillator(); o.type = 'sawtooth';
+      o.frequency.setValueAtTime(f * 1.25, s); o.frequency.linearRampToValueAtTime(f, s + 0.1);
+      var bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700 + Math.random() * 200; bp.Q.value = 2.5;
+      var g = actx.createGain();
+      g.gain.setValueAtTime(0.0001, s); g.gain.linearRampToValueAtTime(0.16, s + 0.02); g.gain.linearRampToValueAtTime(0.0001, s + 0.12);
+      o.connect(bp); bp.connect(g); g.connect(master); o.start(s); o.stop(s + 0.14);
+    }
+  }
+  function carHorn(t){                        // 멀리서 들리는 차 경적 "빵" 또는 "빵빵"
+    if (!master) return;
+    var beeps = Math.random() < 0.5 ? 1 : 2, dur = beeps === 1 ? 0.45 : 0.17, tt = t;
+    for (var b = 0; b < beeps; b++) {
+      tone('square', 415, 415, tt, dur, 0.045, 0.01, 0.04, master, 1200);
+      tone('square', 500, 500, tt, dur, 0.045, 0.01, 0.04, master, 1200);
+      tt += dur + 0.14;
+    }
+  }
+  function trainPass(t){                      // 멀리 지나가는 기차: 기적 + 낮은 울림 + 덜컹덜컹
+    if (!master) return;
+    var total = 12;
+    tone('sawtooth', 311, 311, t + 0.3, 1.6, 0.04, 0.08, 0.5, master, 900);
+    tone('sawtooth', 370, 370, t + 0.3, 1.6, 0.04, 0.08, 0.5, master, 900);
+    var s = actx.createBufferSource(); s.buffer = getBrown(); s.loop = true;
+    var lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260;
+    var g = actx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.2, t + total * 0.45); g.gain.linearRampToValueAtTime(0.0001, t + total);
+    s.connect(lp); lp.connect(g); g.connect(master); s.start(t); s.stop(t + total + 0.1);
+    var tt = t + 1, gap = 0.42;
+    while (tt < t + total - 1) {
+      var amp = 0.06 * Math.sin(Math.PI * (tt - t) / total);
+      clack(tt, amp, master); clack(tt + 0.09, amp * 0.8, master);
+      tt += gap; gap = Math.max(0.26, gap * 0.985);
+    }
+  }
+  function rainSound(t, dur){                 // 아주 조용한 빗소리
+    if (!master) return;
+    var s = actx.createBufferSource(); s.buffer = getNoise(); s.loop = true;
+    var hp = actx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 900;
+    var lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 7000;
+    var g = actx.createGain();
+    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.05, t + 2.5);
+    g.gain.setValueAtTime(0.05, t + dur - 3); g.gain.linearRampToValueAtTime(0.0001, t + dur);
+    s.connect(hp); hp.connect(lp); lp.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.1);
+  }
+
+  // 1초마다 현재 시각·날씨를 보고 소리를 예약 (가끔 나는 소리는 무작위 간격)
+  function due(name, now, minS, maxS, firstMin, firstMax){
+    if (sndNext[name] == null) { sndNext[name] = now + firstMin + Math.random() * (firstMax - firstMin); return false; }
+    if (now < sndNext[name]) return false;
+    sndNext[name] = now + minS + Math.random() * (maxS - minS);
+    return true;
+  }
+  var CR_F = [4300, 4650, 4950];
+  function soundTick(){
+    if (!sndWanted() || !skyInfo || !actx || !master || actx.state !== 'running' || document.hidden) return;
+    var wx = skyInfo.wx, fx = skyInfo.fixed(), d = new Date();
+    var tm = (fx != null) ? fx : (d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60);
+    var sr = wx.sr, ss = wx.ss, now = actx.currentTime;
+    var rainy = (wx.code >= 51 && wx.code <= 67) || (wx.code >= 80 && wx.code <= 82) || (wx.code >= 95 && wx.code <= 99);
+    var warm = wx.temp >= 10;                                   // 추우면 귀뚜라미·개구리는 조용
+    var lv = (tm >= ss) ? Math.max(0, Math.min(1, (tm - (ss + 10)) / 40))
+                        : (tm <= sr ? Math.max(0, Math.min(1, (sr - 15 - tm) / 30)) : 0);   // 밤 정도(0~1)
+    var dawn = tm > sr - 20 && tm < sr + 150;                  // 새벽~아침
+    var day = tm >= sr + 60 && tm < ss - 20;                   // 낮
+
+    if (lv > 0 && warm && !rainy) {
+      for (var k = 0; k < 3; k++) {
+        if (cricketNext[k] < now) cricketNext[k] = now + Math.random() * 0.4;
+        while (cricketNext[k] < now + 1.3) {
+          cricketChirp(cricketNext[k], CR_F[k] * (0.98 + Math.random() * 0.04), 0.03 * lv);
+          cricketNext[k] += 0.5 + Math.random() * 0.3;
+        }
+      }
+    } else cricketNext = [0, 0, 0];
+
+    if (lv > 0.6 && warm) { if (due('frog', now, 120, 360, 10, 90)) frog(now + 0.05); } else sndNext.frog = null;
+    if (dawn && !rainy)   { if (due('sparrow', now, 45, 150, 3, 20)) sparrow(now + 0.05); } else sndNext.sparrow = null;
+    if (day)              { if (due('horn', now, 360, 900, 30, 240)) carHorn(now + 0.05); } else sndNext.horn = null;
+    if (day)              { if (due('train', now, 1500, 3600, 300, 1200)) trainPass(now + 0.05); } else sndNext.train = null;
+    if (rainy)            { if (due('rain', now, 90, 240, 1, 10)) rainSound(now + 0.1, 8 + Math.random() * 7); } else sndNext.rain = null;
+  }
+  setInterval(soundTick, 1000);
+
+  // 설정 화면의 "미리 듣기" 버튼: 지금 시각과 상관없이 해당 소리를 한 번 들려줌
+  function previewSound(kind){
+    if (!ensureAudio()) { alert('이 브라우저는 소리 재생을 지원하지 않습니다.'); return; }
+    var now = actx.currentTime + 0.1;
+    if (kind === 'cricket') { for (var k = 0; k < 3; k++) for (var i = 0; i < 6; i++) cricketChirp(now + k * 0.17 + i * (0.5 + k * 0.04), CR_F[k], 0.03); }
+    else if (kind === 'sparrow') sparrow(now);
+    else if (kind === 'frog') frog(now);
+    else if (kind === 'horn') carHorn(now);
+    else if (kind === 'train') trainPass(now);
+    else if (kind === 'rain') rainSound(now, 7);
+  }
+
+  function updateSoundUi(){
+    var tg = document.getElementById('leSndToggle'), vl = document.getElementById('leSndVol'),
+        vt = document.getElementById('leSndVolText'), ms = document.getElementById('leSndMsg');
+    if (tg) tg.checked = sndWanted();
+    if (vl) vl.value = personal.vol;
+    if (vt) vt.textContent = personal.vol;
+    if (ms) {
+      var follow = (personal.sound === null && personal.theme === null);
+      var txt = follow ? '지금은 관리자 기본 설정을 따르고 있어요.' : '지금은 내가 바꾼 설정을 쓰고 있어요. (이 브라우저에만 적용)';
+      if (sndWanted() && !skyInfo) txt += ' 현재 테마가 \'시간·기온 연동 하늘\'이 아니라서 소리는 나지 않아요.';
+      ms.textContent = txt;
+    }
+  }
 
   // ── 🌇 시간·기온 연동 하늘 ──
   //  현재 시각 + 일출/일몰 시간에 따라 새벽·아침·낮·노을·초저녁·밤으로 서서히 바뀌고,
@@ -39148,6 +39380,7 @@ document.addEventListener('keydown',function(e){
     setSunFor(FALLBACK_LAT, FALLBACK_LON);
     // 테스트용: 주소 뒤에 ?skytime=21:30 처럼 붙이면 그 시각의 하늘을 미리 볼 수 있음
     var skyFixed = null;
+    skyInfo = { wx: wx, fixed: function(){ return skyFixed; } };
     try {
       var qm = new URLSearchParams(location.search).get('skytime');
       if (qm) { var mm = qm.match(/^(\d{1,2}):(\d{2})$/); if (mm) skyFixed = parseInt(mm[1], 10) * 60 + parseInt(mm[2], 10); }
@@ -39617,12 +39850,27 @@ document.addEventListener('keydown',function(e){
     else renderParticles(theme);
   }
 
+  // 내 설정(이 브라우저)이 있으면 그것을, 없으면 관리자 기본값을 적용
+  var lastTh = '\u0000', lastImg = null;
+  function applyEffective(){
+    var th = personal.theme || adminCfg.theme;
+    var img = personal.theme ? null : adminCfg.image_url;
+    if (th !== lastTh || img !== lastImg) { lastTh = th; lastImg = img; applyTheme(th, img); }
+    applySound();
+  }
+  function readAdminCfg(d){
+    adminCfg.theme = d.theme || null;
+    adminCfg.image_url = d.image_url || null;
+    adminCfg.sound = d.sound === true;
+  }
+
   function loadCurrentTheme(){
+    if (personal.theme) applyEffective();   // 내 설정이 있으면 서버 응답을 기다리지 않고 바로 적용
     ensureSeasonSb(function(){
       seasonSbClient.from('app_settings').select('value').eq('key','home_background').maybeSingle()
         .then(function(res){
           if (res && res.data && res.data.value) {
-            try { var d = JSON.parse(res.data.value); applyTheme(d.theme, d.image_url); } catch(e){}
+            try { readAdminCfg(JSON.parse(res.data.value)); applyEffective(); } catch(e){}
           }
         })
         .catch(function(){ /* 테이블이 아직 없으면 무시 */ });
@@ -39631,7 +39879,7 @@ document.addEventListener('keydown',function(e){
         seasonSbClient.channel('le_home_bg_room')
           .on('postgres_changes', { event:'*', schema:'public', table:'app_settings', filter:'key=eq.home_background' }, function(payload){
             if (payload.new && payload.new.value) {
-              try { var d = JSON.parse(payload.new.value); applyTheme(d.theme, d.image_url); } catch(e){}
+              try { readAdminCfg(JSON.parse(payload.new.value)); applyEffective(); } catch(e){}
             }
           })
           .subscribe();
@@ -39639,9 +39887,12 @@ document.addEventListener('keydown',function(e){
     });
   }
 
-  function saveTheme(theme, imageUrl){
+  // 관리자 기본값 저장 (테마 + 소리 사용 여부) — 접속한 모든 직원에게 적용
+  function saveTheme(theme, imageUrl, sound){
+    adminCfg.theme = theme; adminCfg.image_url = imageUrl || null;
+    if (typeof sound === 'boolean') adminCfg.sound = sound;
     ensureSeasonSb(function(){
-      var value = JSON.stringify({ theme: theme, image_url: imageUrl || null });
+      var value = JSON.stringify({ theme: theme, image_url: imageUrl || null, sound: adminCfg.sound });
       seasonSbClient.from('app_settings').upsert({ key:'home_background', value: value, updated_at: new Date().toISOString() })
         .then(function(res){
           if (res && res.error) alert('저장 실패: ' + res.error.message + ' (Supabase에 app_settings 테이블이 있는지 확인해주세요)');
@@ -39708,11 +39959,37 @@ document.addEventListener('keydown',function(e){
   document.querySelectorAll('.le-season-opt').forEach(function(optBtn){
     optBtn.addEventListener('click', async function(){
       var theme = optBtn.getAttribute('data-theme');
-      if (!(await seasonAdminAuth())) return;
-      applyTheme(theme, null);
-      saveTheme(theme, null);
+      personal.theme = theme; savePersonal();   // 내 화면에만 적용 (다른 직원에겐 영향 없음)
+      applyEffective();
       modal.style.display = 'none';
     });
+  });
+
+  // ── 🔊 소리 설정 화면 연결 ──
+  if (btn) btn.addEventListener('click', updateSoundUi);
+  var sndTg = document.getElementById('leSndToggle');
+  if (sndTg) sndTg.addEventListener('change', function(){ personal.sound = sndTg.checked; savePersonal(); applySound(); });
+  var sndVol = document.getElementById('leSndVol');
+  if (sndVol) sndVol.addEventListener('input', function(){
+    personal.vol = parseInt(sndVol.value, 10) || 0; savePersonal(); setVol(); updateSoundUi();
+  });
+  document.querySelectorAll('.le-snd-prev').forEach(function(pb){
+    pb.addEventListener('click', function(){ previewSound(pb.getAttribute('data-snd')); });
+  });
+  var sndFollow = document.getElementById('leSndFollowAdmin');
+  if (sndFollow) sndFollow.addEventListener('click', function(){
+    personal.theme = null; personal.sound = null; savePersonal(); applyEffective();
+  });
+  var sndAdmin = document.getElementById('leSndAdminApply');
+  if (sndAdmin) sndAdmin.addEventListener('click', async function(){
+    if (!(await seasonAdminAuth())) return;
+    var th = personal.theme || adminCfg.theme || 'none';
+    var img = personal.theme ? null : adminCfg.image_url;
+    var snd = sndWanted();
+    saveTheme(th, img, snd);
+    personal.theme = null; personal.sound = null; savePersonal();
+    applyEffective();
+    alert('지금 설정(배경 테마 · 소리 사용 여부)을 전체 직원 기본값으로 적용했습니다.');
   });
 
   if (uploadInput) uploadInput.addEventListener('change', async function(evt){
@@ -39741,8 +40018,7 @@ document.addEventListener('keydown',function(e){
           if (up.error) { alert('업로드 실패: ' + up.error.message + ' (Supabase에 site-backgrounds 버킷이 있는지 확인해주세요)'); uploadStatus.textContent=''; return; }
           var pub = seasonSbClient.storage.from('site-backgrounds').getPublicUrl(path);
           var url = pub.data.publicUrl;
-          applyTheme('custom', url);
-          saveTheme('custom', url);
+          personal.theme = null; savePersonal(); saveTheme('custom', url); applyEffective();
           uploadStatus.textContent = '✅ 적용되었습니다.';
           setTimeout(function(){ modal.style.display = 'none'; evt.target.value=''; uploadStatus.textContent="업로드하면 '커스텀' 배경으로 저장되어 전체 화면 뒤에 표시됩니다. (이미지는 자동으로 용량을 줄여 올려요. 동영상은 되도록 10MB 이하로 짧게 올려주세요 — 용량이 크면 버벅일 수 있어요)"; }, 900);
         });
