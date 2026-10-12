@@ -2455,6 +2455,11 @@ window.getLeBoardClient = function(){
     sel.style.background = on ? '#fee2e2' : '#f1f5f9';
     sel.style.color = on ? '#b91c1c' : '#51667E';
     sel.style.borderColor = on ? '#fca5a5' : '#cbd5e1';
+    const inp = document.getElementById('leChatInput');
+    if (inp) {
+      if (!inp.dataset.leOrigPh) inp.dataset.leOrigPh = inp.placeholder;
+      inp.placeholder = on ? ('⏱ 보낸 뒤 ' + leChatFormatSec(leChatCurrentTimerSec()) + ' 후 자동삭제되는 메시지...') : inp.dataset.leOrigPh;
+    }
   };
   // 선택된 타이머가 있으면 { expires_at: ISO } 를, 없으면 {} 를 돌려줌 (insert 객체에 펼쳐서 사용)
   function leChatExpiresExtra(){
@@ -2466,11 +2471,29 @@ window.getLeBoardClient = function(){
     if (!msg || !msg.expires_at) return '';
     const left = new Date(msg.expires_at).getTime() - Date.now();
     if (left <= 0) return '⏱ 삭제 중';
+    if (left < 60000) return '⏱ ' + Math.ceil(left / 1000) + '초 후 삭제';
     const m = Math.ceil(left / 60000);
     if (m < 60) return '⏱ ' + m + '분 후 삭제';
     const h = Math.floor(m / 60), mm = m % 60;
     return '⏱ ' + h + '시간' + (mm ? ' ' + mm + '분' : '') + ' 후 삭제';
   }
+  // 삭제 예정 시각 (오늘이면 시:분, 다른 날이면 월/일 시:분)
+  function leChatExpiryClock(msg){
+    if (!msg || !msg.expires_at) return '';
+    const d = new Date(msg.expires_at);
+    const t = d.toLocaleTimeString('ko-KR', { hour: '2-digit', minute: '2-digit' });
+    const now = new Date();
+    const same = d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth() && d.getDate() === now.getDate();
+    return same ? t : ((d.getMonth() + 1) + '/' + d.getDate() + ' ' + t);
+  }
+  // 말풍선 옆 남은 시간을 1초마다 갱신
+  function leChatRefreshExpiryLabels(){
+    document.querySelectorAll('[data-msg-expires]').forEach(function(el){
+      const lab = el.querySelector('.le-chat-expiry');
+      if (lab) lab.textContent = leChatExpiryLabel({ expires_at: el.dataset.msgExpires });
+    });
+  }
+  setInterval(function(){ try { leChatRefreshExpiryLabels(); } catch(e) {} }, 1000);
   let leChatExpireBusy = false;
   let leChatExpireWarned = false;
   async function leChatSweepExpired(){
@@ -3348,7 +3371,7 @@ window.getLeBoardClient = function(){
       '<div style="display:flex;flex-direction:column;align-items:' + (mine ? 'flex-end' : 'flex-start') + ';gap:2px;flex-shrink:0;">' +
         readHtml +
         '<span class="le-kakao-time" style="font-size:10.5px;color:#8b95a1;white-space:nowrap;">' + time + '</span>' +
-        (msg.expires_at ? '<span class="le-chat-expiry" style="font-size:9.5px;color:#dc2626;white-space:nowrap;">' + leChatExpiryLabel(msg) + '</span>' : '') +
+        (msg.expires_at ? '<span class="le-chat-expiry" style="font-size:10.5px;font-weight:700;color:#dc2626;white-space:nowrap;">' + leChatExpiryLabel(msg) + '</span><span class="le-chat-expiry-at" style="font-size:10px;color:#dc2626;white-space:nowrap;">' + leChatExpiryClock(msg) + ' 삭제 예정</span>' : '') +
       '</div>';
 
     const bubbleRowHtml =
