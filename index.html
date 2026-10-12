@@ -39047,6 +39047,8 @@ document.addEventListener('keydown',function(e){
       <button data-theme="autumn" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fed7aa;border-radius:10px;background:#fff7ed;color:#c2410c;font-size:12px;font-weight:700;cursor:pointer;">🍁 가을 낙엽</button>
       <button data-theme="winter" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #bfdbfe;border-radius:10px;background:#eff6ff;color:#1d4ed8;font-size:12px;font-weight:700;cursor:pointer;">❄️ 겨울 눈</button>
       <button data-theme="rain" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #cbd5e1;border-radius:10px;background:#f1f5f9;color:#334155;font-size:12px;font-weight:700;cursor:pointer;">☔ 장마 · 비</button>
+      <button data-theme="storm" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #94a3b8;border-radius:10px;background:#1e293b;color:#fde68a;font-size:12px;font-weight:700;cursor:pointer;">⛈ 천둥번개 폭우</button>
+      <button data-theme="sky" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fdba74;border-radius:10px;background:linear-gradient(90deg,#bae6fd,#fed7aa);color:#9a3412;font-size:12px;font-weight:700;cursor:pointer;">🌇 시간·기온 연동 하늘</button>
       <button data-theme="night" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #c7d2fe;border-radius:10px;background:#eef2ff;color:#3730a3;font-size:12px;font-weight:700;cursor:pointer;">🌌 별밤 은하수</button>
       <button data-theme="firefly" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fde68a;border-radius:10px;background:#fefce8;color:#a16207;font-size:12px;font-weight:700;cursor:pointer;">✨ 여름밤 반딧불이</button>
       <button data-theme="tropical" class="le-season-opt" style="flex:1;min-width:100px;padding:10px 8px;border:1px solid #fecaca;border-radius:10px;background:#fff1f2;color:#be123c;font-size:12px;font-weight:700;cursor:pointer;">🌺 열대 여름</button>
@@ -39105,7 +39107,336 @@ document.addEventListener('keydown',function(e){
 
   function isVideoUrl(url){ return /\.(mp4|webm|mov)(\?|$)/i.test(url || ''); }
 
-  function clearLayer(){ layer.innerHTML=''; layer.style.backgroundImage=''; layer.style.backgroundSize=''; layer.style.backgroundPosition=''; }
+  var stormRAF = 0, stormOnResize = null, skyTimer = 0;
+  function stopStorm(){
+    if (skyTimer) { clearInterval(skyTimer); skyTimer = 0; }
+    if (stormRAF) { cancelAnimationFrame(stormRAF); stormRAF = 0; }
+    if (stormOnResize) { window.removeEventListener('resize', stormOnResize); stormOnResize = null; }
+  }
+  function clearLayer(){ stopStorm(); layer.innerHTML=''; layer.style.background=''; layer.style.backgroundImage=''; layer.style.backgroundSize=''; layer.style.backgroundPosition=''; }
+
+
+  // ── 🌇 시간·기온 연동 하늘 ──
+  //  현재 시각 + 일출/일몰 시간에 따라 새벽·아침·낮·노을·초저녁·밤으로 서서히 바뀌고,
+  //  해/달이 하늘을 천천히 지나가며, 구름양·기온(더위/추위)에 따라 분위기가 달라집니다.
+  function renderSky(){
+    clearLayer();
+    var cv = document.createElement('canvas');
+    cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+    layer.appendChild(cv);
+    var ctx = cv.getContext('2d');
+    var W = 0, H = 0, clouds = [], stars = [];
+    var wx = { temp: 18, cloud: 30, code: 0, sr: 390, ss: 1140 }; // 날씨를 못 받아와도 쓰는 기본값(일출 6:30 / 일몰 19:00)
+
+    function mix(a, b, t){ t = Math.max(0, Math.min(1, t)); return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+    function rgb(c, a){ return 'rgba(' + Math.round(c[0]) + ',' + Math.round(c[1]) + ',' + Math.round(c[2]) + ',' + (a == null ? 1 : a) + ')'; }
+    function clamp01(v){ return Math.max(0, Math.min(1, v)); }
+
+    function seedAll(){
+      var overcast = clamp01(wx.cloud / 100);
+      var n = Math.round(4 + overcast * 12);
+      clouds = [];
+      for (var i = 0; i < n; i++) {
+        var s = 0.7 + Math.random() * 1.0, puffs = [], pc = 5 + Math.floor(Math.random() * 4);
+        for (var k = 0; k < pc; k++) puffs.push({ dx: (k - pc / 2) * 34 * s + (Math.random() - .5) * 14, dy: (Math.random() - .5) * 18 * s, r: (34 + Math.random() * 30) * s });
+        clouds.push({ x: Math.random() * (W + 500) - 250, y: H * (0.06 + Math.random() * 0.46), v: (5 + Math.random() * 9) * s, puffs: puffs });
+      }
+      stars = [];
+      for (var j = 0; j < 140; j++) stars.push({ x: Math.random(), y: Math.random() * 0.7, r: 0.5 + Math.random() * 1.3, ph: Math.random() * 6.28 });
+    }
+    function resize(){
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seedAll();
+    }
+    stormOnResize = resize;
+    window.addEventListener('resize', resize);
+    resize();
+
+    // 실시간 날씨(Open-Meteo)에서 기온·구름양·일출/일몰을 가져옴 (30분마다 갱신)
+    function parseMin(str, fallback){
+      var d = new Date(str);
+      if (isNaN(d.getTime())) return fallback;
+      return d.getHours() * 60 + d.getMinutes();
+    }
+    function fetchWx(lat, lon){
+      var url = 'https://api.open-meteo.com/v1/forecast?latitude=' + lat + '&longitude=' + lon
+        + '&current=temperature_2m,weather_code,cloud_cover&daily=sunrise,sunset&timezone=auto&forecast_days=1';
+      fetch(url).then(function(r){ return r.json(); }).then(function(d){
+        var c = d && d.current ? d.current : {}, dl = d && d.daily ? d.daily : {};
+        if (typeof c.temperature_2m === 'number') wx.temp = c.temperature_2m;
+        if (typeof c.cloud_cover === 'number') wx.cloud = c.cloud_cover;
+        if (typeof c.weather_code === 'number') wx.code = c.weather_code;
+        if (dl.sunrise && dl.sunrise[0]) wx.sr = parseMin(dl.sunrise[0], wx.sr);
+        if (dl.sunset && dl.sunset[0]) wx.ss = parseMin(dl.sunset[0], wx.ss);
+        seedAll();
+      }).catch(function(){ /* 실패하면 기본값 그대로 */ });
+    }
+    function refreshWx(){
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          function(pos){ fetchWx(pos.coords.latitude, pos.coords.longitude); },
+          function(){ fetchWx(FALLBACK_LAT, FALLBACK_LON); },
+          { timeout: 5000, maximumAge: 600000 }
+        );
+      } else { fetchWx(FALLBACK_LAT, FALLBACK_LON); }
+    }
+    refreshWx();
+    skyTimer = setInterval(refreshWx, 30 * 60 * 1000);
+
+    function skyColors(tm){
+      var sr = wx.sr, ss = wx.ss, noon = (sr + ss) / 2;
+      var K = [
+        { t: sr - 70,  top: [10,16,38],   mid: [20,30,60],    bot: [30,42,80] },
+        { t: sr - 25,  top: [40,55,105],  mid: [120,100,150], bot: [240,150,120] },
+        { t: sr + 10,  top: [80,130,200], mid: [230,160,140], bot: [255,200,130] },
+        { t: sr + 90,  top: [75,150,225], mid: [140,200,240], bot: [200,230,255] },
+        { t: noon,     top: [50,130,220], mid: [110,180,240], bot: [180,220,255] },
+        { t: ss - 120, top: [70,140,220], mid: [130,190,240], bot: [205,230,255] },
+        { t: ss - 40,  top: [90,130,200], mid: [240,190,130], bot: [255,200,120] },
+        { t: ss,       top: [70,80,150],  mid: [220,110,90],  bot: [255,140,70] },
+        { t: ss + 35,  top: [35,40,100],  mid: [130,70,120],  bot: [220,100,90] },
+        { t: ss + 80,  top: [10,16,38],   mid: [20,30,60],    bot: [30,42,80] }
+      ];
+      if (tm <= K[0].t || tm >= K[K.length - 1].t) return K[0];
+      for (var i = 0; i < K.length - 1; i++) {
+        if (tm >= K[i].t && tm <= K[i + 1].t) {
+          var f = (tm - K[i].t) / Math.max(1, K[i + 1].t - K[i].t);
+          return { top: mix(K[i].top, K[i + 1].top, f), mid: mix(K[i].mid, K[i + 1].mid, f), bot: mix(K[i].bot, K[i + 1].bot, f) };
+        }
+      }
+      return K[0];
+    }
+
+    function drawCloud(c, col, alpha){
+      for (var i = 0; i < c.puffs.length; i++) {
+        var p = c.puffs[i], x = c.x + p.dx, y = c.y + p.dy;
+        var g = ctx.createRadialGradient(x, y, 0, x, y, p.r);
+        g.addColorStop(0, rgb(col, 0.85 * alpha));
+        g.addColorStop(0.6, rgb(col, 0.5 * alpha));
+        g.addColorStop(1, rgb(col, 0));
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(x, y, p.r, 0, Math.PI * 2); ctx.fill();
+      }
+    }
+
+    var last = performance.now();
+    function frame(now){
+      var dt = now - last;
+      if (dt < 33) { stormRAF = requestAnimationFrame(frame); return; } // 약 30fps 로 부드럽게 + 가볍게
+      last = now; dt = Math.min(dt, 100);
+
+      var d = new Date(), tm = d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60;
+      var sr = wx.sr, ss = wx.ss;
+      var col = skyColors(tm);
+      var overcast = clamp01(wx.cloud / 100 * 0.8 + ((wx.code >= 51 && wx.code <= 99) ? 0.35 : 0));
+      // 해가 진 정도(0=낮, 1=깊은 밤), 노을 강도
+      var nightF = (tm >= ss) ? clamp01((tm - (ss - 10)) / 70) : (tm <= sr ? clamp01((sr + 20 - tm) / 70) : 0);
+      if (tm < sr - 70) nightF = 1;
+      var glowF = Math.max(0, 1 - Math.abs(tm - ss) / 75, 1 - Math.abs(tm - sr) / 60);
+
+      // 구름 낀 날은 하늘 색을 회색빛으로
+      function gray(c){ var g = (c[0] + c[1] + c[2]) / 3; return mix(c, [g * 0.92, g * 0.95, g], overcast * 0.55); }
+      var top = gray(col.top), midc = gray(col.mid), bot = gray(col.bot);
+
+      var grad = ctx.createLinearGradient(0, 0, 0, H);
+      grad.addColorStop(0, rgb(top)); grad.addColorStop(0.55, rgb(midc)); grad.addColorStop(1, rgb(bot));
+      ctx.fillStyle = grad; ctx.fillRect(0, 0, W, H);
+
+      // 별 (밤)
+      if (nightF > 0.05) {
+        var tt = now / 1000;
+        for (var i = 0; i < stars.length; i++) {
+          var st = stars[i];
+          ctx.fillStyle = 'rgba(255,255,240,' + (nightF * (1 - overcast * 0.8) * (0.45 + 0.55 * Math.sin(tt * 1.3 + st.ph))).toFixed(3) + ')';
+          ctx.beginPath(); ctx.arc(st.x * W, st.y * H, st.r, 0, Math.PI * 2); ctx.fill();
+        }
+      }
+
+      // 해: 일출→일몰 사이를 천천히 지나감 / 달: 일몰→일출
+      var horizonY = H * 0.8, arcH = H * 0.62;
+      if (tm >= sr - 20 && tm <= ss + 20) {
+        var p = (tm - sr) / (ss - sr);
+        var elev = Math.sin(Math.PI * clamp01(p));
+        var sx = W * (0.08 + 0.84 * p), sy = horizonY - elev * arcH;
+        var sunCol = mix([255,110,50], [255,248,210], Math.pow(elev, 0.6));
+        var glowR = 90 + 90 * (1 - elev) + (wx.temp >= 28 ? 40 : 0);
+        var g1 = ctx.createRadialGradient(sx, sy, 0, sx, sy, glowR);
+        g1.addColorStop(0, rgb(sunCol, 0.75 * (1 - overcast * 0.7))); g1.addColorStop(1, rgb(sunCol, 0));
+        ctx.fillStyle = g1; ctx.beginPath(); ctx.arc(sx, sy, glowR, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = rgb(sunCol, 1 - overcast * 0.6);
+        ctx.beginPath(); ctx.arc(sx, sy, 26 + (1 - elev) * 8, 0, Math.PI * 2); ctx.fill();
+      }
+      if (nightF > 0.05) {
+        var tn = (tm >= ss) ? tm : tm + 1440;
+        var pm = clamp01((tn - ss) / (sr + 1440 - ss));
+        var me = Math.sin(Math.PI * pm);
+        var mx = W * (0.1 + 0.8 * pm), my = horizonY - me * arcH * 0.9;
+        var mg = ctx.createRadialGradient(mx, my, 0, mx, my, 70);
+        mg.addColorStop(0, 'rgba(220,230,255,' + (0.35 * nightF).toFixed(3) + ')'); mg.addColorStop(1, 'rgba(220,230,255,0)');
+        ctx.fillStyle = mg; ctx.beginPath(); ctx.arc(mx, my, 70, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(246,244,232,' + (nightF * (1 - overcast * 0.6)).toFixed(3) + ')';
+        ctx.beginPath(); ctx.arc(mx, my, 20, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(200,200,190,' + (0.35 * nightF).toFixed(3) + ')';
+        ctx.beginPath(); ctx.arc(mx - 6, my - 4, 4, 0, Math.PI * 2); ctx.arc(mx + 6, my + 5, 3, 0, Math.PI * 2); ctx.fill();
+      }
+
+      // 구름: 천천히 흘러감. 노을엔 붉게, 밤엔 어둡게, 흐린 날엔 회색으로
+      var cc = mix([255,255,255], bot, 0.25 + glowF * 0.4);
+      cc = mix(cc, [120,130,148], overcast * 0.55);
+      cc = mix(cc, [58,68,98], nightF * 0.85);
+      var calpha = 0.55 + overcast * 0.4;
+      for (var ci = 0; ci < clouds.length; ci++) {
+        var c = clouds[ci];
+        c.x += c.v * dt / 1000;
+        if (c.x > W + 260) { c.x = -260; c.y = H * (0.06 + Math.random() * 0.46); }
+        drawCloud(c, cc, calpha);
+      }
+
+      // 기온에 따른 분위기: 더우면 따뜻한 노란 기운, 추우면 차가운 푸른 기운
+      var t = wx.temp;
+      if (t >= 26) {
+        var ha = Math.min(0.22, (t - 26) / 12 * 0.22) * (1 - nightF);
+        ctx.fillStyle = 'rgba(255,170,60,' + ha.toFixed(3) + ')'; ctx.fillRect(0, 0, W, H);
+      } else if (t <= 8) {
+        var ca = Math.min(0.26, (8 - t) / 20 * 0.26);
+        ctx.fillStyle = 'rgba(190,220,255,' + ca.toFixed(3) + ')'; ctx.fillRect(0, 0, W, H);
+      }
+
+      // 먼 산(실루엣): 낮엔 초록, 노을엔 보랏빛, 밤엔 어둡게
+      var hill = mix(mix([72,125,92], [60,40,70], glowF), [10,16,28], nightF);
+      ctx.fillStyle = rgb(hill, 0.95);
+      ctx.beginPath(); ctx.moveTo(0, H);
+      for (var x = 0; x <= W; x += 20) ctx.lineTo(x, H * 0.9 - Math.sin(x / W * 5 + 1) * H * 0.03 - Math.sin(x / W * 11) * H * 0.012);
+      ctx.lineTo(W, H); ctx.closePath(); ctx.fill();
+
+      stormRAF = requestAnimationFrame(frame);
+    }
+    stormRAF = requestAnimationFrame(frame);
+  }
+
+  // ── ☔ 진짜 비 / ⛈ 천둥번개 폭우 (canvas 애니메이션) ──
+  function renderStorm(withLightning){
+    clearLayer();
+    layer.style.background = withLightning
+      ? 'linear-gradient(180deg,#0b1220 0%,#1e293b 55%,#334155 100%)'
+      : 'linear-gradient(180deg,#64748b 0%,#94a3b8 60%,#cbd5e1 100%)';
+    var cv = document.createElement('canvas');
+    cv.style.cssText = 'position:absolute;inset:0;width:100%;height:100%;';
+    layer.appendChild(cv);
+    var ctx = cv.getContext('2d');
+    var W = 0, H = 0, drops = [], splashes = [];
+    var wind = withLightning ? 4 : 2;   // 비가 비스듬히 떨어지는 정도
+    function seed(){
+      var n = Math.max(120, Math.min(420, Math.round(W * H / (withLightning ? 4500 : 7000))));
+      drops = [];
+      for (var i = 0; i < n; i++) {
+        drops.push({
+          x: Math.random() * (W + 100) - 50, y: Math.random() * H,
+          len: 10 + Math.random() * 18, v: (withLightning ? 900 : 650) + Math.random() * 500,
+          a: 0.25 + Math.random() * 0.4
+        });
+      }
+    }
+    function resize(){
+      var dpr = Math.min(window.devicePixelRatio || 1, 2);
+      W = window.innerWidth; H = window.innerHeight;
+      cv.width = Math.round(W * dpr); cv.height = Math.round(H * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      seed();
+    }
+    stormOnResize = resize;
+    window.addEventListener('resize', resize);
+    resize();
+
+    // 번개 줄기(가지 포함) 생성
+    function makeBolt(){
+      var segs = [];
+      function walk(x, y, endY, width, depth){
+        var path = [[x, y]];
+        while (y < endY) {
+          y += 12 + Math.random() * 28;
+          x += (Math.random() - 0.5) * 55;
+          path.push([x, y]);
+          if (depth < 2 && Math.random() < 0.07) walk(x, y, Math.min(endY, y + H * 0.28), width * 0.55, depth + 1);
+        }
+        segs.push({ path: path, width: width });
+      }
+      walk(W * (0.12 + Math.random() * 0.76), 0, H * (0.55 + Math.random() * 0.3), 3.2, 0);
+      return segs;
+    }
+    var flashA = 0, bolt = null, restrikes = 0, restrikeAt = 0;
+    var nextFlash = performance.now() + 1500 + Math.random() * 3000;
+    var last = performance.now();
+
+    function frame(now){
+      var dt = Math.min(50, now - last); last = now;
+      if (withLightning) {
+        if (now >= nextFlash) {
+          flashA = 1; bolt = makeBolt();
+          restrikes = Math.random() < 0.65 ? 1 + (Math.random() < 0.3 ? 1 : 0) : 0;
+          restrikeAt = now + 90 + Math.random() * 80;
+          nextFlash = now + 3500 + Math.random() * 9000;
+        }
+        if (restrikes > 0 && now >= restrikeAt) {
+          flashA = 0.85; restrikes--; restrikeAt = now + 90 + Math.random() * 90;
+          if (Math.random() < 0.5) bolt = makeBolt();
+        }
+        flashA = Math.max(0, flashA - dt * 0.0035);
+      }
+      ctx.clearRect(0, 0, W, H);
+
+      // 번개 섬광 + 줄기
+      if (withLightning && flashA > 0) {
+        ctx.fillStyle = 'rgba(220,230,255,' + (flashA * 0.5).toFixed(3) + ')';
+        ctx.fillRect(0, 0, W, H);
+        if (bolt && flashA > 0.2) {
+          ctx.save();
+          ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+          ctx.shadowColor = 'rgba(170,200,255,1)'; ctx.shadowBlur = 24;
+          bolt.forEach(function(sg){
+            ctx.strokeStyle = 'rgba(255,255,255,' + Math.min(1, flashA * 1.3).toFixed(3) + ')';
+            ctx.lineWidth = sg.width;
+            ctx.beginPath();
+            sg.path.forEach(function(pt, i){ if (i === 0) ctx.moveTo(pt[0], pt[1]); else ctx.lineTo(pt[0], pt[1]); });
+            ctx.stroke();
+          });
+          ctx.restore();
+        }
+      }
+
+      // 빗줄기
+      var boost = withLightning ? (1 + flashA * 0.6) : 1;
+      ctx.lineWidth = 1.1; ctx.lineCap = 'round';
+      for (var i = 0; i < drops.length; i++) {
+        var d = drops[i];
+        var slope = -wind * 0.12;               // 비가 떨어지는 기울기(왼쪽 아래로)
+        var dy = d.v * dt / 1000, dx = dy * slope;
+        ctx.strokeStyle = 'rgba(205,220,240,' + Math.min(1, d.a * boost).toFixed(3) + ')';
+        ctx.beginPath();
+        ctx.moveTo(d.x, d.y);
+        ctx.lineTo(d.x + d.len * slope, d.y + d.len);
+        ctx.stroke();
+        d.y += dy; d.x += dx;
+        if (d.y > H) {
+          if (splashes.length < 80 && Math.random() < 0.35) splashes.push({ x: d.x, y: H - 2, r: 1, life: 1 });
+          d.y = -d.len; d.x = Math.random() * (W + 100) - 50;
+        }
+      }
+      // 바닥에 튀는 물방울
+      for (var k = splashes.length - 1; k >= 0; k--) {
+        var sp = splashes[k];
+        sp.r += dt * 0.025; sp.life -= dt * 0.004;
+        if (sp.life <= 0) { splashes.splice(k, 1); continue; }
+        ctx.strokeStyle = 'rgba(205,220,240,' + (sp.life * 0.5).toFixed(3) + ')';
+        ctx.beginPath(); ctx.ellipse(sp.x, sp.y, sp.r * 2, sp.r * 0.7, 0, 0, Math.PI * 2); ctx.stroke();
+      }
+      stormRAF = requestAnimationFrame(frame);
+    }
+    stormRAF = requestAnimationFrame(frame);
+  }
 
   function renderCustom(url){
     clearLayer();
@@ -39139,6 +39470,9 @@ document.addEventListener('keydown',function(e){
   };
 
   function renderParticles(kind){
+    if (kind === 'rain') { renderStorm(false); return; }
+    if (kind === 'storm') { renderStorm(true); return; }
+    if (kind === 'sky') { renderSky(); return; }
     clearLayer();
     var count = 36;
     var emojiSet = SEASON_THEME_EMOJI[kind] || ['❄️'];
@@ -39170,6 +39504,7 @@ document.addEventListener('keydown',function(e){
     var SNOW_CODES = [71,73,75,77,85,86];
     var RAIN_CODES = [51,53,55,56,57,61,63,65,66,67,80,81,82,95,96,99];
     if (SNOW_CODES.indexOf(weatherCode) !== -1) return 'winter';
+    if ([95,96,99].indexOf(weatherCode) !== -1) return 'storm';
     if (RAIN_CODES.indexOf(weatherCode) !== -1) return 'rain';
     if (!isDay) return 'night';
     return seasonKeyByMonth(month);
@@ -39263,7 +39598,18 @@ document.addEventListener('keydown',function(e){
     });
   }
 
-  // 배경 테마는 누구나 바로 바꿀 수 있도록 비밀번호 확인 없이 적용합니다.
+  // 배경 테마는 관리자 비밀번호를 입력한 사람만 바꿀 수 있고, 바꾸면 접속한 모든 사람 화면에 똑같이 적용됩니다.
+  var SEASON_ADMIN_PW_HASH = 'ddfcd6f752faf5e5ba65da9c6e1dbc5be379156eccc152a098ebe52f74d1fd52';
+  var seasonAdminUntil = 0; // 한 번 인증하면 30분 동안은 다시 묻지 않음
+  async function seasonAdminAuth(){
+    if (Date.now() < seasonAdminUntil) return true;
+    var pw = prompt('관리자 비밀번호를 입력하세요.\n(배경 테마를 바꾸면 접속한 모든 사람 화면에 적용됩니다)');
+    if (pw === null) return false;
+    var hash = await window.jinjooSha256Hex(pw);
+    if (hash !== SEASON_ADMIN_PW_HASH && hash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return false; }
+    seasonAdminUntil = Date.now() + 30 * 60 * 1000;
+    return true;
+  }
 
   // 큰 이미지를 올리면 화면이 버벅일 수 있어, 업로드 전 브라우저에서 자동으로 크기를 줄입니다.
   // (동영상은 브라우저에서 압축이 어려워 원본 그대로 올라갑니다.)
@@ -39311,6 +39657,7 @@ document.addEventListener('keydown',function(e){
   document.querySelectorAll('.le-season-opt').forEach(function(optBtn){
     optBtn.addEventListener('click', async function(){
       var theme = optBtn.getAttribute('data-theme');
+      if (!(await seasonAdminAuth())) return;
       applyTheme(theme, null);
       saveTheme(theme, null);
       modal.style.display = 'none';
@@ -39320,6 +39667,7 @@ document.addEventListener('keydown',function(e){
   if (uploadInput) uploadInput.addEventListener('change', async function(evt){
     var file = evt.target.files[0];
     if (!file) return;
+    if (!(await seasonAdminAuth())) { evt.target.value = ''; return; }
 
     var isVideo = /^video\//.test(file.type);
 
