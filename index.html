@@ -39064,17 +39064,15 @@ document.addEventListener('keydown',function(e){
     <div id="leSeasonAutoStatus" style="font-size:11px;color:#8b5cf6;margin:-8px 0 14px;display:none;">🤖 자동 모드: 현재 위치의 실시간 날씨를 확인해 배경을 고르고 있어요...</div>
 
     <div style="border-top:1px solid #e5e7eb;padding-top:14px;margin-bottom:14px;">
-      <div style="font-size:13px;font-weight:800;color:#1B2A31;margin-bottom:6px;">🔊 환경 소리 (코드로 만든 합성음)</div>
-      <div style="font-size:11px;color:#64748b;line-height:1.6;margin-bottom:8px;">'🌇 시간·기온 연동 하늘' 테마에서 시각·날씨에 맞게 가끔 들립니다. 밤엔 귀뚜라미·개구리, 아침엔 참새, 낮엔 차 경적·기차, 비 오는 날엔 조용한 빗소리. 소리 파일을 쓰지 않아 용량이 늘지 않습니다.</div>
+      <div style="font-size:13px;font-weight:800;color:#1B2A31;margin-bottom:6px;">🎹 잔잔한 피아노 배경음 (코드로 만든 합성음)</div>
+      <div style="font-size:11px;color:#64748b;line-height:1.6;margin-bottom:8px;">'🌇 시간·기온 연동 하늘' 테마에서 시각·날씨에 맞는 잔잔한 피아노 곡이 한 곡씩 흘러나오고, 곡 사이엔 잠깐 쉽니다. 아침·낮은 밝게, 저녁은 따뜻하게, 밤은 고요하게, 비 오는 날은 더 느리고 차분하게. 소리 파일을 쓰지 않고 코드로 직접 만들어 용량이 늘지 않습니다.</div>
       <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:700;color:#334155;cursor:pointer;"><input type="checkbox" id="leSndToggle" style="width:18px;height:18px;"> 소리 켜기</label>
       <div style="display:flex;align-items:center;gap:8px;margin:10px 0;font-size:12px;color:#475569;">볼륨 <input type="range" id="leSndVol" min="0" max="100" step="1" style="flex:1;"><span id="leSndVolText" style="width:30px;text-align:right;font-weight:700;">60</span></div>
       <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;">
-        <button class="le-snd-prev" data-snd="cricket" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">귀뚜라미</button>
-        <button class="le-snd-prev" data-snd="frog" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">개구리</button>
-        <button class="le-snd-prev" data-snd="sparrow" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">참새</button>
-        <button class="le-snd-prev" data-snd="horn" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">차 경적</button>
-        <button class="le-snd-prev" data-snd="train" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">기차</button>
-        <button class="le-snd-prev" data-snd="rain" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">빗소리</button>
+        <button class="le-snd-prev" data-snd="bright" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">☀️ 아침·낮 곡</button>
+        <button class="le-snd-prev" data-snd="warm" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">🌇 저녁 곡</button>
+        <button class="le-snd-prev" data-snd="calm" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">🌙 밤 곡</button>
+        <button class="le-snd-prev" data-snd="rain" style="padding:5px 9px;border:1px solid #cbd5e1;border-radius:8px;background:#f8fafc;font-size:11px;cursor:pointer;">☔ 비 오는 날 곡</button>
       </div>
       <div id="leSndMsg" style="font-size:11px;color:#8b5cf6;line-height:1.5;margin-bottom:8px;"></div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
@@ -39136,12 +39134,13 @@ document.addEventListener('keydown',function(e){
   function clearLayer(){ stopStorm(); skyInfo = null; layer.innerHTML=''; layer.style.background=''; layer.style.backgroundImage=''; layer.style.backgroundSize=''; layer.style.backgroundPosition=''; }
 
 
-  // ── 🔊 시간 연동 환경 소리 (오디오 파일 없이 브라우저가 코드로 직접 합성 → 용량 증가 없음) ──
-  //  · '시간·기온 연동 하늘' 테마일 때만 동작: 밤=귀뚜라미(+가끔 개구리), 아침=가끔 참새,
-  //    낮=아주 가끔 차 경적·기차, 비 오는 날=가끔 아주 조용한 빗소리
+  // ── 🎹 시간 연동 잔잔한 피아노 배경음 (오디오 파일 없이 브라우저가 코드로 직접 합성 → 용량 증가 없음) ──
+  //  · '시간·기온 연동 하늘' 테마일 때만 동작. 아침·낮=밝은 곡, 저녁=따뜻한 곡, 밤=고요한 곡, 비 오는 날=더 느리고 차분한 곡
+  //  · 곡은 저작권 걱정 없는 '직접 만든' 느린 왈츠풍 아르페지오이며, 코드가 매번 조금씩 다르게 작곡해서 연주
+  //  · 한 곡(약 35~50초)이 끝나면 잠깐 쉬었다가 다음 곡 (계속 이어지지 않아 거슬리지 않음)
   //  · 내 설정(소리 켜기/끄기, 볼륨, 테마)은 이 브라우저에만 저장되고, 설정하지 않으면 관리자 기본값을 따름
   var SND_KEY = 'leSeasonPersonal_v1';
-  var personal = { theme: null, sound: null, vol: 60 };
+  var personal = { theme: null, sound: null, vol: 70 };
   try {
     var pj = JSON.parse(localStorage.getItem(SND_KEY) || 'null');
     if (pj) {
@@ -39153,24 +39152,43 @@ document.addEventListener('keydown',function(e){
   function savePersonal(){ try { localStorage.setItem(SND_KEY, JSON.stringify(personal)); } catch(e) {} }
   var adminCfg = { theme: null, image_url: null, sound: false };
   var skyInfo = null;                       // 하늘 테마가 켜져 있을 때만 값이 있음 (시각·날씨 정보)
-  var actx = null, comp = null, master = null, noiseBuf = null, brownBuf = null;
-  var sndNext = {}, cricketNext = [0, 0, 0];
+  var actx = null, comp = null, master = null, bus = null, impulseBuf = null, pianoWave = null, nextPieceAt = 0, previewUntil = 0;
 
   function sndWanted(){ return personal.sound !== null ? personal.sound : !!adminCfg.sound; }
   function setVol(){ if (master) master.gain.value = Math.pow(personal.vol / 100, 1.6); }
 
+  function getImpulse(){                    // 은은한 잔향(홀에서 울리는 느낌)
+    if (!impulseBuf) {
+      var len = Math.floor(actx.sampleRate * 2.6);
+      impulseBuf = actx.createBuffer(2, len, actx.sampleRate);
+      for (var c = 0; c < 2; c++) {
+        var d = impulseBuf.getChannelData(c);
+        for (var i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, 2.6);
+      }
+    }
+    return impulseBuf;
+  }
   function ensureAudio(){
     var AC = window.AudioContext || window.webkitAudioContext;
     if (!AC) return false;
     if (!actx) { try { actx = new AC(); } catch(e) { return false; } }
     if (!comp) { comp = actx.createDynamicsCompressor(); comp.connect(actx.destination); }
-    if (!master) { master = actx.createGain(); master.connect(comp); setVol(); }
+    if (!master) {
+      master = actx.createGain(); master.connect(comp); setVol();
+      bus = actx.createGain(); bus.connect(master);
+      var conv = actx.createConvolver(); conv.buffer = getImpulse();
+      var rg = actx.createGain(); rg.gain.value = 0.38;
+      bus.connect(conv); conv.connect(rg); rg.connect(master);
+    }
     if (actx.state === 'suspended') { try { var p = actx.resume(); if (p && p.catch) p.catch(function(){}); } catch(e) {} }
     return true;
   }
+  function silence(){                       // 이미 예약된 연주까지 즉시 조용히
+    if (master) { try { master.disconnect(); } catch(e) {} }
+    master = null; bus = null; nextPieceAt = 0;
+  }
   function stopSound(){
-    if (master) { try { master.disconnect(); } catch(e) {} master = null; }  // 이미 예약된 소리도 즉시 조용해짐
-    sndNext = {}; cricketNext = [0, 0, 0];
+    silence();
     if (actx && actx.state === 'running') { try { actx.suspend(); } catch(e) {} }
   }
   function applySound(){
@@ -39182,156 +39200,117 @@ document.addEventListener('keydown',function(e){
     document.addEventListener(ev, function(){ if (sndWanted()) ensureAudio(); }, { passive: true });
   });
 
-  function getNoise(){
-    if (!noiseBuf) {
-      var n = actx.sampleRate * 2, b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0);
-      for (var i = 0; i < n; i++) d[i] = Math.random() * 2 - 1;
-      noiseBuf = b;
+  // 피아노 한 음: 배음이 섞인 파형 2개(살짝 어긋난 음정으로 따뜻하게) → 시간이 지날수록 어두워지며 사라짐
+  function pianoNote(midi, t, vel){
+    if (!bus) return;
+    if (!pianoWave) {
+      var re = new Float32Array(9), im = new Float32Array([0, 1, 0.45, 0.25, 0.14, 0.08, 0.05, 0.03, 0.02]);
+      pianoWave = actx.createPeriodicWave(re, im);
     }
-    return noiseBuf;
-  }
-  function getBrown(){
-    if (!brownBuf) {
-      var n = actx.sampleRate * 4, b = actx.createBuffer(1, n, actx.sampleRate), d = b.getChannelData(0), last = 0;
-      for (var i = 0; i < n; i++) { last = (last + 0.02 * (Math.random() * 2 - 1)) / 1.02; d[i] = last * 3.5; }
-      brownBuf = b;
-    }
-    return brownBuf;
-  }
-
-  // 기본 톤: 주파수 f0→f1 로 변하는 소리 하나 (att=서서히 커지는 시간, rel=서서히 작아지는 시간)
-  function tone(type, f0, f1, t, dur, vol, att, rel, dest, lp){
-    var o = actx.createOscillator(); o.type = type;
-    o.frequency.setValueAtTime(f0, t);
-    if (f1 !== f0) o.frequency.linearRampToValueAtTime(f1, t + dur);
+    var f = 440 * Math.pow(2, (midi - 69) / 12);
+    var decay = Math.max(1.2, 3.6 - (midi - 40) * 0.04);     // 높은 음일수록 빨리 사라짐
     var g = actx.createGain();
     g.gain.setValueAtTime(0.0001, t);
-    g.gain.linearRampToValueAtTime(vol, t + att);
-    g.gain.setValueAtTime(vol, t + Math.max(att, dur - rel));
-    g.gain.linearRampToValueAtTime(0.0001, t + dur);
-    if (lp) { var f = actx.createBiquadFilter(); f.type = 'lowpass'; f.frequency.value = lp; o.connect(f); f.connect(g); }
-    else o.connect(g);
-    g.connect(dest); o.start(t); o.stop(t + dur + 0.03);
-  }
-  function clack(t, amp, dest){  // 철로 이음매 "덜컹"
-    var s = actx.createBufferSource(); s.buffer = getNoise();
-    var bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700 + Math.random() * 300; bp.Q.value = 1.1;
-    var g = actx.createGain();
-    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(amp, t + 0.006); g.gain.linearRampToValueAtTime(0.0001, t + 0.09);
-    s.connect(bp); bp.connect(g); g.connect(dest); s.start(t, Math.random() * 1.5, 0.12);
+    g.gain.linearRampToValueAtTime(vel * 0.6, t + 0.008);
+    g.gain.exponentialRampToValueAtTime(0.0001, t + decay);
+    var lp = actx.createBiquadFilter(); lp.type = 'lowpass';
+    lp.frequency.setValueAtTime(Math.min(7000, f * 7), t);
+    lp.frequency.exponentialRampToValueAtTime(Math.max(500, f * 1.5), t + decay * 0.8);
+    lp.connect(g); g.connect(bus);
+    for (var k = 0; k < 2; k++) {
+      var o = actx.createOscillator(); o.setPeriodicWave(pianoWave);
+      o.frequency.setValueAtTime(f, t);
+      o.detune.value = k === 0 ? -3 : 3;
+      o.connect(lp); o.start(t); o.stop(t + decay + 0.05);
+    }
   }
 
-  function cricketChirp(t, f, v){            // 귀뚜라미: 높은 소리 4번 짧게 "찌르르르"
-    if (!master) return;
-    for (var i = 0; i < 4; i++) tone('sine', f, f, t + i * 0.045, 0.03, v, 0.006, 0.02, master);
+  // 분위기별 곡 설정 (음계, 으뜸음, 빠르기, 코드 진행)
+  var MAJ = [0, 2, 4, 5, 7, 9, 11], MIN = [0, 2, 3, 5, 7, 8, 10];
+  var MOODS = {
+    bright: { root: 60, scale: MAJ, bpm: 84, vel: 1.0,  rest: 0.10, full: true,  progs: [[0,5,3,4],[0,4,5,3],[3,0,4,5],[0,2,3,4]] },
+    warm:   { root: 62, scale: MIN, bpm: 70, vel: 0.9,  rest: 0.15, full: true,  progs: [[0,5,2,6],[0,3,6,2],[0,5,3,4]] },
+    calm:   { root: 57, scale: MIN, bpm: 58, vel: 0.8,  rest: 0.30, full: false, progs: [[0,5,2,6],[0,3,0,4],[0,6,5,6]] },
+    rain:   { root: 62, scale: MIN, bpm: 54, vel: 0.75, rest: 0.35, full: false, progs: [[0,3,6,2],[0,5,3,4]] }
+  };
+  function degMidi(M, x){                   // 음계 위의 몇 번째 음인지(x) → 피아노 음 높이
+    var o = Math.floor(x / 7), r = ((x % 7) + 7) % 7;
+    return M.root + M.scale[r] + 12 * o;
   }
-  function sparrow(t){                        // 참새: 짧은 "짹짹" 여러 번
-    if (!master) return;
-    var n = 4 + Math.floor(Math.random() * 5), base = 3200 + Math.random() * 900, tt = t;
-    for (var i = 0; i < n; i++) {
-      var f0 = base * (0.9 + Math.random() * 0.3), up = Math.random() < 0.5;
-      tone('sine', f0, f0 * (up ? 1.35 : 0.75), tt, 0.05 + Math.random() * 0.04, 0.07, 0.008, 0.04, master);
-      tt += 0.09 + Math.random() * 0.12;
-    }
+  function chordCands(d){                   // 멜로디가 쓸 수 있는 화음 구성음
+    var c = [];
+    [0, 2, 4].forEach(function(off){ [-7, 0, 7].forEach(function(m){ var x = d + off + m; if (x >= 3 && x <= 12) c.push(x); }); });
+    return c;
   }
-  function frog(t){                           // 개구리: 낮은 "개굴개굴"
-    if (!master) return;
-    var n = 3 + Math.floor(Math.random() * 4), f = 170 + Math.random() * 60;
-    for (var i = 0; i < n; i++) {
-      var s = t + i * 0.16;
-      var o = actx.createOscillator(); o.type = 'sawtooth';
-      o.frequency.setValueAtTime(f * 1.25, s); o.frequency.linearRampToValueAtTime(f, s + 0.1);
-      var bp = actx.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 700 + Math.random() * 200; bp.Q.value = 2.5;
-      var g = actx.createGain();
-      g.gain.setValueAtTime(0.0001, s); g.gain.linearRampToValueAtTime(0.16, s + 0.02); g.gain.linearRampToValueAtTime(0.0001, s + 0.12);
-      o.connect(bp); bp.connect(g); g.connect(master); o.start(s); o.stop(s + 0.14);
-    }
+  function pickNear(c, prev){
+    c = c.slice().sort(function(a, b){ return Math.abs(a - prev) - Math.abs(b - prev); }).slice(0, 3);
+    return c[Math.floor(Math.random() * c.length)];
   }
-  function carHorn(t){                        // 멀리서 들리는 차 경적 "빵" 또는 "빵빵"
-    if (!master) return;
-    var beeps = Math.random() < 0.5 ? 1 : 2, dur = beeps === 1 ? 0.45 : 0.17, tt = t;
-    for (var b = 0; b < beeps; b++) {
-      tone('square', 415, 415, tt, dur, 0.045, 0.01, 0.04, master, 1200);
-      tone('square', 500, 500, tt, dur, 0.045, 0.01, 0.04, master, 1200);
-      tt += dur + 0.14;
-    }
-  }
-  function trainPass(t){                      // 멀리 지나가는 기차: 기적 + 낮은 울림 + 덜컹덜컹
-    if (!master) return;
-    var total = 12;
-    tone('sawtooth', 311, 311, t + 0.3, 1.6, 0.04, 0.08, 0.5, master, 900);
-    tone('sawtooth', 370, 370, t + 0.3, 1.6, 0.04, 0.08, 0.5, master, 900);
-    var s = actx.createBufferSource(); s.buffer = getBrown(); s.loop = true;
-    var lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 260;
-    var g = actx.createGain();
-    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.2, t + total * 0.45); g.gain.linearRampToValueAtTime(0.0001, t + total);
-    s.connect(lp); lp.connect(g); g.connect(master); s.start(t); s.stop(t + total + 0.1);
-    var tt = t + 1, gap = 0.42;
-    while (tt < t + total - 1) {
-      var amp = 0.06 * Math.sin(Math.PI * (tt - t) / total);
-      clack(tt, amp, master); clack(tt + 0.09, amp * 0.8, master);
-      tt += gap; gap = Math.max(0.26, gap * 0.985);
-    }
-  }
-  function rainSound(t, dur){                 // 아주 조용한 빗소리
-    if (!master) return;
-    var s = actx.createBufferSource(); s.buffer = getNoise(); s.loop = true;
-    var hp = actx.createBiquadFilter(); hp.type = 'highpass'; hp.frequency.value = 900;
-    var lp = actx.createBiquadFilter(); lp.type = 'lowpass'; lp.frequency.value = 7000;
-    var g = actx.createGain();
-    g.gain.setValueAtTime(0.0001, t); g.gain.linearRampToValueAtTime(0.05, t + 2.5);
-    g.gain.setValueAtTime(0.05, t + dur - 3); g.gain.linearRampToValueAtTime(0.0001, t + dur);
-    s.connect(hp); hp.connect(lp); lp.connect(g); g.connect(master); s.start(t); s.stop(t + dur + 0.1);
-  }
+  function rnd(a){ return a[Math.floor(Math.random() * a.length)]; }
 
-  // 1초마다 현재 시각·날씨를 보고 소리를 예약 (가끔 나는 소리는 무작위 간격)
-  function due(name, now, minS, maxS, firstMin, firstMax){
-    if (sndNext[name] == null) { sndNext[name] = now + firstMin + Math.random() * (firstMax - firstMin); return false; }
-    if (now < sndNext[name]) return false;
-    sndNext[name] = now + minS + Math.random() * (maxS - minS);
-    return true;
-  }
-  var CR_F = [4300, 4650, 4950];
-  function soundTick(){
-    if (!sndWanted() || !skyInfo || !actx || !master || actx.state !== 'running' || document.hidden) return;
-    var wx = skyInfo.wx, fx = skyInfo.fixed(), d = new Date();
-    var tm = (fx != null) ? fx : (d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60);
-    var sr = wx.sr, ss = wx.ss, now = actx.currentTime;
-    var rainy = (wx.code >= 51 && wx.code <= 67) || (wx.code >= 80 && wx.code <= 82) || (wx.code >= 95 && wx.code <= 99);
-    var warm = wx.temp >= 10;                                   // 추우면 귀뚜라미·개구리는 조용
-    var lv = (tm >= ss) ? Math.max(0, Math.min(1, (tm - (ss + 10)) / 40))
-                        : (tm <= sr ? Math.max(0, Math.min(1, (sr - 15 - tm) / 30)) : 0);   // 밤 정도(0~1)
-    var dawn = tm > sr - 20 && tm < sr + 150;                  // 새벽~아침
-    var day = tm >= sr + 60 && tm < ss - 20;                   // 낮
-
-    if (lv > 0 && warm && !rainy) {
-      for (var k = 0; k < 3; k++) {
-        if (cricketNext[k] < now) cricketNext[k] = now + Math.random() * 0.4;
-        while (cricketNext[k] < now + 1.3) {
-          cricketChirp(cricketNext[k], CR_F[k] * (0.98 + Math.random() * 0.04), 0.03 * lv);
-          cricketNext[k] += 0.5 + Math.random() * 0.3;
+  // 한 곡을 통째로 작곡해서 예약 (왼손: 물결치는 아르페지오, 오른손: 단순한 멜로디). 끝나는 시각 반환
+  function playPiece(moodKey, t0, bars){
+    var M = MOODS[moodKey], eighth = 30 / M.bpm, t = t0;
+    var progA = rnd(M.progs), progB = rnd(M.progs), prev = 7 + rnd([0, 2, 4]);
+    var lhFull = [[0, -7], [1, -3], [2, 0], [3, 2], [4, 0], [5, -3]], lhSoft = [[0, -7], [2, -3], [4, 0]];
+    for (var b = 0; b < bars; b++) {
+      var last = (b === bars - 1), pb = b % 4, phrase = Math.floor(b / 4);
+      var d = last ? 0 : ((phrase === 2 ? progB : progA)[pb]);
+      var lh = last ? [[0, -7], [1, -3], [2, 0]] : (M.full ? lhFull : lhSoft);
+      for (var i = 0; i < lh.length; i++) {
+        var v = 0.07 * M.vel * (lh[i][0] === 0 ? 1.25 : 1) * (0.9 + Math.random() * 0.2);
+        pianoNote(degMidi(M, d + lh[i][1]), t + lh[i][0] * eighth + Math.random() * 0.015, v);
+      }
+      var skip = !last && (pb === 1 || pb === 2) && Math.random() < M.rest;
+      if (!skip) {
+        var pat = last ? [6] : (pb === 3 ? rnd([[6], [4, 2]]) : (M.full ? rnd([[2,2,2],[3,3],[4,2],[3,1,2],[2,1,1,2],[1,1,4]]) : rnd([[6],[4,2],[3,3]])));
+        var pos = 0;
+        for (var n = 0; n < pat.length; n++) {
+          var strong = (pos === 0 || pos === 3 || (pb === 3 && n === pat.length - 1));
+          if (last) prev = 7;
+          else if (strong) prev = pickNear(chordCands(d), prev);
+          else prev = Math.max(3, Math.min(12, prev + rnd([-2, -1, -1, 1, 1, 2])));
+          var mv = 0.13 * M.vel * (0.9 + Math.random() * 0.2);
+          pianoNote(degMidi(M, prev), t + pos * eighth + Math.random() * 0.02, mv);
+          pos += pat[n];
         }
       }
-    } else cricketNext = [0, 0, 0];
-
-    if (lv > 0.6 && warm) { if (due('frog', now, 120, 360, 10, 90)) frog(now + 0.05); } else sndNext.frog = null;
-    if (dawn && !rainy)   { if (due('sparrow', now, 45, 150, 3, 20)) sparrow(now + 0.05); } else sndNext.sparrow = null;
-    if (day)              { if (due('horn', now, 360, 900, 30, 240)) carHorn(now + 0.05); } else sndNext.horn = null;
-    if (day)              { if (due('train', now, 1500, 3600, 300, 1200)) trainPass(now + 0.05); } else sndNext.train = null;
-    if (rainy)            { if (due('rain', now, 90, 240, 1, 10)) rainSound(now + 0.1, 8 + Math.random() * 7); } else sndNext.rain = null;
+      t += 6 * eighth;
+    }
+    return t + 3.0;
   }
-  setInterval(soundTick, 1000);
 
-  // 설정 화면의 "미리 듣기" 버튼: 지금 시각과 상관없이 해당 소리를 한 번 들려줌
+  function pickMood(tm, wx, rainy){
+    if (rainy) return 'rain';
+    if (tm >= wx.ss + 40 || tm <= wx.sr - 20) return 'calm';
+    if (tm >= wx.ss - 60) return 'warm';
+    return 'bright';
+  }
+
+  // 0.5초마다 확인: 곡이 끝나고 쉬는 시간이 지났으면 지금 시각·날씨에 맞는 새 곡 시작
+  function soundTick(){
+    if (!sndWanted()) return;
+    if (!skyInfo) { if (nextPieceAt && !(actx && actx.currentTime < previewUntil)) silence(); return; }     // 하늘 테마가 아니면 조용
+    if (!master) { if (!ensureAudio()) return; }
+    if (!actx || !master || actx.state !== 'running' || document.hidden) return;
+    var now = actx.currentTime;
+    if (now < previewUntil) return;                            // 미리 듣기 중에는 새 곡을 시작하지 않음
+    if (nextPieceAt === 0) nextPieceAt = now + 1.5;            // 켜자마자 곧 시작
+    if (now < nextPieceAt) return;
+    var wx = skyInfo.wx, fx = skyInfo.fixed(), d = new Date();
+    var tm = (fx != null) ? fx : (d.getHours() * 60 + d.getMinutes() + d.getSeconds() / 60);
+    var rainy = (wx.code >= 51 && wx.code <= 67) || (wx.code >= 80 && wx.code <= 82) || (wx.code >= 95 && wx.code <= 99);
+    var end = playPiece(pickMood(tm, wx, rainy), now + 0.2, 16);
+    nextPieceAt = end + 20 + Math.random() * 40;               // 곡 사이 20~60초 쉼
+  }
+  setInterval(soundTick, 500);
+
+  // 설정 화면의 "미리 듣기": 지금 시각과 상관없이 해당 분위기의 짧은 곡(6마디)을 들려줌
   function previewSound(kind){
+    if (!MOODS[kind]) return;
     if (!ensureAudio()) { alert('이 브라우저는 소리 재생을 지원하지 않습니다.'); return; }
-    var now = actx.currentTime + 0.1;
-    if (kind === 'cricket') { for (var k = 0; k < 3; k++) for (var i = 0; i < 6; i++) cricketChirp(now + k * 0.17 + i * (0.5 + k * 0.04), CR_F[k], 0.03); }
-    else if (kind === 'sparrow') sparrow(now);
-    else if (kind === 'frog') frog(now);
-    else if (kind === 'horn') carHorn(now);
-    else if (kind === 'train') trainPass(now);
-    else if (kind === 'rain') rainSound(now, 7);
+    silence(); ensureAudio();                                   // 듣던 소리는 끊고 새로 시작
+    previewUntil = playPiece(kind, actx.currentTime + 0.15, 6);
   }
 
   function updateSoundUi(){
