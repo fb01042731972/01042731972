@@ -1,0 +1,2110 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>CNC 제어판 - 마하3 방식</title>
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;width:100%;height:100%;overflow:hidden}
+body{display:flex;flex-direction:column;height:100dvh}
+body{font-family:Tahoma,"Malgun Gothic",Arial,sans-serif;background:#aaa;color:#111;font-size:11px}
+button,input,select{font:inherit}
+button{border:1px solid #555;background:linear-gradient(#fafafa,#c5c5c5);border-radius:2px;color:#111;min-height:25px;padding:3px 8px;font-weight:600;cursor:pointer}
+button:hover{filter:brightness(1.04)}
+button:active{background:#aaa}
+button:disabled{opacity:.45;cursor:not-allowed}
+input,select{border:1px solid #666;background:#fff;padding:3px 5px;color:#111}
+.top{flex:0 0 auto;min-height:36px;background:linear-gradient(#f7f7f7,#bcbcbc);border-bottom:2px solid #555;display:flex;flex-wrap:wrap;align-items:center;padding:2px 5px;gap:3px 6px;row-gap:3px}
+.title{font-weight:bold;font-size:13px;margin:0 10px 0 4px}
+.menu{display:flex;gap:1px}
+.menu button{border:0;background:transparent;font-weight:normal}
+.connection{margin-left:auto;display:flex;flex-wrap:wrap;align-items:center;gap:4px;row-gap:3px}
+.dot{width:10px;height:10px;border-radius:50%;background:#c00;border:1px solid #600}
+.dot.on{background:#0a2;box-shadow:0 0 5px #0a2}
+.badge{border:1px solid #666;background:#eee;padding:3px 7px}
+.screen-tabs{flex:0 0 auto;height:36px;background:#bdbdbd;border-bottom:2px solid #555;display:flex;align-items:end;padding:0 5px;gap:3px;overflow-x:auto;overflow-y:hidden}
+.screen-tabs button{height:30px;min-width:108px;flex:0 0 auto;border-radius:5px 5px 0 0}
+.screen-tabs button.active{background:#f5f5f5;border-bottom-color:#f5f5f5}
+.workspace{flex:1 1 auto;min-height:0;display:grid;grid-template-columns:28% 42% 30%;grid-template-rows:minmax(0,1fr) minmax(0,.78fr) minmax(155px,.42fr);gap:3px;padding:3px;background:#aaa}
+.box{border:1px solid #555;background:#ddd;min-width:0;min-height:0;overflow:hidden}
+.boxhead{height:24px;background:linear-gradient(#f5f5f5,#bdbdbd);border-bottom:1px solid #777;padding:4px 7px;font-weight:bold;white-space:nowrap}
+.gcode{grid-column:1;grid-row:1/span 2;display:flex;flex-direction:column}
+.gcode-tools{padding:4px;display:flex;gap:3px;border-bottom:1px solid #888}
+.gcode-tools input[type=file]{flex:1;min-width:0}
+#gcodeView{flex:1;overflow:auto;background:#eef1e9;font:11px Consolas,monospace;border:1px solid #888;margin:3px}
+.gline{display:grid;grid-template-columns:48px 1fr;padding:2px 5px;white-space:pre}
+.gline .ln{color:#666;text-align:right;padding-right:8px}
+.gline.selected{background:#cfe3ff;outline:1px solid #4a86c5}
+.gline.current{background:#ffe36b}
+.gline.error{background:#f7aaaa}
+.dro{grid-column:2;grid-row:1;display:flex;flex-direction:column}
+.coordbar{display:flex;gap:3px;padding:4px;align-items:center}
+.coordbar .on{background:#b8d8f2}
+.axisrow{display:grid;grid-template-columns:52px 1fr 70px 55px;gap:3px;align-items:center;margin:2px 4px}
+.axislabel{font-size:18px;font-weight:bold;text-align:center;background:#444;color:#fff;border-radius:2px;padding:5px;cursor:pointer}
+.refled{display:inline-block;width:9px;height:9px;border-radius:50%;background:#888;border:1px solid #222;margin-left:4px;vertical-align:middle}
+.refled.on{background:#0c3;box-shadow:0 0 4px #0c3}
+.droval{font:27px Consolas,monospace;text-align:right;padding:3px 8px;background:#dff0c9;border:2px inset #888;color:#073b00}
+.zero{font-size:10px}
+.scale{background:#f8f8f8;border:1px solid #aaa;padding:5px;text-align:center}
+.machine-row{display:flex;gap:3px;padding:4px}
+.machine-row button{flex:1;min-height:48px}
+.reset{background:#df2027;color:#fff;border:2px solid #700;font-size:18px}
+.cycle{background:#c9edb7;border-color:#477b35}
+.hold{background:#ffe89a}.stop{background:#f4a0a0}
+.state-row{display:flex;gap:5px;padding:3px 4px;align-items:center}
+.led{width:12px;height:12px;border-radius:50%;background:#0a0;border:1px solid #050}
+.toolpath{grid-column:3;grid-row:1;display:flex;flex-direction:column}
+.pathhead{display:flex;gap:3px;padding:3px}
+.pathhead span{margin-left:auto}
+#pathCanvas{flex:1;min-height:0;width:100%;background:#050505;border:2px inset #888}
+.control{grid-column:2;grid-row:2;display:grid;grid-template-columns:1fr 1fr 1fr;gap:3px;padding:3px}
+.subbox{border:1px solid #777;background:#eee;min-width:0}
+.subhead{background:#b9cde0;border-bottom:1px solid #777;text-align:center;font-weight:bold;padding:4px}
+.subbody{padding:5px}
+.program-controls{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:3px;padding:4px;overflow:auto}
+.program-controls button{min-height:35px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.metric{display:grid;grid-template-columns:55px 1fr;gap:3px;align-items:center;margin:3px 0}
+.metric input{width:100%;text-align:right;background:#e4f2d8;font:15px Consolas,monospace}
+.override{display:grid;grid-template-columns:24px 1fr 24px;gap:3px;align-items:center}
+.override .bar{height:70px;border:1px solid #777;background:#ddd;position:relative}
+.override .fill{position:absolute;bottom:0;left:0;right:0;height:50%;background:#65b85a}
+.jog{grid-column:3;grid-row:2;display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px}
+.jogbox{border:1px solid #777;background:#eee}
+.jogtitle{background:#b9cde0;text-align:center;font-weight:bold;padding:4px}
+.jogopts{padding:4px}
+.steps{display:flex;gap:2px;flex-wrap:wrap;margin-top:3px}
+.steps button.active{background:#9dcced}
+.jogpad{display:grid;grid-template-columns:repeat(3,1fr);grid-template-rows:43px 43px 43px;gap:3px;padding:6px}
+.jogpad button{font-size:14px}
+.zpad{display:grid;grid-template-columns:1fr 1fr;gap:4px;padding:6px}
+.zpad button{height:60px}
+.bottom{grid-column:1/4;grid-row:3;display:grid;grid-template-columns:30% 23% 23% 24%;gap:3px;min-height:155px;overflow:hidden}.bottom>.box{min-height:0}.bottom .boxhead{flex:none}.bottom .info{font-size:10px}.bottom .info table{table-layout:fixed}.bottom .info td{padding:2px 3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}.bottom .info td:first-child{width:38%}
+.mdi{display:flex;flex-direction:column}
+.mdirow{display:flex;padding:3px;gap:3px}
+.mdirow input{flex:1;font:12px Consolas,monospace}
+.console{flex:1;overflow:auto;background:#111;color:#ddd;font:10px Consolas,monospace;padding:4px}
+.info{padding:5px;overflow:auto;min-height:0}.info table{width:100%;border-collapse:collapse}.info td{border:1px solid #999;padding:3px}.info td:first-child{width:42%;background:#ddd}
+.statusbar{flex:0 0 auto;height:24px;min-height:24px;background:linear-gradient(#ddd,#999);border-top:2px solid #555;display:flex;align-items:center;padding:0 7px;gap:15px;flex-wrap:wrap}
+.statusbar .file{flex:1}.alarm{color:#d00;font-weight:bold}
+#pages{flex:1 1 auto;min-height:0;overflow:hidden}
+.page{display:none;width:100%;height:100%;padding:8px;background:#ddd;overflow:auto}
+.page.active{display:block}
+.page h3{margin:4px 0 8px}.card{border:1px solid #777;background:#eee;padding:8px;margin-bottom:8px}
+.offset-table{width:100%;border-collapse:collapse;background:#fff}.offset-table th,.offset-table td{border:1px solid #777;padding:5px;text-align:center}
+#jogFlyout{position:fixed;right:5px;top:75px;width:285px;background:#eee;border:2px solid #555;box-shadow:0 5px 20px #333;z-index:20;display:none}
+#jogFlyout .head{background:#b9cde0;padding:7px;font-weight:bold}
+#jogFlyout .body{padding:8px}
+#jogFlyout .close{float:right}
+.alarmState{background:#e21f26!important;color:#fff!important}
+#recoverBar{display:none;flex:0 0 auto;background:#ffe9a8;border-bottom:2px solid #a77b00;padding:5px 8px;font-size:12px}#recoverBar .sub{font-size:11px;color:#533;margin-top:3px}#recoverBar input{width:45px}
+#alarmPanel{display:none;flex:0 0 auto;background:#ffd2d2;border-bottom:3px solid #b00;padding:6px 8px;font-size:12px}#alarmPanel .t{font-size:14px;font-weight:bold;color:#900}#alarmPanel ol{margin:4px 0 4px 18px;padding:0}#alarmPanel .sub{color:#533;font-size:11px}
+
+/* ===== 마하3 좌표창(DRO) ===== */
+.dro{background:linear-gradient(#0c0c48,#2b2b86 62%,#7676bd)}
+.dro .boxhead{background:linear-gradient(#d8d8e8,#9a9ac0)}
+.dro .coordbar{color:#fff;font-size:10px;gap:6px}
+.m3dro{flex:1;min-height:0;display:grid;grid-template-columns:24px 40px 9px minmax(0,1fr) 70px;grid-template-rows:repeat(4,minmax(0,1fr));gap:3px;padding:3px 5px}
+.m3refall{grid-column:1;grid-row:1/5;writing-mode:vertical-rl;text-orientation:upright;letter-spacing:1px;font-size:11px;padding:2px;min-height:0;background:linear-gradient(90deg,#f2f2f2,#9c9c9c);border:2px outset #ccc;border-radius:5px}
+.m3zero{grid-column:2;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;min-height:0;line-height:1;border-radius:5px}
+.m3zero small{font-size:9px;font-weight:600}.m3zero b{font-size:17px}
+.m3ref{grid-column:3;padding:0;min-height:0;border:0;background:#1a1a60;display:flex;align-items:stretch;justify-content:center}
+.m3dro .refled{display:block;width:7px;height:100%;margin:0;border-radius:1px;background:#d00000;border:1px solid #300;box-shadow:none}
+.m3dro .refled.on{background:#10e030;border-color:#050;box-shadow:0 0 5px #10e030}
+.m3dro .droval{grid-column:4;display:flex;align-items:center;justify-content:flex-end;min-height:0;font:600 clamp(20px,3.6vw,38px) Arial,sans-serif;background:#e6e2d6;border:2px inset #aaa;color:#000;padding:0 6px;overflow:hidden}
+.m3scale{grid-column:5;border:2px outset #ccc;background:linear-gradient(#f4f4f4,#bdbdbd);border-radius:4px;display:grid;grid-template-columns:1fr auto;grid-template-rows:1fr 1fr;align-items:center;padding:1px 3px;font-size:9px;min-height:0}
+.m3scale span{font-weight:bold}.m3scale input{grid-column:1/3;width:100%;min-width:0;text-align:right;font:11px Arial;padding:0 2px;height:16px}
+.m3led{display:inline-block;width:26px;height:6px;background:#444;border:1px solid #111;border-radius:1px;vertical-align:middle}
+.m3scale .m3led{width:18px;height:6px}
+.m3led.on{background:#ff3b30;box-shadow:0 0 5px #f33}.m3led.g.on,#offLed.on,#mcLed.on,#slLed.on{background:#ff3b30}
+.m3rad{grid-column:5;grid-row:4;display:flex;align-items:center;justify-content:space-between;padding:1px 4px;min-height:0;font-size:10px;line-height:1.05;border-radius:4px}
+.m3btns{display:grid;grid-template-columns:repeat(4,1fr);gap:3px 4px;padding:2px 5px 4px}
+.m3btns>div{display:flex;flex-direction:column;align-items:center;gap:1px;min-width:0}
+.m3btns .m3led{width:60%}
+.m3btns button{width:100%;min-height:24px;padding:1px 2px;font-size:10px;line-height:1.1;border:2px outset #ddd;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.m3btns button small{font-size:8px;font-weight:normal;color:#333}
+.m3btns button.alarmState small{color:#fff}
+
+/* ===== 마하3 G코드 창 ===== */
+.gcode .boxhead{background:linear-gradient(#d8d8e8,#9a9ac0)}
+#gcodeView{background:#a9bfa9;color:#000;font:600 clamp(11px,1.15vw,14px) Consolas,"Courier New",monospace;border:3px inset #556;margin:3px;min-height:0}
+#gcodeView .gline{padding:1px 4px;grid-template-columns:40px 1fr}
+#gcodeView .gline .ln{color:#4c6a4c;font-weight:normal;font-size:.8em}
+#gcodeView .gline.current{background:#fff;outline:1px solid #666}
+#gcodeView .gline.selected{background:#cfe3ff}
+.m3prog{height:6px;background:#556;margin:0 3px;border:1px solid #333}.m3prog>div{height:100%;width:0;background:#10e030}
+.m3file{display:flex;align-items:center;gap:4px;padding:3px 4px;font-size:11px}
+.m3filebox{flex:1;min-width:0;background:#f2f2f0;border:2px inset #aaa;padding:1px 4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;font-family:Consolas,monospace}
+.m3lines{white-space:nowrap}
+.m3fbtns{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:0 4px 4px}
+.m3fbtns button{min-height:26px;padding:1px 3px;font-size:11px;line-height:1.1;border:2px outset #ddd;border-radius:6px;background:linear-gradient(#f4f4f4,#b9b9b9);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.m3fbtns button small{font-size:8px;font-weight:normal;color:#333}
+#recentMenu{position:absolute;left:4px;right:4px;bottom:62px;background:#fff;border:2px solid #556;z-index:20;max-height:50%;overflow:auto;box-shadow:0 3px 8px #0006;font-size:11px}
+#recentMenu div{padding:4px 6px;border-bottom:1px solid #ddd;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#recentMenu div:hover{background:#cfe3ff}
+
+.m3line{display:grid;grid-template-columns:1fr 54px 1fr;gap:3px;padding:0 4px 4px;align-items:stretch}
+.m3line label{display:flex;flex-direction:column;align-items:center;font-size:10px;font-weight:bold;line-height:1}
+.m3line input{width:100%;min-width:0;text-align:right;font:600 13px Arial;background:#e6e2d6;border:2px inset #aaa;height:22px;padding:0 3px}
+.m3line button,.m3sim button{min-height:26px;padding:1px 3px;font-size:11px;line-height:1.1;border:2px outset #ddd;border-radius:6px;background:linear-gradient(#f4f4f4,#b9b9b9);display:flex;flex-direction:column;align-items:center;justify-content:center}
+.m3line button small,.m3sim button small{font-size:8px;font-weight:normal;color:#333}
+.m3sim{display:flex;align-items:center;gap:4px;padding:0 4px 4px}.m3sim button{flex:1}
+.m3sim .m3led{width:14px;height:22px;flex:none}
+.m3est{font-size:10px;text-align:right;line-height:1.1;white-space:nowrap}.m3est b{display:block;font:600 13px Consolas,monospace;background:#e6e2d6;border:2px inset #aaa;padding:0 3px}
+
+.m3btns{grid-template-columns:repeat(5,1fr)}
+.m3btns2{grid-template-columns:repeat(4,1fr);padding-top:0}
+.m3btns2 button{min-height:20px}
+.dro.togo .droval{background:#cfe6f5}
+
+/* 좌표창 높이 확보 + 글자 크기를 칸 높이에 맞춤 */
+.dro .boxhead{height:22px;padding:3px 7px}
+.dro .coordbar{padding:1px 4px;min-height:0}
+.dro .machine-row{padding:2px 4px}.dro .machine-row button{min-height:36px;font-size:12px}
+.dro .state-row{padding:1px 4px;color:#fff;font-size:11px}
+.m3dro{container-type:size;min-height:130px}
+.m3dro .droval{font-size:clamp(12px,calc((100cqh - 12px) / 4 * .66),44px);line-height:1}
+.m3refall{font-size:10px;letter-spacing:0;line-height:1.05}
+.m3zero small{font-size:8px}.m3zero b{font-size:clamp(11px,calc((100cqh - 12px) / 4 * .5),20px)}
+.m3scale span,.m3scale input{font-size:9px}
+.m3btns button{min-height:30px}
+.m3extra{display:grid;grid-template-columns:repeat(4,1fr);gap:3px;padding:3px}
+.m3extra button{min-height:30px;padding:1px 2px;font-size:10px;line-height:1.1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.m3extra small{font-size:8px;font-weight:normal;color:#333}
+/* ===================== 마하3 화면 배치 ===================== */
+html,body{background:#d4d0c8}
+body{font-family:Tahoma,"Malgun Gothic",Arial,sans-serif;font-size:12px}
+button{min-height:0}
+small{font-weight:normal}
+/* 메뉴줄 */
+.top{min-height:0;height:30px;flex-wrap:nowrap;background:linear-gradient(#f4f2ee,#d4d0c8);border-bottom:1px solid #808080;padding:0 6px;gap:6px}
+.title{display:none}
+.menu button{padding:2px 8px;min-height:0;height:22px;font-size:12px}
+.connection{flex-wrap:nowrap}
+.connection button,.connection select,.connection input,.connection .badge{height:22px;min-height:0;padding:0 7px;font-size:11px;line-height:20px}
+/* 탭줄 */
+.screen-tabs{height:30px;background:#d4d0c8;border-bottom:0;padding:3px 4px 0;gap:2px;align-items:flex-end;overflow:hidden}
+.screen-tabs button{height:25px;min-width:0;padding:0 6px;border:1px solid #666;border-bottom:0;border-radius:3px 3px 0 0;background:linear-gradient(#fbfbfb,#d6d6d6);color:#1a2f86;font-size:11px;font-weight:bold;white-space:nowrap}
+.screen-tabs button.active{background:#fff;color:#0a1a66;box-shadow:inset 0 -3px 0 #3b5bdb}
+/* 실행 화면 */
+.m3run{position:relative;flex:1 1 auto;min-height:0;display:grid;grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,44fr) 44px minmax(0,56fr);background:#d4d0c8;gap:0;padding:0}
+.m3upper{background:linear-gradient(#25257a,#3b3b96);border:2px solid #aab;display:grid;grid-template-columns:minmax(0,36fr) minmax(0,38fr) minmax(0,26fr);gap:12px;padding:8px 10px;min-height:0}
+.m3upper>*{min-width:0;min-height:0;grid-column:auto;grid-row:auto}
+.m3g{display:flex;flex-direction:column;min-height:0}
+#gcodeView{flex:1;min-height:0;margin:0;background:#a9bba9;border:3px inset #889;font:600 13px Consolas,"Courier New",monospace;color:#000}
+.m3prog{margin:3px 0 0;height:5px}
+.dro{display:flex;flex-direction:column;background:linear-gradient(#4848a8,#7c7cc8 55%,#bcbce8);border:2px solid #cdd;border-radius:4px;padding:4px 6px 6px;gap:4px}
+.m3dro{padding:0;gap:3px 4px;grid-template-columns:24px 50px 8px minmax(0,1fr) 76px}
+.m3refall{font-size:9px;letter-spacing:-1px;white-space:nowrap;padding:0;line-height:.95;background:linear-gradient(90deg,#f6f6f6,#b5b5b5)}
+.m3zero{border:2px solid #d41f1f!important;background:linear-gradient(#fafafa,#c8c8c8)}
+.m3zero small{font-size:9px}.m3zero b{font-size:17px}.m3zero{gap:0}
+.m3dro .droval{font:700 34px Arial,sans-serif!important;background:linear-gradient(#d4f1d0,#8bd18b);border:2px inset #6a8;color:#000;padding:0 10px}
+.m3scale{font-size:10px}
+.m3btns{padding:0;grid-template-columns:repeat(5,1fr);gap:2px 5px;background:#8a8ac4;border:2px inset #55a;padding:3px}
+.m3btns button{min-height:34px}
+.m3btns button,.m3fbtns button{font-size:12px}
+.m3btns button small{font-size:9px}
+.m3tp{position:relative;background:#000;border:3px solid #dedede;box-shadow:inset 0 0 0 1px #555}
+.m3tp #pathCanvas{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000}
+#toolInfo{position:absolute;left:6px;top:4px;color:#fff;font:bold 11px Arial;z-index:2}
+.m3zoom{position:absolute;right:6px;bottom:6px;display:flex;gap:4px;z-index:2}
+.m3zoom button{width:26px;height:24px;padding:0;font-size:16px;line-height:1}
+/* 버튼 공통(마하3 느낌) */
+.m3run button{border:2px outset #e4e4e4;border-radius:6px;background:linear-gradient(#f8f8f8,#c6c6c6);color:#000;font-weight:bold;line-height:1.1;padding:2px 4px;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:12px;min-height:0;overflow:hidden}
+.m3run button small{font-size:9px;color:#222;font-weight:normal;line-height:1.05}
+.m3run button:active{border-style:inset}
+.m3run .cycle,.m3run .hold,.m3run .stop,.m3run .reset{color:#000}
+.m3run button.alarmState{background:#e21f26!important;color:#fff!important}
+.m3run button.alarmState small{color:#fff}
+.m3run button.on{background:#b8d8f2}
+/* 파일줄 */
+.m3filerow{display:grid;grid-template-columns:minmax(0,1fr) 250px 27%;gap:10px;padding:4px 10px;align-items:stretch;background:#d4d0c8;min-height:0}
+.m3file2{display:flex;align-items:center;gap:8px;background:linear-gradient(#e8e6e0,#cfccc4);border:2px inset #aaa;padding:0 10px}
+.m3file2 .fl{font:bold 20px Arial}
+.m3file2 .m3filebox{flex:1;font:13px Arial;height:28px;line-height:20px;background:#e6e6e6;border:2px inset #999}
+.m3wiz{display:grid;grid-template-columns:1fr 1fr 1fr;grid-template-rows:minmax(0,1fr);gap:4px;min-height:0}
+.m3cond{order:3;display:flex;align-items:center;justify-content:center;background:linear-gradient(#35d84a,#12a52a);border:2px outset #6d6;border-radius:4px;color:#fff;text-align:center;font-size:12px;text-shadow:0 0 2px #060}
+.m3tpbtns{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;min-height:0}
+/* 아래쪽 */
+.m3low{display:grid;grid-template-columns:minmax(0,36fr) minmax(0,19fr) minmax(0,22fr) minmax(0,19fr);gap:10px;padding:6px 10px 6px;min-height:0;background:#d4d0c8}
+.m3low>*{min-width:0;min-height:0}
+.m3L{display:grid;grid-template-columns:minmax(0,30fr) minmax(0,38fr) minmax(0,38fr);grid-template-rows:minmax(0,1fr) 56px;gap:4px 6px;position:relative}
+.m3c1,.m3c2,.m3c3{display:flex;flex-direction:column;gap:4px;min-height:0;position:relative}
+.m3c1 button{flex:1;min-height:0}
+.m3c1 .cycle{flex:1.8;border:3px solid #1d5a1a;background:linear-gradient(#bff0b0,#58c04a);font-size:14px}
+.m3c1 .hold{background:linear-gradient(#fff6a0,#f2dc1c);border:3px solid #a58d00}
+.m3c1 .stop{background:linear-gradient(#ffb0a8,#e83a30);border:3px solid #8d0f08}
+.m3c2 button,.m3c3 button{flex:1;min-height:0}
+.m3lnrow{display:flex;align-items:center;gap:6px;font-weight:bold;font-size:12px;flex:0 0 22px}
+.m3lnrow input{flex:1;min-width:0;height:22px;text-align:right;font:bold 13px Arial;background:#ececec;border:2px inset #999;padding:0 4px}
+.m3c3 .wled{position:relative}
+.m3c3 .wled::after{content:"";position:absolute;right:5px;top:5px;width:10px;height:10px;border-radius:2px;background:#2c3a6b;border:1px solid #111}
+.m3c3 .wled.alarmState::after{background:#35e24a;box-shadow:0 0 5px #35e24a}
+.m3c3 .wled.alarmState{background:linear-gradient(#f8f8f8,#c6c6c6)!important;color:#000!important}
+.m3c3 .wled.alarmState small{color:#222}
+#recentMenu{position:absolute;left:0;top:0;right:auto;bottom:auto;min-width:230px;z-index:30}
+.m3reset{grid-column:1/3;grid-row:2;display:flex}
+.m3reset .reset{flex:1;border:4px solid #3aa83a;background:linear-gradient(#e83a3a,#b80f14);color:#fff;font:italic bold 22px Arial;outline:2px solid #666;outline-offset:-1px}
+.m3reset .reset small{color:#fff;font-size:11px}
+.m3rtxt{grid-column:3;grid-row:2;display:flex;flex-direction:column;justify-content:space-between;font-size:10px;line-height:1.1;gap:2px}
+.m3rtxt>div{display:flex;gap:3px;flex:1}.m3rtxt button{flex:1;min-height:0}
+.m3rtxt small{font-size:9px}
+/* 패널 */
+.m3pan{display:flex;flex-direction:column;border:2px solid #8e8ec6;background:#d4d0c8;min-height:0}
+.m3ph{background:linear-gradient(#cfd4f4,#98a0dc);border-bottom:2px solid #6f78c8;text-align:center;font:bold 16px Arial;color:#1c2a98;padding:2px 0 1px;line-height:1.05}
+.m3ph small{display:block;font:11px Arial;color:#2a3aa8}
+.m3pb{flex:1;min-height:0;padding:6px;display:flex;flex-direction:column;gap:4px;justify-content:space-between}
+.m3row{display:grid;grid-template-columns:46% minmax(0,1fr);gap:4px;align-items:center;font-weight:bold;font-size:12px}
+.m3row small{font-size:10px;font-weight:normal}
+.m3row input.pk{width:100%;min-width:0;height:24px;text-align:right;font:bold 14px Arial;background:linear-gradient(#ffd0d4,#e89098);border:2px inset #a66;padding:0 6px}
+.m3el{display:block;text-align:right;font:bold 15px Arial;background:linear-gradient(#cfeccf,#8bd18b);border:2px inset #6a8;padding:2px 6px}
+.m3pb>button{flex:1;min-height:0;max-height:38px}
+.m3jogbtn{border:3px solid #2e8f2e!important;background:linear-gradient(#a8f0a0,#44c040)!important}
+.m3feedb{flex-direction:row;gap:8px;justify-content:flex-start}
+.m3fl{display:flex;flex-direction:column;align-items:center;gap:4px;width:54px;flex:0 0 54px}
+.m3arrows{display:flex;gap:3px;width:100%}.m3arrows button{flex:1;height:24px;font-size:14px;padding:0}
+.m3fl .override{flex:1;min-height:0;width:100%;display:block}
+.m3fl .override .bar{height:100%;width:32px;margin:0 auto;border:2px inset #999;background:#ddd;position:relative}
+.m3fl .fill{background:linear-gradient(90deg,#38d04a,#1fa832)}
+.m3fr{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px;justify-content:space-between}
+.m3row2{display:grid;grid-template-columns:40% minmax(0,1fr);gap:4px;align-items:center;font-weight:bold;font-size:11px}
+.m3row2 small{font-size:10px;font-weight:normal}
+.m3row2 input{width:100%;min-width:0;height:24px;text-align:right;font:bold 14px Arial;background:linear-gradient(#e8e8b0,#cfcf6a);border:2px inset #998;padding:0 6px}
+.m3fr button{flex:0 0 30px}
+.m3spin .m3cw{flex:0 0 44px;max-height:none;font-size:13px}
+.m3two{display:flex;gap:4px;flex:0 0 32px}.m3two button{flex:1}
+.m3spin .m3pb>button#sroReset{flex:0 0 30px}
+/* 팝업창 */
+.m3win{position:absolute;z-index:60;background:#e4e0d8;border:2px solid #444;box-shadow:0 6px 22px #0007;display:flex;flex-direction:column}
+.m3win[hidden]{display:none}
+.m3wh{background:linear-gradient(#cfd4f4,#98a0dc);border-bottom:2px solid #6f78c8;padding:5px 8px;font-weight:bold;color:#1c2a98;display:flex;align-items:center;justify-content:space-between}
+.m3x{min-height:0;height:22px;padding:0 8px!important;flex-direction:row!important}
+#jogWin{right:12px;top:8px;width:340px}
+#jogWin .jogopts{padding:6px 8px}#jogWin .jogpad{grid-template-rows:42px 42px 42px;flex:1}
+#jogWin .zpad{grid-template-columns:1fr;width:96px;padding:6px}#jogWin .zpad button{height:auto;flex:1}
+.m3jogrow{display:flex}
+#histWin{left:12px;bottom:8px;width:560px;height:300px}
+#histWin .console{flex:1;min-height:0}
+#moreWin{left:12px;bottom:8px;width:460px}
+.m3more{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;padding:8px}.m3more button{min-height:34px}
+#moreWin .info{padding:0 8px 8px}.m3sim{display:flex;align-items:center;gap:8px;margin-top:6px}
+/* 상태줄 */
+.statusbar{height:34px;min-height:34px;flex-wrap:nowrap;background:linear-gradient(#e6e3dc,#bdb9b0);border-top:2px solid #777;padding:0 8px;gap:8px;font-size:13px}
+.statusbar button{height:24px;min-height:0;min-width:64px;padding:0 8px;font-size:11px;border:2px outset #e4e4e4;border-radius:5px;background:linear-gradient(#f8f8f8,#c6c6c6)}
+.m3stlabel{font:bold 16px Arial;color:#1c2a98}
+.m3stbox{background:#e8e8e8;border:2px inset #999;padding:2px 12px;min-width:180px;display:inline-flex;align-items:center;gap:8px;height:24px;font-size:13px}
+.m3stunit{font-size:12px}
+
+#viewport{position:fixed;inset:0;overflow:hidden;background:#d4d0c8}
+#stage{display:flex;flex-direction:column;position:absolute;left:0;top:0;transform-origin:0 0;background:#d4d0c8}
+</style>
+</head>
+<body>
+<div id="viewport"><div id="stage">
+<div class="top">
+  <div class="title">CNC 제어판 - 마하3 방식</div>
+  <div class="menu">
+    <button id="fileMenu">파일</button><button id="settingsMenu">설정</button><button id="viewMenu">보기</button><button id="diagnosticsMenu">진단</button><button id="helpMenu">도움말</button>
+  </div>
+  <div class="connection">
+    <span class="dot" id="connDot"></span><span class="badge" id="connBadge">연결 안 됨</span>
+    <select id="connType">
+      <option value="serial">USB (시리얼)</option>
+      <option value="ws">이더넷/WiFi (네트워크)</option>
+    </select>
+    <select id="baud"><option>115200</option><option>250000</option><option>57600</option><option>9600</option></select>
+    <input id="netHost" placeholder="IP 주소" value="192.168.1.100" style="width:110px;display:none">
+    <input id="netPort" placeholder="포트" value="81" style="width:50px;display:none">
+    <button id="connectBtn">연결</button><button id="disconnectBtn" disabled>해제</button>
+    <button id="virtualBtn">가상 씨엔씨 끄기</button>
+  </div>
+</div>
+<div id="alarmPanel"></div>
+<div id="recoverBar"></div>
+<div class="screen-tabs">
+ <button class="active" data-page="run">프로그램 실행 (단축키 1)</button>
+ <button data-page="mdi">수동 명령 입력 (단축키 2)</button>
+ <button data-page="toolpath">공구 경로 (단축키 4)</button>
+ <button data-page="offsets">좌표계 / 툴 테이블 (단축키 5)</button>
+ <button data-page="settings">설정 (단축키 6)</button>
+ <button data-page="diagnostics">진단 (단축키 7)</button>
+ <button data-page="motor">축/모터 설정 (8)</button>
+ <button data-page="spindlecfg">스핀들 설정 (9)</button>
+ <button data-page="wizard">마법사 (0)</button>
+ <button data-page="gref">G코드 참고</button>
+</div>
+
+<div id="runPage" class="m3run">
+ <div class="m3upper">
+  <section class="m3g">
+   <div id="gcodeView"><div style="padding:20px;text-align:center">G코드 파일을 열어주세요.</div></div>
+   <div class="m3prog"><div id="progress"></div></div>
+   <input type="file" id="fileInput" accept=".nc,.tap,.txt,.cnc,.gcode,.ngc" hidden>
+  </section>
+
+  <section class="dro">
+   <div class="coordbar" style="display:none"><button id="wcsBtn" class="on" style="display:none">작업좌표</button><b id="coordLabel">작업 G54</b></div>
+   <div class="m3dro">
+<button id="homeBtn" class="m3refall" title="전체 원점 복귀 (REF ALL HOME)">REF ALL HOME</button>
+<button class="m3zero" data-zero="X" title="X축 현재 위치를 0점으로 (Zero X)"><small>0점</small><b>X</b></button><button class="m3ref" data-ref="X" title="클릭: X축 원점 복귀 (Ref). 초록=원점 확정"><span class="refled" id="refX"></span></button><div class="droval" id="xDro">+0.0000</div><div class="m3scale"><span>배율</span><i class="m3led" id="scLedX"></i><input id="scaleX" value="1.0000" title="X축 배율 (G51)"></div>
+<button class="m3zero" data-zero="Y" title="Y축 현재 위치를 0점으로 (Zero Y)"><small>0점</small><b>Y</b></button><button class="m3ref" data-ref="Y" title="클릭: Y축 원점 복귀 (Ref). 초록=원점 확정"><span class="refled" id="refY"></span></button><div class="droval" id="yDro">+0.0000</div><div class="m3scale"><span>배율</span><i class="m3led" id="scLedY"></i><input id="scaleY" value="1.0000" title="Y축 배율 (G51)"></div>
+<button class="m3zero" data-zero="Z" title="Z축 현재 위치를 0점으로 (Zero Z)"><small>0점</small><b>Z</b></button><button class="m3ref" data-ref="Z" title="클릭: Z축 원점 복귀 (Ref). 초록=원점 확정"><span class="refled" id="refZ"></span></button><div class="droval" id="zDro">+0.0000</div><div class="m3scale"><span>배율</span><i class="m3led" id="scLedZ"></i><input id="scaleZ" value="1.0000" title="Z축 배율 (G51)"></div>
+<button class="m3zero" data-zero="A" title="A축 현재 위치를 0점으로 (Zero A)"><small>0점</small><b>A</b></button><button class="m3ref" data-ref="A" title="클릭: A축 원점 복귀 (Ref). 초록=원점 확정"><span class="refled" id="refA"></span></button><div class="droval" id="aDro">+0.0000</div><button id="radiusBtn" class="m3rad" title="회전축 직경 보정 (Radius Correct)"><span>반경<br>보정</span><i class="m3led" id="radLed"></i></button>
+   </div>
+   <div class="m3btns">
+<div><i class="m3led" id="offLed"></i><button id="offlineBtn" title="OFFLINE: 모든 출력 차단 (설정·시험용)">오프라인<small>OFFLINE</small></button></div>
+<div><i class="m3led" style="visibility:hidden"></i><button id="gotoZeroBtn" title="X·Y·Z를 작업 0점으로 이동">0점으로 이동<small>GOTO ZERO</small></button></div>
+<div><i class="m3led" id="tgLed"></i><button id="toGoBtn" title="DRO에 다음 이동까지 남은 거리를 표시">남은 거리<small>To Go</small></button></div>
+<div><i class="m3led" id="mcLed"></i><button id="mcsBtn" title="기계 좌표 표시 전환">기계 좌표<small>Machine Coord's</small></button></div>
+<div><i class="m3led" id="slLed"></i><button id="softBtn" title="소프트 리밋 사용">소프트 리밋<small>Soft Limits</small></button></div>
+   </div>
+  </section>
+
+  <section class="m3tp">
+   <canvas id="pathCanvas"></canvas>
+   <span id="toolInfo">공구: 0</span>
+   <div class="m3zoom"><button id="zoomIn">+</button><button id="zoomOut">−</button></div>
+  </section>
+ </div>
+
+ <div class="m3filerow">
+  <div class="m3file2"><span class="fl">파일:</span><div id="fileName" class="m3filebox" title="불러온 G코드 파일">없음</div><span class="m3lines">줄 <b id="lineNow">0</b>/<b id="lineTotal">0</b></span></div>
+  <div class="m3wiz">
+   <button id="loadWizBtn">마법사<small>Load Wizards</small></button>
+   <button id="gcodeRefBtn">G코드 참고<small>G-Code Ref</small></button>
+   <div class="m3cond"><b id="machineState">대기</b></div>
+  </div>
+  <div class="m3tpbtns">
+   <button id="clearPathBtn">경로 지우기<small>Clear Toolpath</small></button>
+   <button id="view3dBtn">3D 보기<small>Display Mode</small></button>
+   <button id="fitBtn">화면 맞춤<small>Jog Follow</small></button>
+  </div>
+ </div>
+
+ <div class="m3low">
+  <div class="m3L">
+   <div class="m3c1">
+    <button id="cycleBtn" class="cycle">가동 시작<small>Cycle Start &lt;Alt-R&gt;</small></button>
+    <button id="feedHoldBtn" class="hold">이송 일시정지<small>Feed Hold &lt;Spc&gt;</small></button>
+    <button id="stopBtn" class="stop">정지<small>Stop &lt;Alt-S&gt;</small></button>
+   </div>
+   <div class="m3c2">
+    <button id="editBtn" title="G코드 편집기 열기 (Edit G-Code)">G코드 편집<small>Edit G-Code</small></button>
+    <button id="recentBtn" title="최근에 연 파일 목록 (Recent File)">최근 파일<small>Recent File</small></button>
+    <button id="closeGBtn" title="현재 프로그램 닫기 (Close G-Code)">G코드 닫기<small>Close G-Code</small></button>
+    <button id="openBtn" title="G코드 파일 열기 (Load G-Code)">G코드 열기<small>Load G-Code</small></button>
+    <button id="setNextBtn" title="이동·모달 설정 없이 다음에 실행할 줄만 지정 (Set Next Line)">다음 줄 설정<small>Set Next Line</small></button>
+    <label class="m3lnrow">줄:<input id="lineDro" value="1" title="다음에 실행할 줄 번호. 입력 후 Enter"></label>
+    <button id="runHereBtn" title="선택한 줄까지의 모달 상태를 맞추고 그 위치로 이동한 뒤 시작 준비 (Run From Here)">여기서 시작<small>Run From Here</small></button>
+    <div id="recentMenu" hidden></div>
+   </div>
+   <div class="m3c3">
+    <button id="rewindBtn">처음으로<small>Rewind Alt-W</small></button>
+    <button id="singleBtn">한 줄 실행<small>Single BLK Alt-N</small></button>
+    <button id="prevBtn">이전 줄<small>Prev Line</small></button>
+    <button id="nextBtn">다음 줄<small>Next Line</small></button>
+    <button id="blockDeleteBtn" class="wled">블록 건너뛰기<small>Block Delete</small></button>
+    <button id="optionalBtn" class="wled">선택 정지 M1<small>M1 Optional Stop</small></button>
+    <button id="floodBtn" class="wled">절삭유<small>Flood Ctrl-F</small></button>
+   </div>
+   <div class="m3reset"><button id="resetBtn" class="reset">초기화<small>Reset</small></button></div>
+   <div class="m3rtxt"><span>초기화를 눌러 비상 모드 해제<br><small>Press Reset .... Emergency Mode</small></span><div><button id="gCodesBtn">G코드</button><button id="mCodesBtn">M코드</button></div></div>
+  </div>
+
+  <section class="m3pan m3tool">
+   <div class="m3ph">공구 정보<small>Tool Information</small></div>
+   <div class="m3pb">
+    <div class="m3row"><span>공구</span><input class="pk" id="toolNum" value="0"></div>
+    <div class="m3row"><span>직경</span><input class="pk" id="toolDia" value="0.0000"></div>
+    <div class="m3row"><span>높이 H</span><input class="pk" id="hOffset" value="0.0000"></div>
+    <button id="toolZeroBtn">Auto 공구 0점<small>Auto Tool Zero</small></button>
+    <div class="m3row"><span>경과 시간<br><small>Elapsed</small></span><b id="elapsed" class="m3el">00:00:00</b></div>
+    <button id="jogToggle" class="m3jogbtn">수동 이동 ON/OFF<small>Jog ON/OFF Ctrl-Alt-J</small></button>
+   </div>
+  </section>
+
+  <section class="m3pan m3feed">
+   <div class="m3ph">이송 속도<small>Feed Rate</small></div>
+   <div class="m3pb m3feedb">
+    <div class="m3fl">
+     <div class="m3arrows"><button id="froMinus">▼</button><button id="froPlus">▲</button></div>
+     <div class="override"><div class="bar"><div class="fill" id="froFill"></div></div></div>
+    </div>
+    <div class="m3fr">
+     <div class="m3row2"><span>FRO %</span><input id="fro" value="100"></div>
+     <button id="froReset" title="클릭: 이송 보정 100%로 되돌리기">초기화<small>Reset</small></button>
+     <div class="m3row2"><span>이송<br><small>Feedrate</small></span><input id="feedNow" value="0"></div>
+     <div class="m3row2"><span>수동 이송<br><small>Jog</small></span><input id="jogFeed" value="1000"></div>
+    </div>
+   </div>
+  </section>
+
+  <section class="m3pan m3spin">
+   <div class="m3ph">주축 속도<small>Spindle Speed</small></div>
+   <div class="m3pb">
+    <button id="spindleCW" class="m3cw">주축 정회전<small>Spindle CW F5</small></button>
+    <div class="m3two"><button id="spindleCCW">역회전<small>CCW</small></button><button id="spindleStop">정지<small>Stop</small></button></div>
+    <div class="m3row2"><span>SRO %</span><input id="sro" value="100"></div>
+    <button id="sroReset" title="클릭: 주축 보정 100%로 되돌리기">초기화<small>Reset</small></button>
+    <div class="m3row2"><span>RPM</span><input id="spindle" value="0"></div>
+   </div>
+  </section>
+ </div>
+
+ <div id="jogWin" class="m3win" hidden>
+  <div class="m3wh">수동 이동 제어 (Jog)<button id="jogWinClose" class="m3x">닫기</button></div>
+  <div class="jogbox" style="border:0">
+   <div class="jogopts">모드 <button id="jogMode">단계</button>　Step <b id="stepVal">1</b> 밀리미터
+    <div class="steps" id="steps"><button data-step=".01">0.01</button><button data-step=".1">0.1</button><button class="active" data-step="1">1</button><button data-step="10">10</button><button data-step="50">50</button></div>
+   </div>
+   <div class="m3jogrow">
+    <div class="jogpad"><div></div><button data-jog="Y" data-dir="1">▲ Y+</button><div></div>
+     <button data-jog="X" data-dir="-1">◀ X−</button><button id="jogStop">■</button><button data-jog="X" data-dir="1">X+ ▶</button>
+     <div></div><button data-jog="Y" data-dir="-1">▼ Y−</button><div></div></div>
+    <div class="zpad"><button data-jog="Z" data-dir="1">Z+ ▲</button><button data-jog="Z" data-dir="-1">Z− ▼</button></div>
+   </div>
+   <div class="jogopts"><button data-zero="ALL">전체 0점(All)</button> <button id="gotoSafeZBtn">안전 Z로</button> <button id="gotoToolChangeBtn">툴 교환 위치로</button> <button id="gotoHomeG28Btn">홈(G28)으로</button> <button id="mpgBtn">수동 펄스 방식</button> <button id="jogFlyBtn">탭 수동 이동</button></div>
+  </div>
+ </div>
+
+ <div id="histWin" class="m3win" hidden>
+  <div class="m3wh">기록 / 수동 명령 입력 (History / MDI)<button id="histClose" class="m3x">닫기</button></div>
+  <div class="mdirow"><input id="mdiInput" placeholder="G0 X0 Y0 Z0"><button id="mdiSend">전송</button></div>
+  <div id="console" class="console"></div>
+ </div>
+
+ <div id="moreWin" class="m3win" hidden>
+  <div class="m3wh">추가 기능 / 상태<button id="moreClose" class="m3x">닫기</button></div>
+  <div class="m3more">
+   <button id="restartBtn">다시 실행</button><button id="gotoLineBtn">줄 이동</button><button id="optional2">선택 정지</button>
+   <button id="single2">한 줄 실행</button><button id="limitOverrideBtn">리밋 건너뛰기</button><button id="dryBtn">공회전</button>
+   <button id="mistBtn">미스트</button>
+   <button id="gotoZBtn" title="Z축만 작업 Z 0점으로 이동">Z 0점 이동<small>GOTO Z</small></button><button id="deRefBtn" title="모든 축 Ref 해제 (축은 움직이지 않음)">Ref 해제<small>De-Ref All</small></button>
+   <button id="verifyBtn" title="홈 스위치로 이동해 탈조 확인">검증<small>Verify</small></button><button id="g50Btn" title="모든 배율을 1.0으로 (G50)">배율 해제<small>G50</small></button>
+  </div>
+  <div class="info"><table>
+   <tr><td>이송</td><td id="statusFeed">0</td></tr><tr><td>주축</td><td id="statusSpindle">0</td></tr><tr><td>줄</td><td id="statusLine">0 / 0</td></tr><tr><td>방식</td><td id="statusMode">가상 CNC</td></tr><tr><td>크기</td><td id="statBounds">-</td></tr><tr><td>예상 시간</td><td id="statTime">-</td></tr><tr><td>제어기</td><td>그랩엘 / 웹 직렬 통신</td></tr>
+  </table>
+  <div class="m3sim"><button id="simBtn" title="기계를 움직이지 않고 프로그램을 끝까지 돌려 시간을 계산 (Simulate Program Run)">모의 실행<small>Simulate Program Run</small></button><i id="simLed" class="m3led"></i><span class="m3est">예상 시간 <b id="estTime">00:00:00</b></span></div>
+  </div>
+ </div>
+</div>
+
+<div id="pages">
+ <div class="page" id="mdiPage"><h3>수동 명령 입력</h3><div class="card"><input id="mdiPageInput" style="width:80%" placeholder="G0 X10 Y20 Z5"><button id="mdiPageSend">실행</button></div><div class="card">MDI 명령은 현재 선택된 실제/가상 CNC 모드에 적용됩니다.</div></div>
+ <div class="page" id="toolpathPage"><h3>공구경로</h3><div class="card"><button id="pageFit">화면 맞춤</button><button id="pageClear">경로 지우기</button>　공구경로는 프로그램의 G0/G1/G2/G3를 해석하여 표시합니다.</div><canvas id="pageCanvas" style="width:100%;height:75%;background:#050505;border:2px inset #777"></canvas></div>
+ <div class="page" id="offsetsPage"><h3>좌표계 / 옵셋 / 툴 테이블</h3>
+  <div class="card"><b>현재 위치(단순) 옵셋</b><table class="offset-table"><thead><tr><th>축</th><th>Work Offset</th><th>Tool Offset</th><th>배율</th></tr></thead><tbody>
+ <tr><td>X</td><td><input id="offX" value="0"></td><td><input value="0"></td><td><input value="1"></td></tr>
+ <tr><td>Y</td><td><input id="offY" value="0"></td><td><input value="0"></td><td><input value="1"></td></tr>
+ <tr><td>Z</td><td><input id="offZ" value="0"></td><td><input value="0"></td><td><input value="1"></td></tr></tbody></table><br><button id="applyOffsets">적용</button><button id="zeroOffsets">전체 0점</button></div>
+
+  <div class="card"><b>작업 좌표계 G54~G59 (Fixture Offset)</b> — 현재 활성: <b id="activeWCS">G54</b>
+   <table class="offset-table" id="wcsTable"><thead><tr><th>좌표계</th><th>X</th><th>Y</th><th>Z</th><th>A</th><th>사용</th><th>현재위치를 원점으로</th></tr></thead>
+   <tbody id="wcsBody"></tbody></table>
+  </div>
+
+  <div class="card"><b>임시 옵셋 G92</b>　현재 값: X<span id="g92x">0.0000</span> Y<span id="g92y">0.0000</span> Z<span id="g92z">0.0000</span>
+   <br><button id="setG92">현재 위치를 G92 0점으로</button><button id="clearG92">G92 취소 (G92.1)</button></div>
+
+  <div class="card"><b>기준점 G28 / G30</b>
+   <div style="display:flex;gap:20px;flex-wrap:wrap">
+    <div>G28 1차 기준점: X<span id="g28x">0</span> Y<span id="g28y">0</span> Z<span id="g28z">0</span>
+     <br><button id="setG28">현재 위치를 G28로 저장</button><button id="gotoG28">G28로 이동</button></div>
+    <div>G30 2차 기준점: X<span id="g30x">0</span> Y<span id="g30y">0</span> Z<span id="g30z">0</span>
+     <br><button id="setG30">현재 위치를 G30로 저장</button><button id="gotoG30">G30로 이동</button></div>
+   </div>
+  </div>
+
+  <div class="card"><b>툴 테이블</b> (T 코드로 선택, M6로 교체)
+   <table class="offset-table" id="toolTable"><thead><tr><th>Tool #</th><th>설명</th><th>직경</th><th>길이 보정(H)</th><th>선택</th><th>삭제</th></tr></thead>
+   <tbody id="toolBody"></tbody></table>
+   <button id="addToolRow">공구 추가</button>
+  </div>
+ </div>
+ <div class="page" id="settingsPage"><h3>설정</h3><div class="card"><label>기본 수동 이동 이송 <input id="setJogFeed" value="1000"></label>　<label>최대 이송 <input id="maxFeed" value="5000"></label>　<label>단위 <select id="unitSelect"><option value="밀리미터">밀리미터</option><option value="인치">인치</option></select></label></div><div class="card"><b>안전 Z / 툴 교환 위치</b> (기계좌표 기준, G53 이동)<br>
+ <label><input type="checkbox" id="useSafeZ" checked> 안전 Z 사용 (M6 시 안전 Z로 올린 뒤 대기)</label>　<label>안전 Z <input id="safeZ" value="5" style="width:70px"></label><br>
+ <label>툴 교환 X <input id="tcX" value="0" style="width:70px"></label>　<label>Y <input id="tcY" value="0" style="width:70px"></label>　<label>Z <input id="tcZ" value="0" style="width:70px"></label><br>
+ <button id="applySafeZ">적용</button><button id="saveTcPos">현재 기계좌표를 툴 교환 위치로 저장</button><button id="testSafeZ">안전 Z로 이동</button><button id="testToolChange">툴 교환 위치로 이동</button>
+ <div style="font-size:10px;color:#555;margin-top:4px">주의: 원점 복귀(홈)를 하지 않은 상태에서는 사용하지 마세요. GRBL은 홈 후 기계좌표 Z가 0 이하(음수)이므로, 안전 Z도 음수나 0으로 맞춰야 소프트 리밋 알람이 나지 않습니다.</div></div>
+<div class="card"><b>Z축 최대 깊이 제한 (Z-Inhibit)</b> — 프로그램(작업) 좌표 기준으로 Z가 이 값보다 아래로 내려가지 않게 막습니다 (매뉴얼 5.3.7)<br>
+<label><input type="checkbox" id="zInhEn"> 사용</label>　<label>최대 깊이 Z <input id="zInhVal" value="-10" style="width:70px"></label> <button id="zInhApply">적용</button> <span id="zInhState" style="color:#555"></span>
+<div style="font-size:10px;color:#555;margin-top:4px">예: -2.1로 설정하면 G0 Z-2.5 도 Z-2.1 에서 멈춥니다(알람 없이 값만 제한). 위쪽(+) 이동과 이미 제한값보다 깊은 위치에서의 이동은 막지 않습니다. 기계좌표 이동(G53), 원점 복귀, 프로브(G38.2)에는 적용되지 않습니다. 실제 CNC에서는 절대(G90) 모드의 Z 값을 전송 전에 잘라서 보내며, 증분(G91) 이동은 현재 위치를 알 수 없어 제한하지 못합니다.</div></div>
+<div class="card"><b>M코드 매크로 (사용자 정의 M코드)</b> — 매뉴얼 10.9: 내장되지 않은 M코드를 G코드 묶음으로 정의합니다<br>
+<textarea id="mmText" rows="4" style="width:98%;font-family:Consolas,monospace" placeholder="M101 = G0 Z5 | G4 P1&#10;M102 = M8 | G4 P2 | M9"></textarea>
+<button id="mmApply">적용/저장</button> <span id="mmState" style="color:#555"></span>
+<div style="font-size:10px;color:#555;margin-top:4px">한 줄에 하나: <code>M번호 = 명령 | 명령 | 명령</code>. 번호는 M100~M9999만 가능(내장 M코드와 겹치지 않게). 프로그램을 불러올 때와 MDI 입력 시 해당 M코드가 명령 묶음으로 바뀝니다. 매크로 안에서 다른 매크로는 호출할 수 없습니다.</div></div>
+<div class="card"><b>Auto 공구 0점 (Z 프로브, G38.2)</b> — 공구 아래에 프로브 플레이트를 놓고 실행<br>
+<label>최대 하강 <input id="prbDepth" value="10" style="width:60px"></label> <label>프로브 이송 <input id="prbFeed" value="50" style="width:60px"></label> <label>플레이트 두께 <input id="prbThick" value="0" style="width:60px"></label> <label>후퇴 높이 <input id="prbRetract" value="5" style="width:60px"></label><br><button id="prbRun">Auto 공구 0점 실행</button></div>
+<div class="card"><button id="saveSettings">설정 저장</button><button id="loadSettings">설정 복원</button><button id="clearSettings">설정 초기화</button><button id="exportProfile">프로파일 내보내기</button><button id="importProfile">프로파일 가져오기</button><input type="file" id="profileFile" accept=".json" style="display:none"></div></div>
+ <div class="page" id="diagnosticsPage"><h3>진단</h3><div class="card"><b>통신 상태:</b> <span id="diagConn">오프라인</span><br><b>Web Serial:</b> <span id="diagSerial"></span><br><b>가상 모드:</b> <span id="diagVirtual">OFF</span></div>
+  <div class="card"><b>연결 방식 안내</b>
+   <table class="offset-table"><thead><tr><th>방식</th><th>설명</th></tr></thead><tbody>
+    <tr><td>USB (시리얼)</td><td style="text-align:left">GRBL/grblHAL 등 USB-시리얼 컨트롤러. 이 화면에서 "USB (시리얼)" 선택 후 브라우저의 포트 선택창에서 장치를 고릅니다. Chrome/Edge 전용.</td></tr>
+    <tr><td>이더넷/WiFi</td><td style="text-align:left">네트워크(WebSocket)를 지원하는 컨트롤러(FluidNC, 일부 grblHAL 보드 등). IP주소와 포트를 입력 후 연결합니다. 컨트롤러가 WebSocket을 지원하지 않으면(순수 Telnet/HTTP만 지원) 브라우저에서 직접 연결할 수 없습니다.</td></tr>
+    <tr><td>16핀 커넥터</td><td style="text-align:left">이건 통신 프로토콜이 아니라 <b>물리적 배선 커넥터</b>입니다. 메인보드↔브레이크아웃보드 신호선 다발이거나, 리밋/스핀들 등 보조 신호용인 경우가 많습니다. 어느 쪽이든 컨트롤러 자체는 결국 USB 또는 이더넷 중 하나로 PC/브라우저와 통신하므로, 16핀은 위 두 방식과 별개로 하드웨어 배선만 신경 쓰면 됩니다. 정확한 핀 용도는 사용 중인 보드의 모델명을 확인해야 판단할 수 있습니다.</td></tr>
+   </tbody></table>
+  </div>
+  <div class="card"><button id="clearConsole">기록 지우기</button><button id="queryStatus">상태 요청</button><button id="readSettingsBtn">컨트롤러 설정 읽기 ($$)</button><button id="queryInputsBtn">입력 핀 상태 조회</button></div>
+  <div class="card"><b>입력 신호 (리밋/원점/프로브/도어)</b>
+   <div class="state-row" id="pinLeds">
+    <span class="led" id="ledX" style="background:#888"></span>X리밋
+    <span class="led" id="ledY" style="background:#888"></span>Y리밋
+    <span class="led" id="ledZ" style="background:#888"></span>Z리밋
+    <span class="led" id="ledA" style="background:#888"></span>A리밋
+    <span class="led" id="ledP" style="background:#888"></span>프로브
+    <span class="led" id="ledD" style="background:#888"></span>도어
+    <span class="led" id="ledH" style="background:#888"></span>홀드
+    <span class="led" id="ledR" style="background:#888"></span>리셋
+   </div>
+   <div style="font-size:10px;color:#555">실제 CNC 연결 시 상태 요청(?) 응답의 Pn: 필드를 해석하여 표시합니다. (가상 모드에서는 항상 회색)</div>
+  </div>
+  <div class="card"><b>컨트롤러 설정값 ($$)</b><div id="grblSettings" style="max-height:180px;overflow:auto;font:11px Consolas,monospace;background:#fff;border:1px solid #999;padding:4px">연결 후 "컨트롤러 설정 읽기"를 눌러주세요.</div></div>
+ </div>
+
+ <div class="page" id="motorPage"><h3>축/모터 설정 (Motor Tuning)</h3>
+  <div class="card"><table class="offset-table"><thead><tr><th>축</th><th>단위당 스텝<br>(steps/mm)</th><th>최대 속도<br>(mm/min)</th><th>가속도<br>(mm/s²)</th><th>최대 이동거리<br>(mm)</th><th>백래시 보정<br>(mm)</th><th>방향 반전</th></tr></thead>
+  <tbody id="motorBody"></tbody></table></div>
+  <div class="card"><button id="applyMotor">가상/화면에 적용</button><button id="sendMotorGrbl">컨트롤러로 전송 ($100~$132)</button></div>
+  <div class="card"><b>단위당 스텝 계산기</b> (리드스크류 + 스텝모터 방식)
+   <div class="metric"><span>리드/피치</span><input id="calcPitch" value="5"></div>
+   <div class="metric"><span>모터스텝/회전</span><input id="calcStepsRev" value="200"></div>
+   <div class="metric"><span>마이크로스텝</span><input id="calcMicro" value="16"></div>
+   <div class="metric"><span>감속비</span><input id="calcRatio" value="1"></div>
+   결과: <b id="calcResult">640.0000</b> steps/mm
+   <br><label>적용할 축 <select id="calcAxis"><option value="x">X</option><option value="y">Y</option><option value="z">Z</option><option value="a">A</option></select></label>
+   <button id="calcApply">이 축에 결과 적용</button>
+  </div>
+  <div class="card"><b>홈 / 리밋 설정</b>
+   <label><input type="checkbox" id="softLimitEn"> 소프트 리밋 사용 ($20)</label>　
+   <label><input type="checkbox" id="hardLimitEn"> 하드 리밋 사용 ($21)</label>　
+   <label><input type="checkbox" id="homingEn" checked> 홈 사이클 사용 ($22)</label>
+   <table class="offset-table" style="margin-top:6px"><thead><tr><th>축</th><th>소프트 리밋 최소</th><th>소프트 리밋 최대</th></tr></thead><tbody>
+    <tr><td>X</td><td><input id="limMinX" value="-300"></td><td><input id="limMaxX" value="300"></td></tr>
+    <tr><td>Y</td><td><input id="limMinY" value="-300"></td><td><input id="limMaxY" value="300"></td></tr>
+    <tr><td>Z</td><td><input id="limMinZ" value="-100"></td><td><input id="limMaxZ" value="50"></td></tr>
+    <tr><td>A</td><td><input id="limMinA" value="-360"></td><td><input id="limMaxA" value="360"></td></tr>
+   </tbody></table>
+   <label>슬로우 존(리밋 근처 감속 거리) <input id="slowZone" value="5" style="width:60px"></label>
+   <div style="font-size:10px;color:#555">가상 모드에서는 위 범위를 직접 검사해 프로그램 실행·수동 이동을 차단합니다. 실제 GRBL에서는 컨트롤러의 $20과 $130~$132(최대 이동거리)가 적용됩니다.</div>
+   <br><button id="applyLimits">화면에 적용</button><button id="sendLimitsGrbl">컨트롤러로 전송</button>
+  </div>
+  <div class="card"><b>홈(원점 복귀) 속도 / 방향</b> (매뉴얼 5.6.1)
+   <div class="metric"><span>탐색 속도 $25 (mm/min)</span><input id="hmSeek" value="500"></div>
+   <div class="metric"><span>정밀 접근 $24 (mm/min)</span><input id="hmFeed" value="100"></div>
+   <div class="metric"><span>풀오프 거리 $27 (mm)</span><input id="hmPull" value="1"></div>
+   <div>홈 방향 반전 ($23): <label><input type="checkbox" id="hmDirX"> X</label> <label><input type="checkbox" id="hmDirY"> Y</label> <label><input type="checkbox" id="hmDirZ"> Z</label> <label><input type="checkbox" id="hmDirA"> A</label></div>
+   <div style="margin-top:4px">개별 원점 복귀: <button data-homeax="X">X축</button><button data-homeax="Y">Y축</button><button data-homeax="Z">Z축</button><button data-homeax="A">A축</button></div>
+   <br><button id="hmRead">컨트롤러에서 읽기</button><button id="hmSend">컨트롤러로 전송</button>
+   <div style="font-size:10px;color:#555;margin-top:4px">탐색 속도로 스위치를 빠르게 찾은 뒤, 정밀 접근 속도로 천천히 다시 접근하고, 풀오프 거리만큼 물러납니다. 전체 원점 복귀의 축 순서는 컨트롤러가 정합니다(보통 Z가 먼저). 순서를 직접 정하려면 개별 버튼을 순서대로 누르세요. 개별 축 복귀($HX)는 컨트롤러 펌웨어가 지원해야 하며, 지원하지 않으면 오류가 납니다. 처음에는 낮은 속도로 시험하세요.</div>
+  </div>
+ </div>
+
+ <div class="page" id="spindlecfgPage"><h3>스핀들 설정</h3>
+  <div class="card">
+   <div class="metric"><span>최소 RPM</span><input id="spMin" value="0"></div>
+   <div class="metric"><span>최대 RPM</span><input id="spMax" value="24000"></div>
+   <div class="metric"><span>PWM 최소(%)</span><input id="pwmMin" value="0"></div>
+   <div class="metric"><span>PWM 최대(%)</span><input id="pwmMax" value="100"></div>
+   <div class="metric"><span>풀리 비율</span><input id="pulleyRatio" value="1.0"></div>
+   <label><input type="checkbox" id="laserMode"> 레이저 모드 (M3=파워 즉시 반영, M5=오프)</label>
+   <br><button id="applySpindleCfg">화면에 적용</button><button id="sendSpindleGrbl">컨트롤러로 전송 ($30 $31 $32)</button>
+  </div>
+  <div class="card"><b>스핀들 워밍업</b>
+   <div class="metric"><span>목표 RPM</span><input id="warmRpm" value="10000"></div>
+   <div class="metric"><span>유지 시간(초)</span><input id="warmSec" value="60"></div>
+   <button id="warmupBtn">워밍업 시작 (M3 실행 후 대기)</button>
+  </div>
+ </div>
+
+ <div class="page" id="wizardPage"><h3>마법사 (CAM 없이 간단한 형상 가공)</h3>
+  <div class="card"><b>사각형 포켓</b>
+   <div class="metric"><span>원점 X</span><input id="wpX" value="0"></div><div class="metric"><span>원점 Y</span><input id="wpY" value="0"></div>
+   <div class="metric"><span>가로 W</span><input id="wpW" value="50"></div><div class="metric"><span>세로 H</span><input id="wpH" value="30"></div>
+   <div class="metric"><span>깊이</span><input id="wpDepth" value="5"></div><div class="metric"><span>1회 절입</span><input id="wpStepZ" value="1"></div>
+   <div class="metric"><span>공구직경</span><input id="wpTool" value="6"></div><div class="metric"><span>이송 F</span><input id="wpFeed" value="800"></div>
+   <div class="metric"><span>안전높이</span><input id="wpSafeZ" value="5"></div><div class="metric"><span>스텝오버 %</span><input id="wpOver" value="40"></div>
+   <button id="genPocketRect">G코드 생성</button>
+  </div>
+  <div class="card"><b>원형 포켓 / 보스</b>
+   <div class="metric"><span>중심 X</span><input id="wcX" value="0"></div><div class="metric"><span>중심 Y</span><input id="wcY" value="0"></div>
+   <div class="metric"><span>반지름</span><input id="wcR" value="20"></div><div class="metric"><span>깊이</span><input id="wcDepth" value="5"></div>
+   <div class="metric"><span>1회 절입</span><input id="wcStepZ" value="1"></div><div class="metric"><span>공구직경</span><input id="wcTool" value="6"></div>
+   <div class="metric"><span>이송 F</span><input id="wcFeed" value="800"></div><div class="metric"><span>안전높이</span><input id="wcSafeZ" value="5"></div><div class="metric"><span>스텝오버 %</span><input id="wcOver" value="40"></div><div class="metric"><span>보스 주변 폭</span><input id="wcBossW" value="10"></div>
+   <label><input type="checkbox" id="wcBoss"> 보스(외곽 살리기) 모드 — 체크 해제 시 포켓</label>
+   <button id="genPocketCircle">G코드 생성</button>
+  </div>
+  <div class="card"><b>드릴링 패턴 (격자 / 원형 배열)</b>
+   <label><input type="radio" name="drillType" value="grid" checked> 격자</label>　<label><input type="radio" name="drillType" value="circle"> 원형 배열</label>
+   <div class="metric"><span>시작 X</span><input id="wdX" value="0"></div><div class="metric"><span>시작 Y</span><input id="wdY" value="0"></div>
+   <div class="metric"><span>간격 dX</span><input id="wdDx" value="20"></div><div class="metric"><span>간격 dY</span><input id="wdDy" value="20"></div>
+   <div class="metric"><span>개수 nX</span><input id="wdNx" value="3"></div><div class="metric"><span>개수 nY</span><input id="wdNy" value="3"></div>
+   <div class="metric"><span>배열 반지름</span><input id="wdR" value="30"></div><div class="metric"><span>배열 개수</span><input id="wdCount" value="6"></div>
+   <div class="metric"><span>깊이</span><input id="wdDepth" value="5"></div><div class="metric"><span>후퇴높이</span><input id="wdRetract" value="5"></div>
+   <div class="metric"><span>이송 F</span><input id="wdFeed" value="150"></div>
+   <button id="genDrill">G코드 생성</button>
+  </div>
+  <div class="card"><b>DXF / HPGL 불러오기 (매뉴얼 8.2, 8.4)</b> — DXF(LINE / CIRCLE / ARC / LWPOLYLINE) 또는 HPGL(.plt .hpgl: PU/PD/PA/PR, 40단위=1mm)을 선 위로 가공하는 G코드로 변환<br>
+<input type="file" id="dxfFile" accept=".dxf,.plt,.hpgl,.hgl"> <label>깊이 <input id="dxDepth" value="3" style="width:55px"></label> <label>1회 절입 <input id="dxStep" value="1" style="width:55px"></label> <label>이송 F <input id="dxFeed" value="300" style="width:55px"></label> <label>안전높이 <input id="dxSafe" value="5" style="width:55px"></label> <label><input type="checkbox" id="dxSort" checked> 가공 순서 최적화</label> <button id="genDxf">G코드 생성</button></div>
+<div class="card"><b>생성된 G코드</b><br><textarea id="wizardOut" style="width:100%;height:140px;font:11px Consolas,monospace"></textarea>
+   <br><button id="wizardLoad">새 프로그램으로 열기</button><button id="wizardAppend">현재 프로그램에 추가</button>
+  </div>
+ </div>
+
+ <div class="page" id="grefPage"><h3>G코드 / M코드 조견표</h3>
+  <div class="card"><table class="offset-table"><thead><tr><th>코드</th><th>기능</th></tr></thead><tbody id="grefBody"></tbody></table></div>
+ </div>
+</div>
+
+<div class="statusbar">
+ <button id="historyBtn">기록<small style="display:none"></small></button><button id="histClearBtn">지우기</button>
+ <span class="m3stlabel">상태:</span><span class="m3stbox"><span class="led" id="stateLed"></span><b id="stateText">준비</b></span>
+ <span class="m3stunit">단위: <b id="unitText">밀리미터</b></span>
+ <span class="alarm" id="alarmText"></span>
+ <span class="m3stlabel" style="margin-left:auto">프로파일:</span><span class="m3stbox" style="min-width:150px">마하3 방식</span>
+ <button id="moreBtn">추가 기능</button>
+ <span hidden><b id="statusFile">없음</b><span id="statusText">준비</span></span>
+</div>
+</div></div>
+
+<div id="jogFlyout"><div class="head">수동 이동 / 수동 펄스 제어 <button class="close" id="closeJog">닫기</button></div><div class="body">
+ <p><b>수동 이동 방식:</b> <button id="flyStep">단계</button> <button id="flyCont">연속</button></p>
+ <p>이동량: <b id="flyStepVal">1</b> 밀리미터</p>
+ <div class="jogpad"><div></div><button data-jog="Y" data-dir="1">Y+</button><div></div><button data-jog="X" data-dir="-1">X−</button><button id="flyStop">정지</button><button data-jog="X" data-dir="1">X+</button><div></div><button data-jog="Y" data-dir="-1">Y−</button><div></div></div>
+ <div class="zpad"><button data-jog="Z" data-dir="1">Z+</button><button data-jog="Z" data-dir="-1">Z−</button></div>
+ </div></div>
+
+<div id="editorModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:40;align-items:center;justify-content:center"><div style="background:#eee;border:2px solid #555;width:min(900px,95vw);height:80vh;display:flex;flex-direction:column"><div class="boxhead" style="display:flex;gap:4px;align-items:center;height:auto">G코드 편집<span style="flex:1"></span><button id="edApply">적용</button><button id="edSave">파일로 저장</button><button id="edClose">닫기</button></div><textarea id="edText" spellcheck="false" style="flex:1;font:12px Consolas,monospace;margin:4px;resize:none"></textarea><div style="padding:3px 6px">적용하면 주석이 제거되고 G81·G82·G83·G73 고정 사이클은 G0/G1로 풀어서 표시됩니다.</div></div></div>
+
+<script>
+(()=>{
+const W=1100,H=720,st=document.getElementById('stage');
+function fit(){const vw=innerWidth,vh=innerHeight,sc=Math.min(vw/W,vh/H);window.__cncScale=sc;
+ st.style.width=(vw/sc)+'px';st.style.height=(vh/sc)+'px';st.style.transform='scale('+sc+')'}
+fit();addEventListener('resize',fit);
+})();
+</script>
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+let port=null,writer=null,reader=null,ws=null,keepRead=false,rxBuf='';
+const state={
+ virtual:true, connected:false, running:false, paused:false, singleBlock:false, blockDelete:false,
+ lines:[], idx:0, pos:{x:0,y:0,z:0,a:0}, machine:{x:0,y:0,z:0,a:0}, wco:{x:0,y:0,z:0,a:0},
+ modal:{g:'G0',abs:true,plane:'G17',unit:'G21',feed:0,spindle:0}, step:1, jogContinuous:false,
+ timer:null, startTime:0, elapsedBase:0, showWCS:true, path:[], programBounds:null, viewZoom:1,
+ spindleOn:false, spindleDir:1, softLimits:false, dryRun:false, optionalStop:false, flood:false, mist:false,
+ activeWCS:'G54', wcsTable:{G54:{x:0,y:0,z:0,a:0},G55:{x:0,y:0,z:0,a:0},G56:{x:0,y:0,z:0,a:0},G57:{x:0,y:0,z:0,a:0},G58:{x:0,y:0,z:0,a:0},G59:{x:0,y:0,z:0,a:0}},
+ g92:{x:0,y:0,z:0,a:0}, g52:{x:0,y:0,z:0,a:0}, g28:{x:0,y:0,z:0}, g30:{x:0,y:0,z:0},
+ tools:[{n:0,desc:'기본 공구',dia:6,h:0}], activeTool:0,
+ motor:{x:{steps:80,vel:5000,acc:500,travel:300,back:0,rev:false},y:{steps:80,vel:5000,acc:500,travel:300,back:0,rev:false},z:{steps:400,vel:2000,acc:100,travel:100,back:0,rev:false},a:{steps:80,vel:3000,acc:200,travel:360,back:0,rev:false}},
+ spindleCfg:{min:0,max:24000,pwmMin:0,pwmMax:100,pulley:1.0,laser:false}
+};
+state.transport='serial';
+state.softLim={x:{min:-300,max:300},y:{min:-300,max:300},z:{min:-100,max:50},a:{min:-360,max:360}};state.slowZone=5;state.limitOverride=false;state.limitHit='';state.homed={x:false,y:false,z:false,a:false};state.pendingHome=null;
+state.zInh={en:false,val:-10};state.inhAbs=true;state.safeZ=5;state.useSafeZ=true;state.toolChange={x:0,y:0,z:0};state.toolChangeWait=false;
+function log(s,cls=''){const e=$('console');const d=document.createElement('div');d.textContent=s;if(cls)d.className=cls;e.appendChild(d);e.scrollTop=e.scrollHeight}
+function fmt(v){return (Number(v)||0).toFixed(4)}
+function setState(s){$('machineState').textContent=s;$('stateText').textContent=s;$('statusText').textContent=s}
+function renderDRO(){
+ let p=state.showWCS?state.pos:state.machine;if(state.toGo)p=toGoPos();
+ $('xDro').textContent=(p.x>=0?'+':'')+fmt(p.x);$('yDro').textContent=(p.y>=0?'+':'')+fmt(p.y);
+ $('zDro').textContent=(p.z>=0?'+':'')+fmt(p.z);$('aDro').textContent=(p.a>=0?'+':'')+fmt(p.a);
+ $('statusFeed').textContent=Math.round(state.modal.feed||0);$('statusSpindle').textContent=Math.round((state.modal.spindle||0)*((+$('sro').value||100)/100));
+ $('statusLine').textContent=`${state.idx} / ${state.lines.length}`;
+ $('statusMode').textContent=state.virtual?'가상 CNC':'실제 CNC';
+}
+function clean(s){return s.replace(/^\uFEFF/,'').replace(/\(.*?\)/g,'').replace(/;.*$/,'').trim()}
+function parseProgram(t){return applyComp(applyRot(expandCanned(applyPocket(applyTlo(applyScale(applyPolar(expandSub(expandMacros(t.split(/\r?\n/).map(clean).filter(Boolean))))))))))}
+function num(s,L){const m=s.match(new RegExp('(?:^|\\s)'+L+'\\s*(-?\\d+(?:\\.\\d+)?)','i'));return m?parseFloat(m[1]):NaN}
+function gcodeWord(s){
+ const m=s.match(/\bG\s*(\d+)\b/i);return m?'G'+parseInt(m[1]):'';
+}
+function buildPath(){
+ let p={x:0,y:0,z:0}, abs=true, plane='G17', path=[{...p,rapid:false}], minX=0,maxX=0,minY=0,maxY=0;
+ for(const line of state.lines){
+  const up=line.toUpperCase();
+  if(/\bG\s*90\b/.test(up))abs=true;if(/\bG\s*91\b/.test(up))abs=false;
+  if(/\bG\s*17\b/.test(up))plane='G17';
+  const g=gcodeWord(line);
+  if(!['G0','G1','G2','G3'].includes(g))continue;
+  const old={...p},t={...p};
+  for(const L of ['X','Y','Z']){
+   const v=num(line,L);if(!Number.isNaN(v))t[L.toLowerCase()]=abs?v:old[L.toLowerCase()]+v;
+  }
+  const I=num(line,'I');const J=num(line,'J');
+  const ac=(g==='G2'||g==='G3')?arcCenter(g,old,t,I,J,num(line,'R')):null;if(ac){
+   const cx=ac.cx,cy=ac.cy,r=ac.r;let a0=Math.atan2(old.y-cy,old.x-cx),a1=Math.atan2(t.y-cy,t.x-cx),d=a1-a0;
+   if(g==='G2'&&d>=0)d-=Math.PI*2;if(g==='G3'&&d<=0)d+=Math.PI*2;
+   const n=Math.max(12,Math.ceil(Math.abs(d)*r/2));
+   for(let i=1;i<=n;i++){const a=a0+d*i/n;path.push({x:cx+Math.cos(a)*r,y:cy+Math.sin(a)*r,z:old.z+(t.z-old.z)*i/n,rapid:false})}
+  }else path.push({x:t.x,y:t.y,z:t.z,rapid:g==='G0'});
+  p=t;minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y);
+ }
+ state.path=path;state.programBounds={minX,maxX,minY,maxY};draw();progStats();
+}
+function drawCanvas(canvas){
+ if(!canvas)return;const ctx=canvas.getContext('2d'),w=canvas.clientWidth,h=canvas.clientHeight;if(w<10||h<10)return;
+ const d=(devicePixelRatio||1)*(window.__cncScale||1);if(canvas.width!==Math.round(w*d)||canvas.height!==Math.round(h*d)){canvas.width=Math.round(w*d);canvas.height=Math.round(h*d)}
+ ctx.setTransform(d,0,0,d,0,0);ctx.clearRect(0,0,w,h);ctx.fillStyle='#050505';ctx.fillRect(0,0,w,h);
+ ctx.strokeStyle='#222';for(let x=0;x<w;x+=40){ctx.beginPath();ctx.moveTo(x,0);ctx.lineTo(x,h);ctx.stroke()}for(let y=0;y<h;y+=40){ctx.beginPath();ctx.moveTo(0,y);ctx.lineTo(w,y);ctx.stroke()}
+ const b=state.programBounds||{minX:-50,maxX:50,minY:-50,maxY:50},dx=Math.max(1,b.maxX-b.minX),dy=Math.max(1,b.maxY-b.minY),sc=Math.min((w-50)/dx,(h-50)/dy)*state.viewZoom;
+ const ox=w/2-((b.minX+b.maxX)/2)*sc,oy=h/2+((b.minY+b.maxY)/2)*sc;
+ let q=p=>[ox+p.x*sc,oy-p.y*sc];if(state.view3d)q=make3d(w,h);
+ if(state.path.length>1){ctx.lineWidth=1.6;for(let i=1;i<state.path.length;i++){const a=q(state.path[i-1]),z=q(state.path[i]);ctx.beginPath();ctx.moveTo(...a);ctx.lineTo(...z);ctx.strokeStyle=state.path[i].rapid?'#888':'#45d37a';ctx.setLineDash(state.path[i].rapid?[5,4]:[]);ctx.stroke()}ctx.setLineDash([])}
+ if(state.view3d)drawAxes3d(ctx,q);const drawPos=state.animPos||state.pos;
+ const a=q(drawPos);ctx.fillStyle='#f33';ctx.beginPath();ctx.arc(a[0],a[1],6,0,Math.PI*2);ctx.fill();ctx.strokeStyle='#fff';ctx.beginPath();ctx.moveTo(a[0]-12,a[1]);ctx.lineTo(a[0]+12,a[1]);ctx.moveTo(a[0],a[1]-12);ctx.lineTo(a[0],a[1]+12);ctx.stroke();
+}
+function draw(){drawCanvas($('pathCanvas'));drawCanvas($('pageCanvas'))}
+if('ResizeObserver' in window){
+ const ro=new ResizeObserver(()=>draw());
+ ['pathCanvas','pageCanvas'].forEach(id=>{const el=$(id);if(el&&el.parentElement)ro.observe(el.parentElement)});
+}
+function renderGcode(){
+ state.sel=null;const v=$('gcodeView');v.innerHTML='';
+ state.lines.forEach((s,i)=>{const d=document.createElement('div');d.className='gline';d.dataset.i=i;d.innerHTML='<span class="ln">'+String(i+1).padStart(5,'0')+'</span><span>'+s.replace(/&/g,'&amp;').replace(/</g,'&lt;')+'</span>';v.appendChild(d)});
+ highlight(-1);buildPath();renderDRO()
+}
+function highlight(i){document.querySelectorAll('.gline').forEach((e,n)=>e.classList.toggle('current',n===i));const e=document.querySelector(`.gline[data-i="${i}"]`);if(e)e.scrollIntoView({block:'center'})}
+function loadFile(file){file.text().then(t=>{rememberRecent(file.name,t);state.raw=t;state.lines=parseProgram(t);state.idx=0;$('fileName').textContent=file.name;$('statusFile').textContent=file.name;$('lineTotal').textContent=state.lines.length;$('progress').style.width='0%';renderGcode();log(`파일 불러오기: ${file.name} (${state.lines.length}줄)`,'sys')})}
+$('fileInput').addEventListener('change',e=>{if(e.target.files[0])loadFile(e.target.files[0])});
+$('openBtn').onclick=()=>{if($('fileInput').files[0])loadFile($('fileInput').files[0]);else $('fileInput').click()};
+/* 블록 건너뛰기('/'), 선택 정지(M1), 공회전을 적용하는 전처리. skip=이 줄 건너뜀, stop=이 줄 실행 후 정지 */
+/* ===== Z 최대 깊이 제한 (Z-Inhibit, 매뉴얼 5.3.7 / 6.2.17) ===== */
+function zInhRead(){state.zInh={en:$('zInhEn').checked,val:(+$('zInhVal').value)||0};const e=$('zInhState');if(e)e.textContent=state.zInh.en?'사용 중: Z '+state.zInh.val+' 아래로 내려가지 않음':'사용 안 함'}
+function zInhMove(oldz,newz,quiet){
+ const Z=state.zInh;if(!Z||!Z.en||!(newz<oldz)||!(newz<Z.val-1e-9))return newz;
+ const z=Math.min(oldz,Z.val);if(!quiet)log('Z 최대 깊이 제한: Z'+(+newz).toFixed(3)+' → Z'+z.toFixed(3),'err');return z;
+}
+function zInhLine(l,quiet){
+ const up=l.toUpperCase();
+ if(/\bG\s*90(?!\.)/.test(up))state.inhAbs=true;if(/\bG\s*91(?!\.)/.test(up))state.inhAbs=false;
+ const Z=state.zInh;if(!Z||!Z.en||!state.inhAbs)return l;
+ if(/\bG\s*(53|10|28|30|92)\b/.test(up))return l;
+ return l.replace(/(^|\s)Z\s*(-?\d*\.?\d+)/gi,(m,a,v)=>{const z=parseFloat(v);if(z>=Z.val-1e-9)return m;if(!quiet)log('Z 최대 깊이 제한: Z'+z.toFixed(3)+' → Z'+Z.val,'err');return a+'Z'+Z.val});
+}
+/* ===== S값 최대 RPM 제한 (스핀들 설정의 최대 RPM 초과 방지) ===== */
+function spLimitLine(l,quiet){
+ const mx=state.spindleCfg&&state.spindleCfg.max;if(!(mx>0))return l;
+ return l.replace(/(^|[^A-Za-z0-9])S\s*(\d*\.?\d+)/gi,(m,a,v)=>{const sv=parseFloat(v);if(sv<=mx)return m;if(!quiet)log('S값 제한: S'+sv+' → S'+mx+' (스핀들 최대 RPM)','err');return a+'S'+mx});
+}
+function prepLine(raw,quiet){
+ let l=String(raw).trim();const r={skip:false,stop:false,line:l};
+ if(l.startsWith('/')){if(state.blockDelete){r.skip=true;r.line='';return r}l=l.replace(/^\/\d*\s*/,'')}
+ if(state.dryRun)l=l.replace(/\bM0?[3478]\b/gi,'').replace(/\bS\s*-?\d+(?:\.\d+)?/gi,'');
+ if(/\bM0?1\b/i.test(l)){
+  if(state.optionalStop){if(state.virtual)r.stop=true;else l=l.replace(/\bM0?1\b/gi,'M0')}
+  else l=l.replace(/\bM0?1\b/gi,'');
+ }
+ if(state.virtual&&/\bM0{1,2}\b/i.test(l))r.stop=true;
+ r.line=spLimitLine(zInhLine(scaleLine(l.replace(/\s+/g,' ').trim()),quiet),quiet);return r;
+}
+function execProcessed(raw){const pl=prepLine(raw);if(!pl.skip&&pl.line)executeLine(pl.line);return pl}
+function executeLine(line){
+ const up=line.toUpperCase();const old={...state.pos},t={...state.pos};
+ if(/\bG\s*90\b/.test(up))state.modal.abs=true;if(/\bG\s*91\b/.test(up))state.modal.abs=false;
+ if(/\bG\s*20\b/.test(up))state.modal.unit='G20';if(/\bG\s*21\b/.test(up))state.modal.unit='G21';
+ const g=gcodeWord(line);if(['G0','G1','G2','G3'].includes(g))state.modal.g=g;
+ const f=num(line,'F');if(!Number.isNaN(f))state.modal.feed=f;
+ const s=num(line,'S');if(!Number.isNaN(s))state.modal.spindle=Math.min(s,state.spindleCfg.max>0?state.spindleCfg.max:s);
+ if(/\bM3\b/.test(up)){state.spindleOn=true;state.spindleDir=1}if(/\bM4\b/.test(up)){state.spindleOn=true;state.spindleDir=-1}if(/\bM5\b/.test(up))state.spindleOn=false;
+ const wcsM=up.match(/\bG5([4-9])\b/);if(wcsM){selectWCS('G5'+wcsM[1])}
+ if(/\bG\s*52\b/.test(up)){ /* G52: 현재 작업좌표계 위의 임시 옵셋 (G52 X0 Y0 Z0 으로 해제) */
+  const ch=[];state.g52=state.g52||{x:0,y:0,z:0,a:0};
+  for(const L of ['X','Y','Z','A']){const v=num(line,L);if(Number.isNaN(v))continue;const k=L.toLowerCase();state.g92[k]+=v-state.g52[k];state.g52[k]=v;ch.push(L+v)}
+  renderG92G28();log('G52 임시 옵셋 '+(ch.join(' ')||'(변경 없음)'),'sys');return
+ }
+ if(/\bG\s*10\b/.test(up)){ /* G10 L2/L20 P_ X_ Y_ Z_ : 프로그램에서 작업좌표계 설정 (매뉴얼 G10) */
+  const Lm=up.match(/\bL\s*(\d+)/),Pn=num(line,'P');const Ln=Lm?+Lm[1]:NaN;
+  if(Ln===2||Ln===20){
+   const pi=Number.isNaN(Pn)?0:Pn;const g=pi===0?state.activeWCS:(pi>=1&&pi<=6?'G5'+(pi+3):null);
+   if(!g){log('G10: 지원하지 않는 P'+pi+' (P0~P6만 가능)','err');return}
+   const tb=state.wcsTable[g],ch=[];
+   for(const L of ['X','Y','Z','A']){const v=num(line,L);if(Number.isNaN(v))continue;const k=L.toLowerCase();
+    tb[k]=Ln===2?v:(state.machine[k]!==undefined?state.machine[k]:state.pos[k])-v;ch.push(L+tb[k].toFixed(3))}
+   renderWCS();log('G10 L'+Ln+': '+g+' 원점 설정 '+(ch.join(' ')||'(변경 없음)'),'sys');return
+  }
+  log('G10 L'+(Number.isNaN(Ln)?'?':Ln)+'는 지원하지 않아 무시합니다 (L2, L20만 지원)','err');return
+ }
+ if(/\bG92\.1\b/.test(up)){state.g92={x:0,y:0,z:0,a:0};state.g52={x:0,y:0,z:0,a:0}}else if(/\bG92\b/.test(up)){for(const L of ['X','Y','Z','A']){const v=num(line,L);if(!Number.isNaN(v))state.g92[L.toLowerCase()]=old[L.toLowerCase()]-v}}
+ if(/\bG28\b/.test(up)&&!/\bG28\.1\b/.test(up)){t.x=state.g28.x;t.y=state.g28.y;t.z=state.g28.z}
+ if(/\bG28\.1\b/.test(up)){state.g28={x:old.x,y:old.y,z:old.z}}
+ if(/\bG30\b/.test(up)&&!/\bG30\.1\b/.test(up)){t.x=state.g30.x;t.y=state.g30.y;t.z=state.g30.z}
+ if(/\bG30\.1\b/.test(up)){state.g30={x:old.x,y:old.y,z:old.z}}
+ const tM=up.match(/\bT\s*(\d+)/);if(tM)state.pendingTool=parseInt(tM[1]);
+ if(/\bM6\b/.test(up)){const tl=state.tools.find(x=>x.n===state.pendingTool);if(tl){state.activeTool=tl.n;$('toolNum').value=tl.n;$('toolDia').value=tl.dia.toFixed(4);$('hOffset').value=tl.h.toFixed(4);log('공구 교체 완료: T'+tl.n+' '+tl.desc,'sys')}else log('공구 교체: 등록되지 않은 T'+state.pendingTool,'err');
+  if(state.useSafeZ){t.z=state.safeZ;state.toolChangeWait=true;log('M6: 안전 Z로 이동 후 대기 — 공구를 교체한 뒤 "가동 시작"을 누르세요','sys')}}
+ for(const L of ['X','Y','Z','A']){const v=num(line,L);if(!Number.isNaN(v))t[L.toLowerCase()]=(state.modal.abs||/\bG\s*53\b/.test(up))?v:old[L.toLowerCase()]+v}
+ if(!/\bG\s*53\b/.test(up)&&!/\bG\s*(28|30)\b/.test(up))t.z=zInhMove(old.z,t.z);
+ {const bad=limitViolation(t);if(bad){raiseLimitAlarm(bad,t[bad.toLowerCase()]);return}}
+ state.pos=t;state.machine={...t};renderDRO();draw()
+}
+/* ===== 여기서 시작(Run from here) / 다음 줄 설정(Set next line) — 매뉴얼 6.2.7.8~9 ===== */
+function simulateTo(n){
+ const m={unit:state.modal.unit||'G21',abs:true,feed:state.modal.feed||0,spindle:state.modal.spindle||0,spindleOn:false,dir:1,flood:false,mist:false,wcs:state.activeWCS,tool:null,pos:{...state.pos},warn:[]};
+ for(let i=0;i<n;i++){
+  const pl=prepLine(state.lines[i],true);if(pl.skip||!pl.line)continue;const l=pl.line,up=l.toUpperCase();
+  if(/\bG\s*20\b/.test(up))m.unit='G20';if(/\bG\s*21\b/.test(up))m.unit='G21';
+  if(/\bG\s*90(?!\.)/.test(up))m.abs=true;if(/\bG\s*91(?!\.)/.test(up))m.abs=false;
+  const w=up.match(/\bG5([4-9])\b/);if(w)m.wcs='G5'+w[1];
+  const f=num(l,'F');if(!Number.isNaN(f))m.feed=f;
+  const sv=num(l,'S');if(!Number.isNaN(sv))m.spindle=sv;
+  if(/\bM0?3\b/.test(up)){m.spindleOn=true;m.dir=1}if(/\bM0?4\b/.test(up)){m.spindleOn=true;m.dir=-1}if(/\bM0?5\b/.test(up))m.spindleOn=false;
+  if(/\bM0?7\b/.test(up))m.mist=true;if(/\bM0?8\b/.test(up))m.flood=true;if(/\bM0?9\b/.test(up)){m.mist=false;m.flood=false}
+  const t=up.match(/\bT\s*(\d+)/);if(t)m.tool=parseInt(t[1]);
+  if(/\bG\s*(28|30|92|10)\b/.test(up)&&m.warn.indexOf('G28/G30/G92/G10')<0)m.warn.push('G28/G30/G92/G10');
+  if(/\bG\s*(2|3)\b/.test(up)&&/\bR\s*-?\d/.test(up)&&m.warn.indexOf('R 방식 원호')<0)m.warn.push('R 방식 원호(끝점으로 계산)');
+  if(/\bG\s*(10|52)\b/.test(up))continue;
+  for(const L of ['X','Y','Z','A']){const v=num(l,L);if(!Number.isNaN(v)){const k=L.toLowerCase();m.pos[k]=m.abs?v:m.pos[k]+v}}
+ }
+ return m;
+}
+function selectedLine(){return state.sel!=null?state.sel:state.idx}
+function setNextLine(n){
+ if(!state.lines.length){alert('먼저 G코드 파일을 열어주세요.');return}
+ if(state.running||state.streaming){log('프로그램 실행 중에는 다음 줄을 바꿀 수 없습니다. 먼저 정지하세요.','err');return}
+ n=Math.max(0,Math.min(state.lines.length,n));state.idx=n;updateProgress();highlight(n);
+ log('다음 실행 줄: '+(n+1)+' (이동·설정 없음)','sys');
+}
+async function runFromHere(n){
+ if(!state.lines.length){alert('먼저 G코드 파일을 열어주세요.');return}
+ if(state.running||state.streaming){log('프로그램 실행 중에는 사용할 수 없습니다. 먼저 정지하세요.','err');return}
+ n=Math.max(0,Math.min(state.lines.length-1,n));
+ const m=simulateTo(n),p=m.pos;
+ let msg='줄 '+(n+1)+'부터 시작합니다.\n\n단위 '+(m.unit==='G20'?'인치':'밀리미터')+' / '+(m.abs?'절대(G90)':'증분(G91)')+' / 좌표계 '+m.wcs+
+  '\n시작 위치 X'+fx(p.x)+' Y'+fx(p.y)+' Z'+fx(p.z)+'\n이송 F'+m.feed+
+  (m.spindleOn?'\n주축을 켭니다: '+(m.dir>0?'M3':'M4')+' S'+m.spindle:'\n주축: 꺼짐')+(m.flood?'\n절삭유 켜짐(M8)':'')+(m.mist?'\n미스트 켜짐(M7)':'')+
+  (m.warn.length?'\n\n※ 앞부분에 '+m.warn.join(', ')+' 가 있어 위치가 정확하지 않을 수 있습니다.':'')+
+  (state.virtual?'':'\n\n장비가 안전 Z로 올라간 뒤 시작 위치로 이동합니다. 장애물이 없는지 확인하세요.')+'\n\n계속할까요?';
+ if(!confirm(msg))return;
+ if(state.virtual){
+  state.modal.unit=m.unit;state.modal.abs=m.abs;state.modal.feed=m.feed;state.modal.spindle=m.spindle;state.spindleOn=m.spindleOn;state.spindleDir=m.dir;
+  state.flood=m.flood;state.mist=m.mist;$('floodBtn').classList.toggle('alarmState',m.flood);$('mistBtn').classList.toggle('alarmState',m.mist);
+  selectWCS(m.wcs);if(m.tool!=null)state.pendingTool=m.tool;
+  state.pos={...state.pos,...p};state.machine={...state.pos};
+ }else{
+  const cmds=[m.unit,'G90',m.wcs];
+  if(m.spindleOn){cmds.push((m.dir>0?'M3':'M4')+' S'+m.spindle,'G4 P3')}
+  if(m.flood)cmds.push('M8');if(m.mist)cmds.push('M7');
+  try{
+   for(const c of cmds)await sendRaw(c);
+   if(state.useSafeZ)moveMachine({z:state.safeZ});
+   await sendRaw('G0 X'+fx(p.x)+' Y'+fx(p.y));
+   await sendRaw('G1 Z'+fx(p.z)+' F'+(m.feed>0?m.feed:($('jogFeed').value||100)));
+   if(m.feed>0)await sendRaw('G1 F'+m.feed);
+   if(!m.abs)await sendRaw('G91');
+  }catch(e){log('여기서 시작 전송 오류: '+e.message,'err');return}
+ }
+ $('unitText').textContent=m.unit==='G20'?'인치':'밀리미터';
+ state.idx=n;updateProgress();highlight(n);renderDRO();draw();
+ log('여기서 시작: 줄 '+(n+1)+' 준비 완료 — "가동 시작"을 누르면 이 줄부터 실행합니다.','sys');
+}
+$('gcodeView').addEventListener('click',e=>{const g=e.target.closest&&e.target.closest('.gline');if(!g)return;state.sel=+g.dataset.i;document.querySelectorAll('.gline').forEach(x=>x.classList.toggle('selected',x===g))});
+$('runHereBtn').onclick=()=>runFromHere(selectedLine());
+$('setNextBtn').onclick=()=>setNextLine(selectedLine());
+function selectWCS(g){state.activeWCS=g;const cur=state.wcsTable[g];$('activeWCS')&&($('activeWCS').textContent=g);document.querySelectorAll('#wcsBody tr').forEach(tr=>tr.classList.toggle('current',tr.dataset.g===g))}
+function updateProgress(){const n=state.lines.length?state.idx/state.lines.length*100:0;$('lineNow').textContent=state.idx;$('progress').style.width=n+'%';highlight(state.idx-1);saveCheckpoint()}
+function runVirtual(){
+ if(!state.lines.length){alert('먼저 G코드 파일을 열어주세요.');return}
+ zInhRead();state.inhAbs=true;if(state.idx>0)simulateTo(state.idx);
+ state.running=true;state.paused=false;state.toolChangeWait=false;setState('가동');if(state.idx===0||!state.startTime)state.startTime=Date.now();loop()
+}
+function loop(){
+ if(!state.running||state.paused)return;
+ if(state.idx>=state.lines.length){state.running=false;setState('대기');log('프로그램 완료','sys');return}
+ const from={...state.pos};
+ state.animPos={...from};
+ state.limitHit='';const pl=execProcessed(state.lines[state.idx]);
+ if(state.limitHit){state.running=false;const gl=document.querySelector('.gline[data-i="'+state.idx+'"]');if(gl){gl.classList.add('error');gl.scrollIntoView({block:'center'})}return}
+ state.idx++;updateProgress();
+ const to={...state.pos};
+ if(state.toolChangeWait){animateMove(from,to,200);state.running=false;setState('공구교환 대기');$('statusText').textContent='공구교환 대기 — 가동 시작을 누르세요';return}
+ if(pl.stop){animateMove(from,to,200);state.running=false;state.paused=true;setState('프로그램 정지 (M0/M1)');log('M0/M1: 프로그램 정지 — "가동 시작"을 누르면 계속합니다.','sys');return}
+  const delay=Math.max(10,Math.min(1500,60000/Math.max(50,(state.modal.feed||500)*((+$('fro').value||100)/100))*(nearLimit(state.pos)?3:1)));
+ animateMove(from,to,delay);
+ if(state.singleBlock){state.running=false;setState('SINGLE BLOCK');return}
+ state.timer=setTimeout(loop,delay)
+}
+function animateMove(from,to,dur){
+ cancelAnimationFrame(state.animFrame);
+ const t0=performance.now();
+ function frame(now){
+  const k=Math.min(1,(now-t0)/dur);
+  state.animPos={x:from.x+(to.x-from.x)*k,y:from.y+(to.y-from.y)*k,z:from.z+(to.z-from.z)*k};
+  draw();
+  if(k<1)state.animFrame=requestAnimationFrame(frame);else state.animPos=null;
+ }
+ state.animFrame=requestAnimationFrame(frame);
+}
+function start(){if(state.virtual){if(state.running)return;if(state.paused){pause();return}runVirtual()}else if(state.streaming){if(state.paused)pause();else sendRaw('~',false).catch(()=>{})}else streamProgram()}
+/* ===== 실제 CNC: G코드 스트리밍 (GRBL 문자 수 계산 방식, 수신 버퍼 120바이트) ===== */
+const RX_LIMIT=120;
+function streamProgram(){
+ if(!state.lines.length){alert('먼저 G코드 파일을 열어주세요.');return}
+ if(!state.connected){alert('컨트롤러가 연결되어 있지 않습니다.');return}
+ if(state.streaming)return;
+ if(state.idx>=state.lines.length)state.idx=0;
+ zInhRead();state.inhAbs=true;if(state.idx>0)simulateTo(state.idx);
+ state.stream={next:state.idx,pending:[],used:0};
+ state.streaming=true;state.running=true;state.paused=false;state.toolChangeWait=false;
+ if(state.idx===0||!state.startTime)state.startTime=Date.now();
+ setState('가동');log('프로그램 전송 시작 (줄 '+(state.idx+1)+'부터)','sys');pumpStream();
+}
+function abortStream(msg){
+ if(!state.streaming)return;
+ state.streaming=false;state.running=false;state.stream=null;
+ if(!state.virtual)sendRaw('!',false).catch(()=>{});
+ setState('오류 정지');log(msg+' — 이송을 일시정지했습니다. 원인을 확인한 뒤 \"초기화\"를 누르세요.','err');
+}
+function pumpStream(){
+ const S=state.stream;if(!S||!state.streaming)return;
+ while(S.next<state.lines.length){
+  const pl=prepLine(state.lines[S.next]);const line=pl.line;
+  if(pl.skip||!line){if(S.pending.length)return;S.next++;state.idx=S.next;updateProgress();continue}
+  const tM=line.match(/\bT\s*(\d+)/i);if(tM)state.pendingTool=parseInt(tM[1]);
+  if(/\bM0*6\b/i.test(line)){            /* GRBL은 M6을 처리하지 않으므로 직접 공구 교환 대기 */
+   if(S.pending.length)return;            /* 앞 줄이 모두 끝난 뒤에 처리 */
+   S.next++;state.idx=S.next;updateProgress();
+   const tl=state.tools.find(x=>x.n===state.pendingTool);
+   if(tl){state.activeTool=tl.n;$('toolNum').value=tl.n;$('toolDia').value=Number(tl.dia).toFixed(4);$('hOffset').value=Number(tl.h).toFixed(4)}
+   state.streaming=false;state.running=false;state.stream=null;state.toolChangeWait=true;
+   if(state.useSafeZ)moveMachine({z:state.safeZ});
+   setState('공구교환 대기');$('statusText').textContent='공구교환 대기 — 공구를 교체한 뒤 가동 시작을 누르세요';
+   log('M6: 공구 교환 대기 (T'+(state.pendingTool??'?')+'). 교체 후 \"가동 시작\"을 누르세요.','sys');
+   return;
+  }
+  const len=line.length+1;
+  if(S.used>0&&S.used+len>RX_LIMIT)return;   /* 버퍼가 비워지면 ok 수신 시 다시 호출됨 */
+  S.pending.push({len,i:S.next});S.used+=len;S.next++;
+  sendRaw(line,false).catch(e=>{log('전송 오류: '+e.message,'err');abortStream('통신 오류')});
+ }
+ if(S.next>=state.lines.length&&!S.pending.length)finishStream();
+}
+function finishStream(){
+ state.streaming=false;state.running=false;state.stream=null;setState('대기');
+ log('프로그램 전송 완료 — 컨트롤러가 마지막 동작을 마칠 때까지 기다리세요.','sys');
+}
+function streamAck(l){
+ const S=state.stream;const p=S.pending.shift();S.used-=p.len;
+ if(/^error/i.test(l)){
+  const gl=document.querySelector('.gline[data-i=\"'+p.i+'\"]');if(gl){gl.classList.add('error');gl.scrollIntoView({block:'center'})}
+  $('alarmText').textContent='컨트롤러 오류 (줄 '+(p.i+1)+'): '+l;
+  abortStream('컨트롤러 오류 '+l+' (줄 '+(p.i+1)+')');return;
+ }
+ state.idx=p.i+1;updateProgress();
+ if(state.idx>=state.lines.length&&!S.pending.length){finishStream();return}
+ pumpStream();
+}
+function pause(){
+ /* 가상 모드: 프로그램이 돌고 있거나 이미 일시정지 상태일 때만 동작 (대기 중 눌러도 프로그램이 시작되지 않음) */
+ if(state.virtual&&!state.paused&&!state.running){log('실행 중인 프로그램이 없어 이송 일시정지를 무시했습니다.','sys');return}
+ state.paused=!state.paused;
+ if(state.paused){state.running=false;clearTimeout(state.timer);setState('이송 일시정지');if(!state.virtual)sendRaw('!').catch(()=>{})}
+ else{state.running=state.virtual?true:!!state.streaming;setState('가동');if(state.virtual)loop();else sendRaw('~').catch(()=>{})}
+}
+function stop(){state.running=false;state.paused=false;state.streaming=false;state.stream=null;clearTimeout(state.timer);if(!state.virtual)sendRaw('\x18',false).catch(()=>{});setState('정지');}
+$('cycleBtn').onclick=start;$('feedHoldBtn').onclick=pause;$('stopBtn').onclick=()=>{stop();state.idx=0;updateProgress()};
+$('resetBtn').onclick=()=>{stop();state.idx=0;state.pos={x:0,y:0,z:0,a:0};state.machine={...state.pos};updateProgress();renderDRO();draw();setState('초기화')}
+$('rewindBtn').onclick=()=>{state.idx=0;state.pos={x:0,y:0,z:0,a:0};updateProgress();renderDRO();draw();setState('대기')};
+$('restartBtn').onclick=()=>{$('rewindBtn').click();start()};
+$('nextBtn').onclick=()=>{if(state.idx<state.lines.length){execProcessed(state.lines[state.idx]);state.idx++;updateProgress()}};
+$('prevBtn').onclick=()=>{if(state.idx>1){state.idx-=2;state.pos={x:0,y:0,z:0,a:0};for(let i=0;i<state.idx;i++)execProcessed(state.lines[i]);state.idx++;updateProgress()}};
+$('singleBtn').onclick=()=>{state.singleBlock=!state.singleBlock;$('singleBtn').classList.toggle('alarmState',state.singleBlock)};
+$('single2').onclick=()=>$('singleBtn').click();
+$('blockDeleteBtn').onclick=()=>{state.blockDelete=!state.blockDelete;$('blockDeleteBtn').classList.toggle('alarmState',state.blockDelete)};
+$('optionalBtn').onclick=()=>{state.optionalStop=!state.optionalStop;$('optionalBtn').classList.toggle('alarmState',state.optionalStop)};
+$('optional2').onclick=()=>$('optionalBtn').click();
+$('editBtn').onclick=()=>alert('현재 브라우저에서는 G-code 표시/실행 기능을 제공합니다. 원본 파일 직접 편집은 안전을 위해 별도 편집기를 사용하세요.');
+$('gotoLineBtn').onclick=()=>{const n=parseInt(prompt('이동할 줄 번호를 입력하세요','1'));if(n>0&&n<=state.lines.length){state.idx=n-1;updateProgress();highlight(state.idx)}};
+document.querySelectorAll('[data-zero]').forEach(b=>b.onclick=()=>{const a=b.dataset.zero;if(a==='ALL'){for(const k of ['x','y','z','a'])state.wco[k]=state.machine[k]}else state.wco[a.toLowerCase()]=state.machine[a.toLowerCase()];if(!state.virtual)sendRaw(`G10 L20 P1 ${a==='ALL'?'X0 Y0 Z0':a+'0'}`).catch(()=>{});renderDRO()});
+$('gotoZeroBtn').onclick=()=>jogTo({x:0,y:0,z:0});
+document.querySelector('[data-zero="ALL"]').onclick=()=>{for(const k of ['x','y','z','a'])state.pos[k]=0;renderDRO();draw()};
+function jogTo(target){if(state.virtual){{const nt={...state.pos,...target};if(target.z!==undefined)nt.z=zInhMove(state.pos.z,nt.z);const bad=limitViolation(nt);if(bad){raiseLimitAlarm(bad,nt[bad.toLowerCase()]);return}}state.pos={...state.pos,...target};state.machine={...state.pos};renderDRO();draw();log('JOG 이동 '+JSON.stringify(target),'tx')}else{let cmd='G90';for(const [k,v] of Object.entries(target))cmd+=' '+k.toUpperCase()+v;cmd+=' F'+($('jogFeed').value||1000);sendRaw(cmd).catch(()=>{})}}
+function jog(ax,dir){const dist=state.step*dir;if(state.virtual){const k=ax.toLowerCase();let nv=state.pos[k]+dist;if(k==='z')nv=zInhMove(state.pos.z,nv);const l=state.softLim[k];if(state.softLimits&&!state.limitOverride&&(nv<l.min||nv>l.max)){raiseLimitAlarm(ax,nv);nv=Math.min(l.max,Math.max(l.min,nv))}state.pos[k]=nv;state.machine[k]=nv;renderDRO();draw()}else sendRaw(`$J=G91 G21 ${ax}${dist} F${$('jogFeed').value||1000}`).catch(()=>{})}
+document.querySelectorAll('[data-jog]').forEach(b=>b.onclick=()=>jog(b.dataset.jog,+b.dataset.dir));
+$('jogStop').onclick=()=>{if(!state.virtual)sendRaw('\x85',false).catch(()=>{});setState('JOG 정지')};
+document.querySelectorAll('[data-step]').forEach(b=>b.onclick=()=>{document.querySelectorAll('[data-step]').forEach(x=>x.classList.remove('active'));b.classList.add('active');state.step=parseFloat(b.dataset.step);$('stepVal').textContent=state.step;$('flyStepVal').textContent=state.step});
+$('jogMode').onclick=()=>{state.jogContinuous=!state.jogContinuous;$('jogMode').textContent=state.jogContinuous?'CONT':'단계'};
+$('mpgBtn').onclick=()=>$('jogFlyout').style.display='block';$('jogFlyBtn').onclick=()=>$('jogFlyout').style.display='block';$('closeJog').onclick=()=>$('jogFlyout').style.display='none';
+$('flyStep').onclick=()=>{state.jogContinuous=false};$('flyCont').onclick=()=>{state.jogContinuous=true};$('flyStop').onclick=()=>$('jogStop').click();
+$('wcsBtn').onclick=()=>{state.showWCS=true;$('wcsBtn').classList.add('on');$('mcsBtn').classList.remove('on');renderDRO()};
+$('mcsBtn').onclick=()=>{state.showWCS=false;$('mcsBtn').classList.add('on');$('wcsBtn').classList.remove('on');renderDRO()};
+$('fitBtn').onclick=()=>{state.viewZoom=1;draw()};$('clearPathBtn').onclick=()=>{state.path=[];draw()};$('zoomIn').onclick=()=>{state.viewZoom*=1.2;draw()};$('zoomOut').onclick=()=>{state.viewZoom/=1.2;draw()};
+$('pageFit').onclick=()=>{$('fitBtn').click()};$('pageClear').onclick=()=>{$('clearPathBtn').click()};
+$('froMinus').onclick=()=>changeFeedOverride(-10);$('froPlus').onclick=()=>changeFeedOverride(10);$('froReset').onclick=()=>setFeedOverride(100);$('fro').onchange=()=>setFeedOverride($('fro').value);
+/* 이송 보정(FRO): GRBL 실시간 명령 0x90=100%, 0x91/0x92=±10%, 0x93/0x94=±1% (범위 10~200%) */
+function renderFro(){$('froFill').style.height=(+$('fro').value/2)+'%'}
+async function sendByte(code){
+ if(state.virtual)return;
+ const b=new Uint8Array([code]);
+ if(state.transport==='ws'){if(!ws||ws.readyState!==1)throw Error('네트워크 연결이 없습니다');ws.send(b)}
+ else{if(!writer)throw Error('유에스비 연결이 없습니다');await writer.write(b)}
+}
+function setFeedOverride(t){
+ t=Math.max(10,Math.min(200,Math.round(+t||100)));
+ $('fro').value=t;renderFro();
+ if(!state.virtual){(async()=>{try{
+  await sendByte(0x90);let d=t-100;
+  while(d>=10){await sendByte(0x91);d-=10}while(d<=-10){await sendByte(0x92);d+=10}
+  while(d>0){await sendByte(0x93);d--}while(d<0){await sendByte(0x94);d++}
+ }catch(e){log('이송 보정 전송 오류: '+e.message,'err')}})()}
+}
+function setSpindleOverride(t){
+ t=Math.max(10,Math.min(200,Math.round(+t||100)));$('sro').value=t;
+ if(!state.virtual){(async()=>{try{
+  await sendByte(0x99);let d=t-100;
+  while(d>=10){await sendByte(0x9A);d-=10}while(d<=-10){await sendByte(0x9B);d+=10}
+  while(d>0){await sendByte(0x9C);d--}while(d<0){await sendByte(0x9D);d++}
+ }catch(e){log('주축 보정 전송 오류: '+e.message,'err')}})()}
+ renderDRO();
+}
+$('sro').onchange=()=>setSpindleOverride($('sro').value);$('sroReset').onclick=()=>setSpindleOverride(100);
+function changeFeedOverride(n){setFeedOverride((+$('fro').value||100)+n)}
+renderFro();
+function spindle(cmd){if(state.virtual){if(cmd==='M3'||cmd==='M4'){state.spindleOn=true;state.spindleDir=cmd==='M3'?1:-1}else state.spindleOn=false;renderDRO()}else sendRaw(cmd).catch(()=>{})}
+$('spindleCW').onclick=()=>spindle('M3');$('spindleCCW').onclick=()=>spindle('M4');$('spindleStop').onclick=()=>spindle('M5');
+$('softBtn').onclick=()=>{state.softLimits=!state.softLimits;$('softBtn').classList.toggle('alarmState',state.softLimits);$('softLimitEn').checked=state.softLimits;if(state.softLimits){readSoftLimits();if(!(state.homed.x&&state.homed.y&&state.homed.z))log('경고: 원점 복귀(Ref) 전에는 소프트 리밋 기준 위치가 정확하지 않을 수 있습니다.','err')}if(!state.virtual)sendRaw('$20='+(state.softLimits?1:0)).catch(()=>{})};$('dryBtn').onclick=()=>{state.dryRun=!state.dryRun;$('dryBtn').classList.toggle('alarmState',state.dryRun)};
+$('floodBtn').onclick=()=>{state.flood=!state.flood;$('floodBtn').classList.toggle('alarmState',state.flood)};$('mistBtn').onclick=()=>{state.mist=!state.mist;$('mistBtn').classList.toggle('alarmState',state.mist)};
+function mdi(s){s=s.trim();if(!s)return;const ls=expandMacros([s]);if(state.virtual){ls.forEach(x=>{executeLine(x);});log('MDI > '+s+(ls.length>1?'  → 매크로 '+ls.length+'줄':''),'tx')}else(async()=>{for(const x of ls)await sendRaw(spLimitLine(zInhLine(x))).catch(()=>{})})()}
+$('mdiSend').onclick=()=>{$('mdiInput').value&&(mdi($('mdiInput').value),$('mdiInput').value='')};$('mdiInput').onkeydown=e=>{if(e.key==='Enter')$('mdiSend').click()};
+$('mdiPageSend').onclick=()=>mdi($('mdiPageInput').value);$('mdiPageInput').onkeydown=e=>{if(e.key==='Enter')$('mdiPageSend').click()};
+function tab(page){document.querySelectorAll('.screen-tabs button').forEach(b=>b.classList.toggle('active',b.dataset.page===page));$('runPage').style.display=page==='run'?'grid':'none';document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));if(page!=='run')$(page+'Page').classList.add('active');draw()}
+document.querySelectorAll('.screen-tabs button').forEach(b=>b.onclick=()=>tab(b.dataset.page));
+document.addEventListener('keydown',e=>{if(e.target.matches('input,textarea,select'))return;if(e.key==='F5'){e.preventDefault();start()}if(e.key==='Escape')stop();if(e.code==='Space'){e.preventDefault();pause()}if(e.key==='Tab'){e.preventDefault();$('jogFlyout').style.display=$('jogFlyout').style.display==='block'?'none':'block'}});
+async function sendRaw(text,logIt=true){
+ if(state.virtual){if(logIt)log('가상 실행 > '+text,'tx');return true}
+ if(text.length===1&&text.charCodeAt(0)>0x7F){await sendByte(text.charCodeAt(0));if(logIt)log('> 0x'+text.charCodeAt(0).toString(16).toUpperCase(),'tx');return true}  /* 0x80 이상 실시간 명령은 UTF-8이 아닌 1바이트 그대로 전송 */
+ const suffix=(text.length===1&&'?!~\x18\x85'.includes(text))?'':'\n';
+ if(state.transport==='ws'){
+  if(!ws||ws.readyState!==1)throw Error('네트워크 연결이 없습니다');
+  ws.send(text+suffix);if(logIt)log('> '+text,'tx');return true;
+ }
+ if(!writer)throw Error('유에스비 연결이 없습니다');
+ await writer.write(new TextEncoder().encode(text+suffix));if(logIt)log('> '+text,'tx');return true
+}
+function setConnectedUI(on,label){
+ $('connDot').classList.toggle('on',on);$('connBadge').textContent=on?(label||'연결됨'):'연결 안 됨';
+ $('disconnectBtn').disabled=!on;$('connectBtn').disabled=on;
+ if(on){$('virtualBtn').textContent='가상 씨엔씨 켜기';$('statusMode').textContent='실제 CNC';$('diagConn').textContent='온라인'}
+ else{$('diagConn').textContent='오프라인'}
+}
+$('connType').onchange=()=>{const t=$('connType').value;$('baud').style.display=t==='serial'?'':'none';$('netHost').style.display=t==='ws'?'':'none';$('netPort').style.display=t==='ws'?'':'none'};
+async function connect(){
+ const t=$('connType').value;state.transport=t;
+ if(t==='serial'){
+  if(!navigator.serial){alert('Chrome/Edge의 Web Serial이 필요합니다. USB 방식이 아니라면 상단에서 "이더넷/WiFi"를 선택하세요.');return}
+  try{port=await navigator.serial.requestPort();await port.open({baudRate:+$('baud').value});writer=port.writable.getWriter();keepRead=true;state.connected=true;state.virtual=false;
+   setConnectedUI(true,'USB 연결됨');log('유에스비 연결 성공','sys');readLoop()
+  }catch(e){log('연결 오류: '+e.message,'err')}
+ }else{
+  const host=$('netHost').value.trim(),port_=$('netPort').value.trim();
+  if(!host){alert('컨트롤러의 IP 주소를 입력하세요.');return}
+  try{
+   ws=new WebSocket(`ws://${host}:${port_||81}`);
+   ws.onopen=()=>{state.connected=true;state.virtual=false;setConnectedUI(true,'네트워크 연결됨');log(`이더넷/WiFi 연결 성공 (ws://${host}:${port_||81})`,'sys')};
+   ws.onmessage=ev=>{const t=ev.data;String(t).split(/\r?\n/).forEach(l=>{l=l.trim();if(l)incoming(l)})};
+   ws.onerror=()=>log('네트워크 연결 오류 — IP/포트를 확인하세요 (WebSocket 미지원 컨트롤러일 수 있음)','err');
+   ws.onclose=()=>{if(state.connected){log('네트워크 연결 끊김','err');state.connected=false;state.virtual=true;setConnectedUI(false)}};
+  }catch(e){log('연결 오류: '+e.message,'err')}
+ }
+}
+async function readLoop(){try{const dec=new TextDecoderStream();port.readable.pipeTo(dec.writable).catch(()=>{});reader=dec.readable.getReader();while(keepRead){const r=await reader.read();if(r.done)break;if(r.value){rxBuf+=r.value;let i;while((i=rxBuf.indexOf('\n'))>=0){const l=rxBuf.slice(0,i).trim();rxBuf=rxBuf.slice(i+1);if(l)incoming(l)}}}}catch(e){if(keepRead)log('수신 오류: '+e.message,'err')}}
+function incoming(l){if(!l.startsWith('<'))log(l);alarmWatch(l);homeCfgWatch(l);
+ if(state.streaming&&state.stream){
+  if(/^(ok|error:)/i.test(l)){if(state.stream.pending.length){streamAck(l);return}}
+  else if(/^alarm/i.test(l)){abortStream('컨트롤러 알람: '+l)}
+ }
+ if(/^Grbl /i.test(l)&&state.okq&&state.okq.length){const q=state.okq;state.okq=[];q.forEach(f=>f('error:reset'))}
+ if(state.okq&&state.okq.length&&!state.streaming&&/^(ok|error:|alarm)/i.test(l)){state.okq.shift()(l);return}
+ if(state.pendingHome){if(l.toLowerCase()==='ok'){for(const a of state.pendingHome)state.homed[a.toLowerCase()]=true;state.pendingHome=null;renderRef()}else if(/^(error|alarm)/i.test(l))state.pendingHome=null}
+ if(l.startsWith('<')){const m=l.match(/<([^|>]+)/);if(m)setState(m[1].toUpperCase());const mp=l.match(/MPos:([^|]+)/);if(mp){const v=mp[1].split(',').map(Number);if(v.length>=3){state.machine.x=v[0];state.machine.y=v[1];state.machine.z=v[2];state.pos={...state.machine};renderDRO();draw()}}
+  const ov=l.match(/Ov:(\d+),(\d+),(\d+)/);if(ov){if(+ov[1]!==+$('fro').value){$('fro').value=ov[1];renderFro()}if(+ov[3]!==+$('sro').value){$('sro').value=ov[3];renderDRO()}}
+  const pn=l.match(/Pn:([^|>]+)/);updatePinLeds(pn?pn[1]:'');
+  return;
+ }
+ if(state.readingSettings){
+  if(/^\$\d+=/.test(l)){state.grblLines=state.grblLines||[];state.grblLines.push(l);const e=$('grblSettings');if(e)e.textContent=state.grblLines.join('\n')}
+  if(l.toLowerCase()==='ok'){state.readingSettings=false;state.grblLines=[]}
+ }
+}
+$('connectBtn').onclick=connect;
+$('disconnectBtn').onclick=async()=>{
+ keepRead=false;
+ try{if(reader)await reader.cancel()}catch{}try{if(writer)writer.releaseLock()}catch{}try{if(port)await port.close()}catch{}
+ try{if(ws)ws.close()}catch{}
+ reader=writer=port=ws=null;state.connected=false;state.virtual=true;
+ $('connDot').classList.remove('on');$('connBadge').textContent='연결 안 됨';$('disconnectBtn').disabled=true;$('connectBtn').disabled=false;$('virtualBtn').textContent='가상 씨엔씨 끄기';$('diagConn').textContent='오프라인';log('연결 해제','sys')
+};
+$('virtualBtn').onclick=()=>{state.virtual=!state.virtual;if(state.virtual){state.connected=false;$('connDot').classList.remove('on');$('connBadge').textContent='가상 모드';$('virtualBtn').textContent='가상 씨엔씨 끄기';$('diagVirtual').textContent='ON'}else{alert('실제 CNC 모드는 유에스비 연결을 먼저 하세요.');state.virtual=true}};
+$('homeBtn').onclick=()=>refAxes(['X','Y','Z','A']);
+$('toolZeroBtn').onclick=()=>{if(state.virtual){state.pos.z=0;renderDRO();draw()}else mdi('G91 G0 Z-5')};
+$('applyOffsets').onclick=()=>{state.wco.x=+$('offX').value||0;state.wco.y=+$('offY').value||0;state.wco.z=+$('offZ').value||0;renderDRO()};
+$('zeroOffsets').onclick=()=>{['offX','offY','offZ'].forEach(id=>$(id).value=0);$('applyOffsets').click()};
+$('saveSettings').onclick=()=>{localStorage.cncMachSettings=JSON.stringify({jog:$('setJogFeed').value,max:$('maxFeed').value,unit:$('unitSelect').value,step:state.step,safeZ:$('safeZ').value,useSafeZ:$('useSafeZ').checked,tc:[$('tcX').value,$('tcY').value,$('tcZ').value],lim:(readSoftLimits(),state.softLim),slow:state.slowZone}) ;log('설정 저장','sys')};
+$('loadSettings').onclick=()=>{try{const s=JSON.parse(localStorage.cncMachSettings||'{}');if(s.jog)$('setJogFeed').value=s.jog;if(s.max)$('maxFeed').value=s.max;if(s.unit)$('unitSelect').value=s.unit;if(s.step){state.step=+s.step;$('stepVal').textContent=s.step}if(s.safeZ!==undefined){$('safeZ').value=s.safeZ;$('useSafeZ').checked=s.useSafeZ!==false;if(s.tc){$('tcX').value=s.tc[0];$('tcY').value=s.tc[1];$('tcZ').value=s.tc[2]}}readSafeCfg();if(s.lim){for(const k of ['x','y','z','a']){if(s.lim[k]){$('limMin'+k.toUpperCase()).value=s.lim[k].min;$('limMax'+k.toUpperCase()).value=s.lim[k].max}}if(s.slow!==undefined)$('slowZone').value=s.slow;readSoftLimits()}}catch{}};
+$('clearSettings').onclick=()=>{localStorage.removeItem('cncMachSettings');log('설정 초기화','sys')};
+$('clearConsole').onclick=()=>$('console').innerHTML='';$('queryStatus').onclick=()=>state.virtual?log('<Idle|MPos:0,0,0|FS:0,0>'):sendRaw('?').catch(()=>{});
+$('fileMenu').onclick=()=>$('fileInput').click();$('settingsMenu').onclick=()=>tab('settings');$('diagnosticsMenu').onclick=()=>tab('diagnostics');$('viewMenu').onclick=()=>tab('toolpath');$('helpMenu').onclick=()=>alert('Mach3 스타일 브라우저 CNC 제어판\\nF5: Cycle Start / Space: Feed Hold / Esc: Stop / Tab: JOG 패널 / 방향키·PgUp·PgDn: 수동 이동');
+/* ===== 소프트 리밋 / 리밋 건너뛰기 / 축별 Ref LED ===== */
+function readSoftLimits(){
+ for(const k of ['x','y','z','a']){const K=k.toUpperCase();const mn=+$('limMin'+K).value||0,mx=+$('limMax'+K).value||0;state.softLim[k]={min:Math.min(mn,mx),max:Math.max(mn,mx)}}
+ state.slowZone=Math.max(0,+$('slowZone').value||0);state.softLimits=$('softLimitEn').checked;$('softBtn').classList.toggle('alarmState',state.softLimits);
+}
+function limitViolation(t){
+ if(!state.softLimits||state.limitOverride)return '';
+ for(const k of ['x','y','z','a']){const l=state.softLim[k];if(t[k]<l.min-1e-9||t[k]>l.max+1e-9)return k.toUpperCase()}
+ return '';
+}
+function raiseLimitAlarm(ax,val){
+ state.limitHit=ax;const msg='소프트 리밋 초과: '+ax+'축 ('+Number(val).toFixed(3)+') — 이동 차단됨';
+ $('alarmText').textContent=msg;log(msg,'err');setState('리밋 알람');showAlarmPanel(2,msg);
+}
+function nearLimit(p){
+ if(!state.softLimits||!state.slowZone)return false;
+ return ['x','y','z','a'].some(k=>{const l=state.softLim[k];return p[k]-l.min<state.slowZone||l.max-p[k]<state.slowZone});
+}
+function renderRef(){for(const k of ['x','y','z','a']){const e=$('ref'+k.toUpperCase());if(e)e.classList.toggle('on',!!state.homed[k])}}
+function refAxes(axes){
+ if(state.virtual){
+  for(const a of axes){const k=a.toLowerCase();state.pos[k]=0;state.machine[k]=0;state.homed[k]=true}
+  renderDRO();draw();renderRef();setState('HOME');log('원점 복귀(Ref): '+axes.join(''),'sys');
+ }else{
+  if(!confirm(axes.join('')+'축 원점 복귀를 시작합니다. 이동 경로에 장애물이 없는지 확인하세요. 계속할까요?'))return;
+  state.pendingHome=axes.slice();sendRaw(axes.length>=4?'$H':'$H'+axes.join('')).catch(()=>{});
+ }
+}
+document.querySelectorAll('[data-ref]').forEach(el=>el.onclick=()=>refAxes([el.dataset.ref]));
+$('deRefBtn').onclick=()=>{state.homed={x:false,y:false,z:false,a:false};renderRef();log('전체 Ref 해제 (축은 움직이지 않음)','sys')};
+$('limitOverrideBtn').onclick=()=>{
+ const on=!state.limitOverride;
+ if(!state.virtual&&on&&!confirm('리밋 건너뛰기를 켜면 컨트롤러의 소프트 리밋($20=0)을 해제합니다. 축이 기계적 한계에 충돌할 수 있습니다. 계속할까요?'))return;
+ state.limitOverride=on;$('limitOverrideBtn').classList.toggle('alarmState',on);
+ if(!state.virtual)sendRaw('$20='+(on?0:($('softLimitEn').checked?1:0))).catch(()=>{});
+ if(on){state.limitHit='';$('alarmText').textContent='';}
+ log(on?'리밋 건너뛰기 ON — 소프트 리밋 무시 (충돌 주의)':'리밋 건너뛰기 OFF','sys');
+};
+$('resetBtn').addEventListener('click',()=>{state.limitHit='';$('alarmText').textContent='';document.querySelectorAll('.gline.error').forEach(e=>e.classList.remove('error'))});
+renderRef();
+/* ===== 안전 Z / 툴 교환 위치 / G53 기계좌표 이동 ===== */
+function readSafeCfg(){
+ state.useSafeZ=$('useSafeZ').checked;state.safeZ=+$('safeZ').value||0;
+ state.toolChange={x:+$('tcX').value||0,y:+$('tcY').value||0,z:+$('tcZ').value||0};
+}
+function moveMachine(t){
+ if(state.virtual){{const nt={...state.machine,...t};const bad=limitViolation(nt);if(bad){raiseLimitAlarm(bad,nt[bad.toLowerCase()]);return}}state.machine={...state.machine,...t};state.pos={...state.machine};renderDRO();draw();log('G53 이동 '+JSON.stringify(t),'tx')}
+ else{let cmd='G53 G0';for(const [k,v] of Object.entries(t))cmd+=' '+k.toUpperCase()+v;sendRaw(cmd).catch(()=>{})}
+}
+function gotoSafeZ(){readSafeCfg();moveMachine({z:state.safeZ});log('안전 Z로 이동: Z'+state.safeZ,'sys')}
+function gotoToolChange(){
+ readSafeCfg();const tc=state.toolChange;
+ if(!state.virtual&&!confirm('실제 장비가 기계좌표 X'+tc.x+' Y'+tc.y+' Z'+tc.z+' 위치로 이동합니다.\n안전 Z까지 먼저 올립니다. 계속할까요?'))return;
+ moveMachine({z:state.safeZ});moveMachine({x:tc.x,y:tc.y});moveMachine({z:tc.z});
+ log('툴 교환 위치로 이동 완료 (안전 Z → XY → Z)','sys');
+}
+$('gotoSafeZBtn').onclick=gotoSafeZ;$('testSafeZ').onclick=gotoSafeZ;
+$('gotoToolChangeBtn').onclick=gotoToolChange;$('testToolChange').onclick=gotoToolChange;
+$('gotoHomeG28Btn').onclick=()=>$('gotoG28').click();
+$('applySafeZ').onclick=()=>{readSafeCfg();log('안전 Z='+state.safeZ+(state.useSafeZ?' (사용)':' (사용 안 함)')+', 툴 교환 위치 '+JSON.stringify(state.toolChange),'sys')};
+$('saveTcPos').onclick=()=>{$('tcX').value=state.machine.x;$('tcY').value=state.machine.y;$('tcZ').value=state.machine.z;readSafeCfg();log('현재 기계좌표를 툴 교환 위치로 저장했습니다.','sys')};
+/* ===== 좌표계(G54-59) / G92 / G28-G30 UI ===== */
+function renderWCS(){
+ const b=$('wcsBody');b.innerHTML='';
+ Object.keys(state.wcsTable).forEach(g=>{
+  const o=state.wcsTable[g];const tr=document.createElement('tr');tr.dataset.g=g;
+  tr.innerHTML=`<td><b>${g}</b></td>
+   <td><input data-wcs="${g}" data-ax="x" value="${o.x}"></td>
+   <td><input data-wcs="${g}" data-ax="y" value="${o.y}"></td>
+   <td><input data-wcs="${g}" data-ax="z" value="${o.z}"></td>
+   <td><input data-wcs="${g}" data-ax="a" value="${o.a}"></td>
+   <td><button data-wcsuse="${g}">사용</button></td>
+   <td><button data-wcszero="${g}">현재위치 저장</button></td>`;
+  b.appendChild(tr);
+ });
+ b.querySelectorAll('input[data-wcs]').forEach(inp=>inp.onchange=()=>{state.wcsTable[inp.dataset.wcs][inp.dataset.ax]=+inp.value||0});
+ b.querySelectorAll('[data-wcsuse]').forEach(btn=>btn.onclick=()=>{selectWCS(btn.dataset.wcsuse);if(!state.virtual)sendRaw(btn.dataset.wcsuse).catch(()=>{});log('좌표계 '+btn.dataset.wcsuse+' 사용','sys')});
+ b.querySelectorAll('[data-wcszero]').forEach(btn=>btn.onclick=()=>{const g=btn.dataset.wcszero;state.wcsTable[g]={...state.machine};renderWCS();const idx=Object.keys(state.wcsTable).indexOf(g)+1;if(!state.virtual)sendRaw(`G10 L20 P${idx} X0 Y0 Z0`).catch(()=>{});log(g+' 원점을 현재 위치로 저장','sys')});
+ selectWCS(state.activeWCS);
+}
+function renderG92G28(){$('g92x').textContent=fmt(state.g92.x);$('g92y').textContent=fmt(state.g92.y);$('g92z').textContent=fmt(state.g92.z);
+ $('g28x').textContent=fmt(state.g28.x);$('g28y').textContent=fmt(state.g28.y);$('g28z').textContent=fmt(state.g28.z);
+ $('g30x').textContent=fmt(state.g30.x);$('g30y').textContent=fmt(state.g30.y);$('g30z').textContent=fmt(state.g30.z);
+}
+$('setG92').onclick=()=>{state.g92={...state.pos};renderG92G28();if(!state.virtual)sendRaw(`G92 X${state.pos.x} Y${state.pos.y} Z${state.pos.z}`).catch(()=>{});};
+$('clearG92').onclick=()=>{state.g92={x:0,y:0,z:0,a:0};renderG92G28();if(!state.virtual)sendRaw('G92.1').catch(()=>{});};
+$('setG28').onclick=()=>{state.g28={x:state.pos.x,y:state.pos.y,z:state.pos.z};renderG92G28();if(!state.virtual)sendRaw('G28.1').catch(()=>{});};
+$('gotoG28').onclick=()=>{jogTo(state.g28);if(!state.virtual)sendRaw('G28').catch(()=>{});};
+$('setG30').onclick=()=>{state.g30={x:state.pos.x,y:state.pos.y,z:state.pos.z};renderG92G28();if(!state.virtual)sendRaw('G30.1').catch(()=>{});};
+$('gotoG30').onclick=()=>{jogTo(state.g30);if(!state.virtual)sendRaw('G30').catch(()=>{});};
+
+/* ===== 툴 테이블 ===== */
+function renderTools(){
+ const b=$('toolBody');b.innerHTML='';
+ state.tools.forEach((tl,i)=>{
+  const tr=document.createElement('tr');
+  tr.innerHTML=`<td><input data-tool="${i}" data-f="n" value="${tl.n}" style="width:45px"></td>
+   <td><input data-tool="${i}" data-f="desc" value="${tl.desc}"></td>
+   <td><input data-tool="${i}" data-f="dia" value="${tl.dia}"></td>
+   <td><input data-tool="${i}" data-f="h" value="${tl.h}"></td>
+   <td><button data-toolsel="${i}">선택</button></td>
+   <td><button data-tooldel="${i}">삭제</button></td>`;
+  b.appendChild(tr);
+ });
+ b.querySelectorAll('input[data-tool]').forEach(inp=>inp.onchange=()=>{const tl=state.tools[+inp.dataset.tool];const f=inp.dataset.f;tl[f]=(f==='desc')?inp.value:(+inp.value||0)});
+ b.querySelectorAll('[data-toolsel]').forEach(btn=>btn.onclick=()=>{const tl=state.tools[+btn.dataset.toolsel];state.activeTool=tl.n;$('toolNum').value=tl.n;$('toolDia').value=tl.dia.toFixed?tl.dia.toFixed(4):tl.dia;$('hOffset').value=tl.h.toFixed?tl.h.toFixed(4):tl.h;log('공구 선택: T'+tl.n+' '+tl.desc,'sys')});
+ b.querySelectorAll('[data-tooldel]').forEach(btn=>btn.onclick=()=>{state.tools.splice(+btn.dataset.tooldel,1);renderTools()});
+}
+$('addToolRow').onclick=()=>{const n=state.tools.length?Math.max(...state.tools.map(t=>t.n))+1:1;state.tools.push({n,desc:'공구 '+n,dia:6,h:0});renderTools()};
+
+/* ===== 축/모터 설정 ===== */
+function renderMotor(){
+ const b=$('motorBody');b.innerHTML='';
+ [['x','X'],['y','Y'],['z','Z'],['a','A']].forEach(([k,label])=>{
+  const m=state.motor[k];const tr=document.createElement('tr');
+  tr.innerHTML=`<td><b>${label}</b></td>
+   <td><input data-m="${k}" data-f="steps" value="${m.steps}"></td>
+   <td><input data-m="${k}" data-f="vel" value="${m.vel}"></td>
+   <td><input data-m="${k}" data-f="acc" value="${m.acc}"></td>
+   <td><input data-m="${k}" data-f="travel" value="${m.travel}"></td>
+   <td><input data-m="${k}" data-f="back" value="${m.back}"></td>
+   <td style="text-align:center"><input type="checkbox" data-m="${k}" data-f="rev" ${m.rev?'checked':''}></td>`;
+  b.appendChild(tr);
+ });
+ b.querySelectorAll('input[data-m]').forEach(inp=>inp.onchange=()=>{const m=state.motor[inp.dataset.m];const f=inp.dataset.f;m[f]=(f==='rev')?inp.checked:(+inp.value||0)});
+}
+$('applyMotor').onclick=()=>{document.querySelectorAll('#motorBody input[data-m]').forEach(inp=>{const m=state.motor[inp.dataset.m];const f=inp.dataset.f;m[f]=(f==='rev')?inp.checked:(+inp.value||0)});log('축/모터 설정을 화면에 적용했습니다.','sys')};
+$('sendMotorGrbl').onclick=async()=>{
+ document.querySelectorAll('#motorBody input[data-m]').forEach(inp=>{const m=state.motor[inp.dataset.m];const f=inp.dataset.f;m[f]=(f==='rev')?inp.checked:(+inp.value||0)});
+ if(state.virtual){log('가상 모드: 축/모터 설정을 가상 컨트롤러에 반영했습니다 (실제 전송 없음).','sys');return}
+ const map={x:['$100','$110','$120','$130'],y:['$101','$111','$121','$131'],z:['$102','$112','$122','$132'],a:['$103','$113','$123','$133']};
+ for(const k of ['x','y','z','a']){const m=state.motor[k],ids=map[k];await sendRaw(`${ids[0]}=${m.steps}`);await sendRaw(`${ids[1]}=${m.vel}`);await sendRaw(`${ids[2]}=${m.acc}`);await sendRaw(`${ids[3]}=${m.travel}`);}
+ await sendRaw('$3='+['x','y','z','a'].reduce((s,k,i)=>s+(state.motor[k].rev?(1<<i):0),0));
+ log('축/모터 설정을 컨트롤러로 전송했습니다.','sys')
+};
+function calcStepsPerMM(){const pitch=+$('calcPitch').value||1,spr=+$('calcStepsRev').value||200,micro=+$('calcMicro').value||1,ratio=+$('calcRatio').value||1;
+ const v=(spr*micro*ratio)/pitch;$('calcResult').textContent=v.toFixed(4);return v}
+['calcPitch','calcStepsRev','calcMicro','calcRatio'].forEach(id=>$(id).oninput=calcStepsPerMM);
+$('calcApply').onclick=()=>{const v=calcStepsPerMM();const ax=$('calcAxis').value;state.motor[ax].steps=v;renderMotor();log(`계산된 ${v.toFixed(4)} steps/mm 를 ${ax.toUpperCase()}축에 적용`,'sys')};
+$('applyLimits').onclick=()=>{readSoftLimits();log('소프트 리밋 적용: '+(state.softLimits?'사용':'사용 안 함')+' '+JSON.stringify(state.softLim)+', 슬로우 존 '+state.slowZone,'sys')};
+$('sendLimitsGrbl').onclick=async()=>{readSoftLimits();
+ state.softLimits=$('softLimitEn').checked;
+ if(state.virtual){log('가상 모드: 리밋/홈 설정을 가상 컨트롤러에 반영했습니다 (실제 전송 없음).','sys');return}
+ await sendRaw('$20='+($('softLimitEn').checked?1:0));await sendRaw('$21='+($('hardLimitEn').checked?1:0));await sendRaw('$22='+($('homingEn').checked?1:0));log('리밋/홈 설정을 컨트롤러로 전송했습니다.','sys')};
+
+/* ===== 스핀들 설정 ===== */
+function renderSpindleCfg(){const s=state.spindleCfg;$('spMin').value=s.min;$('spMax').value=s.max;$('pwmMin').value=s.pwmMin;$('pwmMax').value=s.pwmMax;$('pulleyRatio').value=s.pulley;$('laserMode').checked=s.laser}
+$('applySpindleCfg').onclick=()=>{const s=state.spindleCfg;s.min=+$('spMin').value||0;s.max=+$('spMax').value||0;s.pwmMin=+$('pwmMin').value||0;s.pwmMax=+$('pwmMax').value||0;s.pulley=+$('pulleyRatio').value||1;s.laser=$('laserMode').checked;log('스핀들 설정을 화면에 적용했습니다.','sys')};
+$('sendSpindleGrbl').onclick=async()=>{
+ $('applySpindleCfg').click();
+ if(state.virtual){log('가상 모드: 스핀들 설정을 가상 컨트롤러에 반영했습니다 (실제 전송 없음).','sys');return}
+ const s=state.spindleCfg;await sendRaw('$30='+s.max);await sendRaw('$31='+s.min);await sendRaw('$32='+(s.laser?1:0));log('스핀들 설정을 컨트롤러로 전송했습니다.','sys')};
+$('warmupBtn').onclick=async()=>{const rpm=+$('warmRpm').value||1000,sec=+$('warmSec').value||30;spindle('M3');mdi('S'+rpm);log(`스핀들 워밍업 시작: ${rpm}RPM, ${sec}초`,'sys');setTimeout(()=>{spindle('M5');log('스핀들 워밍업 종료','sys')},Math.min(sec,600)*1000)};
+
+/* ===== 마법사 (Wizards) ===== */
+function wizardSet(text){$('wizardOut').value=text}
+/* 포켓: 바깥쪽에서 안쪽으로 스텝오버 간격의 동심 경로를 돌며 바닥 전체를 파냄 */
+const fx=v=>(+v).toFixed(3);
+$('genPocketRect').onclick=()=>{
+ const x0=+$('wpX').value||0,y0=+$('wpY').value||0,W=+$('wpW').value||10,H=+$('wpH').value||10,depth=+$('wpDepth').value||1,
+  stepZ=Math.max(0.05,+$('wpStepZ').value||1),tool=+$('wpTool').value||6,F=+$('wpFeed').value||500,safeZ=+$('wpSafeZ').value||5,
+  over=Math.min(100,Math.max(5,+$('wpOver').value||40));
+ const r=tool/2;
+ if(W<=tool||H<=tool){alert('가로·세로가 공구 직경('+tool+')보다 커야 포켓을 가공할 수 있습니다.');return}
+ const x1=x0+r,y1=y0+r,x2=x0+W-r,y2=y0+H-r,s=tool*over/100,dmax=Math.min(x2-x1,y2-y1)/2;
+ const ds=[];for(let d=0;d<dmax-1e-6;d+=s)ds.push(d);ds.push(dmax);
+ const lines=['(마법사: 사각형 포켓 '+W+'x'+H+' 깊이 '+depth+' 스텝오버 '+over+'%)','G21','G90',`G0 Z${safeZ}`,`G0 X${fx(x1)} Y${fx(y1)}`,'G0 Z1'];
+ let z=0,first=true,cx_=x1,cy_=y1;
+ const mv=(x,y)=>{if(Math.abs(x-cx_)<1e-6&&Math.abs(y-cy_)<1e-6)return;lines.push(`G1 X${fx(x)} Y${fx(y)}`);cx_=x;cy_=y};
+ while(z<depth-1e-9){z=Math.min(z+stepZ,depth);
+  if(!first){lines.push(`G1 X${fx(x1)} Y${fx(y1)} F${F}`);cx_=x1;cy_=y1}   /* 앞 깊이에서 이미 파낸 바닥 위를 이동 */
+  first=false;
+  lines.push(`G1 Z-${fx(z)} F${Math.round(F/2)}`);lines.push(`G1 F${F}`);
+  ds.forEach(d=>{const a=x1+d,b=y1+d,c=x2-d,e=y2-d;mv(a,b);mv(c,b);mv(c,e);mv(a,e);mv(a,b)});
+ }
+ lines.push(`G0 Z${safeZ}`,'M30');wizardSet(lines.join('\n'));
+};
+$('genPocketCircle').onclick=()=>{
+ const cx=+$('wcX').value||0,cy=+$('wcY').value||0,R=+$('wcR').value||10,depth=+$('wcDepth').value||1,stepZ=Math.max(0.05,+$('wcStepZ').value||1),
+  tool=+$('wcTool').value||6,F=+$('wcFeed').value||500,boss=$('wcBoss').checked,safeZ=+$('wcSafeZ').value||5,
+  over=Math.min(100,Math.max(5,+$('wcOver').value||40)),bossW=Math.max(0,+$('wcBossW').value||0);
+ const r0=tool/2,s=tool*over/100,radii=[];
+ if(boss){const rin=R+r0,rout=rin+bossW;for(let q=rout;q>rin+1e-6;q-=s)radii.push(q);radii.push(rin)}
+ else{const rr=R-r0;if(rr<=0){alert('포켓 반지름('+R+')이 공구 반지름('+r0+')보다 커야 합니다.');return}for(let q=rr;q>1e-6;q-=s)radii.push(q)}
+ const lines=['(마법사: 원형 '+(boss?'보스 R'+R+' 주변 '+bossW+'mm':'포켓 R'+R)+' 깊이 '+depth+' 스텝오버 '+over+'%)','G21','G90',`G0 Z${safeZ}`,`G0 X${fx(cx+radii[0])} Y${fx(cy)}`,'G0 Z1'];
+ let z=0,first=true;
+ while(z<depth-1e-9){z=Math.min(z+stepZ,depth);
+  if(!first)lines.push(`G1 X${fx(cx+radii[0])} Y${fx(cy)} F${F}`);   /* 앞 깊이에서 이미 파낸 곳을 지나 시작점으로 */
+  first=false;
+  lines.push(`G1 Z-${fx(z)} F${Math.round(F/2)}`);lines.push(`G1 F${F}`);
+  radii.forEach((q,k)=>{if(k)lines.push(`G1 X${fx(cx+q)} Y${fx(cy)}`);lines.push(`G2 X${fx(cx+q)} Y${fx(cy)} I${fx(-q)} J0`)});
+  if(!boss)lines.push(`G1 X${fx(cx)} Y${fx(cy)}`);
+ }
+ lines.push(`G0 Z${safeZ}`,'M30');wizardSet(lines.join('\n'));
+};
+$('genDrill').onclick=()=>{
+ const type=document.querySelector('input[name="drillType"]:checked').value;
+ const x0=+$('wdX').value||0,y0=+$('wdY').value||0,depth=+$('wdDepth').value||5,retract=+$('wdRetract').value||5,F=+$('wdFeed').value||150;
+ const pts=[];
+ if(type==='grid'){const dx=+$('wdDx').value||10,dy=+$('wdDy').value||10,nx=Math.max(1,+$('wdNx').value||1),ny=Math.max(1,+$('wdNy').value||1);
+  for(let j=0;j<ny;j++)for(let i=0;i<nx;i++)pts.push([x0+i*dx,y0+j*dy]);
+ }else{const R=+$('wdR').value||20,n=Math.max(1,+$('wdCount').value||1);
+  for(let i=0;i<n;i++){const a=2*Math.PI*i/n;pts.push([x0+R*Math.cos(a),y0+R*Math.sin(a)]);}
+ }
+ const lines=['(마법사: 드릴링 패턴)','G21','G90',`G0 Z${retract}`];
+ pts.forEach(([x,y])=>{lines.push(`G0 X${x.toFixed(3)} Y${y.toFixed(3)}`,`G1 Z-${depth} F${F}`,`G0 Z${retract}`)});
+ lines.push('M30');wizardSet(lines.join('\n'));
+};
+$('wizardLoad').onclick=()=>{const t=$('wizardOut').value;if(!t.trim())return;state.raw=t;state.lines=parseProgram(t);state.idx=0;$('fileName').textContent='마법사 생성 프로그램';$('statusFile').textContent='마법사 생성 프로그램';$('lineTotal').textContent=state.lines.length;renderGcode();tab('run');log('마법사에서 생성한 프로그램을 불러왔습니다.','sys')};
+$('wizardAppend').onclick=()=>{const t=$('wizardOut').value;if(!t.trim())return;state.lines=state.lines.concat(parseProgram(t));state.raw=(state.raw||'')+'\n'+t;$('lineTotal').textContent=state.lines.length;renderGcode();log('마법사 G코드를 현재 프로그램에 추가했습니다.','sys')};
+
+/* ===== G코드/M코드 참고표 ===== */
+function renderGref(){
+ const rows=[
+  ['G0','급속 위치결정(급속 이송)'],['G1','직선 절삭 이송'],['G2 / G3','시계/반시계 방향 원호 절삭'],['G4','일정 시간 대기(Dwell)'],
+  ['G10 L2 / L20','좌표계 원점을 값으로 설정 / 현재 위치를 지정 좌표계 원점으로 설정'],['G12 / G13','원형 포켓 시계/반시계 (G12 I_ [Z_] [F_]: 현재 XY가 중심, I=반지름, 중심에서 X+I로 이동해 한 바퀴 절삭 후 중심 복귀)'],['G15 / G16','극좌표 취소 / 극좌표 모드 (X=반지름, Y=각도(도), G90에서만, 극점은 G16 X_ Y_ 또는 현재 위치)'],['G52','작업 좌표계 임시 옵셋 (G52 X0 Y0 Z0 으로 해제)'],['G17 / G18 / G19','작업 평면 XY/XZ/YZ 선택'],['G20 / G21','인치 / 밀리미터 단위'],
+  ['G28 / G30','1차/2차 기준점(레퍼런스 포인트)로 복귀'],['G28.1 / G30.1','현재 위치를 기준점으로 저장'],
+  ['G40 / G41 / G42','커터 반경 보정 취소 / 좌측 / 우측'],['G43 / G49','툴 길이 보정 적용 / 취소'],
+  ['G53','기계 좌표계 기준으로 이동 (예: G53 G0 Z0, 해당 줄에만 적용)'],['G54~G59','작업 좌표계(고정자 옵셋) 1~6번 선택'],['G80','고정 사이클 취소'],['G81~G89','드릴/보링 등 고정 사이클'],
+  ['G90 / G91','절대 좌표 / 상대(증분) 좌표'],['G92','임시 좌표계 옵셋 설정'],['G92.1','G92 옵셋 취소'],
+  ['G93 / G94','역시간 이송 / 분당 이송 모드'],['M0 / M1','프로그램 정지 / 선택적 정지'],['M2 / M30','프로그램 종료(또는 리셋 후 종료)'],
+  ['M3 / M4 / M5','주축 정회전 / 역회전 / 정지'],['M6','공구 교체'],['M7 / M8 / M9','미스트 / 절삭유 켜기 / 전체 끄기'],
+  ['T#','다음에 교체할 공구 번호 지정'],['F#','이송 속도 지정'],['S#','주축 속도(RPM) 지정']
+ ];
+ const b=$('grefBody');b.innerHTML=rows.map(r=>`<tr><td style="font-family:Consolas,monospace;font-weight:bold">${r[0]}</td><td style="text-align:left">${r[1]}</td></tr>`).join('');
+}
+
+$('diagSerial').textContent=('serial' in navigator)?'지원':'지원 안 됨';
+$('readSettingsBtn').onclick=()=>{
+ if(state.virtual){
+  const m=state.motor,lines=[
+   '$20='+(state.softLimits?1:0),'$21=0','$22=1','$23='+hmMask(),'$24='+(+$('hmFeed').value||100),'$25='+(+$('hmSeek').value||500),'$27='+(+$('hmPull').value||1),
+   '$30='+state.spindleCfg.max,'$31='+state.spindleCfg.min,'$32='+(state.spindleCfg.laser?1:0),
+   '$100='+m.x.steps,'$101='+m.y.steps,'$102='+m.z.steps,'$103='+m.a.steps,
+   '$110='+m.x.vel,'$111='+m.y.vel,'$112='+m.z.vel,'$113='+m.a.vel,
+   '$120='+m.x.acc,'$121='+m.y.acc,'$122='+m.z.acc,'$123='+m.a.acc,
+   '$130='+m.x.travel,'$131='+m.y.travel,'$132='+m.z.travel,'$133='+m.a.travel
+  ];
+  $('grblSettings').textContent=lines.join('\n');log('가상 모드: 현재 화면 설정값을 GRBL 형식으로 표시했습니다 (실제 컨트롤러 값 아님).','sys');return;
+ }
+ state.readingSettings=true;$('grblSettings').textContent='읽는 중...';sendRaw('$$').catch(()=>{})
+};
+$('queryInputsBtn').onclick=()=>{
+ if(state.virtual){updatePinLeds('');log('가상 모드: 입력 신호 없음(항상 정상 상태로 표시)','sys');return}
+ sendRaw('?').catch(()=>{})
+};
+function updatePinLeds(pn){
+ const set=(id,on)=>{const e=$(id);if(e)e.style.background=on?'#e21f26':'#888'};
+ pn=pn||'';
+ set('ledX',pn.includes('X'));set('ledY',pn.includes('Y'));set('ledZ',pn.includes('Z'));set('ledA',pn.includes('A'));
+ set('ledP',pn.includes('P'));set('ledD',pn.includes('D'));set('ledH',pn.includes('H'));set('ledR',pn.includes('R'));
+}
+setInterval(()=>{if(state.running&&state.startTime){const sec=Math.floor((Date.now()-state.startTime)/1000);$('elapsed').textContent=new Date(sec*1000).toISOString().substr(11,8)}},500);
+setInterval(()=>{if(!state.virtual&&state.connected)sendRaw('?',false).catch(()=>{})},250);
+window.addEventListener('resize',draw);
+$('blockDeleteBtn').title='블록 건너뛰기: 켜면 /로 시작하는 줄을 실행하지 않음';
+$('optionalBtn').title='선택 정지: 켜면 M1에서 프로그램이 멈춤';
+$('dryBtn').title='공회전: 주축·절삭유(M3/M4/M7/M8)와 S값을 무시하고 이동만 실행';
+[['blockDeleteBtn','블록 건너뛰기'],['optionalBtn','선택 정지(M1)'],['dryBtn','공회전']].forEach(([id,n])=>$(id).addEventListener('click',()=>log(n+(( $(id).classList.contains('alarmState'))?' 켜짐':' 꺼짐'),'sys')));
+/* ===== 추가 기능 ===== */
+/* 1) 고정 사이클(G73/G81/G82/G83) → G0/G1 전개 (GRBL은 고정 사이클 미지원, 매뉴얼 10.7.22~24) */
+function expandCanned(ls){
+ const out=[],has=v=>!Number.isNaN(v),f3=v=>(+v).toFixed(3);let abs=true,inch=false,cyc=null,ret98=true,initZ=0,warn=false;const pos={x:0,y:0,z:0},P={z:0,r:0,q:0,p:0,f:0};
+ for(const l of ls){
+  const up=l.toUpperCase();
+  if(/\bG\s*90(?!\.)/.test(up))abs=true;if(/\bG\s*91(?!\.)/.test(up))abs=false;
+  if(/\bG\s*20\b/.test(up))inch=true;if(/\bG\s*21\b/.test(up))inch=false;
+  if(/\bG\s*98\b/.test(up))ret98=true;if(/\bG\s*99\b/.test(up))ret98=false;
+  if(/\bG\s*87\b/.test(up))warn=true;
+  if(/\bG\s*80\b/.test(up))cyc=null;
+  const gm=up.match(/\bG\s*(73|81|82|83|84|85|86|88|89)\b/),mg=up.match(/\bG\s*0*([0-3])\b/),isCyc=!!gm;
+  if(mg&&!isCyc)cyc=null;
+  const X=num(l,'X'),Y=num(l,'Y');
+  if(isCyc){cyc=gm[1];const z=num(l,'Z'),r=num(l,'R'),q=num(l,'Q'),p=num(l,'P'),f=num(l,'F');if(has(z))P.z=z;if(has(r))P.r=r;if(has(q))P.q=q;if(has(p))P.p=p;if(has(f))P.f=f;initZ=pos.z}
+  if(cyc&&(isCyc||has(X)||has(Y))){
+   const rest=l.replace(/\b[GXYZRQPF]\s*-?\d*\.?\d+/gi,'').trim();if(rest)out.push(rest);
+   const tx=has(X)?(abs?X:pos.x+X):pos.x,ty=has(Y)?(abs?Y:pos.y+Y):pos.y,R=abs?P.r:pos.z+P.r,Zb=abs?P.z:R+P.z,cl=inch?0.02:0.5,fs=P.f?' F'+P.f:'';
+   const back=ret98?Math.max(initZ,R):R;
+   out.push('G90');if(pos.z<R-1e-9)out.push('G0 Z'+f3(R));
+   out.push('G0 X'+f3(tx)+' Y'+f3(ty),'G0 Z'+f3(R));
+   if(cyc==='81'||cyc==='82'){out.push('G1 Z'+f3(Zb)+fs);if(cyc==='82'&&P.p>0)out.push('G4 P'+P.p)}
+   else if(cyc==='84'||cyc==='85'||cyc==='86'||cyc==='88'||cyc==='89'){
+    out.push('G1 Z'+f3(Zb)+fs);if((cyc==='84'||cyc==='88'||cyc==='89')&&P.p>0)out.push('G4 P'+P.p);
+    if(cyc==='84')out.push('M4','G1 Z'+f3(R),'M3');
+    else if(cyc==='85'||cyc==='89')out.push('G1 Z'+f3(R));
+    else if(cyc==='86')out.push('M5','G0 Z'+f3(R),'M3');
+    else out.push('M5','M0','M3')}
+   else{const q=Math.abs(P.q)||Math.abs(R-Zb);let cur=R,first=true;
+    while(cur>Zb+1e-9){const nz=Math.max(Zb,cur-q);out.push('G1 Z'+f3(nz)+(first?fs:''));first=false;
+     if(nz>Zb+1e-9){if(cyc==='83')out.push('G0 Z'+f3(R));out.push('G0 Z'+f3(nz+cl))}cur=nz}}
+   out.push('G0 Z'+f3(back));if(!abs)out.push('G91');
+   pos.x=tx;pos.y=ty;pos.z=back;continue;
+  }
+  for(const k of ['x','y','z']){const v=num(l,k.toUpperCase());if(has(v))pos[k]=abs?v:pos[k]+v}
+  out.push(l);
+ }
+ if(warn)log('경고: G87(백 보링) 고정 사이클은 전개하지 못했습니다. 그대로 두면 GRBL이 오류를 냅니다.','err');
+ return out;
+}
+/* 2) R 방식 원호 (매뉴얼 10.7.3.1) */
+function arcCenter(g,o,t,I,J,R){
+ if(!Number.isNaN(I)&&!Number.isNaN(J))return{cx:o.x+I,cy:o.y+J,r:Math.hypot(I,J)};
+ if(Number.isNaN(R))return null;
+ const dx=t.x-o.x,dy=t.y-o.y,d=Math.hypot(dx,dy);if(d<1e-9)return null;
+ const rr=Math.abs(R),h=Math.sqrt(Math.max(0,rr*rr-d*d/4));let s=g==='G2'?1:-1;if(R<0)s=-s;
+ return{cx:(o.x+t.x)/2+s*h*dy/d,cy:(o.y+t.y)/2-s*h*dx/d,r:rr};
+}
+/* 3) G코드 편집기 (매뉴얼 6.5) */
+$('editBtn').onclick=()=>{if(state.running||state.streaming){log('실행 중에는 편집할 수 없습니다. 먼저 정지하세요.','err');return}$('edText').value=state.raw!=null?state.raw:state.lines.join('\n');$('editorModal').style.display='flex'};
+$('edClose').onclick=()=>$('editorModal').style.display='none';
+$('edApply').onclick=()=>{const t=$('edText').value;state.raw=t;state.lines=parseProgram(t);state.idx=0;if($('fileName').textContent==='없음')$('fileName').textContent=$('statusFile').textContent='편집한 프로그램';$('lineTotal').textContent=state.lines.length;renderGcode();updateProgress();log('G코드 편집 적용 ('+state.lines.length+'줄)','sys');$('editorModal').style.display='none'};
+$('edSave').onclick=()=>{const a=document.createElement('a'),n=$('fileName').textContent;a.href=URL.createObjectURL(new Blob([$('edText').value],{type:'text/plain'}));a.download=(n&&n!=='없음'&&n!=='편집한 프로그램'&&n!=='마법사 생성 프로그램')?n:'program.nc';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+/* 4) 연속 수동 이동 + 키보드 핫키 (매뉴얼 6.2.5.1) */
+let jogTimer=null,jogHeld=null;
+function jogStopCont(){if(jogTimer){clearInterval(jogTimer);jogTimer=null}if(jogHeld&&!state.virtual)sendRaw('\x85',false).catch(()=>{});jogHeld=null}
+function jogStart(ax,dir){
+ jogStopCont();const k=ax.toLowerCase();jogHeld={ax,dir};
+ if(state.virtual){jogTimer=setInterval(()=>{let nv=state.pos[k]+(+$('jogFeed').value||1000)/60*0.05*dir;const l=state.softLim[k];if(k==='z'){const z0=nv;nv=zInhMove(state.pos.z,nv,true);if(nv!==z0&&!state.inhNote){state.inhNote=true;log('Z 최대 깊이 제한에서 멈춤 (Z'+nv.toFixed(3)+')','err');setTimeout(()=>{state.inhNote=false},1500)}}
+  if(state.softLimits&&!state.limitOverride&&(nv<l.min||nv>l.max)){raiseLimitAlarm(ax,nv);jogStopCont();return}
+  state.pos[k]=nv;state.machine[k]=nv;renderDRO();draw()},50)}
+ else sendRaw('$J=G91 G21 '+ax+(Math.max(10,+state.motor[k].travel||300)*dir)+' F'+($('jogFeed').value||1000)).catch(()=>{});
+}
+document.querySelectorAll('[data-jog]').forEach(b=>{
+ b.onclick=()=>{if(!state.jogContinuous)jog(b.dataset.jog,+b.dataset.dir)};
+ b.addEventListener('pointerdown',()=>{if(state.jogContinuous)jogStart(b.dataset.jog,+b.dataset.dir)});
+ ['pointerup','pointerleave','pointercancel'].forEach(ev=>b.addEventListener(ev,()=>{if(state.jogContinuous)jogStopCont()}));
+});
+const KEYJOG={ArrowRight:['X',1],ArrowLeft:['X',-1],ArrowUp:['Y',1],ArrowDown:['Y',-1],PageUp:['Z',1],PageDown:['Z',-1]};
+const KEYJOG2={Numpad4:['X',-1],Numpad6:['X',1],Numpad8:['Y',1],Numpad2:['Y',-1],Numpad9:['Z',1],Numpad3:['Z',-1]};const kj=e=>KEYJOG[e.key]||(/^\d$/.test(e.key)?KEYJOG2[e.code]:null);
+document.addEventListener('keydown',e=>{const j=kj(e);if(!j||e.target.matches('input,textarea,select'))return;e.preventDefault();if(e.repeat)return;state.jogContinuous?jogStart(j[0],j[1]):jog(j[0],j[1])});
+document.addEventListener('keyup',e=>{if(kj(e)&&state.jogContinuous)jogStopCont()});
+/* 5) Auto 공구 0점 — Z 프로브 G38.2 (매뉴얼 6.2.17, 10.7.12) */
+function sendWait(cmd){return new Promise((res,rej)=>{state.okq=state.okq||[];state.okq.push(l=>/^ok/i.test(l)?res(l):rej(new Error(l)));sendRaw(cmd).catch(e=>{state.okq.pop();rej(e)})})}
+async function autoZero(){
+ const d=+$('prbDepth').value||10,f=+$('prbFeed').value||50,th=+$('prbThick').value||0,rt=+$('prbRetract').value||5;
+ if(state.probing)return;
+ if(state.virtual){state.pos.z=th;state.machine.z=th;renderDRO();draw();log('가상 모드: Auto 공구 0점 — Z를 플레이트 두께('+th+')로 설정','sys');return}
+ if(!confirm('프로브 플레이트를 공구 아래에 놓고 클립을 연결했나요?\nZ축이 최대 '+d+' 내려가며 접촉하면 Z 0점을 설정합니다.'))return;
+ state.probing=true;
+ try{await sendWait('G91 G38.2 Z-'+d+' F'+f);await sendWait('G10 L20 P0 Z'+th);await sendWait('G0 Z'+rt);await sendWait('G90');log('Auto 공구 0점 완료 (플레이트 두께 '+th+')','sys')}
+ catch(e){log('프로브 실패: '+e.message+' — 플레이트 연결과 최대 하강 값을 확인하고, 알람이면 초기화 후 $X로 해제하세요.','err');sendRaw('G90').catch(()=>{})}
+ finally{state.probing=false}
+}
+$('toolZeroBtn').onclick=autoZero;$('prbRun').onclick=autoZero;
+/* 6) DRO 값 직접 입력 (매뉴얼 3.2.3) */
+['X','Y','Z','A'].forEach(a=>{const e=$(a.toLowerCase()+'Dro'),k=a.toLowerCase();e.style.cursor='pointer';e.title='클릭: '+a+'축 좌표 직접 입력';
+ e.onclick=()=>{const v=prompt(a+'축의 현재 위치를 다음 좌표로 설정합니다.','0');if(v===null)return;const n=parseFloat(v);if(Number.isNaN(n))return;
+  if(state.virtual){state.pos[k]=n;state.machine[k]=n;renderDRO();draw()}else sendRaw('G10 L20 P0 '+a+n).catch(()=>{})}});
+/* 7) 프로파일 저장/복원/내보내기 (매뉴얼 5.7) */
+const PRB=['prbDepth','prbFeed','prbThick','prbRetract'];
+function profileData(){return{wcs:state.wcsTable,g28:state.g28,g30:state.g30,tools:state.tools,motor:state.motor,sp:state.spindleCfg,prb:PRB.map(i=>$(i).value),zi:[$('zInhEn').checked,$('zInhVal').value],mm:$('mmText').value,hm:{v:HM.map(i=>$(i).value),d:HMD.map(i=>$(i).checked)}}}
+function applyProfile(p){
+ if(p.wcs)for(const g in state.wcsTable)if(p.wcs[g])state.wcsTable[g]=Object.assign({x:0,y:0,z:0,a:0},p.wcs[g]);
+ if(p.g28)state.g28=p.g28;if(p.g30)state.g30=p.g30;if(Array.isArray(p.tools)&&p.tools.length)state.tools=p.tools;
+ if(p.motor)for(const k of ['x','y','z','a'])if(p.motor[k])Object.assign(state.motor[k],p.motor[k]);
+ if(p.sp)Object.assign(state.spindleCfg,p.sp);
+ if(p.prb)PRB.forEach((id,i)=>{if(p.prb[i]!==undefined)$(id).value=p.prb[i]});
+ if(p.mm!==undefined){$('mmText').value=p.mm;mmApply()}
+ if(p.zi){$('zInhEn').checked=!!p.zi[0];$('zInhVal').value=p.zi[1];zInhRead()}
+ if(p.hm){HM.forEach((id,i)=>{if(p.hm.v&&p.hm.v[i]!==undefined)$(id).value=p.hm.v[i]});HMD.forEach((id,i)=>{if(p.hm.d)$(id).checked=!!p.hm.d[i]})}
+ renderWCS();renderG92G28();renderTools();renderMotor();renderSpindleCfg();
+}
+const _sv=$('saveSettings').onclick,_ld=$('loadSettings').onclick,_cl=$('clearSettings').onclick;
+$('saveSettings').onclick=()=>{_sv();try{localStorage.cncMachProfile=JSON.stringify(profileData());log('프로파일 저장: 좌표계·툴 테이블·축/모터·스핀들·프로브','sys')}catch(e){log('프로파일 저장 실패: '+e.message,'err')}};
+$('loadSettings').onclick=()=>{_ld();try{const p=JSON.parse(localStorage.cncMachProfile||'null');if(p)applyProfile(p)}catch{}};
+$('clearSettings').onclick=()=>{_cl();try{localStorage.removeItem('cncMachProfile')}catch{}};
+$('exportProfile').onclick=()=>{const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(profileData(),null,1)],{type:'application/json'}));a.download='cnc-profile.json';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),2000)};
+$('importProfile').onclick=()=>$('profileFile').click();
+$('profileFile').onchange=e=>{const f=e.target.files[0];if(!f)return;f.text().then(s=>{try{applyProfile(JSON.parse(s));log('프로파일을 가져왔습니다: '+f.name,'sys')}catch(x){log('프로파일 가져오기 실패: '+x.message,'err')}});e.target.value=''};
+/* 8) DXF 불러오기 → G코드 */
+function parseDxf(s){
+ const a=s.split(/\r?\n/),ents=[];let inE=false,cur=null;
+ for(let i=0;i+1<a.length;i+=2){const c=parseInt(a[i]),v=a[i+1].trim();
+  if(c===2&&v==='ENTITIES'){inE=true;continue}
+  if(c===0&&v==='ENDSEC'){if(cur)ents.push(cur);cur=null;inE=false;continue}
+  if(!inE)continue;
+  if(c===0){if(cur)ents.push(cur);cur={t:v,pts:[],d:{}};continue}
+  if(!cur)continue;const f=parseFloat(v);
+  if(cur.t==='LWPOLYLINE'){if(c===10)cur.pts.push({x:f,y:0,b:0});else if(c===20&&cur.pts.length)cur.pts[cur.pts.length-1].y=f;else if(c===42&&cur.pts.length)cur.pts[cur.pts.length-1].b=f;else if(c===70)cur.d.closed=(parseInt(v)&1)===1}
+  else cur.d[c]=f;
+ }
+ return ents;
+}
+function dxfEnds(e){const d=e.d;
+ if(e.t==='LINE')return{s:[d[10],d[20]],e:[d[11],d[21]]};
+ if(e.t==='CIRCLE'){const q=[d[10]+d[40],d[20]];return{s:q,e:q}}
+ if(e.t==='ARC'){const a0=d[50]*Math.PI/180,a1=d[51]*Math.PI/180,r=d[40];return{s:[d[10]+r*Math.cos(a0),d[20]+r*Math.sin(a0)],e:[d[10]+r*Math.cos(a1),d[20]+r*Math.sin(a1)]}}
+ if(e.t==='LWPOLYLINE'&&e.pts.length>1){const f=e.pts[0],l=e.d.closed?f:e.pts[e.pts.length-1];return{s:[f.x,f.y],e:[l.x,l.y]}}
+ return null}
+/* ===== HPGL(.plt) 불러오기: PU/PD/PA/PR → 폴리라인 (1단위=0.025mm) ===== */
+function parseHpgl(txt){
+ const ents=[],K=0.025;let x=0,y=0,rel=false,down=false,cur=null,unk=0;
+ const flush=()=>{if(cur&&cur.length>1)ents.push({t:'LWPOLYLINE',pts:cur,d:{closed:false}});cur=null};
+ for(const raw of String(txt).split(/[;\r\n]+/)){
+  const c=raw.trim();if(c.length<2)continue;const cmd=c.slice(0,2).toUpperCase(),args=c.slice(2).split(/[,\s]+/).filter(Boolean).map(Number);
+  if(cmd==='PU'||cmd==='PD'||cmd==='PA'||cmd==='PR'){
+   if(cmd==='PA')rel=false;if(cmd==='PR')rel=true;
+   if(cmd==='PU'){down=false}if(cmd==='PD'){down=true}
+   if(!down)flush();
+   if(down&&!cur)cur=[{x:x*K,y:y*K,b:0}];
+   for(let i=0;i+1<args.length;i+=2){
+    if(Number.isNaN(args[i])||Number.isNaN(args[i+1]))continue;
+    if(rel){x+=args[i];y+=args[i+1]}else{x=args[i];y=args[i+1]}
+    if(down){if(!cur)cur=[];cur.push({x:x*K,y:y*K,b:0})}else flush();
+   }
+  }else if(cmd==='IN'||cmd==='SP'||cmd==='LT'||cmd==='VS'||cmd==='FS'||cmd==='IP'||cmd==='IW'||cmd==='PW'||cmd==='SC'){if(cmd==='IN'){flush();down=false;rel=false}}
+  else unk++;
+ }
+ flush();if(unk)log('HPGL: 지원하지 않는 명령 '+unk+'개 무시 (PU/PD/PA/PR만 변환)','err');
+ return ents;
+}
+$('genDxf').onclick=async()=>{
+ const f=$('dxfFile').files[0];if(!f){alert('DXF 파일을 선택하세요.');return}
+ const ftxt=await f.text(),isH=/\.(plt|hpgl|hgl)$/i.test(f.name),ents=isH?parseHpgl(ftxt):parseDxf(ftxt),depth=+$('dxDepth').value||1,sz=Math.max(0.05,+$('dxStep').value||1),F=+$('dxFeed').value||300,sf=+$('dxSafe').value||5;
+ const zs=[];for(let z=sz;z<depth-1e-9;z+=sz)zs.push(z);zs.push(depth);
+ const L=['(DXF 불러오기: '+f.name+' 깊이 '+depth+')','G21','G90','G0 Z'+sf];let n=0,skip=0;
+ const start=(x,y,z)=>{L.push('G0 Z'+sf,'G0 X'+fx(x)+' Y'+fx(y),'G1 Z-'+fx(z)+' F'+Math.round(F/2),'G1 F'+F)};
+ const chunks=[];for(const e of ents){const mark=L.length;const d=e.d;
+  if(e.t==='LINE'){n++;zs.forEach(z=>{start(d[10],d[20],z);L.push('G1 X'+fx(d[11])+' Y'+fx(d[21]))})}
+  else if(e.t==='CIRCLE'){n++;zs.forEach(z=>{start(d[10]+d[40],d[20],z);L.push('G2 X'+fx(d[10]+d[40])+' Y'+fx(d[20])+' I'+fx(-d[40])+' J0')})}
+  else if(e.t==='ARC'){n++;const a0=d[50]*Math.PI/180,a1=d[51]*Math.PI/180,r=d[40],sx=d[10]+r*Math.cos(a0),sy=d[20]+r*Math.sin(a0),ex=d[10]+r*Math.cos(a1),ey=d[20]+r*Math.sin(a1);
+   zs.forEach(z=>{start(sx,sy,z);L.push('G3 X'+fx(ex)+' Y'+fx(ey)+' I'+fx(d[10]-sx)+' J'+fx(d[20]-sy))})}
+  else if(e.t==='LWPOLYLINE'&&e.pts.length>1){n++;const P=e.pts.slice();if(e.d.closed)P.push({...P[0],b:0});
+   zs.forEach(z=>{start(P[0].x,P[0].y,z);for(let i=1;i<P.length;i++){const a=P[i-1],b=P[i];
+    if(a.b){const dd=Math.hypot(b.x-a.x,b.y-a.y),r=dd*(1+a.b*a.b)/(4*Math.abs(a.b));L.push((a.b>0?'G3':'G2')+' X'+fx(b.x)+' Y'+fx(b.y)+' R'+fx(Math.abs(a.b)>1?-r:r))}
+    else L.push('G1 X'+fx(b.x)+' Y'+fx(b.y))}})}
+  else skip++;
+  const en=dxfEnds(e);if(en&&L.length>mark)chunks.push({...en,lines:L.splice(mark)});
+ }
+ const trav=a=>{let x=0,y=0,s=0;a.forEach(c=>{s+=Math.hypot(c.s[0]-x,c.s[1]-y);x=c.e[0];y=c.e[1]});return s};
+ let order=chunks,msg='';
+ if($('dxSort').checked&&chunks.length>1){const rest=chunks.slice();order=[];let x=0,y=0;
+  while(rest.length){let bi=0,bd=1e18;rest.forEach((c,i)=>{const q=Math.hypot(c.s[0]-x,c.s[1]-y);if(q<bd){bd=q;bi=i}});const c=rest.splice(bi,1)[0];order.push(c);x=c.e[0];y=c.e[1]}
+  msg=' — 공구 이동(급속) 거리 '+trav(chunks).toFixed(0)+' → '+trav(order).toFixed(0)}
+ order.forEach(c=>L.push(...c.lines));
+ L.push('G0 Z'+sf,'M30');$('wizardOut').value=L.join('\n');
+ log('DXF 변환: 도형 '+n+'개'+(skip?', 미지원 '+skip+'개 건너뜀(LINE/CIRCLE/ARC/LWPOLYLINE만 지원)':'')+' — 공구 보정 없이 선 위를 따라 가공'+msg,'sys');
+};
+/* 9) 커터 반경 보정 G41/G42/G40 — 프로그램을 읽을 때 오프셋 경로(G1)로 전개 (매뉴얼 9장, 10.7.13) */
+function offsetPath(P,d){
+ const n=P.length;if(n<2)return P.map(p=>({...p}));
+ const N=[];for(let i=0;i<n-1;i++){const dx=P[i+1].x-P[i].x,dy=P[i+1].y-P[i].y,l=Math.hypot(dx,dy);N.push({x:-dy/l*d,y:dx/l*d})}
+ const O=[{x:P[0].x+N[0].x,y:P[0].y+N[0].y,z:P[0].z}];
+ for(let i=1;i<n-1;i++){const a=N[i-1],b=N[i],c=(a.x*b.x+a.y*b.y)/(d*d);
+  if(1+c<0.25)O.push({x:P[i].x+a.x,y:P[i].y+a.y,z:P[i].z},{x:P[i].x+b.x,y:P[i].y+b.y,z:P[i].z});
+  else{const k=1/(1+c);O.push({x:P[i].x+(a.x+b.x)*k,y:P[i].y+(a.y+b.y)*k,z:P[i].z})}}
+ O.push({x:P[n-1].x+N[n-2].x,y:P[n-1].y+N[n-2].y,z:P[n-1].z});return O;
+}
+function applyComp(ls){
+ if(!ls.some(l=>/\bG\s*4[12]\b/i.test(l)))return ls;
+ const out=[],has=v=>!Number.isNaN(v),f3=v=>(+v).toFixed(3);
+ let abs=true,gm=0,side=0,r=0,pts=null,feed=0,used=0,warn=false;const pos={x:0,y:0,z:0};
+ const flush=()=>{if(!pts)return;const P=[];pts.forEach(p=>{const q=P[P.length-1];if(!q||Math.hypot(p.x-q.x,p.y-q.y)>1e-6)P.push(p)});
+  if(P.length>1){let lz=P[0].z;offsetPath(P,side*r).forEach((p,i)=>{const zc=Math.abs(p.z-lz)>1e-9;lz=p.z;out.push('G1 X'+f3(p.x)+' Y'+f3(p.y)+(zc?' Z'+f3(p.z):'')+(i===0&&feed?' F'+feed:''))})}
+  pts=null};
+ for(const l of ls){
+  const up=l.toUpperCase();
+  if(/\bG\s*90(?!\.)/.test(up))abs=true;if(/\bG\s*91(?!\.)/.test(up))abs=false;
+  const mg=up.match(/\bG\s*0*([0-3])\b/);if(mg)gm=+mg[1];
+  const c4=up.match(/\bG\s*4([012])\b/),X=num(l,'X'),Y=num(l,'Y'),Z=num(l,'Z'),F=num(l,'F');
+  if(has(F))feed=F;
+  const tgt={x:has(X)?(abs?X:pos.x+X):pos.x,y:has(Y)?(abs?Y:pos.y+Y):pos.y,z:has(Z)?(abs?Z:pos.z+Z):pos.z};
+  const strip=l.replace(/\bG\s*4[012]\b/gi,'').replace(/\bD\s*\d+/gi,'').trim();
+  if(c4&&c4[1]==='0'){flush();side=0;out.push(l.replace(/\bD\s*\d+/gi,''));pos.x=tgt.x;pos.y=tgt.y;pos.z=tgt.z;continue}
+  if(c4){flush();const D=num(l,'D'),tl=has(D)?state.tools.find(x=>x.n===D):null;r=(tl?+tl.dia:(+$('toolDia').value||0))/2;
+   if(!(r>0)||!abs){warn=true;side=0;pts=null}else{side=c4[1]==='1'?1:-1;pts=[{...pos}];used++}}
+  if(side){
+   if(has(X)||has(Y)){
+    if(gm===2||gm===3){const o={x:pos.x,y:pos.y},ac=arcCenter(gm===2?'G2':'G3',o,tgt,num(l,'I'),num(l,'J'),num(l,'R'));
+     if(ac){const a0=Math.atan2(o.y-ac.cy,o.x-ac.cx),a1=Math.atan2(tgt.y-ac.cy,tgt.x-ac.cx);let d=a1-a0;
+      if(gm===2&&d>=0)d-=Math.PI*2;if(gm===3&&d<=0)d+=Math.PI*2;
+      const n=Math.max(8,Math.ceil(Math.abs(d)*ac.r/0.5));
+      for(let i=1;i<=n;i++){const a=a0+d*i/n;pts.push({x:ac.cx+Math.cos(a)*ac.r,y:ac.cy+Math.sin(a)*ac.r,z:pos.z+(tgt.z-pos.z)*i/n})}
+     }else pts.push({...tgt})}
+    else pts.push({...tgt});
+   }else{flush();pts=[{...pos}];if(strip)out.push(strip)}
+  }else out.push(l);
+  pos.x=tgt.x;pos.y=tgt.y;pos.z=tgt.z;
+ }
+ flush();
+ if(used)log('커터 보정(G41/G42) 적용: 공구 반경 '+r+' — 오프셋 경로(G1)로 전개했습니다. 공구 직경을 바꾼 뒤에는 편집기에서 "적용"을 다시 누르세요.','sys');
+ if(warn)log('경고: 공구 직경이 0이거나 G91 상태라 커터 보정을 적용하지 못했습니다.','err');
+ return out;
+}
+/* 10) 3D 공구 경로 보기: 드래그로 회전, 휠로 확대/축소 */
+state.yaw=-0.6;state.pitch=0.9;state.zk=1;state.ax3d=10;
+function make3d(w,h){
+ const P=state.path.length?state.path:[{x:0,y:0,z:0}],mn=[1e9,1e9,1e9],mx=[-1e9,-1e9,-1e9];
+ P.forEach(p=>{[p.x,p.y,p.z||0].forEach((v,i)=>{mn[i]=Math.min(mn[i],v);mx[i]=Math.max(mx[i],v)})});
+ const xy=Math.max(mx[0]-mn[0],mx[1]-mn[1],1),zr=mx[2]-mn[2];
+ state.zk=zr>0?Math.min(10,Math.max(1,xy*0.25/zr)):1;
+ const c=[(mn[0]+mx[0])/2,(mn[1]+mx[1])/2,(mn[2]+mx[2])/2],rad=Math.max(1,Math.hypot(mx[0]-mn[0],mx[1]-mn[1],zr*state.zk)/2),sc=Math.min(w,h)*0.45/rad*state.viewZoom;
+ state.ax3d=rad*0.3;
+ const cy=Math.cos(state.yaw),sy=Math.sin(state.yaw),cp=Math.cos(state.pitch),sp=Math.sin(state.pitch),zk=state.zk;
+ return p=>{const x=p.x-c[0],y=p.y-c[1],z=((p.z||0)-c[2])*zk,x1=x*cy-y*sy,y1=x*sy+y*cy;return[w/2+x1*sc,h/2-(z*cp+y1*sp)*sc]};
+}
+function drawAxes3d(ctx,q){
+ const L=state.ax3d,o=q({x:0,y:0,z:0});ctx.font='11px sans-serif';
+ [[{x:L,y:0,z:0},'#f55','X'],[{x:0,y:L,z:0},'#5f5','Y'],[{x:0,y:0,z:L/state.zk},'#58f','Z']].forEach(([p,col,n])=>{const a=q(p);ctx.strokeStyle=ctx.fillStyle=col;ctx.beginPath();ctx.moveTo(o[0],o[1]);ctx.lineTo(a[0],a[1]);ctx.stroke();ctx.fillText(n,a[0]+3,a[1]-3)});
+}
+$('view3dBtn').onclick=()=>{state.view3d=!state.view3d;$('view3dBtn').textContent=state.view3d?'2D 보기':'3D 보기';state.viewZoom=1;draw()};
+['pathCanvas','pageCanvas'].forEach(id=>{const c=$(id);let dn=null;c.style.touchAction='none';
+ c.addEventListener('pointerdown',e=>{if(state.view3d){dn=[e.clientX,e.clientY];c.setPointerCapture(e.pointerId)}});
+ c.addEventListener('pointermove',e=>{if(!dn)return;state.yaw+=(e.clientX-dn[0])*0.01;state.pitch=Math.max(0,Math.min(Math.PI/2,state.pitch+(e.clientY-dn[1])*0.01));dn=[e.clientX,e.clientY];draw()});
+ ['pointerup','pointercancel'].forEach(ev=>c.addEventListener(ev,()=>{dn=null}));
+ c.addEventListener('wheel',e=>{if(!state.view3d)return;e.preventDefault();state.viewZoom*=e.deltaY<0?1.1:1/1.1;draw()},{passive:false})});
+/* 11) 프로그램 범위 / 예상 가공 시간 (매뉴얼 6.2.10 툴패스 정보) */
+function progStats(){
+ const has=v=>!Number.isNaN(v),f1=v=>(+v).toFixed(1);
+ let abs=true,gm=0,feed=0,x=0,y=0,z=0,cut=0,rap=0,sec=0,noF=false;
+ const mn=[0,0,0],mx=[0,0,0],rf=+$('maxFeed').value||5000;
+ const see=()=>{[x,y,z].forEach((v,i)=>{mn[i]=Math.min(mn[i],v);mx[i]=Math.max(mx[i],v)})};
+ for(const l of state.lines){const up=l.toUpperCase();
+  if(/\bG\s*90(?!\.)/.test(up))abs=true;if(/\bG\s*91(?!\.)/.test(up))abs=false;
+  const mg=up.match(/\bG\s*0*([0-3])\b/);if(mg)gm=+mg[1];
+  const F=num(l,'F');if(has(F))feed=F;
+  if(/\bG\s*0*4\b/.test(up)){const P=num(l,'P');if(has(P))sec+=P;continue}
+  if(/\bG\s*(28|30|53|92|10)\b/.test(up))continue;
+  const X=num(l,'X'),Y=num(l,'Y'),Z=num(l,'Z');if(!has(X)&&!has(Y)&&!has(Z))continue;
+  const nx=has(X)?(abs?X:x+X):x,ny=has(Y)?(abs?Y:y+Y):y,nz=has(Z)?(abs?Z:z+Z):z;
+  let len=Math.hypot(nx-x,ny-y,nz-z);
+  if(gm>=2){const ac=arcCenter(gm===2?'G2':'G3',{x,y},{x:nx,y:ny},num(l,'I'),num(l,'J'),num(l,'R'));
+   if(ac){const a0=Math.atan2(y-ac.cy,x-ac.cx),a1=Math.atan2(ny-ac.cy,nx-ac.cx);let d=a1-a0;if(gm===2&&d>=0)d-=2*Math.PI;if(gm===3&&d<=0)d+=2*Math.PI;len=Math.hypot(Math.abs(d)*ac.r,nz-z)}}
+  if(gm===0){rap+=len;sec+=len/rf*60}else{cut+=len;if(feed>0)sec+=len/feed*60;else noF=true}
+  x=nx;y=ny;z=nz;see();
+ }
+ const b=$('statBounds'),tm=$('statTime');if(!b||!tm)return;
+ if(!state.lines.length){b.textContent=tm.textContent='-';return}
+ b.textContent='X '+f1(mx[0]-mn[0])+' Y '+f1(mx[1]-mn[1])+' Z '+f1(mx[2]-mn[2]);
+ b.title='X '+f1(mn[0])+' ~ '+f1(mx[0])+'  Y '+f1(mn[1])+' ~ '+f1(mx[1])+'  Z '+f1(mn[2])+' ~ '+f1(mx[2]);
+ const s=Math.round(sec);tm.textContent=new Date(s*1000).toISOString().substr(11,8)+(noF?' (F 없는 구간 제외)':'');
+ tm.title='절삭 '+f1(cut)+' / 급속 '+f1(rap)+' (프로그램 단위). 이송 보정 100%, 가감속 무시, 급속은 설정의 최대 이송('+rf+') 기준';
+ {const smx=state.spindleCfg.max;if(smx>0){let big=0;for(const l of state.lines){const v=num(l,'S');if(has(v)&&v>big)big=v}if(big>smx)log('경고: 프로그램의 S'+big+'가 스핀들 최대 RPM('+smx+')을 넘습니다 — 실행 시 '+smx+'로 제한됩니다.','err')}}
+ if(state.zInh&&state.zInh.en&&mn[2]<state.zInh.val-1e-9)log('경고: 프로그램의 최저 Z('+f1(mn[2])+')가 Z 최대 깊이 제한('+state.zInh.val+')보다 깊습니다 — 실행하면 제한 값에서 멈춥니다.','err');
+}
+/* 12) 서브루틴 M98 P# L# / O# ... M99 — 프로그램을 읽을 때 펼침 (매뉴얼 10.8.7~10.8.8) */
+/* ===== M코드 매크로 (매뉴얼 10.9) ===== */
+state.macros={};
+function mmParse(txt){const m={},bad=[];
+ for(const raw of String(txt||'').split(/\r?\n/)){const l=raw.trim();if(!l||l.startsWith(';')||l.startsWith('//'))continue;
+  const mt=l.match(/^M\s*(\d+)\s*=\s*(.+)$/i);if(!mt){bad.push(l);continue}
+  const n=+mt[1];if(n<100||n>9999){bad.push(l+'  (번호는 100~9999)');continue}
+  const steps=mt[2].split('|').map(x=>x.trim()).filter(Boolean);if(!steps.length){bad.push(l);continue}
+  m[n]=steps}
+ return{m,bad}}
+function mmApply(){const r=mmParse($('mmText').value);state.macros=r.m;
+ try{localStorage.cncMMacros=$('mmText').value}catch(e){}
+ const c=Object.keys(r.m).length;$('mmState').textContent=c+'개 매크로 등록'+(r.bad.length?' / 오류 '+r.bad.length+'줄':'');
+ r.bad.forEach(b=>log('M코드 매크로 형식 오류: '+b,'err'));return r}
+function expandMacros(ls){
+ const keys=Object.keys(state.macros||{});if(!keys.length)return ls;
+ const out=[];
+ for(const l of ls){
+  const mt=l.match(/(^|\s)M\s*0*(\d{3,4})(?![\d.])/i);
+  if(mt&&state.macros[+mt[2]]){
+   const rest=l.replace(mt[0],mt[1]).replace(/\s+/g,' ').trim();if(rest)out.push(rest);
+   out.push(...state.macros[+mt[2]]);
+  }else out.push(l);
+ }
+ return out;
+}
+function expandSub(ls){
+ if(!ls.some(l=>/\bM\s*0*98\b/i.test(l)))return ls;
+ const subs={},main=[];let cur=null;
+ for(const l of ls){
+  const m=l.match(/^O\s*0*(\d+)/i);
+  if(m){cur=subs[+m[1]]=[];continue}
+  if(cur){if(/\bM\s*0*99\b/i.test(l))cur=null;else cur.push(l);continue}
+  main.push(l);
+ }
+ const ex=(a,depth)=>{const o=[];
+  for(const l of a){
+   if(!/\bM\s*0*98\b/i.test(l)){o.push(l);continue}
+   const P=num(l,'P'),L=num(l,'L'),n=Number.isNaN(L)?1:Math.max(1,Math.round(L)),body=subs[Math.round(P)];
+   const rest=l.replace(/\bM\s*0*98\b/gi,'').replace(/\b[PL]\s*-?\d+/gi,'').trim();if(rest)o.push(rest);
+   if(!body){log('경고: 서브루틴 O'+P+'를 찾을 수 없습니다.','err');continue}
+   if(depth>8){log('경고: 서브루틴 중첩이 너무 깊습니다 (O'+P+').','err');continue}
+   for(let i=0;i<n;i++){if(o.length>200000){log('경고: 서브루틴 전개 결과가 너무 큽니다. 반복 횟수를 확인하세요.','err');return o}o.push(...ex(body,depth+1))}
+  }
+  return o};
+ const out=ex(main,0);log('서브루틴(M98) 전개: 서브루틴 '+Object.keys(subs).length+'개, '+out.length+'줄','sys');return out;
+}
+/* 13) 좌표계 회전 G68 X_ Y_ R_ / G69 — 프로그램을 읽을 때 좌표를 회전해 전개 (매뉴얼 10.7.20) */
+function applyRot(ls){
+ if(!ls.some(l=>/\bG\s*68\b/i.test(l)))return ls;
+ const out=[],has=v=>!Number.isNaN(v),f3=v=>(+v).toFixed(3);let abs=true,rot=null,used=0;const pos={x:0,y:0};
+ const rv=(x,y,a)=>{const c=Math.cos(a),s=Math.sin(a);return[x*c-y*s,x*s+y*c]};
+ for(const l of ls){
+  let line=l;const up=l.toUpperCase();
+  if(/\bG\s*90(?!\.)/.test(up))abs=true;if(/\bG\s*91(?!\.)/.test(up))abs=false;
+  if(/\bG\s*69\b/.test(up)){rot=null;line=line.replace(/\bG\s*69\b/gi,'').trim()}
+  else if(/\bG\s*68\b/.test(up)){
+   const cx=num(l,'X'),cy=num(l,'Y'),a=num(l,'R');
+   rot={cx:has(cx)?cx:pos.x,cy:has(cy)?cy:pos.y,a:(has(a)?a:0)*Math.PI/180};used++;
+   line=line.replace(/\bG\s*68\b/gi,'').replace(/\b[XYR]\s*-?\d*\.?\d+/gi,'').trim();
+  }
+  if(!line)continue;
+  const X=num(line,'X'),Y=num(line,'Y'),I=num(line,'I'),J=num(line,'J');
+  const tx=has(X)?(abs?X:pos.x+X):pos.x,ty=has(Y)?(abs?Y:pos.y+Y):pos.y;
+  if(rot&&(has(X)||has(Y)||has(I)||has(J))&&!/\bG\s*(28|30|53|92|10)\b/i.test(line)){
+   const o=line.replace(/\b[XYIJ]\s*-?\d*\.?\d+/gi,'').trim();let add='';
+   if(has(X)||has(Y)){const p=abs?rv(tx-rot.cx,ty-rot.cy,rot.a).map((v,i)=>v+(i?rot.cy:rot.cx)):rv(tx-pos.x,ty-pos.y,rot.a);add+=' X'+f3(p[0])+' Y'+f3(p[1])}
+   if(has(I)||has(J)){const q=rv(has(I)?I:0,has(J)?J:0,rot.a);add+=' I'+f3(q[0])+' J'+f3(q[1])}
+   out.push((o+add).trim());
+  }else out.push(line);
+  pos.x=tx;pos.y=ty;
+ }
+ if(used)log('좌표계 회전(G68) 적용: '+used+'회 — 좌표를 회전해 전개했습니다.','sys');
+ return out;
+}
+/* 14) 배율 G51 X_ Y_ Z_ / G50 — 축 문자(X Y Z, 원호 I J)에 배율을 곱해서 전개 (매뉴얼 10.7.15) */
+/* ===== G16/G15 극좌표 (X=반지름, Y=각도, 매뉴얼 G15/G16) — G90 절대 모드 ===== */
+function applyPolar(ls){
+ if(!ls.some(l=>/\bG\s*1[56]\b/i.test(l)))return ls;
+ const out=[],has=v=>!Number.isNaN(v),R=v=>+v.toFixed(5);
+ let on=false,abs=true,cx=0,cy=0,px=0,py=0,warned=false;
+ const repl=(l,L,v)=>l.replace(new RegExp('(^|\\s)'+L+'\\s*-?\\d*\\.?\\d+','i'),(m,a)=>a+L+v);
+ for(const l of ls){
+  let line=l;const up=l.toUpperCase();
+  if(/\bG\s*90(?!\.)/.test(up))abs=true;if(/\bG\s*91(?!\.)/.test(up))abs=false;
+  if(/\bG\s*15\b/.test(up)){on=false;line=line.replace(/\bG\s*15\b/gi,'').trim();if(!line)continue;out.push(line);continue}
+  if(/\bG\s*16\b/.test(up)){
+   on=true;const X=num(l,'X'),Y=num(l,'Y');cx=has(X)?X:px;cy=has(Y)?Y:py;
+   line=line.replace(/\bG\s*16\b/gi,'').replace(/(^|\s)[XY]\s*-?\d*\.?\d+/gi,' ').replace(/\s+/g,' ').trim();
+   if(!line)continue;out.push(line);continue;
+  }
+  if(on&&/\bG\s*0*[0-3]\b|(^|\s)[XY]\s*-?\d/i.test(l)&&!/\bG\s*53\b/.test(up)){
+   const X=num(l,'X'),Y=num(l,'Y');
+   if((has(X)||has(Y))&&abs){
+    const r0=Math.hypot(px-cx,py-cy),a0=Math.atan2(py-cy,px-cx)*180/Math.PI;
+    const r=has(X)?X:r0,a=has(Y)?Y:a0,nx=R(cx+r*Math.cos(a*Math.PI/180)),ny=R(cy+r*Math.sin(a*Math.PI/180));
+    line=has(X)?repl(line,'X',nx):line+' X'+nx;line=has(Y)?repl(line,'Y',ny):line+' Y'+ny;
+    px=nx;py=ny;
+   }else if((has(X)||has(Y))&&!abs&&!warned){warned=true;log('G16 극좌표는 G90(절대) 모드만 지원합니다 — G91 구간은 변환 없이 직교좌표로 처리됩니다.','err')}
+  }else{const X=num(l,'X'),Y=num(l,'Y');if(abs&&has(X))px=X;if(abs&&has(Y))py=Y}
+  if(!on){const X=num(l,'X'),Y=num(l,'Y');if(abs){if(has(X))px=X;if(has(Y))py=Y}}
+  out.push(line);
+ }
+ return out;
+}
+/* ===== G12/G13 원형 포켓 (매뉴얼 10.7.6): G12 I_ = 시계, G13 I_ = 반시계 ===== */
+function applyPocket(ls){
+ if(!ls.some(l=>/\bG\s*1[23]\b/i.test(l)))return ls;
+ const out=[],has=v=>!Number.isNaN(v),f3=v=>(+v).toFixed(3);let abs=true;const pos={x:0,y:0,z:0};
+ for(const l of ls){
+  const up=l.toUpperCase();
+  if(/\bG\s*90(?!\.)/.test(up))abs=true;if(/\bG\s*91(?!\.)/.test(up))abs=false;
+  const gm=up.match(/\bG\s*(12|13)\b/);
+  if(gm){
+   const I=num(l,'I'),X=num(l,'X'),Y=num(l,'Y'),Z=num(l,'Z'),F=num(l,'F');
+   if(!has(I)||I<=0){log('G12/G13: I(반지름)가 없거나 0 이하라 건너뜁니다 → '+l,'err');continue}
+   const cx=has(X)?(abs?X:pos.x+X):pos.x,cy=has(Y)?(abs?Y:pos.y+Y):pos.y,fs=has(F)?' F'+F:'';
+   const arc=gm[1]==='12'?'G2':'G3';
+   out.push('G90');
+   if(has(X)||has(Y))out.push('G0 X'+f3(cx)+' Y'+f3(cy));
+   if(has(Z)){const z=abs?Z:pos.z+Z;out.push('G1 Z'+f3(z)+fs);pos.z=z}
+   out.push('G1 X'+f3(cx+I)+' Y'+f3(cy)+fs,arc+' X'+f3(cx+I)+' Y'+f3(cy)+' I'+f3(-I)+' J0'+fs,'G1 X'+f3(cx)+' Y'+f3(cy));
+   if(!abs)out.push('G91');
+   pos.x=cx;pos.y=cy;continue;
+  }
+  const X=num(l,'X'),Y=num(l,'Y'),Z=num(l,'Z');
+  if(/\bG\s*53\b/.test(up)){}else{if(has(X))pos.x=abs?X:pos.x+X;if(has(Y))pos.y=abs?Y:pos.y+Y;if(has(Z))pos.z=abs?Z:pos.z+Z}
+  out.push(l);
+ }
+ return out;
+}
+function applyScale(ls){
+ if(!ls.some(l=>/\bG\s*5[01]\b/i.test(l)))return ls;
+ const out=[],has=v=>!Number.isNaN(v);let s={x:1,y:1,z:1},used=0,warn=false;
+ const mulW=(l,L,k)=>l.replace(new RegExp('(^|\\s)'+L+'\\s*(-?\\d*\\.?\\d+)','gi'),(m,a,v)=>a+L+(+(parseFloat(v)*k).toFixed(5)));
+ for(const l of ls){
+  let line=l;const up=l.toUpperCase();
+  if(/\bG\s*50\b/.test(up)){s={x:1,y:1,z:1};line=line.replace(/\bG\s*50\b/gi,'').trim()}
+  else if(/\bG\s*51\b/.test(up)){
+   const X=num(l,'X'),Y=num(l,'Y'),Z=num(l,'Z');
+   s={x:has(X)?X:1,y:has(Y)?Y:1,z:has(Z)?Z:1};used++;
+   line=line.replace(/\bG\s*51\b/gi,'').replace(/\b[XYZ]\s*-?\d*\.?\d+/gi,'').trim();
+  }
+  if(!line)continue;
+  if(s.x!==1||s.y!==1||s.z!==1){
+   const lu=line.toUpperCase(),arc=/\bG\s*0*[23]\b/.test(lu);
+   if(arc&&s.x!==s.y)warn=true;
+   line=mulW(mulW(mulW(line,'X',s.x),'Y',s.y),'Z',s.z);
+   line=mulW(mulW(line,'I',s.x),'J',s.y);
+   if(/\bG\s*(73|81|82|83|84|85|86|88|89)\b/.test(lu))line=mulW(mulW(line,'R',s.z),'Q',s.z);
+   else if(arc&&s.x===s.y)line=mulW(line,'R',s.x);
+  }
+  out.push(line);
+ }
+ if(used)log('배율(G51) 적용: '+used+'회 — 좌표값에 배율을 곱해 전개했습니다.','sys');
+ if(warn)log('경고: X·Y 배율이 다른 상태의 원호(G2/G3)는 타원이 되어 정확하지 않습니다.','err');
+ return out;
+}
+/* 15) 공구 길이 보정 G43/G44 H# / G49 — 툴 테이블의 길이 보정(H)을 Z 좌표에 더해서 전개 (매뉴얼 10.7.14) */
+function applyTlo(ls){
+ if(!ls.some(l=>/\bG\s*(43|44|49)\b/i.test(l)))return ls;
+ const out=[],has=v=>!Number.isNaN(v);let abs=true,off=0,tool=null,used=0,warn=false;
+ const addW=(l,L,k)=>l.replace(new RegExp('(^|\\s)'+L+'\\s*(-?\\d*\\.?\\d+)','gi'),(m,a,v)=>a+L+(+(parseFloat(v)+k).toFixed(5)));
+ for(const l of ls){
+  let line=l;const up=l.toUpperCase();
+  if(/\bG\s*90(?!\.)/.test(up))abs=true;if(/\bG\s*91(?!\.)/.test(up))abs=false;
+  const tm=up.match(/\bT\s*(\d+)/);if(tm)tool=+tm[1];
+  const g=up.match(/\bG\s*(43|44|49)\b/);
+  if(g){
+   if(g[1]==='49')off=0;
+   else{const H=num(l,'H'),n=has(H)?Math.round(H):(tool!=null?tool:(+$('toolNum').value||0)),tl=state.tools.find(x=>x.n===n);
+    if(!tl&&n)warn=true;off=(tl?+tl.h:0)*(g[1]==='44'?-1:1);used++}
+   line=line.replace(/\bG\s*(43|44|49)\b/gi,'').replace(/\bH\s*-?\d+/gi,'').trim();
+  }
+  if(!line)continue;
+  if(off&&abs&&!/\bG\s*(28|30|53|92|10)\b/i.test(line)){
+   line=addW(line,'Z',off);
+   if(/\bG\s*(73|81|82|83|84|85|86|88|89)\b/i.test(line))line=addW(line,'R',off);
+  }
+  out.push(line);
+ }
+ if(used)log('공구 길이 보정(G43/G44) 적용: '+used+'회 — Z 좌표에 툴 테이블의 길이 보정(H)을 더해 전개했습니다.','sys');
+ if(warn)log('경고: 툴 테이블에 없는 H 번호가 있어 보정값 0으로 처리했습니다.','err');
+ return out;
+}
+/* 16) 정전 후 복구 — 가동 중 진행 상황을 브라우저에 자동 저장하고, 다시 열면 복구 안내 (매뉴얼 6.2.7.8 '여기서 시작' 활용) */
+var CP_KEY='cncCheckpoint',CP_PROG='cncCheckpointProg',cpRaw=null;
+function clearCheckpoint(){try{localStorage.removeItem(CP_KEY);localStorage.removeItem(CP_PROG)}catch(e){}cpRaw=null}
+function saveCheckpoint(){
+ if(!state.lines.length)return;
+ if(state.idx>=state.lines.length){if(state.running||state.streaming)clearCheckpoint();return}
+ if(!(state.running||state.streaming))return;
+ try{
+  const t=state.raw!=null?state.raw:state.lines.join('\n');
+  if(cpRaw!==t){localStorage.setItem(CP_PROG,t);cpRaw=t}
+  localStorage.setItem(CP_KEY,JSON.stringify({name:$('fileName').textContent,idx:state.idx,total:state.lines.length,pos:{x:state.pos.x,y:state.pos.y,z:state.pos.z},wcs:state.activeWCS,virtual:!!state.virtual,t:Date.now()}));
+ }catch(e){}
+}
+function showRecoverBar(){
+ const bar=$('recoverBar');let c=null;
+ try{c=JSON.parse(localStorage.getItem(CP_KEY)||'null');if(c&&localStorage.getItem(CP_PROG)==null)c=null}catch(e){c=null}
+ if(!c||!(c.idx>0)){bar.style.display='none';return}
+ const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;'),f=v=>(+v||0).toFixed(3);
+ bar.innerHTML='<b>이전 작업이 끝까지 가지 못하고 중단된 기록이 있습니다.</b> 파일 '+esc(c.name)+' · '+c.idx+'/'+c.total+'줄 · '+new Date(c.t).toLocaleString('ko-KR')+' 저장'+
+  ' · 마지막 위치 X'+f(c.pos.x)+' Y'+f(c.pos.y)+' Z'+f(c.pos.z)+'　되돌릴 줄 수 <input id="cpBack" value="'+(c.virtual?1:10)+'"> <button id="cpRestore">복구 준비</button> <button id="cpIgnore">무시(기록 삭제)</button>'+
+  '<div class="sub">복구 준비는 프로그램을 다시 불러와 이어갈 줄만 표시하며, 장비는 움직이지 않습니다. 전원이 꺼졌다면 기계 위치를 잃었을 수 있으니 먼저 전체 원점 복귀(Ref)를 하고, 좌표계(G54 등) 값을 확인한 뒤 \"여기서 시작\"으로 이어가세요. 컨트롤러가 미리 받아 둔 줄은 아직 실행 전일 수 있어 몇 줄 앞에서 시작하는 것이 안전합니다.</div>';
+ bar.style.display='block';
+ $('cpIgnore').onclick=()=>{if(!confirm('복구 기록을 삭제할까요?'))return;clearCheckpoint();bar.style.display='none'};
+ $('cpRestore').onclick=()=>{
+  if(state.running||state.streaming){log('실행 중에는 복구할 수 없습니다. 먼저 정지하세요.','err');return}
+  const raw=localStorage.getItem(CP_PROG);if(raw==null)return;
+  const back=Math.max(0,Math.round(+$('cpBack').value||0));
+  state.raw=raw;state.lines=parseProgram(raw);
+  if(state.lines.length!==c.total)log('경고: 불러온 줄 수('+state.lines.length+')가 저장 당시('+c.total+')와 다릅니다. 줄 위치를 확인하세요.','err');
+  const n=Math.max(0,Math.min(state.lines.length-1,c.idx-back));
+  $('fileName').textContent=$('statusFile').textContent=c.name||'복구한 프로그램';$('lineTotal').textContent=state.lines.length;$('progress').style.width='0%';
+  renderGcode();state.idx=n;updateProgress();
+  state.sel=n;const row=document.querySelector('.gline[data-i="'+n+'"]');if(row){row.classList.add('selected');row.scrollIntoView({block:'center'})}
+  if(c.wcs)selectWCS(c.wcs);
+  tab('run');bar.style.display='none';
+  log('복구 준비 완료: 줄 '+(n+1)+'에서 이어갈 수 있습니다. 원점 복귀(Ref) 후 \"여기서 시작\"을 누르세요.','sys');
+ };
+}
+/* 17) 알람(하드 리밋 포함) 대응 절차 — 알람 수신 시 즉시 정지·위치 미확인 처리, 원인별 복구 안내와 해제 버튼 (매뉴얼 4.6 리밋 스위치, 6.2.14 리밋 제어) */
+var ALARMS={
+ 1:['하드 리밋','리밋 스위치가 작동해 컨트롤러가 정지했습니다. 위치 정보를 잃었을 수 있습니다.',['진단 화면의 입력 신호 LED로 어느 축 리밋이 눌렸는지 확인하고, 장비가 스위치에 걸려 있지 않은지 눈으로 확인합니다.','\"초기화(Ctrl-X)\"를 누릅니다.','\"알람 해제($X)\"를 누릅니다.','수동 이동 Step을 작게(0.1~1) 하고, 스위치에서 반대 방향으로 조금씩 물러납니다. 안 움직이면 \"리밋 건너뛰기\"를 켠 뒤 물러나고 곧바로 끕니다.','\"전체 원점 복귀(Ref)\"로 위치를 다시 잡습니다.','프로그램 중이었다면 \"여기서 시작\"으로 이어갑니다.']],
+ 2:['소프트 리밋','목표 위치가 설정된 가공 범위를 벗어나 이동이 차단되었습니다.',['프로그램 좌표와 작업 좌표계(G54 등), 공구 길이 보정을 확인합니다. 원점 복귀를 하지 않았다면 기준 위치가 어긋나 있을 수 있습니다.','\"초기화\"와 \"알람 해제($X)\"를 누릅니다.','필요하면 원점 복귀(Ref) 후 좌표계를 다시 잡고, 문제가 된 줄을 고칩니다.']],
+ 3:['가동 중 초기화','이동 중에 초기화가 눌려 위치를 잃었을 수 있습니다.',['\"알람 해제($X)\"를 누릅니다.','반드시 \"전체 원점 복귀(Ref)\"로 위치를 다시 잡습니다.','이어서 가공하려면 \"여기서 시작\"을 사용합니다.']],
+ 4:['프로브 실패(초기 상태)','프로브 명령을 시작할 때 프로브 입력이 이미 접촉 상태였거나 설정이 맞지 않습니다.',['프로브 클립과 플레이트 연결, 배선을 확인합니다. 진단 화면에서 프로브 LED가 꺼져 있어야 합니다.','\"초기화\"와 \"알람 해제($X)\" 후 다시 시도합니다.']],
+ 5:['프로브 실패(접촉 없음)','정해진 거리 안에서 프로브가 접촉하지 않았습니다.',['프로브 플레이트가 공구 아래에 있는지, 클립이 연결되어 있는지 확인합니다.','설정 화면의 \"최대 하강\" 값을 늘리거나 공구를 플레이트에 더 가깝게 둡니다.','\"알람 해제($X)\" 후 다시 시도합니다.']],
+ 6:['원점 복귀 실패(중단)','원점 복귀 도중 초기화 또는 정지가 눌렸습니다.',['\"알람 해제($X)\" 후 다시 \"전체 원점 복귀(Ref)\"를 합니다.']],
+ 7:['원점 복귀 실패(도어 열림)','안전 도어가 열린 상태에서 원점 복귀를 시도했습니다.',['도어를 닫고 \"알람 해제($X)\" 후 원점 복귀를 다시 합니다.']],
+ 8:['원점 복귀 실패(풀오프 후에도 스위치 작동)','스위치에서 물러난 뒤에도 리밋/홈 스위치가 눌려 있습니다.',['스위치 배선과 기계적 간섭을 확인하고, 컨트롤러의 홈 풀오프 거리($27)를 늘립니다.','\"알람 해제($X)\" 후 원점 복귀를 다시 합니다.']],
+ 9:['원점 복귀 실패(스위치를 찾지 못함)','정해진 거리 안에서 홈 스위치를 찾지 못했습니다.',['스위치 배선과 위치, 홈 방향 설정을 확인합니다. 축이 스위치에서 너무 멀면 수동으로 가까이 옮깁니다.','\"알람 해제($X)\" 후 원점 복귀를 다시 합니다.']]
+};
+function hideAlarmPanel(){state.alarmOn=false;$('alarmPanel').style.display='none'}
+function showAlarmPanel(code,detail){
+ const a=ALARMS[code]||['알람'+(code?' '+code:''),'컨트롤러가 알람 상태입니다. 원인을 확인한 뒤 해제하세요.',['\"초기화\"와 \"알람 해제($X)\"를 누릅니다.','필요하면 원점 복귀(Ref)로 위치를 다시 잡습니다.']];
+ const esc=v=>String(v).replace(/&/g,'&amp;').replace(/</g,'&lt;');
+ state.alarmOn=true;
+ $('alarmPanel').innerHTML='<div class="t">알람'+(code?' (ALARM:'+code+')':'')+' — '+esc(a[0])+'</div><div>'+esc(detail&&code===2&&state.virtual?detail:a[1])+(state.lines.length&&state.idx?' (프로그램 줄 '+state.idx+' 근처에서 발생)':'')+'</div><ol>'+a[2].map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>'+
+  '<button id="alUnlock">알람 해제 ($X)</button> <button id="alReset">초기화 (Ctrl-X)</button> <button id="alDiag">진단 화면 열기</button> <button id="alOverride">리밋 건너뛰기 켜기</button> <button id="alRef">전체 원점 복귀</button> <button id="alClose">닫기</button>'+
+  '<div class="sub">알람이 나면 가동은 즉시 멈추고 모든 축의 \"원점 복귀 완료\" 표시가 해제됩니다(위치를 믿을 수 없으므로). 원인을 해결하기 전에 해제부터 누르지 마세요.</div>';
+ $('alarmPanel').style.display='block';
+ $('alUnlock').onclick=()=>{if(state.virtual){state.limitHit='';$('alarmText').textContent='';setState('대기');hideAlarmPanel()}else sendRaw('$X').catch(e=>log('전송 오류: '+e.message,'err'))};
+ $('alReset').onclick=()=>{if(state.virtual){$('resetBtn').click()}else sendRaw('\x18',false).catch(e=>log('전송 오류: '+e.message,'err'))};
+ $('alDiag').onclick=()=>{tab('diagnostics');if(!state.virtual)sendRaw('?').catch(()=>{})};
+ $('alOverride').onclick=()=>{if(!state.limitOverride)$('limitOverrideBtn').click()};
+ $('alRef').onclick=()=>refAxes(['X','Y','Z','A']);
+ $('alClose').onclick=()=>{$('alarmPanel').style.display='none'};
+}
+function onAlarm(code){
+ state.running=false;state.paused=false;clearTimeout(state.timer);
+ if(state.streaming)abortStream('컨트롤러 알람'+(code?' '+code:''));
+ if([0,2,4,5].indexOf(code)<0){state.homed={x:false,y:false,z:false,a:false};renderRef()}
+ const a=ALARMS[code];$('alarmText').textContent='알람'+(code?' '+code:'')+(a?': '+a[0]:'');
+ setState('알람');showAlarmPanel(code);
+}
+function alarmWatch(l){
+ const m=l.match(/^ALARM:\s*(\d+)/i);
+ if(m){onAlarm(+m[1]);return}
+ const st=l.match(/^<(\w+)/);
+ if(st){if(/^alarm$/i.test(st[1])){if(!state.alarmOn)onAlarm(0)}else if(state.alarmOn){hideAlarmPanel();$('alarmText').textContent=''}}
+}
+$('resetBtn').addEventListener('click',()=>{if(state.virtual)hideAlarmPanel()});
+/* 18) 홈 속도/방향 설정 ($23 방향 반전, $24 정밀 접근, $25 탐색, $27 풀오프) + 개별 축 원점 복귀 (매뉴얼 5.6.1, 6.2.2.2) */
+var HM=['hmSeek','hmFeed','hmPull'],HMD=['hmDirX','hmDirY','hmDirZ','hmDirA'];
+function hmMask(){return HMD.reduce((m,id,i)=>m|($(id).checked?(1<<i):0),0)}
+function homeCfgWatch(l){
+ const m=l.match(/^\$(23|24|25|27)=\s*(-?[\d.]+)/);if(!m)return;const v=parseFloat(m[2]);
+ if(m[1]==='24')$('hmFeed').value=v;else if(m[1]==='25')$('hmSeek').value=v;else if(m[1]==='27')$('hmPull').value=v;
+ else HMD.forEach((id,i)=>{$(id).checked=!!(v&(1<<i))});
+ saveHomeCfg();
+}
+function saveHomeCfg(){try{localStorage.setItem('cncHomeCfg',JSON.stringify({v:HM.map(i=>$(i).value),d:HMD.map(i=>$(i).checked)}))}catch(e){}}
+try{const c=JSON.parse(localStorage.getItem('cncHomeCfg')||'null');if(c){HM.forEach((id,i)=>{if(c.v&&c.v[i]!==undefined)$(id).value=c.v[i]});HMD.forEach((id,i)=>{if(c.d)$(id).checked=!!c.d[i]})}}catch(e){}
+HM.concat(HMD).forEach(id=>$(id).addEventListener('change',saveHomeCfg));
+document.querySelectorAll('[data-homeax]').forEach(b=>b.onclick=()=>refAxes([b.dataset.homeax]));
+$('hmRead').onclick=()=>{
+ if(state.virtual){log('가상 모드: 컨트롤러가 없어 화면의 홈 설정값을 그대로 둡니다.','sys');return}
+ state.readingSettings=true;$('grblSettings').textContent='읽는 중...';sendRaw('$$').catch(e=>log('전송 오류: '+e.message,'err'));
+};
+$('hmSend').onclick=async()=>{
+ const seek=+$('hmSeek').value,feed=+$('hmFeed').value,pull=+$('hmPull').value;
+ if(!(seek>0)||!(feed>0)||!(pull>=0)){alert('탐색 속도와 정밀 접근 속도는 0보다 커야 하고, 풀오프 거리는 0 이상이어야 합니다.');return}
+ if(feed>seek&&!confirm('정밀 접근 속도가 탐색 속도보다 빠릅니다. 보통은 반대입니다. 그대로 전송할까요?'))return;
+ saveHomeCfg();
+ if(state.virtual){log('가상 모드: 홈 설정 저장 ($24='+feed+' $25='+seek+' $27='+pull+' $23='+hmMask()+')','sys');return}
+ if(!confirm('컨트롤러에 홈 설정을 씁니다.\n$23='+hmMask()+' (방향 반전)\n$24='+feed+' (정밀 접근)\n$25='+seek+' (탐색)\n$27='+pull+' (풀오프)\n계속할까요?'))return;
+ try{for(const c of ['$23='+hmMask(),'$24='+feed,'$25='+seek,'$27='+pull])await sendWait(c);log('홈 설정 전송 완료','sys')}
+ catch(e){log('홈 설정 전송 실패: '+e.message,'err')}
+};
+try{$('mmText').value=localStorage.cncMMacros||''}catch(e){}
+$('mmApply').onclick=mmApply;mmApply();
+$('zInhApply').onclick=()=>{zInhRead();log(state.zInh.en?'Z 최대 깊이 제한 적용: Z '+state.zInh.val+' (작업 좌표 기준)':'Z 최대 깊이 제한 해제','sys');if(state.lines.length)progStats()};
+$('zInhEn').addEventListener('change',zInhRead);$('zInhVal').addEventListener('change',zInhRead);zInhRead();
+renderWCS();renderG92G28();renderTools();renderMotor();renderSpindleCfg();renderGref();calcStepsPerMM();
+$('loadSettings').click();renderDRO();buildPath();log('Mach3 스타일 CNC 제어판 준비 완료. G-code 파일을 열어 테스트하세요.','sys');showRecoverBar();
+
+/* ===== 마하3 좌표창 기능 보충 ===== */
+state.scale={x:1,y:1,z:1,a:1};state.rotDia=0;state.offline=false;
+function scaleLine(l){
+ const s=state.scale;if(s.x===1&&s.y===1&&s.z===1&&s.a===1)return l;
+ if(/\bG\s*(53|10|28|30|92|52)\b/i.test(l))return l;
+ const mul=(t,L,k)=>k===1?t:t.replace(new RegExp('(^|\\s)'+L+'\\s*(-?\\d*\\.?\\d+)','gi'),(m,a,v)=>a+L+(+(parseFloat(v)*k).toFixed(5)));
+ l=mul(mul(mul(mul(l,'X',s.x),'Y',s.y),'Z',s.z),'A',s.a);
+ l=mul(mul(l,'I',s.x),'J',s.y);
+ if(/\bG\s*0*[23]\b/i.test(l)&&s.x===s.y)l=mul(l,'R',s.x);
+ return l;
+}
+['X','Y','Z','A'].forEach(a=>{const k=a.toLowerCase();if(!$('scale'+a))return;$('scale'+a).onchange=()=>{let v=parseFloat($('scale'+a).value);if(!(Math.abs(v)>0))v=1;state.scale[k]=v;$('scale'+a).value=v.toFixed(4);log('배율 '+a+' = '+v.toFixed(4)+(v!==1?' (G51: 프로그램 좌표에 곱해서 실행)':''),'sys')}});
+$('g50Btn').onclick=()=>{['X','Y','Z','A'].forEach(a=>{state.scale[a.toLowerCase()]=1;$('scale'+a).value='1.0000'});log('G50: 모든 배율 1.0','sys')};
+$('radiusBtn').onclick=()=>{const v=prompt('회전 작업물의 대략적인 직경 (0 = 사용 안 함)\n회전축이 포함된 이송 속도 계산에 쓰입니다.',String(state.rotDia));if(v===null)return;const n=parseFloat(v);state.rotDia=Number.isNaN(n)||n<0?0:n;log('회전 직경 = '+state.rotDia,'sys')};
+$('gotoZBtn').onclick=()=>jogTo({z:0});
+$('mcsBtn').onclick=()=>{state.showWCS=!state.showWCS;$('mcsBtn').classList.toggle('on',!state.showWCS);renderDRO();$('coordLabel').textContent=state.showWCS?'작업 '+state.activeWCS:'기계 좌표'};
+$('offlineBtn').onclick=()=>{
+ if(!state.offline){state.offline=true;state.virtualBefore=state.virtual;state.virtual=true;log('오프라인: 컨트롤러로 아무것도 보내지 않습니다 (화면만 동작)','sys')}
+ else{state.offline=false;state.virtual=state.connected?false:true;log('오프라인 해제: 컨트롤러와 다시 연결됩니다. 화면 위치는 컨트롤러 값으로 다시 맞춰집니다.','sys')}
+ $('offlineBtn').classList.toggle('alarmState',state.offline);
+};
+$('verifyBtn').onclick=()=>{
+ if(state.virtual){log('검증: 가상/오프라인 상태라 탈조가 없습니다.','sys');return}
+ const m=state.machine;if(!confirm('각 축이 홈 스위치로 이동해 위치를 다시 확인합니다.\n이동 경로에 장애물이 없는지 확인하세요. 계속할까요?'))return;
+ log('검증 전 기계좌표 X'+m.x.toFixed(3)+' Y'+m.y.toFixed(3)+' Z'+m.z.toFixed(3)+' — 복귀 후 값과 비교해 탈조를 확인하세요.','sys');refAxes(['X','Y','Z','A']);
+};
+setInterval(()=>{
+ const t=(id,c)=>{const e=$(id);if(e)e.classList.toggle('on',!!c)};
+ t('offLed',state.offline);t('mcLed',!state.showWCS);t('slLed',state.softLimits);t('radLed',state.rotDia>0);
+ for(const a of ['X','Y','Z','A'])t('scLed'+a,state.scale[a.toLowerCase()]!==1);
+ $('softBtn').classList.toggle('alarmState',state.softLimits);
+ $('coordLabel').textContent=state.showWCS?'작업 '+state.activeWCS:'기계 좌표';
+},300);
+
+/* ===== 마하3 G코드 창: 최근 파일 / 닫기 ===== */
+const RECENT_KEY='cncRecentFiles';
+function recentList(){try{return JSON.parse(localStorage.getItem(RECENT_KEY)||'[]')}catch(e){return []}}
+function rememberRecent(name,text){
+ try{let l=recentList().filter(x=>x.name!==name);l.unshift({name,text,n:text.split('\n').length});l=l.slice(0,5);
+  while(l.length>1&&JSON.stringify(l).length>1500000)l.pop();
+  localStorage.setItem(RECENT_KEY,JSON.stringify(l))}catch(e){}
+}
+$('recentBtn').onclick=e=>{
+ e.stopPropagation();const m=$('recentMenu');
+ if(!m.hidden){m.hidden=true;return}
+ const l=recentList();m.innerHTML='';
+ if(!l.length){m.innerHTML='<div style="cursor:default;color:#666">최근에 연 파일이 없습니다.</div>'}
+ l.forEach(x=>{const d=document.createElement('div');d.textContent=x.name+'  ('+x.n+'줄)';d.title=x.name;
+  d.onclick=()=>{m.hidden=true;if(state.running||state.streaming){log('실행 중에는 파일을 바꿀 수 없습니다.','err');return}loadFile(new File([x.text],x.name))};m.appendChild(d)});
+ m.hidden=false;
+};
+document.addEventListener('click',e=>{if(!e.target.closest('#recentMenu'))$('recentMenu').hidden=true});
+$('closeGBtn').onclick=()=>{
+ if(state.running||state.streaming){log('실행 중에는 닫을 수 없습니다. 먼저 정지하세요.','err');return}
+ if(!state.lines.length)return;
+ if(!confirm('현재 G코드를 닫을까요? (편집한 내용은 저장되지 않습니다)'))return;
+ state.lines=[];state.raw=null;state.idx=0;
+ $('fileName').textContent='없음';$('statusFile').textContent='없음';$('lineTotal').textContent='0';$('lineNow').textContent='0';$('progress').style.width='0%';
+ renderGcode();$('gcodeView').innerHTML='<div style="padding:20px;text-align:center">G코드 파일을 열어주세요.</div>';
+ log('G코드를 닫았습니다.','sys');
+};
+
+/* ===== 줄 입력 / 모의 실행 / 예상 시간 ===== */
+$('lineDro').onkeydown=e=>{if(e.key==='Enter'){const v=parseInt($('lineDro').value);if(v>=1)setNextLine(v-1);$('lineDro').blur()}};
+let simT=null;
+function stopSim(restore){
+ if(!simT)return;clearInterval(simT);simT=null;state.simulating=false;$('simLed').classList.remove('on');
+ if(restore!==false){state.idx=state.simSaved||0;$('progress').style.width=(state.lines.length?state.idx/state.lines.length*100:0)+'%';$('lineNow').textContent=state.idx;highlight(state.idx-1);draw()}
+}
+$('simBtn').onclick=()=>{
+ if(simT){stopSim();log('모의 실행 중지','sys');return}
+ if(!state.lines.length){alert('먼저 G코드 파일을 열어주세요.');return}
+ if(state.running||state.streaming){log('실행 중에는 모의 실행을 할 수 없습니다.','err');return}
+ progStats();state.simSaved=state.idx;state.simulating=true;$('simLed').classList.add('on');
+ const n=state.lines.length,step=Math.max(1,Math.ceil(n/150));let i=0;
+ log('모의 실행 시작 (기계는 움직이지 않습니다)','sys');
+ simT=setInterval(()=>{
+  i=Math.min(n,i+step);state.idx=i;$('progress').style.width=(i/n*100)+'%';$('lineNow').textContent=i;highlight(i-1);draw();
+  if(i>=n){stopSim();log('모의 실행 완료 — 예상 가공 시간 '+$('estTime').textContent,'sys')}
+ },30);
+};
+$('cycleBtn').addEventListener('click',()=>stopSim(),true);
+setInterval(()=>{
+ const t=$('statTime').textContent;$('estTime').textContent=/^\d\d:\d\d:\d\d/.test(t)?t.slice(0,8):'00:00:00';
+ const d=$('lineDro');if(document.activeElement!==d&&!simT)d.value=state.lines.length?Math.min(state.idx+1,state.lines.length):0;
+},300);
+
+/* ===== To Go: 다음 이동 끝점까지 남은 거리 ===== */
+state.toGo=false;
+function toGoPos(){
+ const cur=state.pos,r={x:0,y:0,z:0,a:0};let abs=true;
+ for(let i=0;i<Math.min(state.idx,state.lines.length);i++){const u=state.lines[i].toUpperCase();if(/\bG\s*90(?!\.)/.test(u))abs=true;if(/\bG\s*91(?!\.)/.test(u))abs=false}
+ for(let i=state.idx;i<state.lines.length;i++){
+  const l=state.lines[i],u=l.toUpperCase();
+  if(/\bG\s*90(?!\.)/.test(u))abs=true;if(/\bG\s*91(?!\.)/.test(u))abs=false;
+  if(/\bG\s*(28|30|53|92|10|52)\b/.test(u))continue;
+  let any=false;
+  for(const L of ['X','Y','Z','A']){const v=num(l,L);if(!Number.isNaN(v)){any=true;const k=L.toLowerCase();r[k]=abs?v-cur[k]:v}}
+  if(any)return r;
+ }
+ return r;
+}
+$('toGoBtn').onclick=()=>{state.toGo=!state.toGo;document.querySelector('.dro').classList.toggle('togo',state.toGo);$('tgLed').classList.toggle('on',state.toGo);$('toGoBtn').classList.toggle('alarmState',state.toGo);renderDRO()};
+})();
+</script>
+<script>
+(()=>{const $=id=>document.getElementById(id);
+const wins=['jogWin','histWin','moreWin'];
+const tog=(id,show)=>{const e=$(id);const v=show===undefined?e.hidden:show;if(v&&id!=='jogWin')wins.filter(x=>x!==id&&x!=='jogWin').forEach(x=>$(x).hidden=true);e.hidden=!v};
+$('jogToggle').onclick=()=>tog('jogWin');$('jogWinClose').onclick=()=>tog('jogWin',false);
+$('historyBtn').onclick=()=>tog('histWin');$('histClose').onclick=()=>tog('histWin',false);
+$('moreBtn').onclick=()=>tog('moreWin');$('moreClose').onclick=()=>tog('moreWin',false);
+$('histClearBtn').onclick=()=>{$('console').innerHTML=''};
+const go=p=>()=>document.querySelector('.screen-tabs button[data-page='+p+']').click();
+$('loadWizBtn').onclick=go('wizard');$('gcodeRefBtn').onclick=$('gCodesBtn').onclick=$('mCodesBtn').onclick=go('gref');
+})();
+</script>
+<script>
+document.addEventListener('keydown',e=>{
+ if(e.target.matches('input,textarea,select'))return;
+ const hit=id=>{e.preventDefault();document.getElementById(id).click()},k=e.code;
+ if(e.altKey&&!e.ctrlKey){if(k==='KeyR')return hit('cycleBtn');if(k==='KeyS')return hit('stopBtn');if(k==='KeyN')return hit('singleBtn');if(k==='KeyW')return hit('rewindBtn')}
+ if(e.ctrlKey&&e.altKey&&k==='KeyJ')return hit('jogToggle');
+ if(e.ctrlKey&&!e.altKey&&k==='KeyF')return hit('floodBtn');
+});
+</script>
+</body>
+</html>
