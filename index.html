@@ -24843,6 +24843,10 @@ function submitQuickIntake() {
   if (activeDocType === 'workorder') {
     if (!confirm('지금 작업지시서 화면에서 작성 중인 내용이 있다면, 빠른접수 처리 중 화면 내용이 바뀔 수 있습니다.\n계속할까요? (걱정되면 지금 작성 중인 작업지시서를 먼저 저장한 뒤 다시 눌러주세요)')) return;
   }
+  // 🛠 중복 등록 방지: 접수 버튼을 연달아 눌러(더블클릭 등) 같은 접수가 일정·거래내역에 두 번 올라가던 문제.
+  // 처리 시작 후 5초 안에 다시 들어오는 호출은 무시합니다.
+  if (window._qiSubmitLockUntil && Date.now() < window._qiSubmitLockUntil) { showToast('⚠️ 방금 접수가 처리됐습니다. 중복 등록을 막기 위해 잠시 후 다시 눌러 주세요.'); return; }
+  window._qiSubmitLockUntil = Date.now() + 5000;
   // 🛠 버그 수정: 예전에는 견적서 화면에 이미 내용이 있으면 "섞을까요?" confirm을 띄우고,
   // 확인을 누르면 빠른접수 품목을 지금 화면의 quoteRows에 그대로 push했습니다. 이 때문에
   // 빠른접수를 여러 번 실행하면 이전 품목이 화면에 계속 남아있는 채로 새 품목이 계속 쌓였고,
@@ -30777,7 +30781,7 @@ function renderPersonalCalendar() {
       const alarmIcon = (ev.alarm && ev.time) ? '🔔 ' : '';
       const isRange = ev.endDate && ev.endDate > ev.date;
       const rangeTitle = (isRange ? `${escQ(ev.title)} (${ev.date} ~ ${ev.endDate})` : escQ(ev.title)) + (ev.author ? ` — 작성자: ${escQ(ev.author)}` : '');
-      tags += `<span class="cal-evtag${alarmCls}" style="background:${calTypeColor(ev.type)}" title="${rangeTitle}" onclick="event.stopPropagation();calShowEventDetail('${ev.id}')">${alarmIcon}${escQ(ev.title)}${ev.author ? ` <span style="opacity:.85;font-size:.85em">· ${escQ(ev.author)}</span>` : ''}</span>`;
+      tags += `<span class="cal-evtag${alarmCls}" style="background:${calTypeColor(ev.type)}" title="${rangeTitle}" onclick="event.stopPropagation();calShowEventDetail('${ev.id}')">${alarmIcon}${escQ(ev.title)}${calDupMark(ev)}${ev.author ? ` <span style="opacity:.85;font-size:.85em">· ${escQ(ev.author)}</span>` : ''}</span>`;
     });
     if (evs.length > shown.length) {
       tags += `<span class="cal-evtag-more">+${evs.length - shown.length}건 더</span>`;
@@ -30798,6 +30802,7 @@ function renderPersonalCalendar() {
 
   renderCalDayEventList();
   updateCalendarBadge();
+  calRecomputeDups();
 }
 function renderCalDayEventList() {
   const list = loadPersonalSchedule().filter(ev => calEventCoversDate(ev, calSelectedDate))
@@ -30814,7 +30819,7 @@ function renderCalDayEventList() {
       <div>
         <span style="font-weight:700;color:${calTypeColor(ev.type)}">${ev.time ? escQ(ev.time) : '종일'}</span>
         &nbsp;·&nbsp;<span style="color:${calTypeColor(ev.type)}">${calTypeLabel(ev.type)}</span>
-        &nbsp;<b style="cursor:pointer" onclick="calShowEventDetail('${ev.id}')">${escQ(ev.title)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
+        &nbsp;<b style="cursor:pointer" onclick="calShowEventDetail('${ev.id}')">${escQ(ev.title)}${calDupMark(ev)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
         ${isRange ? `<span style="color:#f97316;font-weight:700;font-size:11px;margin-left:4px">📅 ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</span>` : ''}
         ${(ev.alarm && ev.time) ? `<span style="color:#ef4444;font-weight:700;font-size:11px;margin-left:4px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</span>` : ''}
         ${calMemoPublic(ev.memo) ? `<div class="text-[11px] text-gray-400">${escQ(calMemoPublic(ev.memo))}</div>` : ''}${calMemoLock(ev.memo) ? `<div class="text-[11px] text-gray-400">🔒 내용은 일정을 눌러 비밀번호로 열람</div>` : ''}
@@ -30885,7 +30890,13 @@ function calUnlockExtend() { _calUnlockUntil = Date.now() + CAL_UNLOCK_MS; }
 const CAL_LOCK_RE = /\n?\[\[LOCK:([A-Za-z0-9+\/=]+)\]\]/;
 function calMemoPublic(memo) { return String(memo || '').replace(CAL_LOCK_RE, '').trim(); }
 function calMemoLock(memo) { const m = String(memo || '').match(CAL_LOCK_RE); return m ? m[1] : ''; }
+const _calKeyCache = {};
 async function _calDetailKey(pw) {
+  if (_calKeyCache[pw]) return _calKeyCache[pw];
+  _calKeyCache[pw] = _calDetailKeyRaw(pw);
+  return _calKeyCache[pw];
+}
+async function _calDetailKeyRaw(pw) {
   const enc = new TextEncoder();
   const base = await crypto.subtle.importKey('raw', enc.encode(pw), 'PBKDF2', false, ['deriveKey']);
   return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: enc.encode('jinjoo-cal-detail'), iterations: 100000, hash: 'SHA-256' },
@@ -30910,6 +30921,56 @@ async function _calDecryptRaw(b64, pw) {
   for (let i = 0; i < bin.length; i++) all[i] = bin.charCodeAt(i);
   const pt = await crypto.subtle.decrypt({ name: 'AES-GCM', iv: all.slice(0, 12) }, await _calDetailKey(pw), all.slice(12));
   return new TextDecoder().decode(pt);
+}
+// 🔁 중복 표시 — 날짜·시간·구분·제목·메모(🔒 잠긴 내용은 해독한 실제 문구)가 "완전히 똑같은" 일정만
+// 먼저 올린 1건은 그대로 두고, 나중에 올린 건에 "(중복)"을 붙여 보여줍니다. (저장된 제목은 바꾸지 않음)
+let _calDupSet = new Set();
+let _calDupBusy = false, _calDupAgain = false;
+const _calLockHashCache = {};
+function calDupMark(ev) { return (ev && _calDupSet.has(ev.id)) ? ' <span style="color:#dc2626;font-weight:800">(중복)</span>' : ''; }
+async function calRecomputeDups() {
+  if (_calDupBusy) { _calDupAgain = true; return; }
+  _calDupBusy = true;
+  try {
+    const list = loadPersonalSchedule();
+    const base = new Map();
+    list.forEach(ev => {
+      const k = [ev.date, ev.endDate || '', ev.time || '', ev.type || '', String(ev.title || '').trim(), calMemoPublic(ev.memo), ev.link || ''].join('\u0001');
+      if (!base.has(k)) base.set(k, []);
+      base.get(k).push(ev);
+    });
+    const dup = new Set();
+    for (const grp of base.values()) {
+      if (grp.length < 2) continue;
+      const sub = new Map();
+      for (const ev of grp) {
+        let h = '';
+        const lk = calMemoLock(ev.memo);
+        if (lk) {
+          if (_calLockHashCache[lk] === undefined) {
+            try { _calLockHashCache[lk] = await window.jinjooSha256Hex(await calDecryptDetail(lk, CAL_DETAIL_PW)); }
+            catch (e) { _calLockHashCache[lk] = 'x:' + ev.id; } // 해독 불가 → 비교하지 않음(고유값)
+          }
+          h = _calLockHashCache[lk];
+        }
+        if (!sub.has(h)) sub.set(h, []);
+        sub.get(h).push(ev);
+      }
+      for (const g of sub.values()) {
+        if (g.length < 2) continue;
+        g.sort((a, b) => String(a.createdAt || '').localeCompare(String(b.createdAt || '')) || String(a.id).localeCompare(String(b.id)));
+        g.slice(1).forEach(ev => dup.add(ev.id));
+      }
+    }
+    const changed = dup.size !== _calDupSet.size || [...dup].some(id => !_calDupSet.has(id));
+    _calDupSet = dup;
+    if (changed) {
+      const open = id => { const m = document.getElementById(id); return m && !m.classList.contains('hidden'); };
+      if (open('personalCalModal')) renderPersonalCalendar();
+      if (open('calDayDetailModal')) renderCalDayDetailModal();
+    }
+  } catch (e) { console.error('일정 중복 검사 실패:', e); }
+  finally { _calDupBusy = false; if (_calDupAgain) { _calDupAgain = false; calRecomputeDups(); } }
 }
 // 🗂 견적서 전체 스냅샷(일정 잠금 안에 함께 저장) — 압축(gzip) 후 base64
 const CAL_SNAP_MARK = '\n[[QSNAP]]';
@@ -31222,6 +31283,7 @@ function renderCalDayDetailModal() {
   const list = loadPersonalSchedule().filter(ev => calEventCoversDate(ev, dateStr))
     .sort((a,b) => (a.time||'').localeCompare(b.time||''));
   const wrap = document.getElementById('calDayDetailList');
+  calRecomputeDups();
   if (list.length === 0) {
     wrap.innerHTML = `<p class="text-[12px] text-gray-400 text-center py-6">이 날짜에 등록된 일정이 없습니다.</p>`;
     return;
@@ -31233,7 +31295,7 @@ function renderCalDayDetailModal() {
       <div style="cursor:pointer;min-width:0" title="클릭하면 상세 내용을 봅니다" onclick="calShowEventDetail('${ev.id}')">
         <span style="font-weight:700;color:${calTypeColor(ev.type)}">${ev.time ? escQ(ev.time) : '종일'}</span>
         &nbsp;·&nbsp;<span style="color:${calTypeColor(ev.type)}">${calTypeLabel(ev.type)}</span><br>
-        <b style="font-size:13px">${escQ(ev.title)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
+        <b style="font-size:13px">${escQ(ev.title)}${calDupMark(ev)}</b>${ev.author ? `<span style="color:#9ca3af;font-size:10.5px;margin-left:4px">✍ ${escQ(ev.author)}</span>` : ''}
         ${isRange ? `<div style="color:#f97316;font-weight:700;font-size:11px;margin-top:2px">📅 기간: ${escQ(ev.date)} ~ ${escQ(ev.endDate)}</div>` : ''}
         ${(ev.alarm && ev.time) ? `<div style="color:#ef4444;font-weight:700;font-size:11px;margin-top:2px">🔔 알림${ev.alarmFired ? ' (알림완료)' : ''}</div>` : ''}
         ${calMemoPublic(ev.memo) ? `<div class="text-[11px] text-gray-500 mt-1" style="white-space:pre-wrap">${escQ(calMemoPublic(ev.memo))}</div>` : ''}${calMemoLock(ev.memo) ? `<div class="text-[11px] text-gray-400">🔒 내용은 일정을 눌러 비밀번호로 열람</div>` : ''}
