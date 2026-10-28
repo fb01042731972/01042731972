@@ -6615,6 +6615,8 @@ window.getLeBoardClient = function(){
       <button onclick="openEmbeddedTool('cad')" title="DXF 도면을 열어 확인·수정·주석·네스팅합니다" class="hdr-btn" style="background:#ea580c">📐 CAD 뷰어</button>
       <button onclick="openEmbeddedTool('laser')" title="레이저 가공 견적을 계산하고 현재 견적서로 바로 전송합니다" class="hdr-btn" style="background:#2563eb">⚙️ 레이저 견적</button>
       <button onclick="openEmbeddedTool('share')" title="큰 CAD/도면 파일을 서버 없이 다른 컴퓨터로 직접 전송합니다" class="hdr-btn" style="background:#7c3aed">🔗 파일 전송</button>
+      <button onclick="openRelay2560()" title="Mega2560 + 16릴레이 제어 프로그램을 새 창으로 엽니다 (링크만 연결 — 파일 용량 거의 늘지 않음)" class="hdr-btn" style="background:#475569">🔌 2560 릴레이</button>
+      <button onclick="openRelayUno()" title="Arduino UNO 제어 프로그램을 새 창으로 엽니다 (링크만 연결 — 파일 용량 거의 늘지 않음)" class="hdr-btn" style="background:#0e7490">🔌 UNO</button>
       <button onclick="openPersonalCalendar()" title="회사 모임, 거래처 방문 등 개인 일정을 달력으로 관리합니다" class="hdr-btn cal-btn" style="position:relative">📅 일정<span id="calTodayBadge" class="ship-badge" style="display:none">0</span></button>
       <button id="bulletinBoardBtn" onclick="openBulletinBoard()" title="공용 게시판" class="hdr-btn" style="background:#0891b2">📋 게시판</button>
       <button onclick="openStaffModal()" title="직원별 출근/휴무/연차 등 근무 상태를 달력에 기록하고 관리합니다" class="hdr-btn" style="background:#0f766e">👥 직원 근무</button>
@@ -38541,6 +38543,19 @@ function openEmbeddedTool(type){
   frame.onload = function(){ if(frame.srcdoc){ try{ frame.contentWindow.focus(); }catch(e){} } };   // 열자마자 키보드(Esc 등)가 도구 안으로 들어가도록
   frame.srcdoc = type==='cad' ? JINJOO_EMBED_CAD : type==='laser' ? JINJOO_EMBED_LASER : JINJOO_EMBED_SHARE;
   modal.style.display='flex';
+}
+// 🔌 Mega2560 + 16릴레이 제어 프로그램 — 외부 링크(GitHub Pages)를 새 창으로 열기
+// USB 시리얼/블루투스를 쓰는 페이지라 앱 안의 iframe이 아니라 독립된 창으로 엽니다.
+function openRelay2560(){
+  var url='https://dyeo880-sys.github.io/01042731972/2560';
+  var w=window.open(url,'leRelay2560','popup=yes,width=1200,height=850,left=60,top=40,resizable=yes,scrollbars=yes');
+  if(w) w.focus(); else window.open(url,'_blank');
+}
+// 🔌 Arduino UNO 제어 프로그램 — 외부 링크를 새 창으로 열기
+function openRelayUno(){
+  var url='https://dyeo880-sys.github.io/01042731972/UNO';
+  var w=window.open(url,'leRelayUno','popup=yes,width=1200,height=850,left=80,top=50,resizable=yes,scrollbars=yes');
+  if(w) w.focus(); else window.open(url,'_blank');
 }
 function closeEmbeddedTool(){
   const modal=document.getElementById('jinjooToolModal');
