@@ -30765,7 +30765,11 @@ function renderPersonalCalendar() {
       else nEtc++;
     });
     statEl.innerHTML = '견적 <b style="color:#2563eb">' + nQuote + '</b>건 · 접수 <b style="color:#ea580c">' + nIntake + '</b>건 · 출고 <b style="color:#059669">' + nShip + '</b>건 · 기타 <b style="color:#374151">' + nEtc + '</b>건';
-    statEl.title = ym + ' 일정에 기록된 건수 (견적서 / 빠른접수 / 출고예정 / 그 외 일정)';
+    statEl.title = ym + ' 일정에 기록된 건수 — 클릭하면 이달 내용을 전체 열람합니다 (잠긴 내용은 비밀번호 필요)';
+    statEl.style.cursor = 'pointer';
+    statEl.style.textDecoration = 'underline dotted #9ca3af';
+    statEl.style.textUnderlineOffset = '3px';
+    statEl.onclick = calOpenMonthStats;
   })();
   const firstDay = new Date(calViewYear, calViewMonth, 1);
   const startWeekday = firstDay.getDay(); // 0=일
@@ -31208,6 +31212,92 @@ async function _calDoSearch() {
       (secret ? '<div style="font-size:11px;color:#374151;white-space:pre-wrap;margin-top:2px">' + escQ(secret) + '</div>' : '') +
     '</div>').join('') + (hits.length > 30 ? '<div style="padding:6px;text-align:center;font-size:11px;color:#9ca3af">상위 30건만 표시됩니다 (총 ' + hits.length + '건)</div>' : '');
   box.style.display = 'block';
+}
+// 📊 년·월 옆 건수를 누르면 → 이달 일정 내용 전체 열람 (잠긴 접수·견적 내용은 비밀번호 입력 후 해독해서 표시)
+let _calMonthStatsYm = '', _calMonthStatsPw = '';
+function calEvKind(ev) {
+  const isShip = String(ev.id || '').indexOf('cal_qis_ship_') === 0 || String(ev.title || '').indexOf('출고') > -1;
+  if (ev.type === 'quotecal') return 'quote';
+  if (ev.type === 'intake') return isShip ? 'ship' : 'intake';
+  return 'etc';
+}
+function calOpenMonthStats() {
+  _calMonthStatsYm = calViewYear + '-' + String(calViewMonth + 1).padStart(2, '0');
+  let m = document.getElementById('calMonthStatsModal');
+  if (!m) {
+    m = document.createElement('div');
+    m.id = 'calMonthStatsModal';
+    m.style.cssText = 'position:fixed;inset:0;z-index:100000;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;padding:12px';
+    m.onclick = function (e) { if (e.target === m) calCloseMonthStats(); };
+    m.innerHTML = '<div style="background:#fff;border-radius:12px;width:min(720px,100%);max-height:88vh;display:flex;flex-direction:column;box-shadow:0 20px 50px rgba(0,0,0,.3)">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-bottom:1px solid #e5e7eb">' +
+        '<div id="calMonthStatsTitle" style="font-size:15px;font-weight:800;color:#1f2937"></div>' +
+        '<button type="button" class="add-btn" style="margin-top:0" onclick="calCloseMonthStats()">✕ 닫기</button></div>' +
+      '<div id="calMonthStatsBody" style="padding:12px 16px;overflow-y:auto"></div></div>';
+    document.body.appendChild(m);
+  }
+  m.style.display = 'flex';
+  calRenderMonthStats();
+}
+function calCloseMonthStats() {
+  const m = document.getElementById('calMonthStatsModal');
+  if (m) m.style.display = 'none';
+}
+async function calMonthStatsUnlock() {
+  const pw = prompt('열람 비밀번호를 입력하세요.');
+  if (pw === null) return;
+  const p = pw.trim();
+  const locked = loadPersonalSchedule().filter(e => e.date && String(e.date).slice(0, 7) === _calMonthStatsYm && calMemoLock(e.memo));
+  let ok = false;
+  for (const e of locked) { try { await calDecryptDetail(calMemoLock(e.memo), p); ok = true; break; } catch (x) {} }
+  if (!ok) { alert('비밀번호가 일치하지 않습니다.'); return; }
+  _calMonthStatsPw = p;
+  if (!calUnlockActive()) calUnlockExtend();
+  calRenderMonthStats();
+}
+async function calRenderMonthStats() {
+  const ym = _calMonthStatsYm;
+  const body = document.getElementById('calMonthStatsBody');
+  const title = document.getElementById('calMonthStatsTitle');
+  if (!body || !title) return;
+  const [yy, mm] = ym.split('-').map(Number);
+  title.textContent = '📊 ' + yy + '년 ' + mm + '월 일정 전체 열람';
+  const list = loadPersonalSchedule().filter(e => e && e.date && String(e.date).slice(0, 7) === ym)
+    .sort((a, b) => (String(a.date) + (a.time || '')).localeCompare(String(b.date) + (b.time || '')));
+  const lockedCnt = list.filter(e => calMemoLock(e.memo)).length;
+  const pw = calUnlockActive() ? (_calMonthStatsPw || CAL_DETAIL_PW) : '';
+  const unlocked = !!pw;
+  const kinds = [['quote', '📋 견적', '#2563eb'], ['intake', '🏷️ 접수', '#ea580c'], ['ship', '🚚 출고', '#059669'], ['etc', '📌 기타', '#374151']];
+  let h = '';
+  if (lockedCnt) {
+    h += unlocked
+      ? '<div style="font-size:12px;color:#059669;font-weight:700;margin-bottom:8px">🔓 잠금 내용 열람 중 (비밀번호 입력 후 3시간 유지 · 새로고침하면 다시 잠김)</div>'
+      : '<div style="margin-bottom:10px"><button type="button" class="add-btn" style="margin-top:0" onclick="calMonthStatsUnlock()">🔒 비밀번호 입력하고 전체 열람 (잠긴 내용 ' + lockedCnt + '건)</button></div>';
+  }
+  if (!list.length) h += '<div style="text-align:center;color:#9ca3af;font-size:13px;padding:24px">이달에 기록된 일정이 없습니다.</div>';
+  for (const [k, label, color] of kinds) {
+    const items = list.filter(e => calEvKind(e) === k);
+    h += '<div style="margin-bottom:12px"><div style="font-size:13px;font-weight:800;color:' + color + ';margin-bottom:4px">' + label + ' ' + items.length + '건</div>';
+    if (!items.length) h += '<div style="font-size:12px;color:#9ca3af;padding:2px 0 2px 4px">기록 없음</div>';
+    for (const ev of items) {
+      const lock = calMemoLock(ev.memo);
+      let secret = '', lockedMsg = '';
+      if (lock) {
+        if (unlocked) { try { secret = calSplitSnap(await calDecryptDetail(lock, pw)).text; } catch (x) { lockedMsg = '⚠️ 해독 실패 (비밀번호가 다른 일정)'; } }
+        else lockedMsg = '🔒 잠긴 내용 — 비밀번호 입력 시 열람';
+      }
+      const pub = calMemoPublic(ev.memo);
+      h += '<div style="padding:7px 10px;border:1px solid #e5e7eb;border-left:4px solid ' + color + ';border-radius:6px;margin-bottom:5px;cursor:pointer" onclick="calCloseMonthStats();calSearchGo(\'' + ev.id + '\')">' +
+        '<div style="font-size:12.5px;font-weight:700;color:#1f2937">' + escQ(ev.title) + '</div>' +
+        '<div style="font-size:11px;color:#6b7280">' + escQ(ev.date) + (ev.endDate && ev.endDate > ev.date ? ' ~ ' + escQ(ev.endDate) : '') + (ev.time ? ' ' + escQ(ev.time) : '') + (ev.author ? ' · ✍ ' + escQ(ev.author) : '') + '</div>' +
+        (secret ? '<div style="font-size:12px;color:#374151;white-space:pre-wrap;word-break:break-word;margin-top:3px">' + escQ(secret) + '</div>' : '') +
+        (lockedMsg ? '<div style="font-size:11.5px;color:#9ca3af;margin-top:3px">' + lockedMsg + '</div>' : '') +
+        (!lock && pub ? '<div style="font-size:12px;color:#374151;white-space:pre-wrap;word-break:break-word;margin-top:3px">' + escQ(pub) + '</div>' : '') +
+        '</div>';
+    }
+    h += '</div>';
+  }
+  body.innerHTML = h;
 }
 function calSearchGo(id) {
   const ev = loadPersonalSchedule().find(e => e.id === id);
