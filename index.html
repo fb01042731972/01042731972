@@ -8411,7 +8411,10 @@ window.getLeBoardClient = function(){
     </div>
     <div class="flex justify-between items-center mb-2">
       <button onclick="calShiftMonth(-1)" class="add-btn" style="margin-top:0">◀ 이전달</button>
-      <div id="calMonthLabel" class="text-base font-bold text-gray-700"></div>
+      <div style="display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;justify-content:center">
+        <div id="calMonthLabel" class="text-base font-bold text-gray-700"></div>
+        <div id="calMonthStats" style="font-size:12px;font-weight:600;color:#6b7280;white-space:nowrap"></div>
+      </div>
       <div class="flex gap-1">
         <button onclick="calGoToday()" class="add-btn" style="margin-top:0">오늘</button>
         <button onclick="calShiftMonth(1)" class="add-btn" style="margin-top:0">다음달 ▶</button>
@@ -30747,6 +30750,23 @@ function renderPersonalCalendar() {
   document.getElementById('calMonthLabel').textContent = `${calViewYear}년 ${calViewMonth + 1}월`;
 
   const list = loadPersonalSchedule();
+  // 📊 년·월 옆 실시간 집계 — 보고 있는 달의 일정에 기록된 견적/접수/출고/기타 건수
+  (function () {
+    const statEl = document.getElementById('calMonthStats');
+    if (!statEl) return;
+    const ym = calViewYear + '-' + String(calViewMonth + 1).padStart(2, '0');
+    let nQuote = 0, nIntake = 0, nShip = 0, nEtc = 0;
+    list.forEach(ev => {
+      if (!ev || !ev.date || String(ev.date).slice(0, 7) !== ym) return;
+      const isShip = String(ev.id || '').indexOf('cal_qis_ship_') === 0 || String(ev.title || '').indexOf('출고') > -1;
+      if (ev.type === 'quotecal') nQuote++;
+      else if (ev.type === 'intake' && isShip) nShip++;
+      else if (ev.type === 'intake') nIntake++;
+      else nEtc++;
+    });
+    statEl.innerHTML = '견적 <b style="color:#2563eb">' + nQuote + '</b>건 · 접수 <b style="color:#ea580c">' + nIntake + '</b>건 · 출고 <b style="color:#059669">' + nShip + '</b>건 · 기타 <b style="color:#374151">' + nEtc + '</b>건';
+    statEl.title = ym + ' 일정에 기록된 건수 (견적서 / 빠른접수 / 출고예정 / 그 외 일정)';
+  })();
   const firstDay = new Date(calViewYear, calViewMonth, 1);
   const startWeekday = firstDay.getDay(); // 0=일
   const daysInMonth = new Date(calViewYear, calViewMonth + 1, 0).getDate();
