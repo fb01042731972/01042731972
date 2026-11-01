@@ -1187,6 +1187,12 @@
       <div style="font-size:12px;font-weight:800;color:#334155;margin-bottom:6px;">🟢 지금 접속 중 (실시간)</div>
       <div id="leVisitorLiveList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:16px;"><div style="font-size:11px;color:#94a3b8;">불러오는 중...</div></div>
 
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:4px;flex-wrap:wrap;">
+        <div style="font-size:12px;font-weight:800;color:#334155;">📍 IP별 분류 (최근 90일)</div>
+        <button onclick="window.leIpStatsRefresh&&window.leIpStatsRefresh()" style="background:#f1f5f9;border:1px solid #cbd5e1;border-radius:6px;padding:3px 9px;font-size:11.5px;cursor:pointer;">🔄 새로고침</button>
+      </div>
+      <div style="font-size:11px;color:#64748b;margin-bottom:6px;">📍 이름 붙인 IP(공장·사무실 등) = 믿는 장소 · 🟢 자주 = 5일 이상 접속 · 🟡 가끔 = 2~4일 · 🔴 처음/낯선 = 1일뿐 · IP를 눌러 펼치면 상세가 나옵니다</div>
+      <div id="leIpStatsList" style="margin-bottom:16px;max-height:340px;overflow:auto;"></div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap;">
         <div style="font-size:12px;font-weight:800;color:#334155;">📜 접속 기록 (접속·종료 시각 / 머문 시간)</div>
         <select id="leVisitLogRange" onchange="window.leVisitLogRefresh&&window.leVisitLogRefresh()" style="border:1px solid #cbd5e1;border-radius:6px;padding:3px 6px;font-size:11.5px;">
@@ -2074,7 +2080,12 @@ window.getLeBoardClient = function(){
       leSiteChannel = supaClient.channel('site_visitors_room', {
         config: { presence: { key: leSiteIp + '_' + Math.random().toString(36).slice(2,8) } }
       });
-      leSiteChannel.on('presence', { event: 'sync' }, function(){ leSiteRefreshAdminListIfOpen(); });
+      leSiteChannel.on('presence', { event: 'sync' }, function(){ leSiteRefreshAdminListIfOpen(); leSiteBadgeRefresh(); });
+      leSiteChannel.on('presence', { event: 'join' }, function(e){
+        try { (e.newPresences || []).forEach(function(p){
+          if (p && p.ext && p.ip !== leSiteIp && window._leVisitorAdminOk && typeof showToast === 'function') showToast('⚠️ 등록되지 않은 외부 IP 접속: ' + p.ip);
+        }); } catch(x) {}
+      });
       leSiteChannel.subscribe(function(status){
         if (status === 'SUBSCRIBED') {
           leSiteUpdateSitePresence();
@@ -2087,7 +2098,7 @@ window.getLeBoardClient = function(){
   function leSiteUpdateSitePresence(){
     if (!leSiteChannel) return;
     try {
-      leSiteChannel.track({ ip: leSiteIp, nickname: leChatNickname || '', online_at: new Date().toISOString() });
+      leSiteChannel.track({ ip: leSiteIp, nickname: leChatNickname || '', online_at: new Date().toISOString(), ext: leSiteArrival.state === 'external', label: leSiteArrival.label || '' });
     } catch(e) {}
     try { leSiteLogUpdate({ nickname: leChatNickname || '' }); } catch(e) {}
   }
@@ -2115,9 +2126,13 @@ window.getLeBoardClient = function(){
         leSiteIp = ip;
         leSiteCheckBanned(function(banned){
           if (banned) { leSiteShowBannedOverlay(); return; }
-          leSiteTrackVisitor();
-          leSiteSubscribeBanChanges();
-          leSiteLogStart();
+          leSiteArrivalCheck(function(){
+            leSiteShowSplash();
+            leSiteTrackVisitor();
+            leSiteSubscribeBanChanges();
+            leSiteLogStart();
+            leSiteBadgeRefresh();
+          });
         });
       });
     });
@@ -2215,6 +2230,161 @@ window.getLeBoardClient = function(){
     });
   };
 
+  // ══ 📍 접속 도착 확인(자주/외부 판정) · 큰 IP 화면 · 메인 IP 배지 · IP별 분류 ══
+  //   Supabase 'ip_labels' 테이블(ip text pk, label, trusted, updated_at)이 있으면 이름 붙인 IP를 '믿는 장소'로 인식합니다.
+  let leSiteArrival = { state: 'unknown', label: '' };   // state: known | external | unknown
+  function leUaLabel(ua){
+    ua = String(ua || '');
+    const os = /Windows/.test(ua) ? 'Windows' : /Android/.test(ua) ? 'Android' : /iPhone|iPad/.test(ua) ? 'iOS' : /Mac/.test(ua) ? 'Mac' : '기타';
+    const br = /Edg\//.test(ua) ? 'Edge' : /Chrome\//.test(ua) ? 'Chrome' : /Firefox\//.test(ua) ? 'Firefox' : /Safari\//.test(ua) ? 'Safari' : '기타';
+    return os + ' ' + br;
+  }
+  function leSiteArrivalCheck(cb){
+    let done = false;
+    const fin = function(){ if (!done) { done = true; cb(); } };
+    if (!supaClient || !leSiteIp || leSiteIp.indexOf('guest_') === 0) { fin(); return; }
+    setTimeout(fin, 4000);
+    const t0 = new Date(); t0.setHours(0, 0, 0, 0);
+    Promise.all([
+      supaClient.from('ip_labels').select('label,trusted').eq('ip', leSiteIp).maybeSingle(),
+      supaClient.from('visit_log').select('started_at').eq('ip', leSiteIp).lt('started_at', t0.toISOString()).limit(500)
+    ]).then(function(rs){
+      const lab = rs[0] && !rs[0].error ? rs[0].data : null;
+      if (lab && lab.label) leSiteArrival.label = lab.label;
+      if (rs[1] && rs[1].error) { leSiteArrival.state = (lab && lab.trusted) ? 'known' : 'unknown'; fin(); return; }
+      const days = {}; ((rs[1] && rs[1].data) || []).forEach(function(r){ days[String(r.started_at).slice(0, 10)] = 1; });
+      leSiteArrival.state = ((lab && lab.trusted) || Object.keys(days).length >= 3) ? 'known' : 'external';
+      fin();
+    }).catch(fin);
+  }
+  function leSiteShowSplash(){
+    if (!leSiteIp || leSiteIp.indexOf('guest_') === 0) return;
+    try { if (sessionStorage.getItem('leIpSplashShown') === leSiteIp) return; sessionStorage.setItem('leIpSplashShown', leSiteIp); } catch(e) {}
+    const ext = leSiteArrival.state === 'external';
+    let el = document.getElementById('leIpSplash');
+    if (!el) { el = document.createElement('div'); el.id = 'leIpSplash'; document.body.appendChild(el); }
+    el.style.cssText = 'position:fixed;inset:0;z-index:999990;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;color:#fff;cursor:pointer;background:' + (ext ? 'rgba(127,29,29,.97)' : 'rgba(15,58,77,.95)');
+    const msg = ext
+      ? '<div style="font-size:20px;font-weight:800;">⚠️ 등록되지 않은 외부 IP입니다</div><div style="font-size:14px;line-height:1.7;opacity:.95;">이 접속은 IP·시각과 함께 기록되었고 관리자에게 보고됩니다.<br>허가받지 않은 접근은 차단되며 법적 조치될 수 있습니다.<br><span style="opacity:.8;">직원이라면 관리자에게 이 IP 등록을 요청하세요.</span></div>'
+      : (leSiteArrival.state === 'known' ? '<div style="font-size:17px;font-weight:700;">✅ 확인된 접속 장소입니다</div>' : '') + '<div style="font-size:13px;opacity:.85;">접속 시각과 활동이 기록됩니다</div>';
+    el.innerHTML = '<div style="font-size:15px;opacity:.85;">접속 IP</div><div style="font-size:clamp(30px,8vw,66px);font-weight:900;letter-spacing:1px;word-break:break-all;">' + leChatEscape(leSiteIp) + '</div>' +
+      (leSiteArrival.label ? '<div style="font-size:24px;font-weight:800;">📍 ' + leChatEscape(leSiteArrival.label) + '</div>' : '') + msg +
+      '<button style="margin-top:8px;background:#fff;color:#1f2937;border:none;border-radius:8px;padding:9px 28px;font-size:15px;font-weight:800;cursor:pointer;">확인</button>';
+    const close = function(){ el.style.display = 'none'; };
+    el.onclick = close;
+    if (!ext) setTimeout(close, 3500);
+  }
+  function leSiteBadgeRefresh(){
+    const b = document.getElementById('leMyIpBtn'); if (!b) return;
+    if (!leSiteIp || leSiteIp.indexOf('guest_') === 0) { b.textContent = '🌐 IP 확인 불가'; return; }
+    let n = 0;
+    try { const st = leSiteChannel ? leSiteChannel.presenceState() : {}, ips = {}; Object.keys(st).forEach(function(k){ (st[k] || []).forEach(function(p){ if (p && p.ip) ips[p.ip] = 1; }); }); n = Object.keys(ips).length; } catch(e) {}
+    b.textContent = '🌐 ' + leSiteIp + (leSiteArrival.label ? ' · ' + leSiteArrival.label : '') + (n ? ' · ' + n + '곳 접속' : '');
+    b.style.background = leSiteArrival.state === 'external' ? '#b91c1c' : '#0f766e';
+    const pn = document.getElementById('leMyIpPanel'); if (pn && pn.style.display !== 'none') leMyIpRender();
+  }
+  function leMyIpRender(){
+    const pn = document.getElementById('leMyIpPanel'); if (!pn) return;
+    const by = {};
+    try { const st = leSiteChannel ? leSiteChannel.presenceState() : {}; Object.keys(st).forEach(function(k){ (st[k] || []).forEach(function(p){ if (p && p.ip && (!by[p.ip] || (p.online_at || '') < (by[p.ip].online_at || ''))) by[p.ip] = p; }); }); } catch(e) {}
+    const ips = Object.keys(by);
+    const live = ips.length ? ips.map(function(ip){ const p = by[ip];
+      return '<div style="display:flex;justify-content:space-between;gap:6px;padding:3px 0;border-top:1px solid #f1f5f9;"><span><b>' + leChatEscape(ip) + '</b>' + (p.label ? ' <span style="color:#1d4ed8;">📍' + leChatEscape(p.label) + '</span>' : '') + (p.nickname ? ' <span style="color:#64748b;">' + leChatEscape(p.nickname) + '</span>' : '') + (p.ext ? ' <span style="color:#dc2626;font-weight:800;">⚠️외부</span>' : '') + (ip === leSiteIp ? ' <span style="color:#0f766e;">(나)</span>' : '') + '</span><span style="color:#64748b;white-space:nowrap;">' + leVisitDur(Date.now() - new Date(p.online_at).getTime()) + '째</span></div>'; }).join('') : '<div style="color:#94a3b8;">없음</div>';
+    pn.innerHTML = '<div style="font-size:11px;color:#64748b;">내 IP</div><div style="font-size:22px;font-weight:900;">' + leChatEscape(leSiteIp || '-') + '</div>' +
+      (leSiteArrival.label ? '<div style="color:#1d4ed8;font-weight:800;">📍 ' + leChatEscape(leSiteArrival.label) + '</div>' : '') +
+      (leSiteArrival.state === 'external' ? '<div style="color:#dc2626;font-weight:700;">⚠️ 등록되지 않은 외부 IP</div>' : '') +
+      '<div style="margin-top:8px;font-weight:800;">🟢 지금 접속 중</div>' + live +
+      '<div style="margin-top:8px;font-weight:800;">📜 내 IP 최근 활동</div><div id="leMyIpHist" style="color:#94a3b8;">불러오는 중…</div>';
+    if (!supaClient || !leSiteIp) return;
+    supaClient.from('visit_log').select('started_at,last_seen,ended_at').eq('ip', leSiteIp).order('started_at', { ascending: false }).limit(8).then(function(r){
+      const h = document.getElementById('leMyIpHist'); if (!h) return;
+      const rows = (r && r.data) || [];
+      h.style.color = '#334155';
+      h.innerHTML = rows.length ? rows.map(function(x){
+        const live = !x.ended_at && (Date.now() - new Date(x.last_seen).getTime()) < 150000, st = new Date(x.started_at).getTime();
+        return '<div style="padding:2px 0;border-top:1px solid #f1f5f9;">' + leVisitFmt(x.started_at) + ' → ' + (live ? '<span style="color:#059669;font-weight:700;">접속 중</span>' : leVisitFmt(x.ended_at || x.last_seen)) + ' · ' + leVisitDur((live ? Date.now() : new Date(x.ended_at || x.last_seen).getTime()) - st) + '</div>'; }).join('') : '기록 없음';
+    }).catch(function(){});
+  }
+  window.leToggleMyIp = function(e){
+    if (e) e.stopPropagation();
+    const pn = document.getElementById('leMyIpPanel'); if (!pn) return;
+    const open = pn.style.display === 'none';
+    pn.style.display = open ? 'block' : 'none';
+    if (open) leMyIpRender();
+  };
+  document.addEventListener('click', function(e){
+    const pn = document.getElementById('leMyIpPanel');
+    if (pn && pn.style.display === 'block' && !pn.contains(e.target)) pn.style.display = 'none';
+  });
+
+  // 관리자 — IP별 분류 (등록된 장소 / 자주 / 가끔 / 처음·낯선) + 이름 붙이기
+  window.leIpStatsRefresh = function(){
+    const box = document.getElementById('leIpStatsList'); if (!box || !window._leVisitorAdminOk) return;
+    loadSupabaseLib(function(){
+      if (!supaClient) supaClient = window.getLeMainClient();
+      const since = new Date(Date.now() - 90 * 86400000).toISOString();
+      Promise.all([
+        supaClient.from('visit_log').select('ip,nickname,started_at,last_seen,ended_at,ua').gte('started_at', since).order('started_at', { ascending: false }).limit(3000),
+        supaClient.from('ip_labels').select('*'),
+        supaClient.from('banned_ips').select('ip')
+      ]).then(function(rs){
+        if (rs[0] && rs[0].error) { box.innerHTML = '<div style="font-size:11px;color:#dc2626;padding:8px;">기록을 불러오지 못했습니다. visit_log 테이블을 확인해주세요.</div>'; return; }
+        const labels = {}, banned = {}, now = Date.now(), by = {};
+        (((rs[1] || {}).data) || []).forEach(function(r){ labels[r.ip] = r; });
+        (((rs[2] || {}).data) || []).forEach(function(r){ banned[r.ip] = 1; });
+        window._leIpLabelMap = labels;
+        (rs[0].data || []).forEach(function(r){
+          const o = by[r.ip] || (by[r.ip] = { ip: r.ip, n: 0, days: {}, ms: 0, first: r.started_at, last: r.started_at, names: {}, uas: {}, live: false, rows: [] });
+          o.n++; o.days[String(r.started_at).slice(0, 10)] = 1;
+          const st = new Date(r.started_at).getTime(), en = new Date(r.ended_at || r.last_seen).getTime();
+          if (en >= st) o.ms += en - st;
+          if (r.started_at < o.first) o.first = r.started_at;
+          if (r.started_at > o.last) o.last = r.started_at;
+          if (r.nickname) o.names[r.nickname] = 1;
+          o.uas[leUaLabel(r.ua)] = 1;
+          if (!r.ended_at && now - new Date(r.last_seen).getTime() < 150000) o.live = true;
+          if (o.rows.length < 8) o.rows.push(r);
+        });
+        Object.keys(labels).forEach(function(ip){ if (!by[ip] && labels[ip].trusted) by[ip] = { ip: ip, n: 0, days: {}, ms: 0, first: '', last: '', names: {}, uas: {}, live: false, rows: [] }; });
+        const g = { place: [], often: [], some: [], new: [] };
+        Object.keys(by).forEach(function(ip){
+          const o = by[ip], d = Object.keys(o.days).length, lb = labels[ip];
+          (lb && lb.trusted ? g.place : d >= 5 ? g.often : d >= 2 ? g.some : g.new).push(o);
+        });
+        const item = function(o){
+          const lb = labels[o.ip], d = Object.keys(o.days).length, q = leChatAttrEscape(o.ip);
+          return '<details style="border:1px solid #e2e8f0;border-radius:6px;margin-bottom:4px;background:#fff;"><summary style="cursor:pointer;padding:6px 9px;font-size:12px;">' +
+            (lb && lb.trusted ? '<span style="background:#dbeafe;color:#1d4ed8;border-radius:4px;padding:1px 6px;font-weight:800;">📍 ' + leChatEscape(lb.label || '등록') + '</span> ' : '') +
+            '<b>' + leChatEscape(o.ip) + '</b>' + (o.live ? ' <span style="color:#059669;font-weight:700;">🟢접속 중</span>' : '') + (banned[o.ip] ? ' <span style="color:#dc2626;font-weight:700;">🚫차단됨</span>' : '') +
+            ' <span style="color:#64748b;">· ' + o.n + '회 · ' + d + '일 · 총 ' + leVisitDur(o.ms) + (o.last ? ' · 최근 ' + leVisitFmt(o.last) : '') + '</span></summary>' +
+            '<div style="padding:6px 10px 8px;font-size:11.5px;color:#334155;line-height:1.6;">처음 ' + leVisitFmt(o.first) + ' · 마지막 ' + leVisitFmt(o.last) +
+            '<br>이름: ' + (Object.keys(o.names).map(leChatEscape).join(', ') || '(미설정)') + '<br>기기: ' + (Object.keys(o.uas).map(leChatEscape).join(', ') || '-') +
+            '<div style="margin:5px 0;display:flex;gap:6px;"><button onclick="window.leIpLabel(\'' + q + '\')" style="background:#eff6ff;color:#1d4ed8;border:1px solid #bfdbfe;border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;">✏️ 이름 붙이기(공장·사무실…)</button>' +
+            (banned[o.ip] ? '' : '<button onclick="window.leBanIp&&window.leBanIp(\'' + q + '\')" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:5px;padding:3px 9px;font-size:11px;font-weight:700;cursor:pointer;">🚫 차단</button>') + '</div>' +
+            o.rows.map(function(r){ const st = new Date(r.started_at).getTime(), live = !r.ended_at && now - new Date(r.last_seen).getTime() < 150000, en = live ? now : new Date(r.ended_at || r.last_seen).getTime();
+              return leVisitFmt(r.started_at) + ' → ' + (live ? '접속 중' : leVisitFmt(r.ended_at || r.last_seen) + (r.ended_at ? '' : ' (추정)')) + ' · ' + leVisitDur(en - st); }).join('<br>') + '</div></details>';
+        };
+        const sec = function(title, arr){ arr.sort(function(a, b){ return String(b.last).localeCompare(String(a.last)); });
+          return '<div style="font-size:12px;font-weight:800;margin:8px 0 4px;">' + title + ' ' + arr.length + '곳</div>' + (arr.length ? arr.map(item).join('') : '<div style="font-size:11px;color:#94a3b8;">없음</div>'); };
+        box.innerHTML = sec('📍 등록된 장소', g.place) + sec('🟢 자주 접속', g.often) + sec('🟡 가끔 접속', g.some) + sec('🔴 처음·낯선 IP', g.new);
+      }).catch(function(){ box.innerHTML = '<div style="font-size:11px;color:#dc2626;padding:8px;">분류를 불러오지 못했습니다.</div>'; });
+    });
+  };
+  window.leIpLabel = function(ip){
+    if (!window._leVisitorAdminOk) { alert('관리자만 사용할 수 있습니다.'); return; }
+    const cur = ((window._leIpLabelMap || {})[ip] || {}).label || '';
+    const v = prompt(ip + ' 의 장소/이름을 입력하세요 (예: 공장, 사무실, 대표님 집)\n비우고 확인하면 등록이 해제됩니다.', cur);
+    if (v === null) return;
+    const name = v.trim();
+    const q = name ? supaClient.from('ip_labels').upsert({ ip: ip, label: name, trusted: true, updated_at: new Date().toISOString() }) : supaClient.from('ip_labels').delete().eq('ip', ip);
+    q.then(function(r){
+      if (r && r.error) { alert('저장 실패: ' + r.error.message + ' (Supabase에 ip_labels 테이블이 있는지 확인해주세요)'); return; }
+      if (typeof showToast === 'function') showToast(name ? '📍 ' + ip + ' → ' + name : '등록을 해제했습니다.');
+      window.leVisitLogRefresh && window.leVisitLogRefresh();
+    });
+  };
+  (function(){ const o = window.leVisitLogRefresh; window.leVisitLogRefresh = function(){ if (o) o(); window.leIpStatsRefresh && window.leIpStatsRefresh(); }; })();
+
   // 🔐 관리자 전용 — 관리자 비밀번호를 맞게 입력해야 열립니다 (새로고침하면 다시 잠김)
   window._leVisitorAdminOk = false;
   window.leOpenVisitorAdmin = async function(){
@@ -2260,7 +2430,7 @@ window.getLeBoardClient = function(){
       const p = byIp[ip];
       const name = p.nickname ? leChatEscape(p.nickname) : '(이름 미설정)';
       return '<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 10px;">' +
-        '<div style="font-size:12px;color:#1e293b;"><b>' + leChatEscape(ip) + '</b> <span style="color:#64748b;">' + name + '</span></div>' +
+        '<div style="font-size:12px;color:#1e293b;"><b>' + leChatEscape(ip) + '</b> <span style="color:#64748b;">' + name + '</span>' + (p.label ? ' <span style="color:#1d4ed8;">📍' + leChatEscape(p.label) + '</span>' : '') + (p.ext ? ' <span style="color:#dc2626;font-weight:800;">⚠️외부</span>' : '') + '</div>' +
         '<button onclick="window.leBanIp&&window.leBanIp(\'' + leChatAttrEscape(ip) + '\')" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:5px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🚫 영구 차단</button>' +
         '</div>';
     }).join('');
@@ -6763,6 +6933,10 @@ window.getLeBoardClient = function(){
           <div class="gs-item" style="padding:9px 14px;cursor:pointer;font-size:12px;border-top:1px solid #f1f5f9" onclick="closeDataMenu();openCloudLinksModal()" title="네이버 MYBOX, 구글 드라이브, 회사/개인 NAS(IP 주소로 접속하는 드라이브) 등 백업용 폴더 주소를 원하는 만큼 등록해 둘 수 있습니다">☁️ 클라우드/개인 드라이브 바로가기 관리</div>
           <div id="cloudLinksMenuArea"></div>
         </div>
+      </div>
+      <div style="position:relative;display:inline-block">
+        <button id="leMyIpBtn" onclick="window.leToggleMyIp&&window.leToggleMyIp(event)" class="hdr-btn" style="background:#0f766e" title="현재 접속자 IP와 내 IP 활동 기록">🌐 IP</button>
+        <div id="leMyIpPanel" style="display:none;position:absolute;top:100%;right:0;margin-top:4px;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 12px 28px rgba(0,0,0,.15);z-index:60;width:330px;max-height:70vh;overflow:auto;padding:10px 12px;font-size:12px;color:#1e293b"></div>
       </div>
       <div style="position:relative;display:inline-block">
         <button id="settingsMenuBtn" onclick="toggleSettingsMenu()" title="메일 서비스, 화면 테마 색상 등을 설정합니다" class="hdr-btn" style="background:#334155">⚙️ 설정 ▾</button>
