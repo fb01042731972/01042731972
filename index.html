@@ -467,6 +467,35 @@
 </head>
 <body class="p-3 md:p-5">
 
+<!-- 🔴 접속 게이트: IP 표시 + 이름(3글자) 필수. 이름을 기재하지 않으면 입장 불가 -->
+<style>
+@keyframes leRedBlink{0%,100%{opacity:1;box-shadow:0 0 6px 2px rgba(239,68,68,.75)}50%{opacity:.12;box-shadow:none}}
+.le-red-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:4px;vertical-align:middle;animation:leRedBlink 1s steps(1,end) infinite}
+#leTopWho{position:fixed;top:1px;left:8px;z-index:999996;display:none;font-size:10.5px;line-height:15px;font-weight:700;color:#334155;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:8px;padding:0 7px 0 5px;pointer-events:none;max-width:60vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#leNameGate input.le-name-in{width:100%;box-sizing:border-box;text-align:center;font-size:26px;font-weight:800;letter-spacing:8px;border:2px solid #cbd5e1;border-radius:10px;padding:10px 6px;outline:none}
+#leNameGate input.le-name-in:focus{border-color:#146C8E}
+</style>
+<div id="leTopWho" title="접속 중인 이름"><span class="le-red-dot"></span><span id="leTopWhoName"></span> 접속</div>
+<div id="leNameGate" style="position:fixed;inset:0;z-index:999995;background:linear-gradient(135deg,#0b2a38,#146C8E);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;">
+  <div style="background:#fff;border-radius:16px;padding:26px 22px;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);text-align:center;">
+    <div style="font-size:12px;color:#64748b;font-weight:700;">내 접속 IP</div>
+    <div id="leNameGateIp" style="font-size:clamp(22px,7vw,32px);font-weight:900;color:#0f172a;word-break:break-all;margin:2px 0 12px;">확인 중…</div>
+    <div id="leNameGateForm" style="display:none;">
+      <div style="font-size:15px;font-weight:800;color:#1f2937;margin-bottom:4px;">이름을 기재하세요</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:10px;">본인 이름 <b>3글자</b> (한글) · 한 번 기재하면 이 IP·이 기기에서는 자동으로 인식됩니다</div>
+      <input id="leNameGateInput" class="le-name-in" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="홍길동">
+      <div id="leNameGateErr" style="min-height:18px;margin:6px 0 2px;font-size:12px;font-weight:700;color:#dc2626;"></div>
+      <button id="leNameGateBtn" type="button" style="width:100%;background:#146C8E;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:800;cursor:pointer;">입장</button>
+    </div>
+    <div style="margin-top:14px;background:#fef2f2;border:1px solid #fecaca;border-radius:10px;padding:10px 12px;text-align:left;font-size:12px;line-height:1.65;color:#991b1b;">
+      <b>⚠️ 경고</b><br>
+      · 관리자는 <b>접속자의 이름 · 접속 시간 · IP 주소</b>를 확인합니다.<br>
+      · <b>외부인 입장 불허</b> — 허가받지 않은 접속은 기록되며 차단됩니다.<br>
+      · 이름을 기재하지 않으면 입장할 수 없습니다.
+    </div>
+  </div>
+</div>
+
 <div id="pwGate" style="position:fixed;inset:0;z-index:99999;background:linear-gradient(135deg,#0F3A4D,#146C8E);display:flex;align-items:center;justify-content:center;padding:20px;">
   <div style="background:#fff;border-radius:16px;padding:32px 28px;max-width:340px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.3);text-align:center;">
 
@@ -2098,9 +2127,9 @@ window.getLeBoardClient = function(){
   function leSiteUpdateSitePresence(){
     if (!leSiteChannel) return;
     try {
-      leSiteChannel.track({ ip: leSiteIp, nickname: leChatNickname || '', online_at: new Date().toISOString(), ext: leSiteArrival.state === 'external', label: leSiteArrival.label || '' });
+      leSiteChannel.track({ ip: leSiteIp, nickname: leSiteName || leChatNickname || '', online_at: new Date().toISOString(), ext: leSiteArrival.state === 'external', label: leSiteArrival.label || '' });
     } catch(e) {}
-    try { leSiteLogUpdate({ nickname: leChatNickname || '' }); } catch(e) {}
+    try { leSiteLogUpdate({ nickname: leSiteName || leChatNickname || '' }); } catch(e) {}
   }
 
   function leSiteSubscribeBanChanges(){
@@ -2118,12 +2147,76 @@ window.getLeBoardClient = function(){
     } catch(e) {}
   }
 
+  // ══ 🔴 접속 게이트: IP 표시 → 이름(한글 3글자) 필수 → 통과해야 입장 ══
+  //   - 이름은 "IP + 이 기기(브라우저)" 기준으로 저장되어 다음 접속부터 자동 인식된다.
+  //     (사무실처럼 공인 IP를 여럿이 공유해도 서로의 이름이 섞이지 않도록 기기별로 저장)
+  //   - 이름·IP·접속 시각은 visit_log에 기록되고, 관리자(비밀번호)만 볼 수 있다.
+  let leSiteName = '';
+  const LE_SITE_NAME_KEY = 'leSiteNameByIp';
+  function leSiteNameKey(){ return (leSiteIp && leSiteIp.indexOf('guest_') !== 0) ? leSiteIp : '_local'; }
+  function leSiteNameValid(n){ return /^[가-힣]{3}$/.test(String(n || '')); }
+  function leSiteNameLoad(){
+    try { const m = JSON.parse(localStorage.getItem(LE_SITE_NAME_KEY) || '{}'); const v = m[leSiteNameKey()]; return leSiteNameValid(v) ? v : ''; } catch(e) { return ''; }
+  }
+  function leSiteNameSave(n){
+    try { const m = JSON.parse(localStorage.getItem(LE_SITE_NAME_KEY) || '{}'); m[leSiteNameKey()] = n; localStorage.setItem(LE_SITE_NAME_KEY, JSON.stringify(m)); return true; } catch(e) { return false; }
+  }
+  function leTopWhoShow(){
+    const w = document.getElementById('leTopWho'), n = document.getElementById('leTopWhoName');
+    if (!w || !n) return;
+    n.textContent = leSiteName;
+    w.style.display = leSiteName ? 'block' : 'none';
+  }
+  function leNameGateStart(onPass){
+    const gate = document.getElementById('leNameGate');
+    let passed = false, ipDone = false;
+    const pass = function(name){
+      if (passed) return; passed = true;
+      leSiteName = name;
+      if (gate) gate.style.display = 'none';
+      leTopWhoShow();
+      try { document.body.style.overflow = ''; } catch(e) {}
+      onPass();
+    };
+    const showForm = function(){
+      if (passed) return;
+      const form = document.getElementById('leNameGateForm'), inp = document.getElementById('leNameGateInput'),
+            err = document.getElementById('leNameGateErr'), btn = document.getElementById('leNameGateBtn');
+      if (form) form.style.display = 'block';
+      const submit = function(){
+        const v = (inp.value || '').trim();
+        if (!leSiteNameValid(v)) { err.textContent = '이름은 한글 정확히 3글자로 입력해주세요.'; inp.focus(); return; }
+        if (!confirm('"' + v + '" (으)로 등록합니다.\n한 번 등록하면 이 IP·이 기기에서는 자동으로 접속됩니다.\n\n맞습니까?')) return;
+        if (!leSiteNameSave(v)) alert('⚠️ 이 브라우저(시크릿 모드 등)에서는 이름이 저장되지 않아 다음 접속 때 다시 물어볼 수 있습니다.');
+        pass(v);
+      };
+      btn.onclick = submit;
+      inp.addEventListener('keydown', function(e){ if (e.key === 'Enter' && !e.isComposing) { e.preventDefault(); submit(); } });
+      inp.addEventListener('input', function(){ err.textContent = ''; });
+      try { inp.focus(); } catch(e) {}
+    };
+    const gotIp = function(ip){
+      if (ipDone) return; ipDone = true;
+      leSiteIp = ip;
+      const ipEl = document.getElementById('leNameGateIp');
+      if (ipEl) ipEl.textContent = (ip.indexOf('guest_') === 0) ? 'IP 확인 불가' : ip;
+      const saved = leSiteNameLoad();
+      if (saved) pass(saved); else showForm();
+    };
+    try {
+      setTimeout(function(){ gotIp('guest_' + Date.now()); }, 6000);
+      fetch('https://api.ipify.org?format=json')
+        .then(function(r){ return r.json(); })
+        .then(function(d){ gotIp((d && d.ip) ? d.ip : ('guest_' + Date.now())); })
+        .catch(function(){ gotIp('guest_' + Date.now()); });
+    } catch(e) { gotIp('guest_' + Date.now()); }
+  }
+
   function leSiteInit(){
-    if (!leChatConfigured()) return;
-    loadSupabaseLib(function(){
-      if (!supaClient) supaClient = window.getLeMainClient();
-      leChatFetchPublicIp(function(ip){
-        leSiteIp = ip;
+    leNameGateStart(function(){
+      if (!leChatConfigured()) return;
+      loadSupabaseLib(function(){
+        if (!supaClient) supaClient = window.getLeMainClient();
         leSiteCheckBanned(function(banned){
           if (banned) { leSiteShowBannedOverlay(); return; }
           leSiteArrivalCheck(function(){
@@ -2152,7 +2245,7 @@ window.getLeBoardClient = function(){
     const now = new Date().toISOString();
     try {
       leSiteLogP = supaClient.from('visit_log').insert({
-        id: leSiteLogId, ip: leSiteIp, nickname: leChatNickname || '', started_at: now, last_seen: now,
+        id: leSiteLogId, ip: leSiteIp, nickname: leSiteName || leChatNickname || '', started_at: now, last_seen: now,
         ua: String(navigator.userAgent || '').slice(0, 200)
       }).then(function(r){ if (r && r.error) console.warn('[접속기록] 저장 실패(visit_log 테이블 확인):', r.error.message); }).catch(function(){});
     } catch(e) {}
@@ -2279,7 +2372,7 @@ window.getLeBoardClient = function(){
     if (!leSiteIp || leSiteIp.indexOf('guest_') === 0) { b.textContent = '🌐 IP 확인 불가'; return; }
     let n = 0;
     try { const st = leSiteChannel ? leSiteChannel.presenceState() : {}, ips = {}; Object.keys(st).forEach(function(k){ (st[k] || []).forEach(function(p){ if (p && p.ip) ips[p.ip] = 1; }); }); n = Object.keys(ips).length; } catch(e) {}
-    b.textContent = '🌐 ' + leSiteIp + (leSiteArrival.label ? ' · ' + leSiteArrival.label : '') + (n ? ' · ' + n + '곳 접속' : '');
+    b.textContent = '🌐 ' + leSiteIp + (leSiteArrival.label ? ' · ' + leSiteArrival.label : '') + (window._leVisitorAdminOk && n ? ' · ' + n + '곳 접속' : '');
     b.style.background = leSiteArrival.state === 'external' ? '#b91c1c' : '#0f766e';
     const pn = document.getElementById('leMyIpPanel'); if (pn && pn.style.display !== 'none') leMyIpRender();
   }
@@ -2288,12 +2381,13 @@ window.getLeBoardClient = function(){
     const by = {};
     try { const st = leSiteChannel ? leSiteChannel.presenceState() : {}; Object.keys(st).forEach(function(k){ (st[k] || []).forEach(function(p){ if (p && p.ip && (!by[p.ip] || (p.online_at || '') < (by[p.ip].online_at || ''))) by[p.ip] = p; }); }); } catch(e) {}
     const ips = Object.keys(by);
-    const live = ips.length ? ips.map(function(ip){ const p = by[ip];
+    const live = !window._leVisitorAdminOk ? '<div style="color:#94a3b8;">🔒 접속자 목록은 관리자만 볼 수 있습니다</div>' : ips.length ? ips.map(function(ip){ const p = by[ip];
       return '<div style="display:flex;justify-content:space-between;gap:6px;padding:3px 0;border-top:1px solid #f1f5f9;"><span><b>' + leChatEscape(ip) + '</b>' + (p.label ? ' <span style="color:#1d4ed8;">📍' + leChatEscape(p.label) + '</span>' : '') + (p.nickname ? ' <span style="color:#64748b;">' + leChatEscape(p.nickname) + '</span>' : '') + (p.ext ? ' <span style="color:#dc2626;font-weight:800;">⚠️외부</span>' : '') + (ip === leSiteIp ? ' <span style="color:#0f766e;">(나)</span>' : '') + '</span><span style="color:#64748b;white-space:nowrap;">' + leVisitDur(Date.now() - new Date(p.online_at).getTime()) + '째</span></div>'; }).join('') : '<div style="color:#94a3b8;">없음</div>';
-    pn.innerHTML = '<div style="font-size:11px;color:#64748b;">내 IP</div><div style="font-size:22px;font-weight:900;">' + leChatEscape(leSiteIp || '-') + '</div>' +
+    pn.innerHTML = (leSiteName ? '<div style="font-size:11px;color:#64748b;">내 이름</div><div style="font-size:16px;font-weight:900;"><span class="le-red-dot"></span>' + leChatEscape(leSiteName) + '</div>' : '') + '<div style="font-size:11px;color:#64748b;margin-top:4px;">내 IP</div><div style="font-size:22px;font-weight:900;">' + leChatEscape(leSiteIp || '-') + '</div>' +
       (leSiteArrival.label ? '<div style="color:#1d4ed8;font-weight:800;">📍 ' + leChatEscape(leSiteArrival.label) + '</div>' : '') +
       (leSiteArrival.state === 'external' ? '<div style="color:#dc2626;font-weight:700;">⚠️ 등록되지 않은 외부 IP</div>' : '') +
       '<div style="margin-top:8px;font-weight:800;">🟢 지금 접속 중</div>' + live +
+      '<div style="margin-top:6px;font-size:10.5px;color:#b91c1c;">⚠️ 관리자는 접속자의 이름·접속 시간·IP를 확인합니다. 외부인 입장 불허.</div>' +
       '<div style="margin-top:8px;font-weight:800;">📜 내 IP 최근 활동</div><div id="leMyIpHist" style="color:#94a3b8;">불러오는 중…</div>';
     if (!supaClient || !leSiteIp) return;
     supaClient.from('visit_log').select('started_at,last_seen,ended_at').eq('ip', leSiteIp).order('started_at', { ascending: false }).limit(8).then(function(r){
@@ -2398,7 +2492,8 @@ window.getLeBoardClient = function(){
       if (pw === null) return;
       let h = '';
       try { h = await window.jinjooSha256Hex(pw); } catch(e) {}
-      if (!h || h !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
+      // 접속자 관리 비밀번호: 0088 (SHA-256 해시로만 비교)
+      if (!h || h !== 'c64306c91d63dfeed553ccc9e3ba29bc7e84449a67c5714a2f5f497d140f845f') { alert('비밀번호가 일치하지 않습니다.'); return; }
       window._leVisitorAdminOk = true;
     }
     const modal = document.getElementById('leVisitorAdminModal');
@@ -2519,7 +2614,9 @@ window.getLeBoardClient = function(){
             document.getElementById('leChatLockScreen').style.display = 'none';
             leChatUnlocked = true;
             leChatNickname = leSafeGet(LE_GUEST_NICK_KEY) || '';
-            if (!leChatNickname) {
+            if (!leChatNickname && leSiteName) {
+              leChatNickname = leSiteName; leSafeSet(LE_GUEST_NICK_KEY, leSiteName); leChatStart();
+            } else if (!leChatNickname) {
               // 이름을 정하지 않은 경우 접속 IP를 이름으로 자동 지정
               leChatFetchPublicIp(function(ip){
                 leChatNickname = ip;
@@ -2561,7 +2658,9 @@ window.getLeBoardClient = function(){
   function leChatAfterUnlock(){
     document.getElementById('leChatLockScreen').style.display = 'none';
     leChatNickname = leSafeGet(leChatNickStorageKey()) || '';
-    if (!leChatNickname) {
+    if (!leChatNickname && leSiteName) {
+      leChatNickname = leSiteName; leSafeSet(leChatNickStorageKey(), leSiteName); leChatStart();
+    } else if (!leChatNickname) {
       // 이름을 정하지 않은 경우 접속 IP를 이름으로 자동 지정
       leChatFetchPublicIp(function(ip){
         leChatNickname = ip;
