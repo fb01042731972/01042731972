@@ -471,11 +471,13 @@
 <style>
 @keyframes leRedBlink{0%,100%{opacity:1;box-shadow:0 0 6px 2px rgba(239,68,68,.75)}50%{opacity:.12;box-shadow:none}}
 .le-red-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:4px;vertical-align:middle;animation:leRedBlink 1s steps(1,end) infinite}
-#leTopWho{position:fixed;top:1px;left:8px;z-index:999996;display:none;font-size:10.5px;line-height:15px;font-weight:700;color:#334155;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:8px;padding:0 7px 0 5px;pointer-events:none;max-width:60vw;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#leTopWho{position:fixed;top:1px;left:8px;z-index:999996;display:none;gap:5px;flex-wrap:nowrap;font-size:10.5px;line-height:15px;font-weight:700;color:#334155;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:8px;padding:0 7px 0 5px;pointer-events:none;max-width:94vw;white-space:nowrap;overflow:hidden}
+#leTopWho .le-who{display:inline-block;font-size:10.5px;line-height:15px;font-weight:700;color:#334155;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:8px;padding:0 7px 0 5px;white-space:nowrap}
+#leTopWho .le-who.me{border-color:#fca5a5}
 #leNameGate input.le-name-in{width:100%;box-sizing:border-box;text-align:center;font-size:26px;font-weight:800;letter-spacing:8px;border:2px solid #cbd5e1;border-radius:10px;padding:10px 6px;outline:none}
 #leNameGate input.le-name-in:focus{border-color:#146C8E}
 </style>
-<div id="leTopWho" title="접속 중인 이름"><span class="le-red-dot"></span><span id="leTopWhoName"></span> 접속</div>
+<div id="leTopWho" title="지금 접속 중인 사람"></div>
 <div id="leNameGate" style="position:fixed;inset:0;z-index:999995;background:linear-gradient(135deg,#0b2a38,#146C8E);display:flex;align-items:center;justify-content:center;padding:18px;overflow:auto;">
   <div style="background:#fff;border-radius:16px;padding:26px 22px;max-width:380px;width:100%;box-shadow:0 20px 50px rgba(0,0,0,.35);text-align:center;">
     <div style="font-size:12px;color:#64748b;font-weight:700;">내 접속 IP</div>
@@ -2161,11 +2163,25 @@ window.getLeBoardClient = function(){
   function leSiteNameSave(n){
     try { const m = JSON.parse(localStorage.getItem(LE_SITE_NAME_KEY) || '{}'); m[leSiteNameKey()] = n; localStorage.setItem(LE_SITE_NAME_KEY, JSON.stringify(m)); return true; } catch(e) { return false; }
   }
+  // 상단 접속자 표시: 나 + 지금 접속 중인 다른 사람들 이름(이름만, IP·시간은 관리자 전용)
+  function leTopWhoRender(names){
+    const w = document.getElementById('leTopWho'); if (!w) return;
+    if (!leSiteName) { w.style.display = 'none'; return; }
+    const esc = function(t){ return String(t).replace(/[&<>"]/g, function(c){ return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]; }); };
+    const others = (names || []).filter(function(n, i, a){ return n !== leSiteName && a.indexOf(n) === i; });
+    w.innerHTML = [leSiteName].concat(others).map(function(n, i){
+      return '<span class="le-who' + (i ? '' : ' me') + '"><span class="le-red-dot"></span>' + esc(n) + ' 접속</span>';
+    }).join('');
+    w.style.display = 'flex';
+  }
+  window._leTopWhoRender = leTopWhoRender;
   function leTopWhoShow(){
-    const w = document.getElementById('leTopWho'), n = document.getElementById('leTopWhoName');
-    if (!w || !n) return;
-    n.textContent = leSiteName;
-    w.style.display = leSiteName ? 'block' : 'none';
+    let names = [];
+    try {
+      const st = leSiteChannel ? leSiteChannel.presenceState() : {};
+      Object.keys(st).forEach(function(k){ (st[k] || []).forEach(function(p){ if (p && leSiteNameValid(p.nickname)) names.push(p.nickname); }); });
+    } catch(e) {}
+    leTopWhoRender(names);
   }
   function leNameGateStart(onPass){
     const gate = document.getElementById('leNameGate');
@@ -2368,6 +2384,7 @@ window.getLeBoardClient = function(){
     if (!ext) setTimeout(close, 3500);
   }
   function leSiteBadgeRefresh(){
+    try { leTopWhoShow(); } catch(e) {}
     const b = document.getElementById('leMyIpBtn'); if (!b) return;
     if (!leSiteIp || leSiteIp.indexOf('guest_') === 0) { b.textContent = '🌐 IP 확인 불가'; return; }
     let n = 0;
