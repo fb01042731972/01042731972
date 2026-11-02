@@ -2662,7 +2662,8 @@ window.getLeBoardClient = function(){
             document.getElementById('leChatLockScreen').style.display = 'none';
             leChatUnlocked = true;
             leChatNickname = leSafeGet(LE_GUEST_NICK_KEY) || '';
-            if (!leChatNickname && leSiteName) {
+            if (leSiteName) {
+              // 접속 시 정한 이름이 있으면 항상 그 이름을 채팅 대화명으로 사용 (기존 저장값 덮어씀)
               leChatNickname = leSiteName; leSafeSet(LE_GUEST_NICK_KEY, leSiteName); leChatStart();
             } else if (!leChatNickname) {
               // 이름을 정하지 않은 경우 접속 IP를 이름으로 자동 지정
@@ -2706,7 +2707,8 @@ window.getLeBoardClient = function(){
   function leChatAfterUnlock(){
     document.getElementById('leChatLockScreen').style.display = 'none';
     leChatNickname = leSafeGet(leChatNickStorageKey()) || '';
-    if (!leChatNickname && leSiteName) {
+    if (leSiteName) {
+      // 접속 시 정한 이름이 있으면 항상 그 이름을 채팅 대화명으로 사용 (기존 저장값 덮어씀)
       leChatNickname = leSiteName; leSafeSet(leChatNickStorageKey(), leSiteName); leChatStart();
     } else if (!leChatNickname) {
       // 이름을 정하지 않은 경우 접속 IP를 이름으로 자동 지정
@@ -2746,6 +2748,10 @@ window.getLeBoardClient = function(){
   window.leChatOpenNameChange = function(){
     const body = document.getElementById('leChatBody');
     if (!body || body.style.display === 'none') return; // 채팅 사용 중일 때만 이름 변경 가능
+    if (leSiteName) { // 접속 시 정한 이름으로 고정
+      if (typeof showToast === 'function') showToast('대화명은 접속 시 등록한 이름("' + leSiteName + '")으로 자동 설정됩니다.');
+      return;
+    }
     leChatIsRenaming = true;
     body.style.display = 'none';
     document.getElementById('leChatNameScreen').style.display = 'flex';
@@ -2808,8 +2814,9 @@ window.getLeBoardClient = function(){
       let pwOk = false;
       try { pwOk = sessionStorage.getItem('jinjoo_pw_ok') === '1'; } catch(e) {}
       if (!pwOk || typeof leChatInit !== 'function') return;
+      if (!leSiteName && tries < 40) return; // 접속 게이트(이름 등록)를 통과할 때까지 잠시 대기
       done = true; clearInterval(timer);
-      const hasId = leSafeGet('leChatNickname') || leSafeGet(LE_GUEST_TOKEN_KEY);
+      const hasId = leSiteName || leSafeGet('leChatNickname') || leSafeGet(LE_GUEST_TOKEN_KEY);
       if (hasId) { try { leChatInit(); } catch(e) { console.warn('[leChat] 백그라운드 연결 실패', e); } }
     }, 1500);
   })();
