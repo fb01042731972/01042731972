@@ -2653,15 +2653,14 @@ window.getLeBoardClient = function(){
     let el = document.getElementById('leIpSplash');
     if (!el) { el = document.createElement('div'); el.id = 'leIpSplash'; document.body.appendChild(el); }
     el.style.cssText = 'position:fixed;inset:0;z-index:999990;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;text-align:center;padding:24px;color:#fff;cursor:pointer;background:' + (ext ? 'rgba(127,29,29,.97)' : 'rgba(15,58,77,.95)');
-    const msg = ext
-      ? '<div style="font-size:20px;font-weight:800;">⚠️ 등록되지 않은 외부 IP입니다</div><div style="font-size:14px;line-height:1.7;opacity:.95;">이 접속은 IP·시각과 함께 기록되었고 관리자에게 보고됩니다.<br>허가받지 않은 접근은 차단되며 법적 조치될 수 있습니다.<br><span style="opacity:.8;">직원이라면 관리자에게 이 IP 등록을 요청하세요.</span></div>'
-      : (leSiteArrival.state === 'known' ? '<div style="font-size:17px;font-weight:700;">✅ 확인된 접속 장소입니다</div>' : '') + '<div style="font-size:13px;opacity:.85;">접속 시각과 활동이 기록됩니다</div>';
+    const who = leSiteName ? '<div style="font-size:clamp(26px,7vw,44px);font-weight:900;">' + leChatEscape(leSiteName) + '님 접속합니다</div>' : '';
+    const msg = who + '<div style="font-size:15px;opacity:.9;">접속 기록은 남습니다</div>';
     el.innerHTML = '<div style="font-size:15px;opacity:.85;">접속 IP</div><div style="font-size:clamp(30px,8vw,66px);font-weight:900;letter-spacing:1px;word-break:break-all;">' + leChatEscape(leSiteIp) + '</div>' +
       (leSiteArrival.label ? '<div style="font-size:24px;font-weight:800;">📍 ' + leChatEscape(leSiteArrival.label) + '</div>' : '') + msg +
       '<button style="margin-top:8px;background:#fff;color:#1f2937;border:none;border-radius:8px;padding:9px 28px;font-size:15px;font-weight:800;cursor:pointer;">확인</button>';
     const close = function(){ el.style.display = 'none'; };
     el.onclick = close;
-    if (!ext) setTimeout(close, 3500);
+    setTimeout(close, 2000);
   }
   function leSiteBadgeRefresh(){
     try { leTopWhoShow(); } catch(e) {}
