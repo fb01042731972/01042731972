@@ -512,6 +512,7 @@
       <button id="pwSubmit" style="width:100%;padding:12px;border:none;border-radius:10px;background:#146C8E;color:#fff;font-size:15px;font-weight:700;cursor:pointer;">확인</button>
       <div style="margin-top:14px;">
         <a id="pwAdminLink" href="javascript:void(0)" style="font-size:11px;color:#94a3b8;text-decoration:underline;">관리자 - 비밀번호 변경</a>
+        <br><a id="pwEmailLink" href="javascript:void(0)" style="font-size:12px;color:#146C8E;text-decoration:underline;font-weight:700;display:inline-block;margin-top:8px;">🔐 관리자 이메일 로그인</a>
       </div>
     </div>
 
@@ -523,6 +524,32 @@
       <div id="adminPwError" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px;">관리자 암호가 올바르지 않습니다.</div>
       <button id="adminPwSubmit" style="width:100%;padding:12px;border:none;border-radius:10px;background:#374151;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">확인</button>
       <button id="adminPwCancel" style="width:100%;padding:10px;border:none;border-radius:10px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;">취소</button>
+    </div>
+
+    <div id="pwStageEmail" style="display:none;">
+      <div style="font-size:32px;margin-bottom:8px;">🔐</div>
+      <div style="font-size:16px;font-weight:800;color:#1B2A31;margin-bottom:4px;">관리자 이메일 로그인</div>
+      <div style="font-size:12px;color:#64748b;margin-bottom:16px;">등록된 관리자 계정으로 로그인하세요</div>
+      <input id="adminEmailInput" type="email" autocomplete="username" placeholder="이메일" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;margin-bottom:10px;">
+      <input id="adminEmailPw" type="password" autocomplete="current-password" placeholder="비밀번호" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:15px;margin-bottom:12px;">
+      <div id="adminEmailError" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px;"></div>
+      <button id="adminEmailSubmit" style="width:100%;padding:12px;border:none;border-radius:10px;background:#146C8E;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">로그인</button>
+      <button id="adminEmailCancel" style="width:100%;padding:10px;border:none;border-radius:10px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;">취소</button>
+    </div>
+
+    <div id="pwStageMfa" style="display:none;">
+      <div style="font-size:32px;margin-bottom:8px;">📱</div>
+      <div id="mfaTitle" style="font-size:16px;font-weight:800;color:#1B2A31;margin-bottom:4px;">2단계 인증</div>
+      <div id="mfaDesc" style="font-size:12px;color:#64748b;margin-bottom:14px;line-height:1.5;">인증 앱의 6자리 코드를 입력하세요</div>
+      <div id="mfaQrBox" style="display:none;margin-bottom:12px;">
+        <img id="mfaQrImg" alt="QR" style="width:180px;height:180px;display:block;margin:0 auto 6px;background:#fff;">
+        <div style="font-size:11px;color:#64748b;">QR이 안 되면 앱에서 '직접 입력'을 고르고 아래 키를 입력하세요</div>
+        <code id="mfaSecret" style="display:block;font-size:12px;word-break:break-all;background:#f1f5f9;border-radius:6px;padding:6px;margin-top:4px;user-select:all;"></code>
+      </div>
+      <input id="mfaCode" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6자리 코드" style="width:100%;box-sizing:border-box;padding:12px 14px;border:1px solid #cbd5e1;border-radius:10px;font-size:18px;text-align:center;letter-spacing:6px;margin-bottom:12px;">
+      <div id="mfaError" style="display:none;color:#dc2626;font-size:12px;margin-bottom:10px;"></div>
+      <button id="mfaSubmit" style="width:100%;padding:12px;border:none;border-radius:10px;background:#146C8E;color:#fff;font-size:15px;font-weight:700;cursor:pointer;margin-bottom:8px;">확인</button>
+      <button id="mfaCancel" style="width:100%;padding:10px;border:none;border-radius:10px;background:transparent;color:#94a3b8;font-size:13px;cursor:pointer;">취소</button>
     </div>
 
     <div id="pwStageChange" style="display:none;">
@@ -560,6 +587,27 @@
   }
 
   window.jinjooSha256Hex = sha256Hex;
+
+  // 관리자 모드: 반드시 '서버가 확인한 이메일 로그인'(Supabase Auth + is_admin())을 통과한 뒤에만 켜집니다.
+  var ADMIN_SENTINEL = '__JINJOO_AUTO_ADMIN__';
+  function installAutoAdmin(){
+    if(window.jinjooAutoAdmin) return;
+    window.jinjooAutoAdmin = true;
+    // 관리자 비밀번호를 묻는 창은 자동 통과
+    var origPrompt = window.prompt;
+    window.prompt = function(msg, def){
+      if(typeof msg === 'string' && msg.indexOf('관리자') !== -1) return ADMIN_SENTINEL;
+      return origPrompt.call(window, msg, def);
+    };
+    // 자동 통과 값은 관리자 해시로 변환
+    window.jinjooSha256Hex = async function(text){
+      if(text === ADMIN_SENTINEL) return ADMIN_PW_HASH;
+      return sha256Hex(text);
+    };
+    window._leVisitorAdminOk = true;
+    try{ document.dispatchEvent(new Event('jinjoo-admin-on')); }catch(e){}
+  }
+  window.jinjooInstallAutoAdmin = installAutoAdmin;
   // 관리자 비밀번호 해시를 전역에서 재사용(다른 삭제 기능 등)할 수 있도록 노출.
   // 평문 비밀번호는 어디에도 저장하지 않고, SHA-256 해시만 비교합니다.
   window.jinjooAdminPwHash = ADMIN_PW_HASH;
@@ -659,6 +707,181 @@
     showStage(stageLogin);
     setTimeout(function(){ input.focus(); }, 50);
   });
+
+  // --- 관리자 이메일 로그인 (Supabase Auth) ---
+  // 비밀번호 확인과 관리자 판정은 모두 서버가 합니다(is_admin()). 이 파일에는 관리자 정보가 없습니다.
+  var stageEmail = document.getElementById('pwStageEmail');
+  var emailInput = document.getElementById('adminEmailInput');
+  var emailPw = document.getElementById('adminEmailPw');
+  var emailErr = document.getElementById('adminEmailError');
+  var emailBtn = document.getElementById('adminEmailSubmit');
+
+  function ensureSupabase(){
+    return new Promise(function(resolve){
+      if(window.supabase && window.supabase.createClient) return resolve(true);
+      var ex = document.querySelector('script[data-jinjoo-sb]') || document.querySelector('script[src*="supabase-js"]');
+      var done = false;
+      function fin(){ if(!done){ done = true; resolve(!!(window.supabase && window.supabase.createClient)); } }
+      if(!ex){
+        ex = document.createElement('script');
+        ex.src = 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
+        ex.setAttribute('data-jinjoo-sb','1');
+        document.head.appendChild(ex);
+      }
+      ex.addEventListener('load', fin);
+      ex.addEventListener('error', fin);
+      var n = 0;
+      var t = setInterval(function(){ n++; if(window.supabase && window.supabase.createClient){ clearInterval(t); fin(); } else if(n > 100){ clearInterval(t); fin(); } }, 100);
+    });
+  }
+  async function isServerAdmin(client){
+    try{
+      var s = await client.auth.getSession();
+      if(!s || !s.data || !s.data.session) return false;
+      var r = await client.rpc('is_admin');
+      return !r.error && r.data === true;
+    }catch(e){ return false; }
+  }
+  function emailFail(msg){ emailErr.textContent = msg; emailErr.style.display = 'block'; emailBtn.disabled = false; emailBtn.textContent = '로그인'; }
+
+  document.getElementById('pwEmailLink').addEventListener('click', function(){
+    err.style.display = 'none'; emailErr.style.display = 'none';
+    emailPw.value = '';
+    showStage(stageEmail);
+    setTimeout(function(){ emailInput.focus(); }, 50);
+  });
+  var openedFromApp = false;
+  // 앱 안(직원으로 이미 입장한 상태)에서 관리자 로그인 창만 다시 열기
+  window.jinjooOpenAdminLogin = function(){
+    openedFromApp = true;
+    err.style.display = 'none'; emailErr.style.display = 'none';
+    emailPw.value = '';
+    gate.style.display = 'flex';
+    showStage(stageEmail);
+    setTimeout(function(){ emailInput.focus(); }, 50);
+  };
+  document.getElementById('adminEmailCancel').addEventListener('click', function(){
+    if(openedFromApp){ openedFromApp = false; gate.style.display = 'none'; showStage(stageLogin); return; }
+    showStage(stageLogin);
+    setTimeout(function(){ input.focus(); }, 50);
+  });
+  // 휴대폰 인증 앱(TOTP) 2단계 인증. 처음이면 QR 등록, 이후에는 6자리 코드만 입력합니다.
+  var stageMfa = document.getElementById('pwStageMfa');
+  var mfaCode = document.getElementById('mfaCode');
+  var mfaErr = document.getElementById('mfaError');
+  var mfaSubmit = document.getElementById('mfaSubmit');
+  var mfaCancel = document.getElementById('mfaCancel');
+  function mfaFail(msg){ mfaErr.textContent = msg; mfaErr.style.display = 'block'; mfaSubmit.disabled = false; mfaSubmit.textContent = '확인'; }
+
+  function mfaStep(client, label){
+    return new Promise(async function(resolve){
+      var factorId = '';
+      var finished = false;
+      function done(v){ if(finished) return; finished = true; mfaSubmit.onclick = null; mfaCancel.onclick = null; mfaCode.onkeydown = null; resolve(v); }
+      document.getElementById('mfaTitle').textContent = '2단계 인증 · ' + label;
+      document.getElementById('mfaQrBox').style.display = 'none';
+      mfaErr.style.display = 'none'; mfaCode.value = ''; mfaSubmit.disabled = false; mfaSubmit.textContent = '확인';
+      showStage(stageMfa);
+      mfaCancel.onclick = function(){ done(false); };
+      try{
+        var lvl = await client.auth.mfa.getAuthenticatorAssuranceLevel();
+        if(lvl.data && lvl.data.currentLevel === 'aal2'){ done(true); return; }
+        var lf = await client.auth.mfa.listFactors();
+        if(lf.error) throw lf.error;
+        var verified = (lf.data && lf.data.totp) || [];
+        if(verified.length){
+          factorId = verified[0].id;
+          document.getElementById('mfaDesc').textContent = '휴대폰 인증 앱에서 "' + label + '" 항목의 6자리 코드를 입력하세요';
+        } else {
+          var all = (lf.data && lf.data.all) || [];
+          for(var i = 0; i < all.length; i++){
+            if(all[i].factor_type === 'totp' && all[i].status !== 'verified'){ try{ await client.auth.mfa.unenroll({ factorId: all[i].id }); }catch(e){} }
+          }
+          var en = await client.auth.mfa.enroll({ factorType: 'totp', friendlyName: label + ' ' + Date.now() });
+          if(en.error) throw en.error;
+          factorId = en.data.id;
+          var qr = en.data.totp.qr_code || '';
+          document.getElementById('mfaQrImg').src = qr;
+          document.getElementById('mfaSecret').textContent = en.data.totp.secret || '';
+          document.getElementById('mfaQrBox').style.display = 'block';
+          document.getElementById('mfaDesc').textContent = '처음 한 번만 등록합니다. 휴대폰에서 Google Authenticator(또는 Microsoft Authenticator) 앱을 열고 QR을 스캔한 뒤, 앱에 표시된 6자리 코드를 입력하세요';
+        }
+      }catch(e){
+        mfaFail('2단계 인증을 준비하지 못했습니다: ' + (e && e.message || e) + ' (Supabase 인증 설정에서 MFA(TOTP)가 켜져 있는지 확인하세요)');
+        return;
+      }
+      async function submit(){
+        var code = (mfaCode.value || '').replace(/\s/g, '');
+        if(!/^\d{6}$/.test(code)){ mfaFail('6자리 숫자를 입력하세요.'); return; }
+        mfaSubmit.disabled = true; mfaSubmit.textContent = '확인 중...'; mfaErr.style.display = 'none';
+        try{
+          var v = await client.auth.mfa.challengeAndVerify({ factorId: factorId, code: code });
+          if(v.error){ mfaCode.value = ''; mfaFail('코드가 올바르지 않습니다. 앱의 최신 코드를 입력하세요.'); return; }
+          done(true);
+        }catch(e){ mfaFail('확인하지 못했습니다. 다시 시도하세요.'); }
+      }
+      mfaSubmit.onclick = submit;
+      mfaCode.onkeydown = function(e){ if(e.key === 'Enter'){ submit(); } };
+      setTimeout(function(){ mfaCode.focus(); }, 80);
+    });
+  }
+
+  async function tryEmailLogin(){
+    var email = (emailInput.value || '').trim();
+    var pw = emailPw.value || '';
+    if(!email || !pw){ emailFail('이메일과 비밀번호를 입력하세요.'); return; }
+    emailBtn.disabled = true; emailBtn.textContent = '확인 중...'; emailErr.style.display = 'none';
+    var ok = await ensureSupabase();
+    var a = ok && window.getLeMainClient ? window.getLeMainClient() : null;
+    if(!a){ emailFail('서버 연결을 준비하지 못했습니다. 인터넷 연결을 확인하세요.'); return; }
+    var ra;
+    try{ ra = await a.auth.signInWithPassword({ email: email, password: pw }); }catch(e){ ra = { error: e }; }
+    if(ra.error){ emailFail('이메일 또는 비밀번호가 올바르지 않습니다.'); return; }
+    // 1차 확인: 관리자 이메일인가 (서버 판정). 아니면 2단계 인증 등록 화면도 보여주지 않음
+    var pre = await a.rpc('is_admin_email');
+    if(pre.error){ try{ await a.auth.signOut(); }catch(e){} emailFail('서버 설정(SQL)이 아직 적용되지 않았습니다.'); return; }
+    if(pre.data !== true){ try{ await a.auth.signOut(); }catch(e){} emailFail('관리자 권한이 없는 계정입니다.'); return; }
+    // 2단계: 인증 앱 코드
+    var m1 = await mfaStep(a, '채팅');
+    if(!m1){ try{ await a.auth.signOut(); }catch(e){} showStage(stageEmail); emailFail('로그인이 취소되었습니다.'); return; }
+    if(!(await isServerAdmin(a))){ try{ await a.auth.signOut(); }catch(e){} showStage(stageEmail); emailFail('관리자 확인에 실패했습니다.'); return; }
+    // 게시판·일정 서버(다른 프로젝트)도 같은 계정 + 그 서버의 인증 앱 코드 (취소해도 채팅 관리자는 유지)
+    try{
+      var b = window.getLeBoardClient ? window.getLeBoardClient() : null;
+      if(b){
+        var rb = await b.auth.signInWithPassword({ email: email, password: pw });
+        if(!rb.error){
+          var m2 = await mfaStep(b, '게시판·일정');
+          if(!m2 || !(await isServerAdmin(b))){ await b.auth.signOut(); }
+        }
+      }
+    }catch(e){}
+    emailPw.value = '';
+    try{ sessionStorage.setItem('jinjoo_pw_ok','1'); }catch(e){}
+    installAutoAdmin();
+    gate.style.display = 'none';
+    openedFromApp = false;
+    emailBtn.disabled = false; emailBtn.textContent = '로그인';
+    showStage(stageLogin);
+  }
+  emailBtn.addEventListener('click', tryEmailLogin);
+  emailPw.addEventListener('keydown', function(e){ if(e.key === 'Enter'){ tryEmailLogin(); } });
+
+  // 이전에 로그인한 관리자 세션이 남아 있으면(서버가 다시 확인한 경우에만) 자동 복구
+  (async function restoreAdmin(){
+    try{
+      var has = false;
+      for(var i = 0; i < localStorage.length; i++){ var k = localStorage.key(i) || ''; if(k.indexOf('sb-') === 0 && k.slice(-11) === '-auth-token'){ has = true; break; } }
+      if(!has) return;
+      if(!(await ensureSupabase())) return;
+      var a = window.getLeMainClient ? window.getLeMainClient() : null;
+      if(a && await isServerAdmin(a)){
+        try{ sessionStorage.setItem('jinjoo_pw_ok','1'); }catch(e){}
+        installAutoAdmin();
+        gate.style.display = 'none';
+      }
+    }catch(e){}
+  })();
 
   // --- 비밀번호 변경 단계 ---
   var newPwInput = document.getElementById('newPwInput');
@@ -2559,7 +2782,7 @@ window.getLeBoardClient = function(){
   (function(){ const o = window.leVisitLogRefresh; window.leVisitLogRefresh = function(){ if (o) o(); window.leIpStatsRefresh && window.leIpStatsRefresh(); }; })();
 
   // 🔐 관리자 전용 — 관리자 비밀번호를 맞게 입력해야 열립니다 (새로고침하면 다시 잠김)
-  window._leVisitorAdminOk = false;
+  window._leVisitorAdminOk = !!window.jinjooAutoAdmin;
   window.leOpenVisitorAdmin = async function(){
     if (!window._leVisitorAdminOk) {
       const pw = prompt('관리자 비밀번호를 입력하세요.');
@@ -4379,11 +4602,12 @@ window.getLeBoardClient = function(){
     const isImage = el.dataset.isImage === '1';
     const isPdf = el.dataset.isPdf === '1';
     if (!fileUrl) return;
-    const pw = window.prompt('이 파일은 비밀번호로 보호되어 있습니다.\n비밀번호를 입력하세요');
-    if (pw === null) return; // 취소
+    const _isAdm = !!window.jinjooAutoAdmin;
+    let pw = '';
+    if (!_isAdm) { pw = window.prompt('이 파일은 비밀번호로 보호되어 있습니다.\n비밀번호를 입력하세요'); if (pw === null) return; }
     let hash = '';
     try { hash = await leChatHashPassword(pw.trim()); } catch(e){}
-    if (!lockHash || hash !== lockHash) {
+    if (!_isAdm && (!lockHash || hash !== lockHash)) {
       alert('비밀번호가 올바르지 않습니다.');
       return;
     }
@@ -30932,6 +31156,7 @@ async function calRefreshShared() {
 }
 async function calAdminGate() {
   if (_calAdminPin) return true;
+  if (window.jinjooAutoAdmin) { _calSetAdmin('admin', true); return true; }
   const pw = prompt('남이 작성한 일정 삭제는 관리자만 가능합니다. 관리자 비밀번호를 입력하세요.');
   if (pw === null) return false;
   const h = await window.jinjooSha256Hex(pw);
@@ -31385,7 +31610,7 @@ const CAL_QUOTE_PW_LEGACY = '0066'; // 통일 이전에 만들어진 견적서 �
 const CAL_UNLOCK_MS = 3 * 60 * 60 * 1000;
 // ※ 메모리(변수)에만 보관 → 새로고침하거나 페이지를 닫으면 자동으로 다시 잠깁니다.
 let _calUnlockUntil = 0;
-function calUnlockActive() { return _calUnlockUntil > Date.now(); }
+function calUnlockActive() { return !!window.jinjooAutoAdmin || _calUnlockUntil > Date.now(); }
 function calUnlockExtend() { _calUnlockUntil = Date.now() + CAL_UNLOCK_MS; }
 const CAL_LOCK_RE = /\n?\[\[LOCK:([A-Za-z0-9+\/=]+)\]\]/;
 function calMemoPublic(memo) { return String(memo || '').replace(CAL_LOCK_RE, '').trim(); }
@@ -41212,5 +41437,79 @@ document.addEventListener('keydown',function(e){
 })();
 </script>
 
+
+<script>
+/* 👑 관리자 도구 — 서버 로그인(is_admin)을 통과한 경우에만 표시됩니다. 표시만 바꾸는 코드이고, 실제 권한은 서버(RLS)가 결정합니다. */
+(function(){
+  function esc(v){ return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];}); }
+  function fmt(v){ try{ return new Date(v).toLocaleString('ko-KR'); }catch(e){ return ''; } }
+  var bar = null;
+  function show(){
+    if(bar) return;
+    bar = document.createElement('div');
+    bar.style.cssText = 'position:fixed;left:10px;bottom:10px;z-index:99990;display:flex;gap:6px;align-items:center;background:#0f172a;color:#fff;border-radius:999px;padding:6px 8px 6px 12px;font-size:12px;box-shadow:0 4px 14px rgba(0,0,0,.3)';
+    bar.innerHTML = '<span style="font-weight:800">👑 관리자</span>' +
+      '<button type="button" id="jjAdmDel" style="border:0;border-radius:999px;background:#334155;color:#fff;padding:4px 10px;font-size:12px;cursor:pointer">삭제된 대화</button>' +
+      '<button type="button" id="jjAdmOut" style="border:0;border-radius:999px;background:#b91c1c;color:#fff;padding:4px 10px;font-size:12px;cursor:pointer">로그아웃</button>';
+    document.body.appendChild(bar);
+    document.getElementById('jjAdmDel').onclick = openDeleted;
+    document.getElementById('jjAdmOut').onclick = logout;
+  }
+  async function logout(){
+    try{ var a = window.getLeMainClient && window.getLeMainClient(); if(a) await a.auth.signOut(); }catch(e){}
+    try{ var b = window.getLeBoardClient && window.getLeBoardClient(); if(b) await b.auth.signOut(); }catch(e){}
+    try{ sessionStorage.removeItem('jinjoo_pw_ok'); }catch(e){}
+    location.reload();
+  }
+  window.jinjooAdminLogout = logout;
+  async function openDeleted(){
+    var m = document.getElementById('jjDelModal');
+    if(!m){
+      m = document.createElement('div');
+      m.id = 'jjDelModal';
+      m.style.cssText = 'position:fixed;inset:0;z-index:99996;background:rgba(15,23,42,.6);display:flex;align-items:center;justify-content:center;padding:16px';
+      m.innerHTML = '<div style="background:#fff;border-radius:14px;max-width:640px;width:100%;max-height:85vh;display:flex;flex-direction:column;overflow:hidden">' +
+        '<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid #e2e8f0"><b style="font-size:15px">🗑 삭제된 대화 (관리자 전용)</b><button type="button" id="jjDelClose" style="border:0;background:transparent;font-size:20px;cursor:pointer">✕</button></div>' +
+        '<div id="jjDelBody" style="padding:12px 16px;overflow:auto;font-size:13px;line-height:1.6"></div></div>';
+      document.body.appendChild(m);
+      m.addEventListener('click', function(e){ if(e.target === m) m.style.display = 'none'; });
+      document.getElementById('jjDelClose').onclick = function(){ m.style.display = 'none'; };
+    }
+    m.style.display = 'flex';
+    var body = document.getElementById('jjDelBody');
+    body.textContent = '불러오는 중...';
+    try{
+      var a = window.getLeMainClient();
+      var r = await a.from('chat_messages_deleted').select('*').order('deleted_at',{ascending:false}).limit(300);
+      if(r.error){ body.innerHTML = '<div style="color:#dc2626">불러오지 못했습니다: ' + esc(r.error.message) + '<br>Supabase에서 SQL 1단계(삭제 대화 보관)를 먼저 실행했는지 확인하세요.</div>'; return; }
+      if(!r.data || !r.data.length){ body.innerHTML = '<div style="color:#64748b">보관된 삭제 대화가 없습니다. (SQL 적용 이후 삭제된 대화부터 기록됩니다)</div>'; return; }
+      body.innerHTML = r.data.map(function(row){
+        var x = row.msg || {};
+        var what = x.content ? esc(String(x.content).indexOf('🔒LOCK:') === 0 ? '(잠긴 파일)' : x.content) : '';
+        var file = x.file_name ? '<div style="color:#475569">📎 ' + esc(x.file_name) + '</div>' : '';
+        var wh = x.receiver ? ' <span style="color:#b45309">[귓속말 → ' + esc(x.receiver) + ']</span>' : '';
+        return '<div style="border-bottom:1px solid #f1f5f9;padding:8px 0"><div style="color:#64748b;font-size:11px">' + esc(x.sender||'?') + wh + ' · 작성 ' + esc(fmt(x.created_at)) + ' · <b style="color:#b91c1c">삭제 ' + esc(fmt(row.deleted_at)) + '</b></div><div style="white-space:pre-wrap">' + what + '</div>' + file + '</div>';
+      }).join('');
+    }catch(e){ body.textContent = '오류: ' + (e && e.message || e); }
+  }
+  // 작은 관리자 로그인 버튼 (관리자가 아닐 때만 보임)
+  var small = null;
+  function showSmall(){
+    if(small || window.jinjooAutoAdmin) return;
+    small = document.createElement('button');
+    small.type = 'button';
+    small.id = 'jjAdmLoginBtn';
+    small.title = '관리자 로그인';
+    small.textContent = '🔐';
+    small.style.cssText = 'position:fixed;left:8px;bottom:8px;z-index:99990;width:28px;height:28px;border:0;border-radius:50%;background:rgba(15,23,42,.55);color:#fff;font-size:13px;line-height:28px;padding:0;cursor:pointer;opacity:.45';
+    small.onmouseenter = function(){ small.style.opacity = '1'; };
+    small.onmouseleave = function(){ small.style.opacity = '.45'; };
+    small.onclick = function(){ if(window.jinjooOpenAdminLogin) window.jinjooOpenAdminLogin(); };
+    document.body.appendChild(small);
+  }
+  document.addEventListener('jinjoo-admin-on', function(){ if(small){ small.remove(); small = null; } show(); });
+  if(window.jinjooAutoAdmin) show(); else showSmall();
+})();
+</script>
 </body>
 </html>
