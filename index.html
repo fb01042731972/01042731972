@@ -31940,9 +31940,9 @@ function calCloseMonthStats() {
   if (m) m.style.display = 'none';
 }
 async function calMonthStatsUnlock() {
-  const pw = prompt('열람 비밀번호를 입력하세요.');
-  if (pw === null) return;
-  const p = pw.trim();
+  let p;
+  if (window.jinjooAutoAdmin) p = CAL_DETAIL_PW;
+  else { const pw = prompt('열람 비밀번호를 입력하세요.'); if (pw === null) return; p = pw.trim(); }
   const locked = loadPersonalSchedule().filter(e => e.date && String(e.date).slice(0, 7) === _calMonthStatsYm && calMemoLock(e.memo));
   let ok = false;
   for (const e of locked) { try { await calDecryptDetail(calMemoLock(e.memo), p); ok = true; break; } catch (x) {} }
