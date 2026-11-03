@@ -467,13 +467,15 @@
 </head>
 <body class="p-3 md:p-5">
 
-<!-- 🔴 접속 게이트: IP 표시 + 이름(3글자) 필수. 이름을 기재하지 않으면 입장 불가 -->
+<!-- 🔴 접속 게이트: IP 표시 + 이름(2~5글자) 필수. 이름을 기재하지 않으면 입장 불가 -->
 <style>
 @keyframes leRedBlink{0%,100%{opacity:1;box-shadow:0 0 6px 2px rgba(239,68,68,.75)}50%{opacity:.12;box-shadow:none}}
 .le-red-dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#ef4444;margin-right:4px;vertical-align:middle;animation:leRedBlink 1s steps(1,end) infinite}
 #leTopWho{position:fixed;top:2px;left:8px;z-index:999996;display:none;flex-direction:column;align-items:flex-start;gap:2px;font-size:10.5px;line-height:15px;font-weight:700;color:#334155;background:transparent;border:0;padding:0;pointer-events:none;max-width:94vw;max-height:60vh;white-space:nowrap;overflow:hidden}
 #leTopWho .le-who{display:inline-block;font-size:10.5px;line-height:15px;font-weight:700;color:#334155;background:rgba(255,255,255,.88);border:1px solid #e2e8f0;border-radius:8px;padding:0 7px 0 5px;white-space:nowrap}
 #leTopWho .le-who.me{border-color:#fca5a5}
+#leTopWho .le-who.dm{pointer-events:auto;cursor:pointer}
+#leTopWho .le-who.dm:hover{background:#e0f2fe;border-color:#7dd3fc}
 #leNameGate input.le-name-in{width:100%;box-sizing:border-box;text-align:center;font-size:26px;font-weight:800;letter-spacing:8px;border:2px solid #cbd5e1;border-radius:10px;padding:10px 6px;outline:none}
 #leNameGate input.le-name-in:focus{border-color:#146C8E}
 </style>
@@ -484,8 +486,8 @@
     <div id="leNameGateIp" style="font-size:clamp(22px,7vw,32px);font-weight:900;color:#0f172a;word-break:break-all;margin:2px 0 12px;">확인 중…</div>
     <div id="leNameGateForm" style="display:none;">
       <div style="font-size:15px;font-weight:800;color:#1f2937;margin-bottom:4px;">이름을 기재하세요</div>
-      <div style="font-size:12px;color:#64748b;margin-bottom:10px;">본인 이름 <b>3글자</b> (한글) · 한 번 기재하면 이 IP·이 기기에서는 자동으로 인식됩니다</div>
-      <input id="leNameGateInput" class="le-name-in" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="홍길동">
+      <div style="font-size:12px;color:#64748b;margin-bottom:10px;">본인 이름 <b>2~5글자</b> (한글) · 한 번 기재하면 이 IP·이 기기에서는 자동으로 인식됩니다</div>
+      <input id="leNameGateInput" class="le-name-in" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" maxlength="5" placeholder="홍길동">
       <div id="leNameGateErr" style="min-height:18px;margin:6px 0 2px;font-size:12px;font-weight:700;color:#dc2626;"></div>
       <button id="leNameGateBtn" type="button" style="width:100%;background:#146C8E;color:#fff;border:none;border-radius:10px;padding:12px;font-size:15px;font-weight:800;cursor:pointer;">입장</button>
     </div>
@@ -2149,14 +2151,14 @@ window.getLeBoardClient = function(){
     } catch(e) {}
   }
 
-  // ══ 🔴 접속 게이트: IP 표시 → 이름(한글 3글자) 필수 → 통과해야 입장 ══
+  // ══ 🔴 접속 게이트: IP 표시 → 이름(한글 2~5글자) 필수 → 통과해야 입장 ══
   //   - 이름은 "IP + 이 기기(브라우저)" 기준으로 저장되어 다음 접속부터 자동 인식된다.
   //     (사무실처럼 공인 IP를 여럿이 공유해도 서로의 이름이 섞이지 않도록 기기별로 저장)
   //   - 이름·IP·접속 시각은 visit_log에 기록되고, 관리자(비밀번호)만 볼 수 있다.
   let leSiteName = '';
   const LE_SITE_NAME_KEY = 'leSiteNameByIp';
   function leSiteNameKey(){ return (leSiteIp && leSiteIp.indexOf('guest_') !== 0) ? leSiteIp : '_local'; }
-  function leSiteNameValid(n){ return /^[가-힣]{3}$/.test(String(n || '')); }
+  function leSiteNameValid(n){ return /^[가-힣]{2,5}$/.test(String(n || '')); }
   function leSiteNameLoad(){
     try { const m = JSON.parse(localStorage.getItem(LE_SITE_NAME_KEY) || '{}'); const v = m[leSiteNameKey()]; return leSiteNameValid(v) ? v : ''; } catch(e) { return ''; }
   }
@@ -2198,7 +2200,7 @@ window.getLeBoardClient = function(){
     const all = [mine].concat(others);
     let html = all.slice(0, LE_WHO_MAX).map(function(p, i){
       const parts = [leFmtClock(p.at), leMaskIp(p.ip)].filter(Boolean).map(esc).join(' · ');
-      return '<span class="le-who' + (i ? '' : ' me') + '"><span class="le-red-dot"></span>' + esc(p.name) + ' 접속' +
+      return '<span class="le-who' + (i ? ' dm' : ' me') + '"' + (i ? ' data-name="' + esc(p.name) + '" title="클릭하면 ' + esc(p.name) + '님에게 메시지 보내기"' : '') + '><span class="le-red-dot"></span>' + esc(p.name) + ' 접속' +
              (parts ? '<span style="display:block;font-size:9.5px;line-height:13px;font-weight:600;color:#64748b;padding-left:11px;">' + parts + '</span>' : '') + '</span>';
     }).join('');
     if (all.length > LE_WHO_MAX) html += '<span class="le-who">외 ' + (all.length - LE_WHO_MAX) + '명 접속 중</span>';
@@ -2206,6 +2208,30 @@ window.getLeBoardClient = function(){
     w.style.display = 'flex';
   }
   window._leTopWhoRender = leTopWhoRender;
+  // 상단 접속자 클릭 → 채팅창을 열고 그 사람과의 1:1 대화방으로 이동
+  document.addEventListener('click', function(e){
+    const el = e.target && e.target.closest ? e.target.closest('#leTopWho .le-who.dm') : null;
+    if (!el) return;
+    const name = el.getAttribute('data-name');
+    if (name) window.leTopWhoOpenDm(name);
+  });
+  window.leTopWhoOpenDm = function(name){
+    const win = document.getElementById('leChatWindow');
+    if (win && (win.style.display === 'none' || win.style.display === '')) window.leChatToggle();
+    let tries = 0;
+    const go = function(){
+      const body = document.getElementById('leChatBody');
+      const ready = body && body.style.display === 'flex' && typeof window.leChatOpenConv === 'function' && leChatNickname;
+      if (ready) {
+        try { if (typeof leChatSwitchTab === 'function') leChatSwitchTab('chat'); } catch(e) {}
+        window.leChatOpenConv(String(name).trim().normalize('NFC'));
+        const inp = document.getElementById('leChatInput'); if (inp) inp.focus();
+      } else if (++tries < 40) {
+        setTimeout(go, 150);
+      }
+    };
+    go();
+  };
   function leTopWhoShow(){
     let names = [];
     try {
@@ -2232,7 +2258,7 @@ window.getLeBoardClient = function(){
       if (form) form.style.display = 'block';
       const submit = function(){
         const v = (inp.value || '').trim();
-        if (!leSiteNameValid(v)) { err.textContent = '이름은 한글 정확히 3글자로 입력해주세요.'; inp.focus(); return; }
+        if (!leSiteNameValid(v)) { err.textContent = '이름은 한글 2~5글자로 입력해주세요.'; inp.focus(); return; }
         if (!confirm('"' + v + '" (으)로 등록합니다.\n한 번 등록하면 이 IP·이 기기에서는 자동으로 접속됩니다.\n\n맞습니까?')) return;
         if (!leSiteNameSave(v)) alert('⚠️ 이 브라우저(시크릿 모드 등)에서는 이름이 저장되지 않아 다음 접속 때 다시 물어볼 수 있습니다.');
         pass(v);
