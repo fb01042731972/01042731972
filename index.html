@@ -7,7 +7,7 @@
 
 <!-- PWA: 홈 화면에 앱처럼 설치하기 위한 설정 -->
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#146C8E">
+<meta name="theme-color" content="#060B18">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
@@ -41510,5 +41510,106 @@ document.addEventListener('keydown',function(e){
   if(window.jinjooAutoAdmin) show(); else showSmall();
 })();
 </script>
+<style id="future-theme">
+/* ══════════ FUTURE THEME — 화면 전용(인쇄/PDF는 그대로) ══════════ */
+@media screen{
+:root{
+  --user-bg:#060B18;--user-card-bg:#ffffff;--user-accent:#0E7490;--user-accent-dark:#0B1530;
+  --user-accent-tint:#ECFEFF;--user-accent-border:#A5F3FC;--line:#DCE6F2;--radius-card:16px;--radius-sm:8px;
+  --ion:#22D3EE;--plasma:#8B5CF6;--void:#060B18;
+  --shadow-card:0 0 0 1px rgba(34,211,238,.22),0 18px 40px -24px rgba(34,211,238,.6),inset 0 1px 0 rgba(255,255,255,.95);
+  --shadow-pop:0 0 0 1px rgba(34,211,238,.4),0 24px 60px -18px rgba(139,92,246,.6);
+}
+html{background:#060B18;scrollbar-color:#22D3EE #0B1530;scrollbar-width:thin}
+body{background:transparent!important;position:relative;font-feature-settings:"tnum" 1}
+body::before{content:"";position:fixed;inset:-4%;z-index:-1;pointer-events:none;will-change:transform;
+  background:
+   radial-gradient(60vmax 42vmax at 10% -8%,rgba(34,211,238,.30),transparent 62%),
+   radial-gradient(52vmax 40vmax at 104% 8%,rgba(139,92,246,.34),transparent 62%),
+   radial-gradient(44vmax 30vmax at 50% 118%,rgba(244,114,182,.16),transparent 62%),
+   linear-gradient(rgba(148,197,255,.07) 1px,transparent 1px) 0 0/44px 44px,
+   linear-gradient(90deg,rgba(148,197,255,.07) 1px,transparent 1px) 0 0/44px 44px,#060B18;
+  animation:fxDrift 30s ease-in-out infinite alternate}
+@keyframes fxDrift{to{transform:scale(1.05) translate3d(-1.2%,.8%,0)}}
+::-webkit-scrollbar{width:9px;height:9px}
+::-webkit-scrollbar-track{background:#0B1530}
+::-webkit-scrollbar-thumb{background:linear-gradient(#22D3EE,#8B5CF6);border-radius:9px}
+
+/* 상단 헤더: 어두운 유리 패널 + 네온 외곽선 */
+.max-w-5xl.bg-white:has(#hdrBtnBar){
+  background:linear-gradient(135deg,rgba(11,21,48,.88),rgba(28,18,64,.80))!important;
+  backdrop-filter:blur(16px) saturate(1.5);-webkit-backdrop-filter:blur(16px) saturate(1.5);
+  border:1px solid rgba(34,211,238,.38)!important;border-radius:20px!important;
+  box-shadow:0 0 0 1px rgba(139,92,246,.22),0 0 46px -12px rgba(34,211,238,.55),inset 0 1px 0 rgba(255,255,255,.10)!important}
+.max-w-5xl.bg-white:has(#hdrBtnBar) h1{font-size:1.35rem;font-weight:800;letter-spacing:.06em;
+  background:linear-gradient(90deg,#67E8F9 0%,#C4B5FD 60%,#F9A8D4 100%);-webkit-background-clip:text;background-clip:text;
+  -webkit-text-fill-color:transparent;color:transparent;filter:drop-shadow(0 0 12px rgba(34,211,238,.45))}
+.max-w-5xl.bg-white:has(#hdrBtnBar) :is(.text-gray-400,.text-gray-500,.text-gray-600,.text-gray-700,.text-gray-800){color:#B9C8E4!important}
+
+/* 카드/패널: 밝은 프로스트 유리 + 시안 글로우 */
+.pcard,.shadow-md:not(:has(#hdrBtnBar)){box-shadow:var(--shadow-card)!important}
+.pcard,.rounded-lg{border-radius:16px!important}
+.pcard{border:1px solid rgba(34,211,238,.28);background:linear-gradient(180deg,#fff,#F4F9FF)}
+.sec-title{background:linear-gradient(90deg,#0B1530,#16204A 70%,#2A1B5C);color:#67E8F9;border-left:3px solid #22D3EE;
+  border-radius:10px;letter-spacing:.04em;text-shadow:0 0 10px rgba(34,211,238,.6);box-shadow:0 0 18px -6px rgba(34,211,238,.6)}
+#priceSettingsArea .bg-gradient-to-r,.bg-gradient-to-r.from-gray-800{background:linear-gradient(90deg,#0B1530,#1B1650 60%,#3B1C7A)!important;
+  box-shadow:inset 0 -1px 0 rgba(34,211,238,.5)}
+
+/* 버튼 */
+.hdr-btn{border-radius:11px;border:1px solid rgba(255,255,255,.28)!important;letter-spacing:.02em;
+  box-shadow:0 0 0 1px rgba(0,0,0,.15) inset,0 6px 18px -8px rgba(34,211,238,.85);
+  transition:transform .15s,box-shadow .15s,filter .15s}
+.hdr-btn:hover{filter:brightness(1.15) saturate(1.15);transform:translateY(-1px);box-shadow:0 0 0 1px rgba(255,255,255,.25) inset,0 10px 26px -8px rgba(139,92,246,.95)}
+.add-btn{color:#0E7490;background:linear-gradient(180deg,#F2FEFF,#E4F8FD);border:1px solid #67E8F9;border-radius:10px;font-weight:700}
+.add-btn:hover{background:#CFFAFE;box-shadow:0 0 16px -2px rgba(34,211,238,.7)}
+.bg-blue-600,.bg-indigo-600,.bg-emerald-600,.bg-green-600{background-image:linear-gradient(135deg,rgba(255,255,255,.18),transparent 55%);box-shadow:0 8px 20px -10px rgba(34,211,238,.9)}
+.cat-tab,.doc-tab{border-radius:12px 12px 0 0;background:#EAF2FB;color:#3B4B66;border-color:#CFE0F3}
+.cat-tab.active{background:linear-gradient(135deg,#0891B2,#7C3AED);color:#fff;border-color:transparent;box-shadow:0 0 22px -4px rgba(34,211,238,.85)}
+.doc-tab.active{background:#fff;color:#0B1530;border-color:#22D3EE;box-shadow:0 -3px 14px -4px rgba(34,211,238,.6)}
+
+/* 입력칸 */
+.inp,.quote-inp,.qinp-td{transition:border-color .15s,box-shadow .15s,background .15s}
+.inp{border-radius:9px;border-color:#C9D8EA;background:#FBFDFF}
+.inp:focus{border-color:#22D3EE;background:#fff;box-shadow:0 0 0 3px rgba(34,211,238,.25),0 0 18px -4px rgba(34,211,238,.7)}
+select:focus,textarea:focus,input:focus-visible,button:focus-visible{outline:2px solid #22D3EE;outline-offset:2px}
+
+/* 표 */
+.pcard table th{background:linear-gradient(180deg,#12204A,#0B1530);color:#A5F3FC;border-color:#1E2D5C;letter-spacing:.03em}
+.pcard table td{border-color:#E1EAF5}
+.pcard table tr:hover td{background:#ECFEFF}
+.qtable th{background:linear-gradient(180deg,#12204A,#0B1530);color:#A5F3FC}
+.qtable tbody tr:nth-child(even) td{background:#F3F8FF}
+
+/* 견적서·발주서·명세표: 종이는 그대로, 화면에서만 빛나는 테두리 */
+.quote-wrap{border:1px solid rgba(34,211,238,.6);box-shadow:0 0 0 1px rgba(139,92,246,.25),0 24px 60px -24px rgba(34,211,238,.7)}
+.quote-header{background:linear-gradient(120deg,#0B1530 0%,#12388F 55%,#6D28D9 100%)}
+.quote-total-box{background:linear-gradient(120deg,#0B1530,#1B1650);box-shadow:inset 0 0 0 1px rgba(34,211,238,.4)}
+
+/* 알림·토스트·채팅 버튼 */
+.toast{background:rgba(11,21,48,.92);color:#E0F7FF;border:1px solid rgba(34,211,238,.6);backdrop-filter:blur(10px);
+  box-shadow:0 0 28px -4px rgba(34,211,238,.7)}
+#leChatToggleBtn{background:linear-gradient(135deg,#0891B2,#7C3AED)!important;box-shadow:0 0 0 2px rgba(255,255,255,.25),0 0 28px -2px rgba(34,211,238,.9)!important}
+
+/* 로그인(비밀번호·이름) 게이트: 우주 배경 + 홀로그램 카드 */
+#pwGate,#leNameGate{background:
+   radial-gradient(60vmax 40vmax at 15% 0%,rgba(34,211,238,.32),transparent 60%),
+   radial-gradient(50vmax 40vmax at 100% 100%,rgba(139,92,246,.38),transparent 60%),
+   linear-gradient(rgba(148,197,255,.08) 1px,transparent 1px) 0 0/40px 40px,
+   linear-gradient(90deg,rgba(148,197,255,.08) 1px,transparent 1px) 0 0/40px 40px,#060B18!important}
+#pwGate>div,#leNameGate>div{background:rgba(255,255,255,.95)!important;border:1px solid rgba(34,211,238,.7);border-radius:22px!important;
+  box-shadow:0 0 0 1px rgba(139,92,246,.35),0 0 60px -6px rgba(34,211,238,.65),0 30px 80px rgba(0,0,0,.5)!important;
+  animation:gateIn .7s cubic-bezier(.2,.8,.2,1) both}
+@keyframes gateIn{from{opacity:0;transform:translateY(18px) scale(.97);filter:blur(6px)}to{opacity:1;transform:none;filter:none}}
+#pwGate input,#leNameGate input{border:1px solid #A5F3FC!important;border-radius:12px!important;background:#F5FDFF}
+#pwGate input:focus,#leNameGate input:focus{outline:none;box-shadow:0 0 0 3px rgba(34,211,238,.3),0 0 22px -4px rgba(34,211,238,.8)}
+#pwSubmit,#leNameGateBtn{background:linear-gradient(135deg,#0891B2,#7C3AED)!important;border-radius:12px!important;
+  box-shadow:0 10px 28px -10px rgba(34,211,238,.95);letter-spacing:.08em;transition:transform .15s,filter .15s}
+#pwSubmit:hover,#leNameGateBtn:hover{transform:translateY(-1px);filter:brightness(1.12)}
+}
+@media screen and (prefers-reduced-motion:reduce){
+  body::before,#pwGate>div,#leNameGate>div{animation:none!important}
+  .hdr-btn,.add-btn,.inp{transition:none!important}
+}
+</style>
 </body>
 </html>
