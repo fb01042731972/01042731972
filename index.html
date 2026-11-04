@@ -1133,6 +1133,7 @@
         <span id="leChatSelectCount" style="flex:1;font-weight:700;">0개 선택됨</span>
         <button type="button" class="le-select-cancel" onclick="leChatToggleSelectMode()">취소</button>
         <button type="button" class="le-select-delete" onclick="leChatBulkDeleteSelected()">선택 삭제</button>
+        <button type="button" class="le-select-delete" style="background:#b45309!important;" onclick="leChatPurgeOldFiles()" title="3개월 지난 첨부파일만 저장소에서 삭제 (대화 글자는 남김, 관리자 비밀번호 필요)">오래된 파일 정리</button>
         <button type="button" class="le-select-delete" style="background:#7f1d1d!important;" onclick="leChatAdminDeleteAll()" title="전체 대화방의 채팅 내용을 전부 삭제, 귓속말 제외 (관리자 비밀번호 필요)">전체 삭제(관리자)</button>
       </div>
       <div id="leChatInputBar" style="position:relative;display:flex;gap:6px;padding:8px;border-top:1px solid #e2e8f0;flex-shrink:0;">
@@ -4275,6 +4276,76 @@ window.getLeBoardClient = function(){
     leChatUpdateSelectBar();
     if (failCount > 0) alert(failCount + '개 메시지가 서버에서 삭제되지 않았습니다.\n(Supabase chat_messages 삭제 권한/RLS 정책을 확인하세요)');
     if (fileFailCount > 0) alert(fileFailCount + '개 첨부파일이 저장소에서 삭제되지 않았습니다.\n(Supabase Storage chat-files 버킷의 삭제 권한을 확인하세요)');
+  };
+
+  // ── 오래된 첨부파일 정리: 3개월 지난 첨부파일만 저장소에서 삭제하고, 대화 글자는 그대로 남김 ──
+  const LE_CHAT_FILE_KEEP_MONTHS = 3;
+  window.leChatPurgeOldFiles = async function(){
+    if (!supaClient) return;
+    const pw = prompt('관리자 비밀번호를 입력하세요.\n(' + LE_CHAT_FILE_KEEP_MONTHS + '개월 지난 첨부파일만 삭제합니다. 대화 글자는 남습니다)');
+    if (pw === null) return;
+    const pwHash = await window.jinjooSha256Hex(pw);
+    if (pwHash !== LE_CHAT_DELETE_ALL_PW_HASH && pwHash !== window.jinjooAdminPwHash) { alert('비밀번호가 일치하지 않습니다.'); return; }
+    const btn = document.querySelector('#leChatSelectBar .le-select-delete[onclick="leChatPurgeOldFiles()"]');
+    if (btn) btn.disabled = true;
+    try {
+      const cutoffDate = new Date();
+      cutoffDate.setMonth(cutoffDate.getMonth() - LE_CHAT_FILE_KEEP_MONTHS);
+      const cutoff = cutoffDate.toISOString();
+      // 1) 대상 조회: 기준일 이전 + 첨부파일이 있는 메시지 (스티커·프로필 등 하위 폴더 파일은 제외)
+      const targets = [];
+      let skipped = 0;
+      for (let from = 0; from < 20000; from += 1000) {
+        const r = await supaClient.from('chat_messages').select('id,file_url,file_name,content,created_at')
+          .not('file_url', 'is', null).lt('created_at', cutoff).order('created_at', { ascending: true }).range(from, from + 999);
+        if (r.error) throw r.error;
+        const rows = r.data || [];
+        rows.forEach(function(m){
+          const path = leChatExtractStoragePath(m.file_url || '');
+          if (path && path.indexOf('/') === -1 && m.id != null) targets.push({ m: m, path: path }); else skipped++;
+        });
+        if (rows.length < 1000) break;
+      }
+      if (!targets.length) { alert(LE_CHAT_FILE_KEEP_MONTHS + '개월 지난 첨부파일이 없습니다.'); return; }
+      const oldest = String(targets[0].m.created_at || '').slice(0, 10);
+      if (!confirm(LE_CHAT_FILE_KEEP_MONTHS + '개월 지난 첨부파일 ' + targets.length + '개를 삭제합니다.\n(가장 오래된 것: ' + oldest + ')\n\n· 대화 글자는 그대로 남고, 파일 자리에는 "삭제된 첨부파일"로 표시됩니다.\n· 삭제한 파일은 되돌릴 수 없습니다.\n\n계속할까요?')) return;
+      // 2) 메시지에서 파일 연결을 먼저 끊고(성공한 것만), 저장소 파일을 삭제
+      let done = 0, rowFail = 0;
+      const okPaths = [];
+      for (const t of targets) {
+        const m = t.m;
+        const wasLocked = typeof m.content === 'string' && m.content.indexOf(LE_CHAT_LOCK_PREFIX) === 0;
+        const base = (!wasLocked && m.content) ? (m.content + '\n') : '';
+        const note = base + '🗑 보관 기간(' + LE_CHAT_FILE_KEEP_MONTHS + '개월)이 지나 삭제된 첨부파일' + (m.file_name ? (': ' + m.file_name) : '');
+        try {
+          const u = await supaClient.from('chat_messages').update({ file_url: null, content: note }).eq('id', m.id).select('id');
+          if (u.error || !u.data || !u.data.length) { rowFail++; continue; }
+          okPaths.push(t.path);
+          done++;
+          const ci = leChatMsgCache.findIndex(function(x){ return String(x.id) === String(m.id); });
+          if (ci !== -1) leChatMsgCache[ci] = Object.assign({}, leChatMsgCache[ci], { file_url: null, content: note });
+        } catch(e) { rowFail++; }
+      }
+      let fileFail = 0;
+      for (let i = 0; i < okPaths.length; i += 100) {
+        const chunk = okPaths.slice(i, i + 100);
+        try {
+          const rm = await supaClient.storage.from('chat-files').remove(chunk);
+          if (rm.error) fileFail += chunk.length;
+          else fileFail += chunk.length - (rm.data || []).length;
+        } catch(e) { fileFail += chunk.length; }
+      }
+      if (leChatSelectMode) leChatToggleSelectMode();
+      leChatRenderConvList();
+      if (leChatViewMode === 'thread' && leChatActiveConv !== null) leChatRenderThread(leChatActiveConv);
+      alert('오래된 파일 정리 완료\n- 첨부파일 ' + done + '개 정리' +
+        (rowFail ? ('\n- 메시지 수정 실패 ' + rowFail + '개 (chat_messages 수정 권한/RLS 확인)') : '') +
+        (fileFail ? ('\n- 저장소 삭제 실패 ' + fileFail + '개 (chat-files 버킷 삭제 권한 확인)') : ''));
+    } catch(e) {
+      alert('오래된 파일 정리 실패: ' + (e.message || e));
+    } finally {
+      if (btn) btn.disabled = false;
+    }
   };
 
   // ── 관리자 전체 삭제: 모든 대화방(귓속말 포함)의 채팅 메시지를 전부 삭제 ──
@@ -41611,5 +41682,139 @@ select:focus,textarea:focus,input:focus-visible,button:focus-visible{outline:2px
   .hdr-btn,.add-btn,.inp{transition:none!important}
 }
 </style>
+<style id="leChatFutureUI">
+/* ═══ 직원 채팅 FUTURE UI — 디자인 전용 오버라이드 (HTML/JS 기능·ID·이벤트 변경 없음) ═══ */
+@property --le-ang{syntax:"<angle>";inherits:false;initial-value:0deg}
+@keyframes leAng{to{--le-ang:360deg}}
+@keyframes leSpin{to{transform:rotate(360deg)}}
+@keyframes leWinIn{from{opacity:0;transform:translateY(22px) scale(.96)}to{opacity:1;transform:none}}
+@keyframes lePulse{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes leMsgPop{from{opacity:0;transform:translateY(8px) scale(.97);filter:blur(4px)}to{opacity:1;transform:none;filter:none}}
+@keyframes leFxBlink{0%,100%{transform:scale(1)}50%{transform:scale(1.12)}}
+@media screen{
+/* 창 본체: 어두운 유리 + 회전하는 빛 테두리 */
+#leChatWindow{color-scheme:dark;background:linear-gradient(160deg,rgba(9,17,42,.95),rgba(7,10,28,.97) 55%,rgba(22,12,52,.96))!important;
+  backdrop-filter:blur(24px) saturate(1.6);-webkit-backdrop-filter:blur(24px) saturate(1.6);border:0!important;border-radius:22px!important;color:#E8F2FF!important;
+  box-shadow:0 0 0 1px rgba(34,211,238,.20),inset 0 1px 0 rgba(255,255,255,.08),0 0 70px -12px rgba(34,211,238,.45),0 40px 90px -24px rgba(139,92,246,.6)!important;
+  animation:leWinIn .5s cubic-bezier(.2,.8,.2,1) backwards}
+#leChatWindow::before{content:"";position:absolute;left:0;top:0;right:0;bottom:0;width:auto;border-radius:inherit;padding:1.5px;pointer-events:none;z-index:30;
+  background:conic-gradient(from var(--le-ang),transparent 0 52%,rgba(34,211,238,.95) 72%,rgba(139,92,246,.95) 88%,transparent 100%);
+  -webkit-mask:linear-gradient(#000 0 0) content-box,linear-gradient(#000 0 0);-webkit-mask-composite:xor;mask:linear-gradient(#000 0 0) content-box exclude,linear-gradient(#000 0 0);mask-composite:exclude;
+  animation:leAng 7s linear infinite}
+#leChatWindow ::selection{background:rgba(34,211,238,.35);color:#fff}
+
+/* 상단 바 */
+#leChatWindow #leChatHeader,#leChatWindow #leChatThreadHeader{background:linear-gradient(90deg,rgba(34,211,238,.10),rgba(139,92,246,.12))!important;border-bottom:1px solid rgba(34,211,238,.25)!important;color:#EAF4FF!important}
+#leChatWindow #leChatHeader>div:last-child{gap:1px!important}
+#leChatWindow #leChatHeader button,#leChatWindow #leChatThreadHeader button{color:#9FB4D9!important;border-radius:9px!important;padding:5px 4px!important;transition:background .15s,color .15s,box-shadow .15s}
+#leChatWindow #leChatHeader button:hover,#leChatWindow #leChatThreadHeader button:hover{background:rgba(34,211,238,.14)!important;color:#fff!important;box-shadow:0 0 14px -2px rgba(34,211,238,.7)}
+#leChatWindow #leChatMaximizeBtn.active{color:#22D3EE!important}
+#leChatWindow #leChatThreadTitle{color:#F2F8FF!important;font-size:15px!important;letter-spacing:.01em;text-shadow:0 0 14px rgba(34,211,238,.35)}
+#leChatWindow #leChatOnlineBtn{background:rgba(34,211,238,.10)!important;color:#9FEFFF!important;border:1px solid rgba(34,211,238,.35)!important}
+#leChatWindow #leChatOnlineBtn>span:first-child{box-shadow:0 0 8px #22c55e}
+
+/* 탭 · 목록 */
+#leChatWindow #leChatListScreen,#leChatWindow #leChatFriendContent{background:linear-gradient(180deg,rgba(255,255,255,.015),transparent)!important}
+#leChatWindow #leChatListItems,#leChatWindow #leChatFriendItems,#leChatWindow #leChatListContent{background:transparent!important}
+#leChatWindow #leChatTabBar{background:rgba(255,255,255,.03)!important;border-bottom:1px solid rgba(34,211,238,.18)!important}
+#leChatWindow .le-chat-tab{color:#7F93B8!important;transition:color .15s}
+#leChatWindow .le-chat-tab-active{color:#CFF8FF!important;text-shadow:0 0 12px rgba(34,211,238,.7);box-shadow:inset 0 -2px 0 0 #22D3EE,0 10px 18px -14px #22D3EE!important}
+#leChatWindow .le-kakao-list-row{background:transparent!important;border-bottom:1px solid rgba(34,211,238,.10)!important;position:relative;transition:background .18s,box-shadow .18s!important}
+#leChatWindow .le-kakao-list-row:hover{background:linear-gradient(90deg,rgba(34,211,238,.13),rgba(139,92,246,.05))!important;box-shadow:inset 3px 0 0 #22D3EE}
+#leChatWindow .le-kakao-list-row:active{background:rgba(34,211,238,.2)!important}
+#leChatWindow .le-kakao-list-row img,#leChatWindow .le-kakao-list-row>div:first-child>div{border-radius:50%!important;box-shadow:0 0 0 2px rgba(34,211,238,.45),0 0 14px -3px rgba(34,211,238,.6)}
+#leChatWindow .le-kakao-list-row span[style*="background:#22c55e" i]{border-color:#0B1530!important;box-shadow:0 0 8px #22c55e}
+#leChatWindow .le-kakao-list-row span[style*="background:#ef4444" i]{background:linear-gradient(135deg,#F43F5E,#8B5CF6)!important;box-shadow:0 0 12px rgba(244,63,94,.8)}
+#leChatWindow #leChatBoardLive{background:rgba(255,255,255,.03)!important;border-top:1px solid rgba(34,211,238,.28)!important}
+#leChatWindow #leChatBoardLive>div:first-child{background:rgba(34,211,238,.07)!important;border-bottom:1px solid rgba(34,211,238,.15)!important}
+#leChatWindow #leChatBoardLiveStatus{color:#6EE7B7!important}
+#leChatWindow #leChatBoardLiveStatus::before{content:"";display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:#34D399;box-shadow:0 0 8px #34D399;animation:lePulse 2s ease-in-out infinite}
+
+/* 대화 화면: 격자 위에 떠 있는 메시지 */
+#leChatWindow #leChatThreadScreen{background:radial-gradient(70% 45% at 100% 0%,rgba(139,92,246,.20),transparent 70%),radial-gradient(60% 40% at 0% 100%,rgba(34,211,238,.14),transparent 70%),linear-gradient(rgba(148,197,255,.05) 1px,transparent 1px) 0 0/32px 32px,linear-gradient(90deg,rgba(148,197,255,.05) 1px,transparent 1px) 0 0/32px 32px,#070D20!important}
+#leChatWindow #leChatMessages{background-color:transparent!important;color:#E8F2FF}
+#leChatWindow #leChatMessages .le-kakao-msg.le-kakao-consecutive{margin-top:-5px!important}
+#leChatWindow #leChatMessages .le-kakao-msg.le-msg-pop{animation:leMsgPop .35s cubic-bezier(.2,.8,.2,1) both}
+#leChatWindow #leChatMessages .le-kakao-msg .le-kakao-bubble{border:1px solid rgba(34,211,238,.28)!important;border-radius:5px 18px 18px 18px!important;padding:9px 13px!important;
+  background:rgba(16,28,62,.80)!important;color:#E8F2FF!important;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.07),0 0 20px -10px rgba(34,211,238,.7)!important}
+#leChatWindow #leChatMessages .le-kakao-msg.mine .le-kakao-bubble{border:1px solid rgba(255,255,255,.18)!important;border-radius:18px 5px 18px 18px!important;
+  background:linear-gradient(135deg,#0E9BBF 0%,#4F5BE0 55%,#7C3AED 100%)!important;color:#fff!important;
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.25),0 10px 26px -10px rgba(34,211,238,.85)!important}
+#leChatWindow #leChatMessages .le-kakao-bubble[style*="dashed"]{border:1px dashed rgba(250,204,21,.85)!important}
+#leChatWindow #leChatMessages .le-kakao-bubble a>div[style*="width:160px"]{background-color:rgba(255,255,255,.08)!important;border-color:rgba(255,255,255,.25)!important}
+#leChatWindow #leChatMessages .le-kakao-bubble [onclick^="leChatUnlockFile"]{background-color:rgba(255,255,255,.12)!important}
+#leChatWindow #leChatMessages .le-kakao-bubble img{box-shadow:0 0 0 1px rgba(34,211,238,.4),0 10px 24px -12px rgba(0,0,0,.8)}
+#leChatWindow #leChatMessages span[onclick^="leChatOpenProfile"]{color:#8BE9FF!important;text-shadow:0 0 10px rgba(34,211,238,.35)}
+#leChatWindow #leChatMessages div[onclick^="leChatOpenProfile"]>*{border-radius:50%!important;box-shadow:0 0 0 1.5px rgba(34,211,238,.7),0 0 14px -2px rgba(34,211,238,.7)}
+#leChatWindow #leChatMessages [style*="background:#B5BFC9" i]{background-image:linear-gradient(135deg,#0891B2,#7C3AED)!important}
+#leChatWindow #leChatMessages .le-kakao-meta [style*="color:#ef4444" i]{color:#FB7185!important}
+#leChatWindow #leChatMessages .le-kakao-meta [style*="color:#c2c8cf" i]{color:#51648C!important}
+#leChatWindow #leChatMessages .le-chat-expiry,#leChatWindow #leChatMessages .le-chat-expiry-at{color:#FB7185!important}
+#leChatWindow #leChatMessages .le-kakao-unread-count{color:#F9A8D4!important;text-shadow:0 0 10px rgba(244,114,182,.8)}
+#leChatWindow #leChatMessages .le-kakao-date-sep span{background:rgba(34,211,238,.10)!important;border:1px solid rgba(34,211,238,.35);color:#9FEFFF!important;letter-spacing:.04em;backdrop-filter:blur(6px)}
+
+/* 공지 · 답장 · 수정 · 업로드 · 선택 삭제 바 */
+#leChatWindow #leChatPinBanner{background:linear-gradient(90deg,rgba(250,204,21,.16),rgba(250,204,21,.03))!important;border-bottom:1px solid rgba(250,204,21,.35)!important}
+#leChatWindow #leChatPinBanner,#leChatWindow #leChatPinBanner *{color:#FDE68A!important}
+#leChatWindow #leChatReplyBar,#leChatWindow #leChatEditBar{background:rgba(139,92,246,.14)!important;border-top:1px solid rgba(139,92,246,.4)!important}
+#leChatWindow #leChatReplyBar *,#leChatWindow #leChatEditBar *{color:#C4B5FD!important}
+#leChatWindow #leChatUploadProgress{background:rgba(34,211,238,.10)!important;color:#9FEFFF!important}
+#leChatWindow #leChatSelectBar{background:rgba(244,63,94,.12);border-top:1px solid rgba(244,63,94,.45);color:#FDA4AF}
+#leChatWindow #leChatSelectBar .le-select-cancel{background:rgba(255,255,255,.08);color:#CFE0FF;border-color:rgba(255,255,255,.2)!important}
+
+/* 입력 바 */
+#leChatWindow #leChatInputBar{background:rgba(6,11,24,.92)!important;border-top:1px solid rgba(34,211,238,.28)!important;padding:10px 10px 12px!important;gap:7px!important;align-items:center;box-shadow:0 -14px 30px -20px rgba(34,211,238,.5)}
+#leChatWindow #leChatInput{background:rgba(255,255,255,.06)!important;border:1px solid rgba(34,211,238,.30)!important;border-radius:22px!important;padding:10px 15px!important;color:#EAF4FF!important;transition:border-color .15s,box-shadow .15s,background .15s}
+#leChatWindow #leChatInput::placeholder{color:#6C80A6!important}
+#leChatWindow #leChatInput:focus{background:rgba(255,255,255,.09)!important;border-color:#22D3EE!important;box-shadow:0 0 0 3px rgba(34,211,238,.18),0 0 22px -4px rgba(34,211,238,.7)!important}
+#leChatWindow #leChatPlusBtn,#leChatWindow #leChatEmojiBtn{width:36px!important;height:36px!important;padding:0!important;border-radius:50%!important;background:rgba(255,255,255,.06)!important;border:1px solid rgba(34,211,238,.30)!important;color:#7BE7FF!important;transition:box-shadow .15s,background .15s,transform .15s}
+#leChatWindow #leChatPlusBtn:hover,#leChatWindow #leChatEmojiBtn:hover{background:rgba(34,211,238,.16)!important;box-shadow:0 0 16px -2px rgba(34,211,238,.8)}
+#leChatWindow #leChatTimerSel{height:36px;background:rgba(255,255,255,.06)!important;color:#7BE7FF!important;border:1px solid rgba(34,211,238,.30)!important;border-radius:12px!important}
+#leChatWindow option{background:#0B1530;color:#EAF4FF}
+#leChatWindow #leChatInputBar>button[onclick="leChatSend()"]{width:40px!important;height:40px!important;background:linear-gradient(135deg,#22D3EE,#7C3AED)!important;color:#fff!important;border-radius:50%!important;
+  box-shadow:0 8px 22px -8px rgba(34,211,238,.95),inset 0 1px 0 rgba(255,255,255,.35)!important;transition:transform .15s,filter .15s}
+#leChatWindow #leChatInputBar>button[onclick="leChatSend()"]:hover{transform:translateY(-1px) scale(1.05);filter:brightness(1.15)}
+#leChatWindow #leChatInputBar>button[onclick="leChatSend()"]:active{transform:scale(.93)}
+#leChatWindow #leChatResizeHandle svg path{stroke:#22D3EE!important;opacity:.7}
+
+/* 검색 화면 · 설정 화면 · 팝업 메뉴 */
+#leChatWindow #leChatSearchScreen{background:#070D20!important}
+#leChatWindow #leChatSearchScreen>div:first-child{background:rgba(34,211,238,.06)!important;border-bottom:1px solid rgba(34,211,238,.2)!important}
+#leChatWindow input:not([type=checkbox]):not([type=radio]):not([type=file]),#leChatWindow textarea,#leChatWindow #leChatSearchInput,#leChatWindow #leChatFriendSearchInput{background-color:rgba(255,255,255,.06)!important;color:#EAF4FF!important;border:1px solid rgba(34,211,238,.30)!important}
+#leChatWindow input:focus,#leChatWindow textarea:focus{border-color:#22D3EE!important;box-shadow:0 0 0 3px rgba(34,211,238,.18)!important}
+#leChatWindow input[type=checkbox]{accent-color:#22D3EE}
+#leChatWindow #leChatPlusMenu,#leChatWindow #leChatCaptureSubMenu,#leChatWindow #leChatEmojiPicker,#leChatWindow #leChatOnlineList{background:rgba(9,16,40,.96)!important;border:1px solid rgba(34,211,238,.35)!important;border-radius:14px!important;backdrop-filter:blur(16px);box-shadow:0 0 0 1px rgba(139,92,246,.25),0 18px 44px -14px rgba(34,211,238,.55)!important}
+#leChatWindow #leChatPlusMenu button,#leChatWindow #leChatCaptureSubMenu button{background:transparent!important;color:#E6F1FF!important;transition:background .15s}
+#leChatWindow #leChatPlusMenu button:hover,#leChatWindow #leChatCaptureSubMenu button:hover{background:rgba(34,211,238,.14)!important}
+
+/* 인라인 색상 일괄 변환(밝은 테마 → 어두운 테마) */
+#leChatWindow [style*="color:#1e293b" i],#leChatWindow [style*="color:#334155" i],#leChatWindow [style*="color:#222" i],#leChatWindow [style*="color:#191919" i],#leChatWindow [style*="color:#3d4a5c" i]{color:#EAF4FF!important}
+#leChatWindow [style*="color:#475569" i],#leChatWindow [style*="color:#64748b" i]{color:#A9BBDD!important}
+#leChatWindow [style*="color:#94a3b8" i],#leChatWindow [style*="color:#8b95a1" i]{color:#7F93B8!important}
+#leChatWindow [style*="color:#51667E" i]{color:#7BE7FF!important}
+#leChatWindow [style*="color:#B45309" i]{color:#FBBF24!important}
+#leChatWindow [style*="color:#dc2626" i]{color:#FB7185!important}
+#leChatWindow [style*="background:#fff" i],#leChatWindow [style*="background:#FFFFFF" i]{background-color:rgba(10,18,44,.92)!important}
+#leChatWindow [style*="background:#f8fafc" i],#leChatWindow [style*="background:#f1f5f9" i],#leChatWindow [style*="background:#F2F4F5" i],#leChatWindow [style*="background:#fafafa" i],#leChatWindow [style*="background:#f5f5f5" i],#leChatWindow [style*="background:#e2e8f0" i]{background-color:rgba(255,255,255,.07)!important}
+#leChatWindow [style*="background:#f0f9ff" i]{background-color:rgba(34,211,238,.09)!important;border-color:rgba(34,211,238,.35)!important}
+#leChatWindow [style*="background:#fef2f2" i]{background-color:rgba(244,63,94,.14)!important;color:#FDA4AF!important;border-color:rgba(244,63,94,.4)!important}
+#leChatWindow [style*="background:#51667E" i]{background-image:linear-gradient(135deg,#0891B2,#7C3AED)!important;background-color:#0891B2!important;color:#fff!important;box-shadow:0 6px 18px -8px rgba(34,211,238,.9)}
+#leChatWindow [style*="solid #e2e8f0" i],#leChatWindow [style*="solid #eceeef" i],#leChatWindow [style*="solid #f1f5f9" i],#leChatWindow [style*="solid #e5e7eb" i],#leChatWindow [style*="solid #cbd5e1" i],#leChatWindow [style*="solid #f0f0f0" i]{border-color:rgba(34,211,238,.22)!important}
+
+/* 열기 버튼: 궤도 링 + 글로우 */
+#leChatToggleBtn{width:58px!important;height:58px!important;background:radial-gradient(circle at 30% 25%,#67E8F9 0,#0891B2 38%,#5B21B6 100%)!important;color:#fff!important;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.35),0 0 30px -2px rgba(34,211,238,.9),0 12px 30px -8px rgba(139,92,246,.8)!important;transition:transform .2s}
+#leChatToggleBtn:hover{transform:scale(1.08)}
+#leChatToggleBtn::before{content:"";position:absolute;inset:-6px;border-radius:50%;pointer-events:none;
+  background:conic-gradient(transparent 0 55%,#22D3EE 80%,#8B5CF6 95%,transparent);-webkit-mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));mask:radial-gradient(farthest-side,transparent calc(100% - 2px),#000 calc(100% - 1px));animation:leSpin 5s linear infinite}
+#leChatToggleBtn.leChatBlink{animation:leFxBlink 1s ease-in-out infinite}
+#leChatUnreadBadge{z-index:2;background:linear-gradient(135deg,#F43F5E,#F472B6)!important;border:2px solid #060B18!important;box-shadow:0 0 14px rgba(244,63,94,.9)}
+}
+@media screen and (max-width:700px){#leChatWindow{border-radius:16px!important}}
+@media screen and (max-width:520px){#leChatWindow{border-radius:0!important}}
+@media screen and (prefers-reduced-motion:reduce){#leChatWindow,#leChatWindow::before,#leChatToggleBtn::before,#leChatToggleBtn.leChatBlink,#leChatBoardLiveStatus::before,.le-kakao-msg.le-msg-pop{animation:none!important}}
+</style>
+
 </body>
 </html>
