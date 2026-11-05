@@ -41477,12 +41477,12 @@ document.addEventListener('keydown',function(e){
 </script>
 
 <!-- 📻 라디오 : 아이콘 클릭 시 웹라디오를 새 창으로 열기 (드래그로 위치 이동 가능) -->
-<div id="leRadio" class="no-print" style="position:fixed;z-index:99989;left:14px;bottom:130px;font-family:inherit;">
+<div id="leRadio" class="no-print" style="position:fixed;z-index:99989;left:190px;bottom:62px;font-family:inherit;">
   <button id="leRadioBtn" title="라디오 (새 창)" style="width:40px;height:40px;border-radius:50%;border:2px solid rgba(34,211,238,.9);background:#0B1530;color:#fff;font-size:20px;line-height:36px;padding:0;cursor:pointer;opacity:1;touch-action:none;box-shadow:0 0 12px rgba(34,211,238,.7),0 3px 10px rgba(0,0,0,.4);">📻</button>
 </div>
 <script>
 (function(){
-  var URL_RADIO='https://dyeo880-sys.github.io/01042731972/', KEY='le_radio_v2', st={x:null,y:null};
+  var URL_RADIO='https://dyeo880-sys.github.io/01042731972/', KEY='le_radio_v3', st={x:null,y:null};
   var box=document.getElementById('leRadio'), btn=document.getElementById('leRadioBtn');
   try{ var s=JSON.parse(localStorage.getItem(KEY)||'null'); if(s) st.x=s.x, st.y=s.y; }catch(e){}
   function save(){ try{localStorage.setItem(KEY,JSON.stringify(st));}catch(e){} }
@@ -41620,6 +41620,8 @@ body::before{content:"";position:fixed;inset:-4%;z-index:-1;pointer-events:none;
    backdrop-filter가 만든 별도 스택 영역을 아래 요소들보다 위로 올림 */
 .max-w-5xl.bg-white:has(#hdrBtnBar){position:relative!important;z-index:500!important;overflow:visible!important}
 #hdrBtnBar{position:relative;z-index:501}
+/* 하단 자막 뉴스줄(34px)에 가려지던 고정 버튼을 자막 위로 올림 */
+button[onclick^="openQuickIntakeModal"],button[onclick^="printActiveDoc"]{bottom:52px!important}
 #hdrBtnBar>div{position:relative}
 #customerMenu,#imgToolsMenu,#copyMenu,#dataMenu,#settingsMenu,.hdrbtn-more-menu{z-index:510!important;max-height:calc(100vh - 140px);overflow-y:auto!important}
 
