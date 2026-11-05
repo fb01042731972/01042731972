@@ -41616,6 +41616,12 @@ body::before{content:"";position:fixed;inset:-4%;z-index:-1;pointer-events:none;
   background:linear-gradient(90deg,#67E8F9 0%,#C4B5FD 60%,#F9A8D4 100%);-webkit-background-clip:text;background-clip:text;
   -webkit-text-fill-color:transparent;color:transparent;filter:drop-shadow(0 0 12px rgba(34,211,238,.45))}
 .max-w-5xl.bg-white:has(#hdrBtnBar) :is(.text-gray-400,.text-gray-500,.text-gray-600,.text-gray-700,.text-gray-800){color:#B9C8E4!important}
+/* [수정] 헤더 드롭다운(데이터/복사/설정 등)이 아래 탭바·'더보기'·견적서에 가려지는 문제:
+   backdrop-filter가 만든 별도 스택 영역을 아래 요소들보다 위로 올림 */
+.max-w-5xl.bg-white:has(#hdrBtnBar){position:relative!important;z-index:500!important;overflow:visible!important}
+#hdrBtnBar{position:relative;z-index:501}
+#hdrBtnBar>div{position:relative}
+#customerMenu,#imgToolsMenu,#copyMenu,#dataMenu,#settingsMenu,.hdrbtn-more-menu{z-index:510!important;max-height:calc(100vh - 140px);overflow-y:auto!important}
 
 /* 카드/패널: 밝은 프로스트 유리 + 시안 글로우 */
 .pcard,.shadow-md:not(:has(#hdrBtnBar)){box-shadow:var(--shadow-card)!important}
