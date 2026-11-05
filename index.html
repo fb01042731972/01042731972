@@ -1132,6 +1132,7 @@
         <label style="display:flex;align-items:center;gap:3px;cursor:pointer;user-select:none;flex-shrink:0;"><input type="checkbox" id="leChatSelectAllCb" onclick="leChatToggleSelectAll(this)">전체선택</label>
         <span id="leChatSelectCount" style="flex:1;font-weight:700;">0개 선택됨</span>
         <button type="button" class="le-select-cancel" onclick="leChatToggleSelectMode()">취소</button>
+        <button type="button" class="le-select-delete" style="background:#2563eb!important;" onclick="leChatForwardSelected()" title="선택한 메시지·첨부파일을 다른 대화방/친구에게 전달, 복사, 저장">선택 전달</button>
         <button type="button" class="le-select-delete" onclick="leChatBulkDeleteSelected()">선택 삭제</button>
         <button type="button" class="le-select-delete" style="background:#b45309!important;" onclick="leChatPurgeOldFiles()" title="3개월 지난 첨부파일만 저장소에서 삭제 (대화 글자는 남김, 관리자 비밀번호 필요)">오래된 파일 정리</button>
         <button type="button" class="le-select-delete" style="background:#7f1d1d!important;" onclick="leChatAdminDeleteAll()" title="전체 대화방의 채팅 내용을 전부 삭제, 귓속말 제외 (관리자 비밀번호 필요)">전체 삭제(관리자)</button>
@@ -1199,6 +1200,26 @@
       <input id="leChatInput" type="text" placeholder="메시지 입력... (😊 눌러 이모티콘 추가)" style="flex:1;border:1px solid #cbd5e1;border-radius:6px;padding:7px 9px;font-size:12.5px;min-width:0;" onkeydown="if(event.key==='Enter') leChatSend()">
       <button onclick="leChatSend()" style="background:#51667E;color:#fff;border:none;border-radius:6px;padding:0 12px;font-size:12.5px;font-weight:700;cursor:pointer;flex-shrink:0;">전송</button>
       </div>
+    </div>
+  </div>
+
+  <!-- ➡ 전달 / 복사 / 저장 -->
+  <div id="leChatForwardModal" style="display:none;position:absolute;inset:0;background:#fff;flex-direction:column;z-index:30;">
+    <div style="display:flex;align-items:center;gap:6px;padding:10px;border-bottom:1px solid #e2e8f0;flex-shrink:0;">
+      <b style="flex:1;font-size:13.5px;color:#1e293b;">➡ 전달 · 복사 · 저장</b>
+      <span onclick="leChatCloseForward()" style="cursor:pointer;font-weight:800;color:#64748b;padding:2px 6px;">✕</span>
+    </div>
+    <div id="leChatFwdPreview" style="padding:8px 10px;font-size:11.5px;color:#334155;background:#f8fafc;border-bottom:1px solid #e2e8f0;max-height:96px;overflow:auto;flex-shrink:0;white-space:pre-wrap;word-break:break-word;"></div>
+    <div style="display:flex;gap:6px;padding:8px 10px;flex-shrink:0;border-bottom:1px solid #e2e8f0;">
+      <button type="button" onclick="leChatFwdCopyText()" style="flex:1;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:7px 4px;font-size:12px;font-weight:700;cursor:pointer;">📋 내용 복사</button>
+      <button type="button" onclick="leChatFwdSaveText()" style="flex:1;border:1px solid #cbd5e1;background:#fff;border-radius:8px;padding:7px 4px;font-size:12px;font-weight:700;cursor:pointer;">💾 파일로 저장</button>
+    </div>
+    <div style="padding:8px 10px 4px;font-size:11.5px;font-weight:800;color:#475569;flex-shrink:0;">전달할 대상 (여러 곳 선택 가능)</div>
+    <div style="padding:0 10px 6px;flex-shrink:0;"><input id="leChatFwdSearch" type="text" placeholder="이름 · 직책 · IP 검색" oninput="leChatFwdRenderTargets()" style="width:100%;box-sizing:border-box;border:1px solid #cbd5e1;border-radius:8px;padding:6px 9px;font-size:12px;"></div>
+    <div id="leChatFwdTargets" style="flex:1;min-height:0;overflow:auto;padding:0 10px 6px;"></div>
+    <div style="padding:8px 10px;border-top:1px solid #e2e8f0;flex-shrink:0;display:flex;gap:6px;">
+      <button type="button" onclick="leChatCloseForward()" style="border:1px solid #e2e8f0;background:#fff;color:#64748b;border-radius:8px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer;">취소</button>
+      <button type="button" id="leChatFwdGoBtn" onclick="leChatFwdGo()" style="flex:1;border:0;background:#2563eb;color:#fff;border-radius:8px;padding:9px;font-size:13px;font-weight:800;cursor:pointer;">➡ 전달하기</button>
     </div>
   </div>
 
@@ -1564,6 +1585,7 @@ window.getLeBoardClient = function(){
   // ── 외부인(게스트) 초대 관련 상태 ──
   let leChatIsGuest = false;        // 초대 링크로 들어온 외부인이면 true
   let leChatGuestToken = '';        // 이 브라우저가 사용중인 초대 토큰
+  let leChatOnlineIps = {};         // 닉네임(정규화) -> 접속 IP (현재 접속자)
   let leChatOnlineRoles = {};       // 닉네임(정규화) -> 'staff' | 'guest' (현재 접속자 역할)
   // ── 사이트 전체 접속자/IP 차단 관련 상태 (채팅을 열지 않아도 항상 동작) ──
   let leSiteIp = '';
@@ -3780,6 +3802,7 @@ window.getLeBoardClient = function(){
       });
     });
     leChatOnlineRoles = roles;
+    leChatOnlineIps = ips;
     const uniqueNames = Array.from(new Set(names)).sort(function(a,b){ return a.localeCompare(b, 'ko'); });
 
     const countEl = document.getElementById('leChatOnlineCount');
@@ -3953,6 +3976,8 @@ window.getLeBoardClient = function(){
       div.dataset.msgCreated = msg.created_at;
     }
     if (msg.file_url) div.dataset.fileUrl = msg.file_url;
+    if (msg.file_name) div.dataset.fileName = msg.file_name;
+    if (msg.created_at) div.dataset.msgTime = msg.created_at;
     if (msg.expires_at) div.dataset.msgExpires = msg.expires_at;
     if (msg.content != null) div.dataset.msgContent = msg.content;
     div.dataset.msgSenderName = msg.sender || '';
@@ -4019,7 +4044,8 @@ window.getLeBoardClient = function(){
       : '';
     const deleteBtnHtml = '<span onclick="leChatDeleteMessage(this)" title="삭제" style="cursor:pointer;color:#ef4444;font-weight:800;margin-right:4px;">✕</span>';
     const selectCbHtml = '<input type="checkbox" class="le-select-cb" onclick="leChatOnSelectCheckbox(this)">';
-    const toolsHtml = selectCbHtml + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml;
+    const fwdBtnHtml = '<span onclick="leChatStartForward(this)" title="전달 · 복사 · 저장" style="cursor:pointer;color:#2563eb;font-weight:800;margin-right:4px;">➡</span>';
+    const toolsHtml = selectCbHtml + deleteBtnHtml + editBtnHtml + pinBtnHtml + replyBtnHtml + fwdBtnHtml;
 
     // 이름/아바타는 상대방 메시지의 "묶음 첫 메시지"에서만 표시 (카카오톡 방식)
     const showNameAvatar = !mine && !consecutive;
@@ -4457,6 +4483,160 @@ window.getLeBoardClient = function(){
     const input = document.getElementById('leChatInput');
     if (input) input.focus();
   };
+
+  // ── ➡ 전달 / 복사 / 저장 ──
+  let leChatFwdItems = [];
+  let leChatFwdPicked = new Set();
+  function leChatMsgFromWrap(w){
+    const c = w.dataset.msgId ? leChatFindCachedMsg(w.dataset.msgId) : null;
+    if (c) return c;
+    return { sender: w.dataset.msgSenderName || w.dataset.msgSender || '', content: w.dataset.msgContent || '', file_url: w.dataset.fileUrl || '', file_name: w.dataset.fileName || '', created_at: w.dataset.msgTime || w.dataset.msgCreated || '' };
+  }
+  function leChatFwdText(items){
+    return items.map(function(m){
+      const t = m.created_at ? new Date(m.created_at) : null;
+      const ts = t && !isNaN(t) ? (t.getFullYear() + '-' + String(t.getMonth()+1).padStart(2,'0') + '-' + String(t.getDate()).padStart(2,'0') + ' ' + String(t.getHours()).padStart(2,'0') + ':' + String(t.getMinutes()).padStart(2,'0')) : '';
+      const locked = leChatIsLocked(m);
+      let line = (ts ? '[' + ts + '] ' : '') + (m.sender || '') + ': ' + (locked ? '🔒 비밀번호로 보호된 파일' : (m.content || ''));
+      if (m.file_url) line += (line.endsWith(': ') ? '' : '\n') + '📎 ' + (m.file_name || '첨부파일') + ' ' + m.file_url;
+      return line;
+    }).join('\n');
+  }
+  window.leChatOpenForward = function(items){
+    items = (items || []).filter(function(m){ return m && (m.content || m.file_url); });
+    if (!items.length) { alert('전달할 메시지가 없습니다.'); return; }
+    leChatFwdItems = items; leChatFwdPicked = new Set();
+    const pv = document.getElementById('leChatFwdPreview');
+    if (pv) pv.textContent = items.length + '개 메시지\n' + leChatFwdText(items).slice(0, 600);
+    const sr = document.getElementById('leChatFwdSearch'); if (sr) sr.value = '';
+    leChatFwdRenderTargets();
+    document.getElementById('leChatForwardModal').style.display = 'flex';
+    leChatFwdLoadProfiles();
+  };
+  window.leChatCloseForward = function(){
+    const m = document.getElementById('leChatForwardModal'); if (m) m.style.display = 'none';
+    leChatFwdItems = []; leChatFwdPicked = new Set();
+  };
+  window.leChatStartForward = function(el){
+    const w = el.closest('[data-msg-id], [data-msg-created]'); if (!w) return;
+    leChatOpenForward([leChatMsgFromWrap(w)]);
+  };
+  window.leChatForwardSelected = function(){
+    const ws = Array.from(leChatSelectedIds);
+    if (!ws.length) { alert('전달할 메시지를 먼저 선택하세요.'); return; }
+    const items = ws.map(leChatMsgFromWrap);
+    items.sort(function(a,b){ return String(a.created_at||'').localeCompare(String(b.created_at||'')); });
+    leChatOpenForward(items);
+  };
+  let leChatFwdProfiles = {};
+  async function leChatFwdLoadProfiles(){
+    try {
+      const { data } = await leChatProfilesTable().select('nickname, photo_url, position');
+      const o = {};
+      (data || []).forEach(function(r){ if (r && r.nickname) o[String(r.nickname).trim().normalize('NFC')] = r; });
+      leChatFwdProfiles = o;
+      if (document.getElementById('leChatForwardModal').style.display !== 'none') leChatFwdRenderTargets();
+    } catch(e) {}
+  }
+  window.leChatFwdRenderTargets = function(){
+    const box = document.getElementById('leChatFwdTargets'); if (!box) return;
+    const myNorm = String(leChatNickname||'').trim().normalize('NFC');
+    const names = new Set(), last = {};
+    leChatMsgCache.forEach(function(m){
+      const snd = String(m.sender||'').trim().normalize('NFC'), rcv = String(m.receiver||'').trim().normalize('NFC');
+      [snd, rcv].forEach(function(n){ if (n && n !== myNorm) names.add(n); });
+      // 나와 1:1로 주고받은 마지막 시각
+      const other = (snd === myNorm) ? rcv : (rcv === myNorm ? snd : '');
+      if (other && m.created_at && (!last[other] || m.created_at > last[other])) last[other] = m.created_at;
+    });
+    (leChatOnlineNames||[]).forEach(function(n){ const nn = String(n||'').trim().normalize('NFC'); if (nn && nn !== myNorm) names.add(nn); });
+    const info = function(n){
+      const pr = leChatFwdProfiles[n] || {};
+      const on = (leChatOnlineNames||[]).some(function(x){ return String(x||'').trim().normalize('NFC') === n; });
+      return { name:n, pos: pr.position || '', photo: pr.photo_url || leChatAvatarCache[n] || '', online:on, role: leChatOnlineRoles[n] || (/^guest_/i.test(n) ? 'guest' : ''), ip: leChatOnlineIps[n] || '', last: last[n] || '' };
+    };
+    const q = (document.getElementById('leChatFwdSearch')?.value || '').trim().normalize('NFC').toLowerCase();
+    let list = Array.from(names).map(info);
+    if (q) list = list.filter(function(x){ return (x.name + ' ' + x.pos + ' ' + x.ip).toLowerCase().includes(q); });
+    // 접속중 먼저, 그 다음 최근 대화 순, 마지막으로 이름순
+    list.sort(function(a,b){ return (b.online-a.online) || String(b.last).localeCompare(String(a.last)) || a.name.localeCompare(b.name,'ko'); });
+    const fmtLast = function(iso){ const d = new Date(iso); if (isNaN(d)) return ''; return (d.getMonth()+1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2,'0') + ':' + String(d.getMinutes()).padStart(2,'0'); };
+    const badge = function(t,bg,fg){ return '<span style="display:inline-block;font-size:10px;font-weight:700;padding:1px 6px;border-radius:9px;background:' + bg + ';color:' + fg + ';margin-left:4px;vertical-align:1px;">' + t + '</span>'; };
+    const rows = [];
+    if (!q) rows.push('<label style="display:flex;align-items:center;gap:9px;padding:9px 4px;border-bottom:1px solid #e2e8f0;cursor:pointer;"><input type="checkbox" data-k="" ' + (leChatFwdPicked.has('') ? 'checked' : '') + ' onchange="leChatFwdPick(this)"><span style="font-size:20px;">👥</span><span style="font-size:13px;font-weight:800;">전체 대화방</span><span style="font-size:11px;color:#64748b;">모든 사람에게 보임</span></label>');
+    list.forEach(function(x){
+      const k = leChatAttrEscape(x.name);
+      const av = x.photo
+        ? '<img src="' + leChatEscape(x.photo) + '" style="width:34px;height:34px;border-radius:50%;object-fit:cover;object-position:center 20%;flex-shrink:0;">'
+        : '<div style="width:34px;height:34px;border-radius:50%;background:#B5BFC9;color:#fff;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:700;flex-shrink:0;">' + leChatEscape(x.name.replace(/^guest_/i,'G').charAt(0)) + '</div>';
+      const b = (x.role === 'guest' ? badge('손님','#fef3c7','#92400e') : (x.role === 'staff' ? badge('직원','#dbeafe','#1e40af') : ''))
+              + (x.online ? badge('● 접속중','#dcfce7','#166534') : badge('오프라인','#f1f5f9','#64748b'));
+      const sub = [x.pos ? leChatEscape(x.pos) : '', x.ip ? 'IP ' + leChatEscape(x.ip) : '', x.last ? '최근 대화 ' + fmtLast(x.last) : ''].filter(Boolean).join(' · ');
+      rows.push('<label style="display:flex;align-items:center;gap:9px;padding:8px 4px;border-bottom:1px solid #f1f5f9;cursor:pointer;"><input type="checkbox" data-k="' + k + '" ' + (leChatFwdPicked.has(x.name) ? 'checked' : '') + ' onchange="leChatFwdPick(this)">' + av +
+        '<div style="min-width:0;flex:1;"><div style="font-size:13px;font-weight:800;word-break:break-all;">' + leChatEscape(x.name) + b + '</div>' +
+        (sub ? '<div style="font-size:11px;color:#64748b!important;margin-top:1px;word-break:break-all;">' + sub + '</div>' : '') + '</div></label>');
+    });
+    box.innerHTML = rows.join('') || '<div style="padding:20px;text-align:center;font-size:12px;color:#94a3b8;">대상이 없습니다.</div>';
+    leChatFwdUpdateBtn();
+  };
+  window.leChatFwdPick = function(cb){
+    const k = cb.getAttribute('data-k') || '';
+    if (cb.checked) leChatFwdPicked.add(k); else leChatFwdPicked.delete(k);
+    leChatFwdUpdateBtn();
+  };
+  function leChatFwdUpdateBtn(){
+    const b = document.getElementById('leChatFwdGoBtn');
+    if (b) b.textContent = '➡ 전달하기' + (leChatFwdPicked.size ? ' (' + leChatFwdPicked.size + '곳)' : '');
+  }
+  window.leChatFwdCopyText = async function(){
+    const t = leChatFwdText(leChatFwdItems);
+    try { await navigator.clipboard.writeText(t); }
+    catch(e){ const ta = document.createElement('textarea'); ta.value = t; ta.style.cssText = 'position:fixed;left:-9999px;'; document.body.appendChild(ta); ta.select(); try{ document.execCommand('copy'); }catch(_){} ta.remove(); }
+    if (typeof showToast === 'function') showToast('📋 대화 내용을 복사했습니다.'); else alert('복사했습니다.');
+  };
+  window.leChatFwdSaveText = function(){
+    const d = new Date(), nm = '대화내용_' + d.getFullYear() + String(d.getMonth()+1).padStart(2,'0') + String(d.getDate()).padStart(2,'0') + '_' + String(d.getHours()).padStart(2,'0') + String(d.getMinutes()).padStart(2,'0') + '.txt';
+    const blob = new Blob(['﻿' + leChatFwdText(leChatFwdItems)], {type:'text/plain;charset=utf-8'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nm; document.body.appendChild(a); a.click();
+    setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 800);
+  };
+  window.leChatFwdGo = async function(){
+    if (!supaClient) return;
+    if (!leChatFwdPicked.size) { alert('전달할 대상을 선택하세요.'); return; }
+    const targets = Array.from(leChatFwdPicked), items = leChatFwdItems.slice();
+    const btn = document.getElementById('leChatFwdGoBtn'); if (btn) { btn.disabled = true; btn.textContent = '전달 중...'; }
+    let ok = 0, fail = 0;
+    for (const tg of targets) {
+      const receiver = tg === '' ? null : tg;
+      for (const m of items) {
+        try {
+          const locked = leChatIsLocked(m);
+          let content = m.content || '';
+          if (!locked) content = '↪ 전달 · ' + (m.sender || '') + (content ? '\n' + content : '');
+          leChatMarkPendingOwnMessage(leChatNickname, receiver, content, m.file_name || '');
+          const payload = Object.assign({ sender: leChatNickname, content: content, receiver: receiver }, leChatExpiresExtra());
+          if (m.file_url) { payload.file_url = m.file_url; payload.file_name = m.file_name || ''; }
+          const { data: inserted, error } = await supaClient.from('chat_messages').insert(payload).select('*').single();
+          if (error) throw error;
+          if (inserted && !leChatMsgCache.some(function(x){ return inserted.id != null && x.id != null && String(x.id) === String(inserted.id); })) {
+            leChatMsgCache.push(inserted);
+            if (leChatViewMode === 'thread' && leChatActiveConv === leChatConvKeyOf(inserted)) {
+              leChatRenderMessage(inserted, true);
+              const bx = document.getElementById('leChatMessages'); if (bx) bx.scrollTop = bx.scrollHeight;
+            }
+          }
+          ok++;
+        } catch(e) { fail++; }
+      }
+    }
+    leChatRenderConvList();
+    if (btn) btn.disabled = false;
+    leChatCloseForward();
+    if (leChatSelectMode) leChatToggleSelectMode();
+    const msg = '➡ ' + ok + '건 전달 완료' + (fail ? ' (실패 ' + fail + '건)' : '');
+    if (typeof showToast === 'function') showToast(msg); else alert(msg);
+  };
+
   window.leChatCancelReply = function(){
     leChatReplyTarget = null;
     const bar = document.getElementById('leChatReplyBar');
@@ -41627,6 +41807,16 @@ button[onclick^="printActiveDoc"]{bottom:88px!important}
 button[onclick^="openQuickIntakeModal"]{bottom:140px!important}
 #leSeasonBgBtn{left:auto!important;right:20px!important;bottom:192px!important;width:44px!important;height:44px!important}
 #hdrBtnBar>div{position:relative}
+/* 채팅 전달 창: 어두운 테마에서도 글자가 또렷하게 보이도록 색 고정 */
+#leChatWindow #leChatForwardModal{background:#fff!important;color-scheme:light}
+#leChatWindow #leChatForwardModal b,#leChatWindow #leChatForwardModal label{color:#1e293b!important;text-shadow:none!important}
+#leChatWindow #leChatForwardModal label div div[style*="color:#64748b"]{color:#64748b!important}
+#leChatWindow #leChatForwardModal #leChatFwdPreview{color:#334155!important;background:#f1f5f9!important}
+#leChatWindow #leChatForwardModal #leChatFwdSearch{color:#1e293b!important;background:#fff!important;border:1px solid #94a3b8!important}
+#leChatWindow #leChatForwardModal div[style*="font-weight:800"]{color:#334155!important}
+#leChatWindow #leChatForwardModal input[type=checkbox]{accent-color:#2563eb;width:17px;height:17px;background:#fff!important}
+#leChatWindow #leChatForwardModal button{color:#1e293b!important;background:#fff!important;border:1px solid #94a3b8!important}
+#leChatWindow #leChatForwardModal #leChatFwdGoBtn{background:#2563eb!important;color:#fff!important;border:0!important}
 #customerMenu,#imgToolsMenu,#copyMenu,#dataMenu,#settingsMenu,.hdrbtn-more-menu{z-index:510!important;max-height:calc(100vh - 140px);overflow-y:auto!important}
 
 /* 카드/패널: 밝은 프로스트 유리 + 시안 글로우 */
