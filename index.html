@@ -3054,12 +3054,18 @@ window.getLeBoardClient = function(){
         const key = leChatConvKeyOf(m);
         const rs = leChatReadState[key];
         const lastRead = rs && rs[leChatNickname];
-        if (!lastRead) return;                              // 읽음 기록이 없는 방은 기존 값 유지
+        if (!lastRead) {
+          // 읽음 기록이 없는 방: 전체방('')은 기존 값 유지, 1:1 대화방은 한 번도 안 열어본 것이므로
+          // 상대가 보낸 메시지를 모두 안읽음으로 센다 (오프라인 중 받은 메시지 누락 방지)
+          if (key !== '') counts[key] = (counts[key] || 0) + 1;
+          return;
+        }
         if (new Date(m.created_at) > new Date(lastRead)) counts[key] = (counts[key] || 0) + 1;
       });
-      Object.keys(leChatReadState).forEach(function(key){
-        const rs = leChatReadState[key];
-        if (!rs || !rs[leChatNickname]) return;
+      const unreadKeys = {};
+      Object.keys(leChatReadState).forEach(function(k){ const r = leChatReadState[k]; if (r && r[leChatNickname]) unreadKeys[k] = 1; });
+      Object.keys(counts).forEach(function(k){ unreadKeys[k] = 1; });
+      Object.keys(unreadKeys).forEach(function(key){
         const viewing = (leChatViewMode === 'thread' && leChatActiveConv === key);
         const n = viewing ? 0 : (counts[key] || 0);
         if (n > 0) map[key] = n; else delete map[key];
@@ -3763,9 +3769,26 @@ window.getLeBoardClient = function(){
       .subscribe(function(status){
         if (status === 'SUBSCRIBED') {
           leChatTrackPresence();
+          leChatResync(); // (재)연결될 때 끊겨 있던 사이 온 메시지를 서버에서 다시 가져옴
         }
       });
   }
+
+  // 서버 기록을 다시 불러와 놓친 메시지/안읽음 숫자를 맞춤 (과도한 호출 방지용 3초 제한)
+  let leChatResyncBusy = false, leChatResyncAt = 0;
+  async function leChatResync(){
+    if (leChatResyncBusy || !supaClient || !leChatNickname) return;
+    if (Date.now() - leChatResyncAt < 3000) return;
+    leChatResyncBusy = true; leChatResyncAt = Date.now();
+    try {
+      await Promise.all([leChatLoadHistory(), leChatLoadReadState()]);
+      leChatRecomputeUnread();
+    } catch(e) { console.warn('[leChat] 재동기화 실패', e); }
+    leChatResyncBusy = false;
+  }
+  document.addEventListener('visibilitychange', function(){ if (!document.hidden) leChatResync(); });
+  window.addEventListener('online', function(){ leChatResync(); });
+  window.addEventListener('focus', function(){ leChatResync(); });
 
   // 접속자(Presence) 등록/해제
   function leChatTrackPresence(){
