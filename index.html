@@ -2357,7 +2357,7 @@ window.getLeBoardClient = function(){
     if (!supaClient || !leSiteIp) return;
     try {
       leSiteChannel = supaClient.channel('site_visitors_room', {
-        config: { presence: { key: leSiteIp + '_' + Math.random().toString(36).slice(2,8) } }
+        config: { presence: { key: (window._leSiteMyKey = leSiteIp + '_' + Math.random().toString(36).slice(2,8)) } }
       });
       leSiteChannel.on('presence', { event: 'sync' }, function(){ leSiteRefreshAdminListIfOpen(); leSiteBadgeRefresh(); });
       leSiteChannel.on('presence', { event: 'join' }, function(e){
@@ -2446,7 +2446,7 @@ window.getLeBoardClient = function(){
     const all = [mine].concat(others);
     let html = all.slice(0, LE_WHO_MAX).map(function(p, i){
       const parts = [leFmtClock(p.at), leMaskIp(p.ip)].filter(Boolean).map(esc).join(' · ');
-      return '<span class="le-who' + (i ? ' dm' : ' me') + '"' + (i ? ' data-name="' + esc(p.name) + '" title="클릭하면 ' + esc(p.name) + '님에게 메시지 보내기"' : '') + '><span class="le-red-dot"></span>' + esc(p.name) + ' 접속' +
+      return '<span class="le-who' + (i ? ' dm' : ' me') + '"' + (i ? ' data-name="' + esc(p.name) + '" title="클릭하면 ' + esc(p.name) + '님에게 메시지 보내기"' : '') + '><span class="le-red-dot"></span>' + esc(p.name) + (i ? '' : ' <span style="color:#fff;background:#0f766e;border-radius:9px;padding:0 6px;font-size:10px;font-weight:800;vertical-align:1px;">나</span>') + ' 접속' +
              (parts ? '<span style="display:block;font-size:9.5px;line-height:13px;font-weight:600;color:#64748b;padding-left:11px;">' + parts + '</span>' : '') + '</span>';
     }).join('');
     if (all.length > LE_WHO_MAX) html += '<span class="le-who">외 ' + (all.length - LE_WHO_MAX) + '명 접속 중</span>';
@@ -2690,18 +2690,40 @@ window.getLeBoardClient = function(){
     const b = document.getElementById('leMyIpBtn'); if (!b) return;
     if (!leSiteIp || leSiteIp.indexOf('guest_') === 0) { b.textContent = '🌐 IP 확인 불가'; return; }
     let n = 0;
-    try { const st = leSiteChannel ? leSiteChannel.presenceState() : {}, ips = {}; Object.keys(st).forEach(function(k){ (st[k] || []).forEach(function(p){ if (p && p.ip) ips[p.ip] = 1; }); }); n = Object.keys(ips).length; } catch(e) {}
-    b.textContent = '🌐 ' + leSiteIp + (leSiteArrival.label ? ' · ' + leSiteArrival.label : '') + (window._leVisitorAdminOk && n ? ' · ' + n + '곳 접속' : '');
+    try { n = leSitePeople().length; } catch(e) {}
+    b.textContent = '🌐 ' + leSiteIp + (leSiteArrival.label ? ' · ' + leSiteArrival.label : '') + (window._leVisitorAdminOk && n ? ' · ' + n + '명 접속' : '');
     b.style.background = leSiteArrival.state === 'external' ? '#b91c1c' : '#0f766e';
     const pn = document.getElementById('leMyIpPanel'); if (pn && pn.style.display !== 'none') leMyIpRender();
   }
+  // 접속자를 IP가 아니라 사람(이름) 단위로 만든다. 같은 IP(사무실 공유기)를 쓰는 여러 명이 한 줄로 합쳐지거나 모두 '나'로 보이는 문제 방지.
+  function leSitePeople(){
+    const out = {};
+    let st = {};
+    try { st = leSiteChannel ? leSiteChannel.presenceState() : {}; } catch(e) {}
+    Object.keys(st).forEach(function(k){
+      (st[k] || []).forEach(function(p){
+        if (!p || !p.ip) return;
+        const nm = String(p.nickname || '').trim();
+        const id = (nm ? 'n:' + nm : 'k:' + k) + '|' + p.ip;
+        const mine = (k === window._leSiteMyKey);
+        if (!out[id]) out[id] = { p: p, ip: p.ip, name: nm, isMe: mine };
+        else {
+          if (mine) out[id].isMe = true;
+          if ((p.online_at || '') < (out[id].p.online_at || '')) out[id].p = p;
+        }
+      });
+    });
+    return Object.keys(out).map(function(id){ return out[id]; }).sort(function(a, b){
+      if (a.isMe !== b.isMe) return a.isMe ? -1 : 1;
+      return String(a.p.online_at || '').localeCompare(String(b.p.online_at || ''));
+    });
+  }
   function leMyIpRender(){
     const pn = document.getElementById('leMyIpPanel'); if (!pn) return;
-    const by = {};
-    try { const st = leSiteChannel ? leSiteChannel.presenceState() : {}; Object.keys(st).forEach(function(k){ (st[k] || []).forEach(function(p){ if (p && p.ip && (!by[p.ip] || (p.online_at || '') < (by[p.ip].online_at || ''))) by[p.ip] = p; }); }); } catch(e) {}
-    const ips = Object.keys(by);
-    const live = !window._leVisitorAdminOk ? '<div style="color:#94a3b8;">🔒 접속자 목록은 관리자만 볼 수 있습니다</div>' : ips.length ? ips.map(function(ip){ const p = by[ip];
-      return '<div style="display:flex;justify-content:space-between;gap:6px;padding:3px 0;border-top:1px solid #f1f5f9;"><span><b>' + leChatEscape(ip) + '</b>' + (p.label ? ' <span style="color:#1d4ed8;">📍' + leChatEscape(p.label) + '</span>' : '') + (p.nickname ? ' <span style="color:#64748b;">' + leChatEscape(p.nickname) + '</span>' : '') + (p.ext ? ' <span style="color:#dc2626;font-weight:800;">⚠️외부</span>' : '') + (ip === leSiteIp ? ' <span style="color:#0f766e;">(나)</span>' : '') + '</span><span style="color:#64748b;white-space:nowrap;">' + leVisitDur(Date.now() - new Date(p.online_at).getTime()) + '째</span></div>'; }).join('') : '<div style="color:#94a3b8;">없음</div>';
+    const people = leSitePeople();
+    const live = !window._leVisitorAdminOk ? '<div style="color:#94a3b8;">🔒 접속자 목록은 관리자만 볼 수 있습니다</div>' : people.length ? people.map(function(it){ const p = it.p;
+      const nameHtml = it.name ? '<b style="font-size:13px;">' + leChatEscape(it.name) + '</b>' : '<b style="color:#94a3b8;">(이름 미설정)</b>';
+      return '<div style="display:flex;justify-content:space-between;gap:6px;padding:4px 0;border-top:1px solid #f1f5f9;' + (it.isMe ? 'background:#f0fdfa;' : '') + '"><span>' + nameHtml + (it.isMe ? ' <span style="color:#fff;background:#0f766e;border-radius:9px;padding:0 6px;font-size:10px;font-weight:800;">나</span>' : '') + ' <span style="color:#64748b;">' + leChatEscape(it.ip) + '</span>' + (p.label ? ' <span style="color:#1d4ed8;">📍' + leChatEscape(p.label) + '</span>' : '') + (p.ext ? ' <span style="color:#dc2626;font-weight:800;">⚠️외부</span>' : '') + '</span><span style="color:#64748b;white-space:nowrap;">' + leVisitDur(Date.now() - new Date(p.online_at).getTime()) + '째</span></div>'; }).join('') : '<div style="color:#94a3b8;">없음</div>';
     pn.innerHTML = (leSiteName ? '<div style="font-size:11px;color:#64748b;">내 이름</div><div style="font-size:16px;font-weight:900;"><span class="le-red-dot"></span>' + leChatEscape(leSiteName) + '</div>' : '') + '<div style="font-size:11px;color:#64748b;margin-top:4px;">내 IP</div><div style="font-size:22px;font-weight:900;">' + leChatEscape(leSiteIp || '-') + '</div>' +
       (leSiteArrival.label ? '<div style="color:#1d4ed8;font-weight:800;">📍 ' + leChatEscape(leSiteArrival.label) + '</div>' : '') +
       (leSiteArrival.state === 'external' ? '<div style="color:#dc2626;font-weight:700;">⚠️ 등록되지 않은 외부 IP</div>' : '') +
@@ -2834,23 +2856,17 @@ window.getLeBoardClient = function(){
     if (!leSiteChannel) { listEl.innerHTML = '<div style="font-size:11px;color:#94a3b8;">접속자 추적이 아직 준비되지 않았습니다.</div>'; return; }
     let state = {};
     try { state = leSiteChannel.presenceState(); } catch(e) {}
-    const byIp = {};
-    Object.keys(state).forEach(function(key){
-      (state[key] || []).forEach(function(p){
-        if (p && p.ip) byIp[p.ip] = p;
-      });
-    });
-    const ips = Object.keys(byIp);
-    if (ips.length === 0) {
+    const people = leSitePeople();
+    if (people.length === 0) {
       listEl.innerHTML = '<div style="font-size:11px;color:#94a3b8;">현재 접속자가 없습니다.</div>';
       return;
     }
-    listEl.innerHTML = ips.map(function(ip){
-      const p = byIp[ip];
-      const name = p.nickname ? leChatEscape(p.nickname) : '(이름 미설정)';
+    listEl.innerHTML = people.map(function(it){
+      const p = it.p, ip = it.ip;
+      const name = it.name ? leChatEscape(it.name) : '(이름 미설정)';
       return '<div style="display:flex;align-items:center;justify-content:space-between;background:#f8fafc;border:1px solid #e2e8f0;border-radius:6px;padding:7px 10px;">' +
-        '<div style="font-size:12px;color:#1e293b;"><b>' + leChatEscape(ip) + '</b> <span style="color:#64748b;">' + name + '</span>' + (p.label ? ' <span style="color:#1d4ed8;">📍' + leChatEscape(p.label) + '</span>' : '') + (p.ext ? ' <span style="color:#dc2626;font-weight:800;">⚠️외부</span>' : '') + '</div>' +
-        '<button onclick="window.leBanIp&&window.leBanIp(\'' + leChatAttrEscape(ip) + '\')" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:5px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🚫 영구 차단</button>' +
+        '<div style="font-size:12px;color:#1e293b;"><b>' + name + '</b>' + (it.isMe ? ' <span style="color:#fff;background:#0f766e;border-radius:9px;padding:0 6px;font-size:10px;font-weight:800;">나</span>' : '') + ' <span style="color:#64748b;">' + leChatEscape(ip) + '</span>' + (p.label ? ' <span style="color:#1d4ed8;">📍' + leChatEscape(p.label) + '</span>' : '') + (p.ext ? ' <span style="color:#dc2626;font-weight:800;">⚠️외부</span>' : '') + '</div>' +
+        (it.isMe ? '' : '<button onclick="window.leBanIp&&window.leBanIp(\'' + leChatAttrEscape(ip) + '\')" title="같은 IP를 쓰는 모든 사람이 차단됩니다" style="background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:5px;padding:4px 9px;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap;">🚫 영구 차단</button>') +
         '</div>';
     }).join('');
   }
@@ -3842,7 +3858,7 @@ window.getLeBoardClient = function(){
           const ip = ips[nk];
           const banBtn = ip ? ' <span onclick="event.stopPropagation();window.leBanIp&&window.leBanIp(\'' + leChatAttrEscape(ip) + '\')" title="이 사람의 IP(' + leChatAttrEscape(ip) + ') 영구 차단" style="margin-left:auto;color:#dc2626;font-size:11px;cursor:pointer;">🚫</span>' : '';
           return '<div style="padding:6px 12px;font-size:12px;color:#1e293b;white-space:nowrap;display:flex;align-items:center;" onmouseover="this.style.background=\'#f1f5f9\'" onmouseout="this.style.background=\'\'">' +
-            '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(n) + '\')" style="cursor:pointer;display:flex;align-items:center;flex:1;">🟢 ' + leChatAvatarThumbHtml(n, 16) + leChatEscape(n) + '</span>' + banBtn + '</div>';
+            '<span onclick="leChatOpenProfile(\'' + leChatAttrEscape(n) + '\')" style="cursor:pointer;display:flex;align-items:center;flex:1;">🟢 ' + leChatAvatarThumbHtml(n, 16) + leChatEscape(n) + (nk === String(leChatNickname||'').trim().normalize('NFC') ? ' <span style="margin-left:4px;color:#fff;background:#0f766e;border-radius:9px;padding:0 6px;font-size:10px;font-weight:800;">나</span>' : '') + '</span>' + (nk === String(leChatNickname||'').trim().normalize('NFC') ? '' : banBtn) + '</div>';
         }).join('');
       }
     }
